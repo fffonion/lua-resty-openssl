@@ -2,7 +2,7 @@
 
 FFI-based OpenSSL binding for LuaJIT, supporting OpenSSL 1.1 and 1.0.2 series
 
-![Build Status](https://travis-ci.org/fffonion/lua-resty-openssl.svg?branch=master)
+![Build Status](https://travis-ci.com/fffonion/lua-resty-openssl.svg?branch=master)
 
 
 Table of Contents
