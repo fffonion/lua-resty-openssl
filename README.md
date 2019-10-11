@@ -107,6 +107,11 @@ to explictly decode the key using `format`, which can be a choice of `PER`, `DER
 for auto detect.
 3. `nil` to create a 2048 bits RSA key.
 
+### pkey.istype
+
+**syntax**: *status = pkey.istype(table)*
+
+Returns `true` if table is an instance of `pkey`. Returns `false` otherwise.
 
 ### pkey:getParameters
 
@@ -169,6 +174,12 @@ Module to expose BIGNUM structure. This module is not exposed through `resty.ope
 Creates a BIGNUM instance. The first argument can be `BIGNUM *` cdata object, or a Lua number,
 or `nil` to creates a empty instance.
 
+### bn.istype
+
+**syntax**: *status = bn.istype(table)*
+
+Returns `true` if table is an instance of `bn`. Returns `false` otherwise.
+
 ### bn:toBinary
 
 **syntax**: *bin, err = bn:toBinary()*
@@ -193,6 +204,12 @@ Module to interact with message digest.
 Creates a digest instance.`digest_name` is a string of digest algorithm name. To view
 a list of digest algorithms implemented, use `openssl list -digest-algorithms`.
 
+### digest.istype
+
+**syntax**: *status = digest.istype(table)*
+
+Returns `true` if table is an instance of `digest`. Returns `false` otherwise.
+
 ### digest:update
 
 **syntax**: *digest:update(partial, ...)*
@@ -206,17 +223,68 @@ Updates the digest with one or more string.
 
 ## resty.openssl.x509
 
+### x509.new
+
+### x509.istype
+
+**syntax**: *status = x509.istype(table)*
+
+Returns `true` if table is an instance of `x509`. Returns `false` otherwise.
+
+### x509:getLifetime
+
+### x509:getPublicKey
+
 ## resty.openssl.x509.csr
+
+### csr.new
+
+### csr.istype
+
+**syntax**: *status = csr.istype(table)*
+
+Returns `true` if table is an instance of `csr`. Returns `false` otherwise.
+
+### csr:setSubject
+
+### csr:setSubjectAlt
+
+### csr:setPublicKey
+
+### csr:tostring
+
+### csr:toPEM
 
 ## resty.openssl.x509.altname
 
+### altname.new
+
+### altname.istype
+
+**syntax**: *altname = digest.istype(table)*
+
+Returns `true` if table is an instance of `altname`. Returns `false` otherwise.
+
+### altname:add
+
 ## resty.openssl.x509.name
+
+### name.new
+
+### name.istype
+
+**syntax**: *status = name.istype(table)*
+
+Returns `true` if table is an instance of `name`. Returns `false` otherwise.
+
+### name:add
 
 
 TODO
 ====
 
 - test memory leak
+- seperate cdef with lua implementation to allow cleaner dependency
 
 [Back to TOC](#table-of-contents)
 
