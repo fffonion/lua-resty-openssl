@@ -24,8 +24,8 @@ __DATA__
             local nb_expected = math.floor(ngx.now())
             local na_expected = math.floor(nb_expected + 365 * 86400)
             local pem = io.open("cert.pem"):read("*a")
-            local openssl = require("resty.openssl")
-            local p, err = openssl.x509.new(pem)
+            local x509 = require("resty.openssl.x509")
+            local p, err = x509.new(pem)
             ngx.say(err)
             local not_before, not_after, err = p:getLifetime()
             ngx.say(err)
@@ -51,10 +51,10 @@ true
 --- config
     location =/t {
         content_by_lua_block {
-            local openssl = require("resty.openssl")
-            local p, err = openssl.x509.new()
+            local x509 = require("resty.openssl.x509")
+            local p, err = x509.new()
             ngx.say(err)
-            p, err = openssl.x509.new("222")
+            p, err = x509.new("222")
             ngx.say(err)
         }
     }
@@ -64,5 +64,34 @@ true
 "expect a string at #1
 x509.new: .*pem_lib.c.+
 "
+--- no_error_log
+[error]
+
+
+=== TEST 3: Exports public key
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            os.execute("openssl req -newkey rsa:2048 -nodes -keyout key.pem -x509 -days 365 -out cert.pem -subj '/'")
+            local pem = io.open("cert.pem"):read("*a")
+            local x509 = require("resty.openssl.x509")
+            local c, err = x509.new(pem)
+            ngx.say(err)
+            ngx.say(c:getPublicKey():toPEM():sub(1, 26))
+            pem = io.open("key.pem"):read("*a")
+            local pkey = require("resty.openssl.pkey")
+            local k, err = pkey.new(pem)
+            ngx.print(c:getPublicKey():toPEM() == k:toPEM("public"))
+            os.remove("key.pem")
+            os.remove("cert.pem")
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"nil
+-----BEGIN PUBLIC KEY-----
+true"
 --- no_error_log
 [error]

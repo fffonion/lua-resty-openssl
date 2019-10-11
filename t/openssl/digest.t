@@ -18,8 +18,7 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            local openssl = require("resty.openssl")
-            local digest, err = openssl.digest.new("sha256")
+            local digest, err = require("resty.openssl.digest").new("sha256")
             assert(err == nil)
             digest:update("🦢🦢🦢🦢🦢🦢")
             ngx.print(ngx.encode_base64(digest:final()))
@@ -37,8 +36,7 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            local openssl = require("resty.openssl")
-            local digest, err = openssl.digest.new("sha256")
+            local digest, err = require("resty.openssl.digest").new("sha256")
             assert(err == nil)
             digest:update("🦢", "🦢🦢", "🦢🦢", "🦢")
             ngx.print(ngx.encode_base64(digest:final()))
@@ -56,8 +54,7 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            local openssl = require("resty.openssl")
-            local digest, err = openssl.digest.new("sha256")
+            local digest, err = require("resty.openssl.digest").new("sha256")
             if err then
                 ngx.log(ngx.ERR, err)
                 return
@@ -78,8 +75,7 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            local openssl = require("resty.openssl")
-            local digest, err = openssl.digest.new("sha257")
+            local digest, err = require("resty.openssl.digest").new("sha257")
             ngx.print(err)
         }
     }

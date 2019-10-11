@@ -36,7 +36,7 @@ __DATA__
 --- response_body eval
 ""
 --- error_log
-bn.toBinary failed
+bn:toBinary failed
 
 === TEST 2: New BIGNUM instance from number
 --- http_config eval: $::HttpConfig

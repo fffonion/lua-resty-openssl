@@ -17,6 +17,7 @@ local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 
 ffi.cdef [[
   void X509_free(X509 *a);
+  EVP_PKEY *X509_get_pubkey(X509 *x);
 
   EVP_PKEY *d2i_PrivateKey_bio(BIO *bp, EVP_PKEY **a);
   EVP_PKEY *d2i_PUBKEY_bio(BIO *bp, EVP_PKEY **a);
@@ -148,6 +149,16 @@ function _M:getLifetime()
   not_after = asn1_to_unix(not_after)
 
   return not_before, not_after, nil
+end
+
+function _M:getPublicKey()
+  local ctx = C.X509_get_pubkey(self.ctx)
+  if ctx == nil then
+    return nil, format_error("x509:getPublicKey")
+  end
+  -- lazy load pkey to avoid circular dependency (which might makes pkey a userdata)
+  local pkey_lib = require("resty.openssl.pkey")
+  return pkey_lib.new(ctx)
 end
 
 return _M

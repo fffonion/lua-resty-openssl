@@ -18,8 +18,7 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            local openssl = require("resty.openssl")
-            local p = openssl.pkey.new()
+            local p = require("resty.openssl.pkey").new()
             ngx.say(p:toPEM('private'))
         }
     }
@@ -35,8 +34,7 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            local openssl = require("resty.openssl")
-            local p = openssl.pkey.new({
+            local p = require("resty.openssl.pkey").new({
                 type = 'RSA',
                 bits = 2048,
             })
@@ -55,8 +53,7 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            local openssl = require("resty.openssl")
-            local p = openssl.pkey.new({
+            local p = require("resty.openssl.pkey").new({
                 type = 'EC',
                 curve = 'prime256v1',
             })
@@ -75,10 +72,10 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            local openssl = require("resty.openssl")
-            local p, err = openssl.pkey.new(123)
+            local pkey = require("resty.openssl.pkey")
+            local p, err = pkey.new(123)
             ngx.say(err)
-            local p, err = openssl.pkey.new('PRIVATE KEY')
+            local p, err = pkey.new('PRIVATE KEY')
             ngx.say(err)
         }
     }
@@ -96,13 +93,13 @@ pkey.new:load_pkey: .+
 --- config
     location =/t {
         content_by_lua_block {
-            local openssl = require("resty.openssl")
-            local p1, err = openssl.pkey.new()
+            local pkey = require("resty.openssl.pkey")
+            local p1, err = pkey.new()
             if err then
                 ngx.log(ngx.ERR, err)
                 return
             end
-            local p2, err = openssl.pkey.new(p1:toPEM('private'))
+            local p2, err = pkey.new(p1:toPEM('private'))
             if err then
                 ngx.log(ngx.ERR, err)
                 return
@@ -122,15 +119,15 @@ pkey.new:load_pkey: .+
 --- config
     location =/t {
         content_by_lua_block {
-            local openssl = require("resty.openssl")
-            local p1, err = openssl.pkey.new()
+            local pkey = require("resty.openssl.pkey")
+            local p1, err = pkey.new()
             if err then
                 ngx.log(ngx.ERR, err)
                 return
             end
             local pem = p1:toPEM('private')
             local der, err = require("ngx.ssl").priv_key_pem_to_der(pem)
-            local p2, err = openssl.pkey.new(der)
+            local p2, err = pkey.new(der)
             if err then
                 ngx.log(ngx.ERR, err)
                 return
@@ -150,15 +147,14 @@ pkey.new:load_pkey: .+
 --- config
     location =/t {
         content_by_lua_block {
-            local openssl = require("resty.openssl")
-            local p, err = openssl.pkey.new({
+            local p, err = require("resty.openssl.pkey").new({
                 exp = 65537,
             })
             if err then
                 ngx.log(ngx.ERR, err)
                 return
             end
-            local params, er = p:getParameters()
+            local params, err = p:getParameters()
             if err then
                 ngx.log(ngx.ERR, err)
                 return
@@ -185,14 +181,13 @@ AQAB
 --- config
     location =/t {
         content_by_lua_block {
-            local openssl = require("resty.openssl")
-            local p, err = openssl.pkey.new()
+            local p, err = require("resty.openssl.pkey").new()
             if err then
                 ngx.log(ngx.ERR, err)
                 return
             end
             
-            local digest, err = openssl.digest.new("SHA256")
+            local digest, err = require("resty.openssl.digest").new("SHA256")
             if err then
                 ngx.log(ngx.ERR, err)
                 return
@@ -230,8 +225,7 @@ true
 --- config
     location =/t {
         content_by_lua_block {
-            local openssl = require("resty.openssl")
-            local p, err = openssl.pkey.new()
+            local p, err = require("resty.openssl.pkey").new()
             if err then
                 ngx.log(ngx.ERR, err)
                 return

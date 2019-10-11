@@ -23,7 +23,7 @@ Description
 supports OpenSSL `1.1.1`, `1.1.0` and `1.0.2` series.
 
 The API is kept as same [luaossl](https://github.com/wahern/luaossl) while only a small sets
-of OpenSSL API implemented.
+of OpenSSL APIs are currently implemented.
 
 
 [Back to TOC](#table-of-contents)
@@ -163,7 +163,8 @@ Module to expose BIGNUM structure. This module is not exposed through `resty.ope
 
 ### bn.new
 
-**syntax**: *b, err = bn.new(bn_instance or number?)*
+**syntax**: *b, err = bn.new(bn_cdata?)*
+**syntax**: *b, err = bn.new(number?)*
 
 Creates a BIGNUM instance. The first argument can be `BIGNUM *` cdata object, or a Lua number,
 or `nil` to creates a empty instance.
@@ -189,8 +190,8 @@ Module to interact with message digest.
 
 **syntax**: *d, err = digest.new(digest_name)*
 
-Creates a digest instance. The `digest_name` is a valid digest algorithm name. To view
-a list of digest algorithms implemented, use `openssl list -digest-algorithms`
+Creates a digest instance.`digest_name` is a string of digest algorithm name. To view
+a list of digest algorithms implemented, use `openssl list -digest-algorithms`.
 
 ### digest:update
 

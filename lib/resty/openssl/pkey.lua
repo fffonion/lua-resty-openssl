@@ -13,6 +13,7 @@ require "resty.openssl.ec"
 local bn_lib = require "resty.openssl.bn"
 require "resty.openssl.bio"
 require "resty.openssl.pem"
+require "resty.openssl.objects"
 local util = require "resty.openssl.util"
 require "resty.openssl.x509"
 local format_error = require("resty.openssl.err").format_error
@@ -188,20 +189,15 @@ local PEM_write_bio_PrivateKey_args = { null, null, 0, null, null }
 local PEM_write_bio_PUBKEY_args = {}
 
 local function tostring(self, fmt)
-  local method
+  local method, args
   if fmt == 'private' or fmt == 'PrivateKey' then
     method = 'PEM_write_bio_PrivateKey'
+    args = PEM_write_bio_PrivateKey_args
   elseif not fmt or fmt == 'public' or fmt == 'PublicKey' then
     method = 'PEM_write_bio_PUBKEY'
+    args = PEM_write_bio_PUBKEY_args
   else
     return nil, "can only export private or public key, not " .. fmt
-  end
-
-  local args
-  if method == 'PEM_write_bio_PrivateKey' then
-    args = PEM_write_bio_PrivateKey_args
-  else
-    args = PEM_write_bio_PUBKEY_args
   end
 
   return util.read_using_bio(method, self.ctx, unpack(args))
@@ -210,17 +206,24 @@ end
 local _M = {}
 local mt = { __index = _M, __tostring = tostring }
 
+local evp_ptr_ct = ffi.typeof('EVP_PKEY*')
 -- type
 -- bits
 -- exp
 -- curve
 function _M.new(s, ...)
-  local ctx, err, has_private
+  local ctx, err
   s = s or {}
   if type(s) == 'table' then
     ctx, err = generate_key(s)
   elseif type(s) == 'string' then
     ctx, err = load_pkey(s, ...)
+  elseif type(s) == 'cdata' then
+    if ffi.istype(evp_ptr_ct, s) then
+      ctx = s
+    else
+      return nil, "expect a EVP_PKEY* cdata at #1"
+    end
   else
     return nil, "unexpected type " .. type(s) .. " at #1"
   end
@@ -237,7 +240,6 @@ function _M.new(s, ...)
 
   local self = setmetatable({
     ctx = ctx,
-    -- has_private = has_private,
     key_size = key_size,
   }, mt)
 
@@ -246,8 +248,12 @@ function _M.new(s, ...)
   return self, nil
 end
 
+function _M.istype(l)
+  return l.ctx and ffi.istype(evp_ptr_ct, l.ctx)
+end
+
 local empty_table = {}
-local bnptr_type = ffi.typeof("const BIGNUM *[1]")
+local bn_ptrptr_ct = ffi.typeof("const BIGNUM *[1]")
 local function get_rsa_params_11(pkey)
   -- {"n", "e", "d", "p", "q", "dmp1", "dmq1", "iqmp"}
   local rsa_st = C.EVP_PKEY_get0_RSA(pkey)
@@ -258,17 +264,17 @@ local function get_rsa_params_11(pkey)
   return setmetatable(empty_table, {
     __index = function(tbl, k)
       if k == 'n' then
-        local bnptr = bnptr_type()
-        C.RSA_get0_key(rsa_st, bnptr, nil, nil)
-        return bn_lib.new(bnptr[0]), nil
+        local ptr = bn_ptrptr_ct()
+        C.RSA_get0_key(rsa_st, ptr, nil, nil)
+        return bn_lib.new(ptr[0]), nil
       elseif k == 'e' then
-        local bnptr = bnptr_type()
-        C.RSA_get0_key(rsa_st, nil, bnptr, nil)
-        return bn_lib.new(bnptr[0]), nil
+        local ptr = bn_ptrptr_ct()
+        C.RSA_get0_key(rsa_st, nil, ptr, nil)
+        return bn_lib.new(ptr[0]), nil
       elseif k == 'd' then
-        local bnptr = bnptr_type()
-        C.RSA_get0_key(rsa_st, nil, nil, bnptr)
-        return bn_lib.new(bnptr[0]), nil
+        local ptr = bn_ptrptr_ct()
+        C.RSA_get0_key(rsa_st, nil, nil, ptr)
+        return bn_lib.new(ptr[0]), nil
       end
     end
   }), nil

@@ -40,6 +40,8 @@ ffi.cdef(
 ]]
 )
 
+local bn_ptr_ct = ffi.typeof('BIGNUM*')
+
 function _M.new(bn)
   local _bn
   if bn == nil or type(bn) == 'number'then
@@ -52,6 +54,11 @@ function _M.new(bn)
       end
     end
   elseif type(bn) == 'cdata' then
+    if ffi.istype(bn_ptr_ct, bn) then
+      ctx = bn
+    else
+      return nil, "expect a BIGNUM* cdata at #1"
+    end
     _bn = bn
   else
     return nil, "unexpected initializer passed in (got " .. type(bn) .. ")"
@@ -60,13 +67,17 @@ function _M.new(bn)
   return setmetatable( { bn = _bn }, mt), nil
 end
 
+function _M.istype(l)
+  return l.ctx and ffi.istype(bn_ptr_ct, l.ctx)
+end
+
 function _M:toBinary()
   local length = (C.BN_num_bits(self.bn)+7)/8
   length = floor(length)
   local buf = ffi_new('unsigned char[?]', length)
   local sz = C.BN_bn2bin(self.bn, buf)
   if sz == 0 then
-    return nil, format_error("bn.toBinary")
+    return nil, format_error("bn:toBinary")
   end
   buf = ffi_str(buf, length)
   return buf, nil
