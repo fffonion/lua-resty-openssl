@@ -86,7 +86,7 @@ __DATA__
     GET /t
 --- response_body_like eval
 "unexpected type.+
-load key failed.+
+pkey.new:load_pkey: .+
 "
 --- no_error_log
 [error]

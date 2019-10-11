@@ -15,6 +15,7 @@ require "resty.openssl.bio"
 require "resty.openssl.pem"
 local util = require "resty.openssl.util"
 require "resty.openssl.x509"
+local format_error = require("resty.openssl.err").format_error
 
 local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
 
@@ -152,6 +153,8 @@ local function load_pkey(txt, fmt, typ)
     return nil, "expecting 'pr', 'pu' or '*' at #3"
   end
 
+  ngx.log(ngx.DEBUG, "load key using fmt: ", fmt, ", type: ", typ)
+
   local bio = C.BIO_new_mem_buf(txt, #txt)
   if bio == nil then
     return "BIO_new_mem_buf() failed"
@@ -176,7 +179,7 @@ local function load_pkey(txt, fmt, typ)
   end
 
   if ctx == nil then
-    return nil, "load key failed, fmt: " .. fmt .. ", type: " .. typ
+    return nil, format_error("pkey.new:load_pkey")
   end
   return ctx, nil
 end

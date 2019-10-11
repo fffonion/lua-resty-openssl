@@ -7,6 +7,7 @@ local ffi_cast = ffi.cast
 local ffi_str = ffi.string
 
 require "resty.openssl.bio"
+local format_error = require("resty.openssl.err").format_error
 
 local function read_using_bio(f, ...)
   if not C[f] then
@@ -28,7 +29,7 @@ local function read_using_bio(f, ...)
 
   local code = C[f](bio, ...)
   if code ~= 1 then
-      return nil, f .. "() failed: " .. code
+      return nil, format_error(f, code)
   end
   
   local buf = ffi_new("char *[1]")
@@ -41,5 +42,4 @@ end
 
 return {
   read_using_bio = read_using_bio,
-  version_num = version_num,
 }

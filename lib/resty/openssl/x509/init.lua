@@ -12,6 +12,7 @@ local mt = {__index = _M}
 
 require "resty.openssl.ossl_typ"
 local asn1_lib = require("resty.openssl.asn1")
+local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 
 ffi.cdef [[
@@ -77,7 +78,7 @@ function _M.new(cert)
   local ctx = C.PEM_read_bio_X509(bio, nil, nil, nil)
   if ctx == nil then
     C.BIO_free(bio)
-    return nil, "PEM_read_bio_X509() failed"
+    return nil, format_error("x509.new")
   end
 
   C.BIO_free(bio)

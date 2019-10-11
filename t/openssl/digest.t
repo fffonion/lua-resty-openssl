@@ -86,6 +86,6 @@ __DATA__
 --- request
     GET /t
 --- response_body eval
-"EVP_get_digestbyname() failed"
+"invalid digest type \"sha257\""
 --- no_error_log
 [error]

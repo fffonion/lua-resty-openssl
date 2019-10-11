@@ -10,6 +10,7 @@ local mt = {__index = _M}
 
 require "resty.openssl.ossl_typ"
 require "resty.openssl.evp"
+local format_error = require("resty.openssl.err").format_error
 
 local version_num = require("resty.openssl.version").version_num
 
@@ -23,17 +24,17 @@ function _M.new(typ)
     ffi_gc(ctx, C.EVP_MD_CTX_destroy)
   end
   if ctx == nil then
-    return nil, "EVP_MD_CTX_new() failed"
+    return nil, "failed to create EVP_MD_CTX"
   end
 
-  local typ = C.EVP_get_digestbyname(typ or 'sha1')
-  if typ == nil then
-    return nil, "EVP_get_digestbyname() failed"
+  local dtyp = C.EVP_get_digestbyname(typ or 'sha1')
+  if dtyp == nil then
+    return nil, string.format("invalid digest type \"%s\"", typ)
   end
 
-  local code = C.EVP_DigestInit_ex(ctx, typ, nil)
+  local code = C.EVP_DigestInit_ex(ctx, dtyp, nil)
   if code ~= 1 then
-    return nil, "EVP_DigestInit_ex() failed: " .. code
+    return nil, format_error("digest.new")
   end
 
   return setmetatable({ ctx = ctx }, mt), nil

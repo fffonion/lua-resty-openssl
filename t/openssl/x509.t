@@ -60,9 +60,9 @@ true
     }
 --- request
     GET /t
---- response_body eval
+--- response_body_like eval
 "expect a string at #1
-PEM_read_bio_X509() failed
+x509.new: .*pem_lib.c.+
 "
 --- no_error_log
 [error]

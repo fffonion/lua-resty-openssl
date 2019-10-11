@@ -10,6 +10,7 @@ local _M = {}
 local mt = {__index = _M}
 
 require "resty.openssl.ossl_typ"
+local format_error = require("resty.openssl.err").format_error
 
 local BN_ULONG
 if ffi.abi('64bit') then
@@ -47,7 +48,7 @@ function _M.new(bn)
     if type(bn) == 'number' then
       if C.BN_set_word(_bn, bn) ~= 1 then
         C.BN_free(bn)
-        return nil, "BN_set_word() failed"
+        return nil, format_error("bn.new")
       end
     end
   elseif type(bn) == 'cdata' then
@@ -65,7 +66,7 @@ function _M:toBinary()
   local buf = ffi_new('unsigned char[?]', length)
   local sz = C.BN_bn2bin(self.bn, buf)
   if sz == 0 then
-    return nil, "BN_bn2bin() failed"
+    return nil, format_error("bn.toBinary")
   end
   buf = ffi_str(buf, length)
   return buf, nil

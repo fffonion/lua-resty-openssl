@@ -1,6 +1,6 @@
 --[[
   The OpenSSL stack library. Note `safestack` is not usable here in ffi because
-  those symbols are not eaten after preprocessing.
+  those symbols are eaten after preprocessing.
   Instead, we should do a Lua land type checking by having a nested field indicating
   which type of cdata its ctx holds.
 ]]

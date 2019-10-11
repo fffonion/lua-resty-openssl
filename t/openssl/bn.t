@@ -35,8 +35,8 @@ __DATA__
     GET /t
 --- response_body eval
 ""
---- error_log_like
-BN_bn2bin faled
+--- error_log
+bn.toBinary failed
 
 === TEST 2: New BIGNUM instance from number
 --- http_config eval: $::HttpConfig
