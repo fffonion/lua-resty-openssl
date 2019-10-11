@@ -11,6 +11,9 @@ require "resty.openssl.ossl_typ"
 require "resty.openssl.evp"
 require "resty.openssl.objects"
 local stack_lib = require "resty.openssl.stack"
+local pkey_lib = require "resty.openssl.pkey"
+local altname_lib = require "resty.openssl.x509.altname"
+local x509_name_lib = require "resty.openssl.x509.name"
 local util = require "resty.openssl.util"
 
 ffi.cdef [[
@@ -54,6 +57,8 @@ end
 local _M = {}
 local mt = { __index = _M, __tostring = __tostring }
 
+local x509_req_ptr_ct = ffi.typeof("X509_REQ*")
+
 function _M.new()
   local ctx = C.X509_REQ_new()
   if ctx == il then
@@ -68,8 +73,14 @@ function _M.new()
   return self, nil
 end
 
+function _M.istype(l)
+  return l.ctx and ffi.istype(x509_req_ptr_ct, l.ctx)
+end
 
 function _M:setSubject(name)
+  if not x509_name_lib.istype(name) then
+    return "expect a x509.name instance at #1"
+  end
   local code = C.X509_REQ_set_subject_name(self.ctx, name.ctx)
   if code ~= 1 then
     return "X509_REQ_set_subject_name() failed: " .. code
@@ -104,12 +115,18 @@ local function xr_modifyRequestedExtension(csr, target_nid, value, crit, flags)
 end
 
 function _M:setSubjectAlt(alt)
+  if not altname_lib.istype(alt) then
+    return "expect a x509.altname instance at #1"
+  end
   -- #define NID_subject_alt_name            85
   -- #define X509V3_ADD_REPLACE              2L
   return xr_modifyRequestedExtension(self.ctx, 85, alt.ctx, 0, 2)
 end
 
 function _M:setPublicKey(pkey)
+  if not pkey_lib.istype(pkey) then
+    return "expect a pkey instance at #1"
+  end
   local code = C.X509_REQ_set_pubkey(self.ctx, pkey.ctx)
   if code ~= 1 then
     return "X509_REQ_set_pubkey() failed: " .. code
@@ -118,6 +135,10 @@ end
 
 local int_ptr = ffi.typeof("int[1]")
 function _M:sign(pkey)
+  if not pkey_lib.istype(pkey) then
+    return "expect a pkey instance at #1"
+  end
+
   local nid = int_ptr()
   local code = C.EVP_PKEY_get_default_digest_nid(pkey.ctx, nid)
   if code <= 0 then -- 1: advisory 2: mandatory

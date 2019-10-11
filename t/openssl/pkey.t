@@ -220,7 +220,33 @@ true
 --- no_error_log
 [error]
 
-=== TEST 9: Outputs public key
+=== TEST 9: Bail on bad digest or verify parameters
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local p, err = require("resty.openssl.pkey").new()
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+
+            local s, err = p:sign("not a cdata")
+            ngx.say(err)
+            local v, err = p:verify(s, "not a cdata")
+            ngx.say(err)
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"expect a digest instance at #1
+expect a digest instance at #2
+"
+--- no_error_log
+[error]
+
+=== TEST 10: Outputs public key
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {

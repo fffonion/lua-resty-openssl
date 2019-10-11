@@ -11,6 +11,8 @@ local _M = {}
 local mt = {__index = _M}
 
 require "resty.openssl.ossl_typ"
+require "resty.openssl.bio"
+require "resty.openssl.pem"
 local asn1_lib = require("resty.openssl.asn1")
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10

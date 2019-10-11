@@ -14,6 +14,8 @@ local format_error = require("resty.openssl.err").format_error
 
 local version_num = require("resty.openssl.version").version_num
 
+local md_ctx_ptr_ct = ffi.typeof('EVP_MD_CTX*')
+
 function _M.new(typ)
   local ctx
   if version_num >= 0x10100000 then
@@ -38,6 +40,10 @@ function _M.new(typ)
   end
 
   return setmetatable({ ctx = ctx }, mt), nil
+end
+
+function _M.istype(l)
+  return l.ctx and ffi.istype(md_ctx_ptr_ct, l.ctx)
 end
 
 function _M:update(...)

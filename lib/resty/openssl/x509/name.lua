@@ -25,6 +25,8 @@ local MBSTRING_ASC  = 0x1001 -- (MBSTRING_FLAG|1)
 local _M = {}
 local mt = { __index = _M, __tostring = tostring }
 
+local x509_name_ptr_ct = ffi.typeof("X509_NAME*")
+
 function _M.new(cert)
   local ctx = C.X509_NAME_new()
   if ctx == nil then
@@ -39,6 +41,9 @@ function _M.new(cert)
   return self, nil
 end
 
+function _M.istype(l)
+  return l.ctx and ffi.istype(x509_name_ptr_ct, l.ctx)
+end
 
 function _M:add(nid, txt)
   local asn1 = C.OBJ_txt2obj(nid, 0)

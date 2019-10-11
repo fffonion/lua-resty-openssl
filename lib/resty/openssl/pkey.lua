@@ -16,6 +16,7 @@ require "resty.openssl.pem"
 require "resty.openssl.objects"
 local util = require "resty.openssl.util"
 require "resty.openssl.x509"
+local digest_lib = require "resty.openssl.digest"
 local format_error = require("resty.openssl.err").format_error
 
 local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
@@ -314,6 +315,9 @@ end
 local uint_ptr = ffi.typeof("unsigned int[1]")
 
 function _M:sign(digest)
+  if not digest_lib.istype(digest) then
+    return nil, "expect a digest instance at #1"
+  end
   local buf = ffi_new('unsigned char[?]', self.key_size)
   local length = uint_ptr()
   local code = C.EVP_SignFinal(digest.ctx, buf, length, self.ctx)
@@ -321,6 +325,9 @@ function _M:sign(digest)
 end
 
 function _M:verify(signature, digest)
+  if not digest_lib.istype(digest) then
+    return nil, "expect a digest instance at #2"
+  end
   local code = C.EVP_VerifyFinal(digest.ctx, signature, #signature, self.ctx)
   if code == 0 then
     return false, nil

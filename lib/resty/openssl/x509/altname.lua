@@ -17,6 +17,8 @@ require "resty.openssl.asn1"
 local _M = {}
 local mt = { __index = _M, __tostring = tostring }
 
+local general_names_ptr_ct = ffi.typeof("GENERAL_NAMES*")
+
 local GENERAL_NAME_stack_gc = stack_lib.gc_of("GENERAL_NAME")
 
 function _M.new()
@@ -33,6 +35,10 @@ function _M.new()
   }, mt)
 
   return self, nil
+end
+
+function _M.istype(l)
+  return l.ctx and ffi.istype(general_names_ptr_ct, l.ctx)
 end
 
 local GEN_OTHERNAME = 0
