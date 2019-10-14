@@ -48,14 +48,14 @@ end
 function _M:add(nid, txt)
   local asn1 = C.OBJ_txt2obj(nid, 0)
   if asn1 == nil then
-    return "OBJ_txt2obj() failed, invalid NID " .. (nid or "nil")
+    return self, "OBJ_txt2obj() failed, invalid NID " .. (nid or "nil")
   end
 
   local code = C.X509_NAME_add_entry_by_OBJ(self.ctx, asn1, MBSTRING_ASC, txt, #txt, -1, 0)
   C.ASN1_OBJECT_free(asn1)
 
   if code ~= 1 then
-    return "X509_NAME_add_entry_by_OBJ() failed"
+    return self, "X509_NAME_add_entry_by_OBJ() failed"
   end
 
 end

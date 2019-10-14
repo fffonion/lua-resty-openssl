@@ -68,6 +68,8 @@ end
 local _M = {}
 local mt = { __index = _M, __tostring = tostring }
 
+local x509_ptr_ct = ffi.typeof("X509*")
+
 -- only PEM format is supported for now
 function _M.new(cert)
   if type(cert) ~= "string" then
@@ -92,6 +94,10 @@ function _M.new(cert)
   }, mt)
 
   return self, nil
+end
+
+function _M.istype(l)
+  return l.ctx and ffi.istype(x509_ptr_ct, l.ctx)
 end
 
 -- https://github.com/wahern/luaossl/blob/master/src/openssl.c

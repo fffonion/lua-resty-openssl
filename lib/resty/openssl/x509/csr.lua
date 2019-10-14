@@ -169,7 +169,3 @@ end
 
 return _M
 
---[[
-  csr:setSubjectAlt(alt)
-
-]]

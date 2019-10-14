@@ -22,6 +22,7 @@ ffi.cdef [[
 if OPENSSL_10 then
   ffi.cdef [[
     // crypto/rsa/rsa_locl.h
+    // needed to extract parameters
     // Note: this struct is trimmed
     struct rsa_st {
       int pad;

@@ -8,14 +8,11 @@ local _M = {}
 local mt = {__index = _M}
 
 require "resty.openssl.ossl_typ"
+local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
 
 ffi.cdef [[
-  // >= 1.1
   EVP_PKEY *EVP_PKEY_new(void);
   void EVP_PKEY_free(EVP_PKEY *pkey);
-  // 1.0
-  EVP_MD_CTX *EVP_MD_CTX_create(void);
-  void EVP_MD_CTX_destroy(EVP_MD_CTX *ctx);
 
   struct rsa_st *EVP_PKEY_get0_RSA(EVP_PKEY *pkey);
   struct ec_key_st *EVP_PKEY_get0_EC_KEY(EVP_PKEY *pkey);
@@ -24,8 +21,6 @@ ffi.cdef [[
   int EVP_PKEY_base_id(const EVP_PKEY *pkey);
   int EVP_PKEY_size(const EVP_PKEY *pkey);
   
-  EVP_MD_CTX *EVP_MD_CTX_new(void);
-  void EVP_MD_CTX_free(EVP_MD_CTX *ctx);
   /*__owur*/ int EVP_DigestInit_ex(EVP_MD_CTX *ctx, const EVP_MD *type,
                                  ENGINE *impl);
   /*__owur*/ int EVP_DigestUpdate(EVP_MD_CTX *ctx, const void *d,
@@ -45,42 +40,49 @@ ffi.cdef [[
   int EVP_PKEY_get_default_digest_nid(EVP_PKEY *pkey, int *pnid);
   const EVP_MD *EVP_get_digestbyname(const char *name);
 
-  // crypto/internal/evp_int.h
-  typedef struct {
-    unsigned char pubkey[57];
-    unsigned char *privkey;
-  } ECX_KEY;
-  // typedef /*_Atomic*/ int CRYPTO_REF_COUNT;
-
-    // Note: this struct is trimmed
-  struct evp_pkey_st {
-    int type;
-    int save_type;
-    const EVP_PKEY_ASN1_METHOD *ameth;
-    ENGINE *engine;
-    ENGINE *pmeth_engine;
-    union {
-        void *ptr;
-        struct rsa_st *rsa;
-        struct dsa_st *dsa;
-        struct dh_st *dh;
-        struct ec_key_st *ec;
-        ECX_KEY *ecx;
-    } pkey;
-    // trimmed
-
-    // CRYPTO_REF_COUNT references;
-    // CRYPTO_RWLOCK *lock;
-    // STACK_OF(X509_ATTRIBUTE) *attributes;
-    // int save_parameters;
-
-    // struct {
-    //     EVP_KEYMGMT *keymgmt;
-    //     void *provkey;
-    // } pkeys[10];
-    // size_t dirty_cnt_copy;
-  };
 ]]
+
+if OPENSSL_11 then
+  ffi.cdef [[
+    EVP_MD_CTX *EVP_MD_CTX_new(void);
+    void EVP_MD_CTX_free(EVP_MD_CTX *ctx);
+  ]]
+else
+  ffi.cdef [[
+    EVP_MD_CTX *EVP_MD_CTX_create(void);
+    void EVP_MD_CTX_destroy(EVP_MD_CTX *ctx);
+    // crypto/evp/evp.h
+    // only needed for openssl 1.0.x where getters are not available
+    // needed to get key to extract parameters
+    // Note: this struct is trimmed
+    struct evp_pkey_st {
+      int type;
+      int save_type;
+      const EVP_PKEY_ASN1_METHOD *ameth;
+      ENGINE *engine;
+      ENGINE *pmeth_engine;
+      union {
+          void *ptr;
+          struct rsa_st *rsa;
+          struct dsa_st *dsa;
+          struct dh_st *dh;
+          struct ec_key_st *ec;
+      } pkey;
+      // trimmed
+
+      // CRYPTO_REF_COUNT references;
+      // CRYPTO_RWLOCK *lock;
+      // STACK_OF(X509_ATTRIBUTE) *attributes;
+      // int save_parameters;
+
+      // struct {
+      //     EVP_KEYMGMT *keymgmt;
+      //     void *provkey;
+      // } pkeys[10];
+      // size_t dirty_cnt_copy;
+    };
+  ]]
+end
 
 return {
   EVP_PKEY_RSA = 6,

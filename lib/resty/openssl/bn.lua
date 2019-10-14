@@ -21,16 +21,6 @@ end
 
 ffi.cdef(
 [[
-  struct bignum_st {
-    ]] .. BN_ULONG ..[[ *d;     /* Pointer to an array of 'BN_BITS2' bit
-                                 * chunks. */
-    int top;                    /* Index of last used d +1. */
-    /* The next are internal book keeping for bn_expand. */
-    int dmax;                   /* Size of the d array. */
-    int neg;                    /* one if the number is negative */
-    int flags;
-};
-
   BIGNUM *BN_new(void);
   void BN_free(BIGNUM *a);
   int BN_add_word(BIGNUM *a, ]] .. BN_ULONG ..[[ w);
