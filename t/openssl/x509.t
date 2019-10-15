@@ -26,9 +26,15 @@ __DATA__
             local pem = io.open("cert.pem"):read("*a")
             local x509 = require("resty.openssl.x509")
             local p, err = x509.new(pem)
-            ngx.say(err)
-            local not_before, not_after, err = p:getLifetime()
-            ngx.say(err)
+            if err then
+                ngx.say("1 " .. err)
+                ngx.exit(0)
+            end
+            local not_before, not_after, err = p:get_lifetime()
+            if err then
+                ngx.say("2 " .. err)
+                ngx.exit(0)
+            end
             ngx.say(not_before == nb_expected or {not_before, "!=", nb_expected})
             ngx.say(not_after == na_expected or {not_after, "!=", na_expected})
             os.remove("key.pem")
@@ -38,9 +44,7 @@ __DATA__
 --- request
     GET /t
 --- response_body eval
-"nil
-nil
-true
+"true
 true
 "
 --- no_error_log
@@ -52,7 +56,7 @@ true
     location =/t {
         content_by_lua_block {
             local x509 = require("resty.openssl.x509")
-            local p, err = x509.new()
+            local p, err = x509.new(true)
             ngx.say(err)
             p, err = x509.new("222")
             ngx.say(err)
@@ -61,7 +65,7 @@ true
 --- request
     GET /t
 --- response_body_like eval
-"expect a string at #1
+"expect nil or a string at #1
 x509.new: .*pem_lib.c.+
 "
 --- no_error_log
@@ -77,12 +81,20 @@ x509.new: .*pem_lib.c.+
             local pem = io.open("cert.pem"):read("*a")
             local x509 = require("resty.openssl.x509")
             local c, err = x509.new(pem)
-            ngx.say(err)
-            ngx.say(c:getPublicKey():toPEM():sub(1, 26))
+            if err then
+                ngx.say("1 " .. err)
+                ngx.exit(0)
+            end
+            local p, err = c:get_public_key()
+            if err then
+                ngx.say("2 " .. err)
+                ngx.exit(0)
+            end
+            ngx.say(p:to_PEM():sub(1, 26))
             pem = io.open("key.pem"):read("*a")
             local pkey = require("resty.openssl.pkey")
             local k, err = pkey.new(pem)
-            ngx.print(c:getPublicKey():toPEM() == k:toPEM("public"))
+            ngx.print(c:get_public_key():to_PEM() == k:to_PEM("public"))
             os.remove("key.pem")
             os.remove("cert.pem")
         }
@@ -90,8 +102,7 @@ x509.new: .*pem_lib.c.+
 --- request
     GET /t
 --- response_body eval
-"nil
------BEGIN PUBLIC KEY-----
+"-----BEGIN PUBLIC KEY-----
 true"
 --- no_error_log
 [error]

@@ -3,9 +3,8 @@ local ffi = require "ffi"
 local C = ffi.C
 local ffi_gc = ffi.gc
 local ffi_new = ffi.new
+local ffi_cast = ffi.cast
 local ffi_string = ffi.string
-
-local floor = math.floor
 
 local _M = {}
 local mt = {__index = _M}
@@ -14,19 +13,73 @@ require "resty.openssl.ossl_typ"
 require "resty.openssl.bio"
 require "resty.openssl.pem"
 local asn1_lib = require("resty.openssl.asn1")
+local digest_lib = require("resty.openssl.digest")
+local x509_name_lib = require("resty.openssl.x509.name")
+local util = require("resty.openssl.util")
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
+local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
 
 ffi.cdef [[
+  // macros from asn1.h
+  X509* X509_new(void);
   void X509_free(X509 *a);
-  EVP_PKEY *X509_get_pubkey(X509 *x);
 
+  int X509_sign(X509 *x, EVP_PKEY *pkey, const EVP_MD *md);
+
+  ASN1_TIME *X509_gmtime_adj(ASN1_TIME *s, long adj);
+
+  // needed by pkey
   EVP_PKEY *d2i_PrivateKey_bio(BIO *bp, EVP_PKEY **a);
   EVP_PKEY *d2i_PUBKEY_bio(BIO *bp, EVP_PKEY **a);
 ]]
 
-local X509_get0_notBefore, X509_get0_notAfter
-if OPENSSL_10 then
+-- accessors provides a openssl version neutral interface to lua layer
+-- it doesn't handle any error, expect that to be implemented in 
+-- _M.set_X or _M.get_X
+local accessors = {}
+ffi.cdef [[
+  int X509_set_pubkey(X509 *x, EVP_PKEY *pkey);
+  int X509_set_version(X509 *x, long version);
+  int X509_set_serialNumber(X509 *x, ASN1_INTEGER *serial);
+  int X509_set_subject_name(X509 *x, X509_NAME *name);
+  int X509_set_issuer_name(X509 *x, X509_NAME *name);
+]]
+accessors.set_pubkey = C.X509_set_pubkey
+accessors.set_version = C.X509_set_version
+accessors.set_serial_number = C.X509_set_serialNumber
+accessors.set_subject_name = C.X509_set_subject_name
+accessors.set_issuer_name = C.X509_set_issuer_name
+
+if OPENSSL_11 then
+  ffi.cdef [[
+    int X509_set1_notBefore(X509 *x, const ASN1_TIME *tm);
+    int X509_set1_notAfter(X509 *x, const ASN1_TIME *tm);
+    /*const*/ ASN1_TIME *X509_get0_notBefore(const X509 *x);
+    /*const*/ ASN1_TIME *X509_get0_notAfter(const X509 *x);
+    EVP_PKEY *X509_get_pubkey(X509 *x);
+    long X509_get_version(const X509 *x);
+    const ASN1_INTEGER *X509_get0_serialNumber(X509 *x);
+    X509_NAME *X509_get_subject_name(const X509 *a);
+    X509_NAME *X509_get_issuer_name(const X509 *a);
+  ]]
+  -- generally, use get1 if we return a lua table wrapped ctx which doesn't support dup.
+  -- in that case, a new struct is returned from C api, and we will handle gc.
+  -- openssl will increment the reference count for returned ptr, and won't free it when
+  -- parent struct is freed.
+  -- otherwise, use get0, which returns an internal pointer, we don't need to free it up.
+  -- it will be gone together with the parent struct.
+  accessors.set_not_before = C.X509_set1_notBefore
+  accessors.get_not_before = C.X509_get0_notBefore -- returns internal ptr, we convert to number
+  accessors.set_not_after = C.X509_set1_notAfter
+  accessors.get_not_after = C.X509_get0_notAfter -- returns internal ptr, we convert to number
+  accessors.get_pubkey = C.X509_get_pubkey -- returns new evp_pkey instance, don't need to dup
+  accessors.get_version = C.X509_get_version -- returns int
+  accessors.get_serial_number = C.X509_get0_serialNumber -- returns internal ptr, we convert to bn
+  accessors.get_subject_name = C.X509_get_subject_name -- returns internal ptr, we dup it
+  accessors.get_issuer_name = C.X509_get_issuer_name -- returns internal ptr, we dup it
+elseif OPENSSL_10 then
+  -- in openssl 1.0.x some getters are direct accessor to struct members (defiend by macros)
   ffi.cdef [[
     // crypto/x509/x509.h
     typedef struct X509_val_st {
@@ -35,8 +88,8 @@ if OPENSSL_10 then
     } X509_VAL;
     // Note: this struct is trimmed
     typedef struct x509_cinf_st {
-      ASN1_INTEGER *version;
-      ASN1_INTEGER *serialNumber;
+      /*ASN1_INTEGER*/ void *version;
+      /*ASN1_INTEGER*/ void *serialNumber;
       /*X509_ALGOR*/ void *signature;
       /*X509_NAME*/ void *issuer;
       X509_VAL *validity;
@@ -48,22 +101,35 @@ if OPENSSL_10 then
       // trimmed
     } X509;
 
+    int X509_set_notBefore(X509 *x, const ASN1_TIME *tm);
+    int X509_set_notAfter(X509 *x, const ASN1_TIME *tm);
+    EVP_PKEY *X509_get_pubkey(X509 *x);
+    ASN1_INTEGER *X509_get_serialNumber(X509 *x);
+    X509_NAME *X509_get_subject_name(const X509 *a);
+    X509_NAME *X509_get_issuer_name(const X509 *a);
   ]]
-  X509_get0_notBefore = function(x509)
+  accessors.set_not_before = C.X509_set_notBefore
+  accessors.get_not_before = function(x509)
+    if x509 == nil or x509.cert_info == nil or x509.cert_info.validity == nil then
+      return nil
+    end
     return x509.cert_info.validity.notBefore
   end
-  X509_get0_notAfter = function(x509)
+  accessors.set_not_after = C.X509_set_notAfter
+  accessors.get_not_after = function(x509)
+    if x509 == nil or x509.cert_info == nil or x509.cert_info.validity == nil then
+      return nil
+    end
     return x509.cert_info.validity.notAfter
   end
-else
-  ffi.cdef [[
-    const ASN1_TIME *X509_get0_notBefore(const X509 *x);
-    const ASN1_TIME *X509_get0_notAfter(const X509 *x);
-  ]]
-  X509_get0_notBefore = C.X509_get0_notBefore
-  X509_get0_notAfter = C.X509_get0_notAfter
+  accessors.get_pubkey = C.X509_get_pubkey -- returns new evp_pkey instance, don't need to dup
+  accessors.get_version = function(x509)
+    return C.ASN1_INTEGER_get(x509.cert_info.version)
+  end
+  accessors.get_serial_number = C.X509_get_serialNumber -- returns internal ptr, we convert to bn
+  accessors.get_subject_name = C.X509_get_subject_name -- returns internal ptr, we dup it
+  accessors.get_issuer_name = C.X509_get_issuer_name -- returns internal ptr, we dup it
 end
-
 
 local _M = {}
 local mt = { __index = _M, __tostring = tostring }
@@ -72,22 +138,33 @@ local x509_ptr_ct = ffi.typeof("X509*")
 
 -- only PEM format is supported for now
 function _M.new(cert)
-  if type(cert) ~= "string" then
-    return nil, "expect a string at #1"
-  end
-  local bio = C.BIO_new_mem_buf(cert, #cert)
-  if bio == nil then
-    return nil, "BIO_new_mem_buf() failed"
-  end
+  local ctx
+  if not cert then
+    -- routine for create a new cert
+    ctx = C.X509_new()
+    if ctx == nil then
+      return nil, format_error("x509.new")
+    end
+    ffi_gc(ctx, C.X509_free)
 
-  local ctx = C.PEM_read_bio_X509(bio, nil, nil, nil)
-  if ctx == nil then
+    C.X509_gmtime_adj(accessors.get_not_before(ctx), 0)
+    C.X509_gmtime_adj(accessors.get_not_after(ctx), 0)
+  elseif type(cert) == "string" then
+    -- routine for load an existing cert
+    local bio = C.BIO_new_mem_buf(cert, #cert)
+    if bio == nil then
+      return nil, format_error("x509.new:BIO_new_mem_buf")
+    end
+
+    ctx = C.PEM_read_bio_X509(bio, nil, nil, nil)
     C.BIO_free(bio)
-    return nil, format_error("x509.new")
+    if ctx == nil then
+      return nil, format_error("x509.new")
+    end
+    ffi_gc(ctx, C.X509_free)
+  else
+    return nil, "expect nil or a string at #1"
   end
-
-  C.BIO_free(bio)
-  ffi_gc(ctx, C.X509_free)
 
   local self = setmetatable({
     ctx = ctx,
@@ -97,76 +174,187 @@ function _M.new(cert)
 end
 
 function _M.istype(l)
-  return l.ctx and ffi.istype(x509_ptr_ct, l.ctx)
+  return l and l.ctx and ffi.istype(x509_ptr_ct, l.ctx)
 end
 
--- https://github.com/wahern/luaossl/blob/master/src/openssl.c
-local function isleap(year)
-	return (year % 4) == 0 and ((year % 100) > 0 or (year % 400) == 0)
-end
-
-local past = { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334 }
-local function yday(year, mon, mday)
-	local d = past[mon] + mday - 1
-  if mon > 2 and isleap(year) then
-    d = d + 1
+function _M:set_lifetime(not_before, not_after)
+  local ok, err
+  if not_before then
+    ok, err = self:set_not_before(not_before)
+    if err then
+      return ok, err
+    end
   end
-	return d
+
+  if not_after then
+    ok, err = self:set_not_after(not_after)
+    if err then
+      return ok, err
+    end
+  end
+
+  return true
 end
 
-local function leaps(year)
-  return floor(year / 400) + floor(year / 4) - floor(year / 100)
-end
-
--- make sure this code works after 100 years
-local yyyy = tonumber(ngx.today():sub(1, 4))
-local yy00 = yyyy - yyyy % 100
-
-local function asn1_to_unix(asn1)
-  local s = asn1_lib.ASN1_STRING_get0_data(asn1)
-  local s = ffi.string(s)
-  -- 190303223958Z
-  local year = yy00 + tonumber(s:sub(1, 2))
-  local month = tonumber(s:sub(3, 4))
-  local day = tonumber(s:sub(5, 6))
-  local hour = tonumber(s:sub(7, 8))
-  local minute = tonumber(s:sub(9, 10))
-  local second = tonumber(s:sub(11, 12))
-
-  local tm = 0
-  tm = (year - 1970) * 365
-  tm = tm + leaps(year - 1) - leaps(1969)
-  tm = (tm + yday(year, month, day)) * 24
-  tm = (tm + hour) * 60
-  tm = (tm + minute) * 60
-  tm = tm + second
-  return tm
-end
-
-function _M:getLifetime()
+function _M:get_lifetime()
   local err
-  local not_before = X509_get0_notBefore(self.ctx)
+  local not_before, err = self:get_not_before()
   if not_before == nil then
-    return nil, nil, "X509_get_notBefore() failed"
+    return nil, nil, err
   end
-  not_before = asn1_to_unix(not_before)
-  local not_after = X509_get0_notAfter(self.ctx)
+  local not_after, err = self:get_not_after()
   if not_after == nil then
-    return nil, nil, "X509_get_notAfter() failed"
+    return nil, nil, err
   end
-  not_after = asn1_to_unix(not_after)
 
   return not_before, not_after, nil
 end
 
-function _M:getPublicKey()
-  local ctx = C.X509_get_pubkey(self.ctx)
-  if ctx == nil then
-    return nil, format_error("x509:getPublicKey")
+local number_to_asn1 = function(tm) return C.ASN1_TIME_set(nil, tm) end
+
+-- Generate getter/setters
+local attributes = {
+  {
+    -- name used in openssl
+    field = "serial_number",
+    -- luaossl compaitbile name
+    alias = "serial",
+    -- attribute type
+    typ = "resty.openssl.bn",
+    -- the optional type converter
+    from = function(bn_ctx)
+      local ctx = C.BN_to_ASN1_INTEGER(bn_ctx, nil)
+      if ctx == nil then
+        return nil, format_error("x509:set:BN_to_ASN1_INTEGER")
+      end
+      ffi_gc(ctx, C.ASN1_INTEGER_free)
+      return ctx
+    end,
+    to = function(asn1_integer)
+    end,
+  },
+  {
+    field = "not_before",
+    typ = "number",
+    from = number_to_asn1,
+    to = asn1_lib.asn1_to_unix,
+  },
+  {
+    field = "not_after",
+    typ = "number",
+    from = number_to_asn1,
+    to = asn1_lib.asn1_to_unix,
+  },
+  {
+    field = "pubkey",
+    alias = "public_key",
+    typ = "resty.openssl.pkey",
+  },
+  {
+    field = "subject_name",
+    alias = "subject",
+    typ = "resty.openssl.x509.name",
+  },
+  {
+    field = "issuer_name",
+    alias = "issuer",
+    typ = "resty.openssl.x509.name",
+  },
+  {
+    field = "version",
+    typ = "number",
+    to = tonumber,
+  },
+}
+
+for _, attribute in ipairs(attributes) do
+  local field = attribute.field
+  local typ = attribute.typ
+
+  local cfunc = "set_" .. field
+  _M[cfunc] = function(self, i)
+    local toset, err
+    if typ == "number" or typ == "string" then
+      if type(i) ~= typ then
+        return false, "expect a " .. typ .. " at #1"
+      end
+      toset = i
+    else
+      local lib = require(typ)
+      if lib.istype and not lib.istype(i) then
+        return false, "expect a \"" ..  typ .. "\" instance at #1"
+      end
+      toset = i.ctx
+    end
+
+    if attribute.from then
+      toset, err = attribute.from(toset)
+      if err then
+        return false, err
+      end
+    end
+
+    if accessors[cfunc](self.ctx, toset) == 0 then
+      return false, format_error("x509:set_" .. field)
+    end
+
+    return true
   end
-  -- lazy load pkey to avoid circular dependency (which might makes pkey a userdata)
+
+  local cfunc = "get_" .. field
+  _M[cfunc] = function(self)
+    local ctx = accessors[cfunc](self.ctx)
+    if ctx == nil then
+      return nil, format_error("x509:get_" .. field)
+    end
+
+    if attribute.to then
+      ctx = attribute.to(ctx)
+    end
+    if typ == "number" or typ == "string" then
+      return ctx
+    end
+
+    local lib = require(typ)
+    -- if duplication of struct is supported
+    if lib.dup then
+      return lib.dup(ctx)
+    -- otherwise just contruct a lua table
+    else
+      return lib.new(ctx)
+    end
+  end
+
+  if attribute.alias then
+    _M['get_' .. attribute.alias] = _M['get_' .. field]
+    _M['set_' .. attribute.alias] = _M['set_' .. field]
+  end
+  
+end
+
+
+function _M:sign(pkey, digest)
   local pkey_lib = require("resty.openssl.pkey")
-  return pkey_lib.new(ctx)
+  if not pkey_lib.istype(pkey) then
+    return false, "expect a pkey instance at #1"
+  end
+  if digest then
+    if not digest_lib.istype(digest) then
+      return false, "expect a digest instance at #2"
+    end
+  end
+
+  -- returns size of signature if success
+  if C.X509_sign(self.ctx, pkey.ctx, digest and digest.ctx) == 0 then
+    return false, format_error("x509:sign")
+  end
+
+  return true
+end
+
+function _M:to_PEM()
+  ngx.log(ngx.ERR, self.ctx == nil)
+  return util.read_using_bio("PEM_write_bio_X509", self.ctx)
 end
 
 return _M
