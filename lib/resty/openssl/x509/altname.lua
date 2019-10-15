@@ -38,7 +38,7 @@ function _M.new()
 end
 
 function _M.istype(l)
-  return l.ctx and ffi.istype(general_names_ptr_ct, l.ctx)
+  return l and l.ctx and ffi.istype(general_names_ptr_ct, l.ctx)
 end
 
 local GEN_OTHERNAME = 0
@@ -70,17 +70,17 @@ end
 
 function _M:add(typ, value)
   if not typ then
-    return "expect a string at #1"
+    return nil, "expect a string at #1"
   end
   typ = typ:lower()
   if type(value) ~= 'string' then
-    return "except a string at #2"
+    return nil, "except a string at #2"
   end
 
   local txt = value
   local gen_type = types[typ]
   if not gen_type then
-    return "unknown type " .. typ
+    return nil, "unknown type " .. typ
   end
 
   -- the stack element stays with stack
@@ -89,7 +89,7 @@ function _M:add(typ, value)
   -- of the stack to release all memories
   local gen = C.GENERAL_NAME_new()
   if gen == nil then
-    return "GENERAL_NAME_new() failed"
+    return nil, "GENERAL_NAME_new() failed"
   end
 
   if gen_id == GEN_DIRNAME then
@@ -102,7 +102,7 @@ function _M:add(typ, value)
   local asn1_string = C.ASN1_STRING_type_new(22)
   if asn1_string == nil then
     C.GENERAL_NAME_free(gen)
-    return "ASN1_STRING_type_new() failed"
+    return nil, "ASN1_STRING_type_new() failed"
   end
 
   gen.d.ia5 = asn1_string
@@ -110,11 +110,11 @@ function _M:add(typ, value)
   local code = C.ASN1_STRING_set(gen.d.ia5, txt, #txt)
   if code ~= 1 then
     C.GENERAL_NAME_free(gen)
-    return "ASN1_STRING_set() failed: " .. code
+    return nil, "ASN1_STRING_set() failed: " .. code
   end
 
   stack_lib.OPENSSL_sk_push(self.ctx, gen)
-  return
+  return self
 end
 
 return _M

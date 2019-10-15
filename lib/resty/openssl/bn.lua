@@ -23,9 +23,11 @@ ffi.cdef(
 [[
   BIGNUM *BN_new(void);
   void BN_free(BIGNUM *a);
+  BIGNUM *BN_dup(const BIGNUM *a);
   int BN_add_word(BIGNUM *a, ]] .. BN_ULONG ..[[ w);
   int BN_set_word(BIGNUM *a, ]] .. BN_ULONG ..[[ w);
   int BN_num_bits(const BIGNUM *a);
+  BIGNUM *BN_bin2bn(const unsigned char *s, int len, BIGNUM *ret);
   int BN_bn2bin(const BIGNUM *a, unsigned char *to);
 ]]
 )
@@ -33,44 +35,62 @@ ffi.cdef(
 local bn_ptr_ct = ffi.typeof('BIGNUM*')
 
 function _M.new(bn)
-  local _bn
-  if bn == nil or type(bn) == 'number'then
-    _bn = C.BN_new()
-    ffi_gc(_bn, C.BN_free)
-    if type(bn) == 'number' then
-      if C.BN_set_word(_bn, bn) ~= 1 then
-        C.BN_free(bn)
-        return nil, format_error("bn.new")
-      end
+  local ctx = C.BN_new()
+  ffi_gc(ctx, C.BN_free)
+
+  if type(bn) == 'number' then
+    if C.BN_set_word(ctx, bn) ~= 1 then
+      return nil, format_error("bn.new")
     end
-  elseif type(bn) == 'cdata' then
-    if ffi.istype(bn_ptr_ct, bn) then
-      ctx = bn
-    else
-      return nil, "expect a BIGNUM* cdata at #1"
-    end
-    _bn = bn
-  else
-    return nil, "unexpected initializer passed in (got " .. type(bn) .. ")"
+  elseif bn then
+    return nil, "expect nil or a number at #1"
   end
 
-  return setmetatable( { bn = _bn }, mt), nil
+  return setmetatable( { ctx = ctx }, mt), nil
 end
 
 function _M.istype(l)
-  return l.ctx and ffi.istype(bn_ptr_ct, l.ctx)
+  return l and l.ctx and ffi.istype(bn_ptr_ct, l.ctx)
 end
 
-function _M:toBinary()
-  local length = (C.BN_num_bits(self.bn)+7)/8
+function _M:to_binary()
+  local length = (C.BN_num_bits(self.ctx)+7)/8
+  -- align to bytes
   length = floor(length)
   local buf = ffi_new('unsigned char[?]', length)
-  local sz = C.BN_bn2bin(self.bn, buf)
+  local sz = C.BN_bn2bin(self.ctx, buf)
   if sz == 0 then
-    return nil, format_error("bn:toBinary")
+    return nil, format_error("bn:to_binary")
   end
   buf = ffi_str(buf, length)
   return buf, nil
+end
+
+function _M.from_binary(s)
+  if not s or type(s) ~= "string" then
+    return nil, "expect a string at #1"
+  end
+
+  local ctx = C.BN_bin2bn(s, #s, nil)
+  if ctx == nil then
+    return nil, format_error("bn.from_binary")
+  end
+  ffi_gc(ctx, C.BN_free)
+  return setmetatable( { ctx = ctx }, mt), nil
+end
+
+function _M.dup(ctx)
+  if not ffi.istype(bn_ptr_ct, ctx) then
+    return nil, "expect a bn ctx at #1"
+  end
+  local ctx = C.BN_dup(ctx)
+  ffi_gc(ctx, C.BN_free)
+
+  local self = setmetatable({
+    ctx = ctx,
+  }, mt)
+
+  return self, nil
 end
 
 return _M

@@ -9,6 +9,7 @@ local mt = {__index = _M}
 
 require "resty.openssl.ossl_typ"
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
+local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
 
 ffi.cdef [[
   RSA *RSA_new(void);
@@ -19,7 +20,9 @@ ffi.cdef [[
   void RSA_get0_factors(const RSA *r, const BIGNUM **p, const BIGNUM **q);
 ]]
 
-if OPENSSL_10 then
+if OPENSSL_11 then
+  ffi.cdef('struct rsa_st;')
+elseif OPENSSL_10 then
   ffi.cdef [[
     // crypto/rsa/rsa_locl.h
     // needed to extract parameters
@@ -52,6 +55,5 @@ if OPENSSL_10 then
       // BN_BLINDING *mt_blinding;
     };
   ]]
-else
-  ffi.cdef('struct rsa_st;')
 end
+  

@@ -20,6 +20,6 @@ end
 
 return {
     version_num = tonumber(version_num),
-    OPENSSL_11 = version_num >= 0x10100000,
-    OPENSSL_10 = version_num < 0x10100000,
+    OPENSSL_11 = version_num >= 0x10100000 and version_num < 0x10200000,
+    OPENSSL_10 = version_num < 0x10100000 and version_num > 0x10000000,
 }

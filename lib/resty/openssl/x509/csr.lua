@@ -42,7 +42,7 @@ ffi.cdef [[
 
 ]]
 
-local function __tostring(self, fmt)
+local function tostring(self, fmt)
   local method
   if not fmt or fmt == 'PEM' then
     method = 'PEM_write_bio_X509_REQ'
@@ -55,7 +55,7 @@ local function __tostring(self, fmt)
 end
 
 local _M = {}
-local mt = { __index = _M, __tostring = __tostring }
+local mt = { __index = _M, __tostring = tostring }
 
 local x509_req_ptr_ct = ffi.typeof("X509_REQ*")
 
@@ -74,16 +74,16 @@ function _M.new()
 end
 
 function _M.istype(l)
-  return l.ctx and ffi.istype(x509_req_ptr_ct, l.ctx)
+  return l and l and l.ctx and ffi.istype(x509_req_ptr_ct, l.ctx)
 end
 
-function _M:setSubject(name)
+function _M:set_subject_name(name)
   if not x509_name_lib.istype(name) then
     return "expect a x509.name instance at #1"
   end
   local code = C.X509_REQ_set_subject_name(self.ctx, name.ctx)
-  if code ~= 1 then
-    return "X509_REQ_set_subject_name() failed: " .. code
+  if code == 0 then
+    return format_error("csr:setSubject")
   end
 end
 
@@ -114,7 +114,7 @@ local function xr_modifyRequestedExtension(csr, target_nid, value, crit, flags)
 
 end
 
-function _M:setSubjectAlt(alt)
+function _M:set_subject_alt(alt)
   if not altname_lib.istype(alt) then
     return "expect a x509.altname instance at #1"
   end
@@ -123,7 +123,7 @@ function _M:setSubjectAlt(alt)
   return xr_modifyRequestedExtension(self.ctx, 85, alt.ctx, 0, 2)
 end
 
-function _M:setPublicKey(pkey)
+function _M:set_pubkey(pkey)
   if not pkey_lib.istype(pkey) then
     return "expect a pkey instance at #1"
   end
@@ -159,11 +159,11 @@ function _M:sign(pkey)
 end
 
 function _M:tostring(fmt)
-  return __tostring(self, fmt)
+  return tostring(self, fmt)
 end
 
 function _M:toPEM()
-  return __tostring(self, "PEM")
+  return tostring(self, "PEM")
 end
 
 

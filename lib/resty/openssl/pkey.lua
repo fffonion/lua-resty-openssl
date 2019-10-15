@@ -19,6 +19,7 @@ require "resty.openssl.x509"
 local digest_lib = require "resty.openssl.digest"
 local format_error = require("resty.openssl.err").format_error
 
+local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
 
 local function generate_key(config)
@@ -250,7 +251,7 @@ function _M.new(s, ...)
 end
 
 function _M.istype(l)
-  return l.ctx and ffi.istype(evp_ptr_ct, l.ctx)
+  return l and l.ctx and ffi.istype(evp_ptr_ct, l.ctx)
 end
 
 local empty_table = {}
@@ -267,15 +268,15 @@ local function get_rsa_params_11(pkey)
       if k == 'n' then
         local ptr = bn_ptrptr_ct()
         C.RSA_get0_key(rsa_st, ptr, nil, nil)
-        return bn_lib.new(ptr[0]), nil
+        return bn_lib.dup(ptr[0])
       elseif k == 'e' then
         local ptr = bn_ptrptr_ct()
         C.RSA_get0_key(rsa_st, nil, ptr, nil)
-        return bn_lib.new(ptr[0]), nil
+        return bn_lib.dup(ptr[0])
       elseif k == 'd' then
         local ptr = bn_ptrptr_ct()
         C.RSA_get0_key(rsa_st, nil, nil, ptr)
-        return bn_lib.new(ptr[0]), nil
+        return bn_lib.dup(ptr[0])
       end
     end
   }), nil
@@ -287,22 +288,22 @@ local function get_rsa_params_10(pkey)
   return setmetatable(empty_table, {
     __index = function(tbl, k)
       if k == 'n' then
-        return bn_lib.new(pkey.pkey.rsa.n), nil
+        return bn_lib.dup(pkey.pkey.rsa.n)
       elseif k == 'e' then
-        return bn_lib.new(pkey.pkey.rsa.e), nil
+        return bn_lib.dup(pkey.pkey.rsa.e)
       elseif k == 'd' then
-        return bn_lib.new(pkey.pkey.rsa.d), nil
+        return bn_lib.dup(pkey.pkey.rsa.d)
       end
     end
   }), nil
 end
 
-function _M:getParameters()
+function _M:get_parameters()
   local key_type = C.EVP_PKEY_base_id(self.ctx)
   if key_type == evp_lib.EVP_PKEY_RSA then
     if OPENSSL_11 then
       return get_rsa_params_11(self.ctx)
-    else
+    elseif OPENSSL_10 then
       return get_rsa_params_10(self.ctx)
     end
   elseif key_type == evp_lib.EVP_PKEY_EC then
@@ -337,7 +338,7 @@ function _M:verify(signature, digest)
   return false, "EVP_VerifyFinal() failed"
 end
 
-function _M:toPEM(pub_or_priv)
+function _M:to_PEM(pub_or_priv)
   return tostring(self, pub_or_priv)
 end
 

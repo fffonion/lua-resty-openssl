@@ -11,6 +11,7 @@ local mt = {__index = _M}
 require "resty.openssl.ossl_typ"
 require "resty.openssl.evp"
 local format_error = require("resty.openssl.err").format_error
+local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
 
 local md_ctx_ptr_ct = ffi.typeof('EVP_MD_CTX*')
@@ -20,7 +21,7 @@ function _M.new(typ)
   if OPENSSL_11 then
     ctx = C.EVP_MD_CTX_new()
     ffi_gc(ctx, C.EVP_MD_CTX_free)
-  else
+  elseif OPENSSL_10 then
     ctx = C.EVP_MD_CTX_create()
     ffi_gc(ctx, C.EVP_MD_CTX_destroy)
   end
@@ -42,7 +43,7 @@ function _M.new(typ)
 end
 
 function _M.istype(l)
-  return l.ctx and ffi.istype(md_ctx_ptr_ct, l.ctx)
+  return l and l.ctx and ffi.istype(md_ctx_ptr_ct, l.ctx)
 end
 
 function _M:update(...)

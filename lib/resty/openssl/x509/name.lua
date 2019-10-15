@@ -14,6 +14,7 @@ require "resty.openssl.objects"
 ffi.cdef [[
   X509_NAME * X509_NAME_new(void);
   void X509_NAME_free(X509_NAME *name);
+  X509_NAME *X509_NAME_dup(X509_NAME *xn);
   int X509_NAME_add_entry_by_OBJ(X509_NAME *name, const ASN1_OBJECT *obj, int type,
                                const unsigned char *bytes, int len, int loc,
                                int set);
@@ -27,7 +28,7 @@ local mt = { __index = _M, __tostring = tostring }
 
 local x509_name_ptr_ct = ffi.typeof("X509_NAME*")
 
-function _M.new(cert)
+function _M.new(name)
   local ctx = C.X509_NAME_new()
   if ctx == nil then
     return nil, "X509_NAME_new() failed"
@@ -42,7 +43,7 @@ function _M.new(cert)
 end
 
 function _M.istype(l)
-  return l.ctx and ffi.istype(x509_name_ptr_ct, l.ctx)
+  return l and l.ctx and ffi.istype(x509_name_ptr_ct, l.ctx)
 end
 
 function _M:add(nid, txt)
@@ -58,6 +59,21 @@ function _M:add(nid, txt)
     return self, "X509_NAME_add_entry_by_OBJ() failed"
   end
 
+  return self
+end
+
+function _M.dup(ctx)
+  if not ffi.istype(x509_name_ptr_ct, ctx) then
+    return nil, "expect a x509.name ctx at #1"
+  end
+  local ctx = C.X509_NAME_dup(ctx)
+  ffi_gc(ctx, C.X509_NAME_free)
+
+  local self = setmetatable({
+    ctx = ctx,
+  }, mt)
+
+  return self, nil
 end
 
 

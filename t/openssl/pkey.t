@@ -19,7 +19,7 @@ __DATA__
     location =/t {
         content_by_lua_block {
             local p = require("resty.openssl.pkey").new()
-            ngx.say(p:toPEM('private'))
+            ngx.say(p:to_PEM('private'))
         }
     }
 --- request
@@ -38,7 +38,7 @@ __DATA__
                 type = 'RSA',
                 bits = 2048,
             })
-            ngx.say(p:toPEM('private'))
+            ngx.say(p:to_PEM('private'))
         }
     }
 --- request
@@ -57,7 +57,7 @@ __DATA__
                 type = 'EC',
                 curve = 'prime256v1',
             })
-            ngx.say(p:toPEM('private'))
+            ngx.say(p:to_PEM('private'))
         }
     }
 --- request
@@ -99,12 +99,12 @@ pkey.new:load_pkey: .+
                 ngx.log(ngx.ERR, err)
                 return
             end
-            local p2, err = pkey.new(p1:toPEM('private'))
+            local p2, err = pkey.new(p1:to_PEM('private'))
             if err then
                 ngx.log(ngx.ERR, err)
                 return
             end
-            ngx.print(p1:toPEM('private') == p2:toPEM('private'))
+            ngx.print(p1:to_PEM('private') == p2:to_PEM('private'))
         }
     }
 --- request
@@ -125,14 +125,14 @@ pkey.new:load_pkey: .+
                 ngx.log(ngx.ERR, err)
                 return
             end
-            local pem = p1:toPEM('private')
+            local pem = p1:to_PEM('private')
             local der, err = require("ngx.ssl").priv_key_pem_to_der(pem)
             local p2, err = pkey.new(der)
             if err then
                 ngx.log(ngx.ERR, err)
                 return
             end
-            ngx.print(p2 and pem == p2:toPEM('private'))
+            ngx.print(p2 and pem == p2:to_PEM('private'))
         }
     }
 --- request
@@ -154,7 +154,7 @@ pkey.new:load_pkey: .+
                 ngx.log(ngx.ERR, err)
                 return
             end
-            local params, err = p:getParameters()
+            local params, err = p:get_parameters()
             if err then
                 ngx.log(ngx.ERR, err)
                 return
@@ -162,7 +162,7 @@ pkey.new:load_pkey: .+
             ngx.say(params.d ~= nil)
             ngx.say(params.e ~= nil)
             ngx.say(params.n ~= nil)
-            ngx.say(ngx.encode_base64(params.e:toBinary()))
+            ngx.say(ngx.encode_base64(params.e:to_binary()))
         }
     }
 --- request
@@ -256,7 +256,7 @@ expect a digest instance at #2
                 ngx.log(ngx.ERR, err)
                 return
             end
-            ngx.say(p:toPEM())
+            ngx.say(p:to_PEM())
         }
     }
 --- request

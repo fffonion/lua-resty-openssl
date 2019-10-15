@@ -2,10 +2,8 @@
 local function create_csr(domain_pkey, ...)
   local domains = {...}
 
-  local err
-
   local subject = require("resty.openssl.x509.name").new()
-  err = subject:add("CN", domains[1])
+  local _, err = subject:add("CN", domains[1])
   if err then
     return nil, err
   end
@@ -18,7 +16,7 @@ local function create_csr(domain_pkey, ...)
     end
 
     for _, domain in pairs(domains) do
-      err = alt:add("DNS", domain)
+      _, err = alt:add("DNS", domain)
       if err then
         return nil, err
       end
@@ -26,18 +24,19 @@ local function create_csr(domain_pkey, ...)
   end
 
   local csr = require("resty.openssl.x509.csr").new()
-  err = csr:setSubject(subject)
+  err = csr:set_subject_name(subject)
   if err then
     return nil, err
   end
+
   if alt then
-    err = csr:setSubjectAlt(alt)
+    err = csr:set_subject_alt(alt)
     if err then
       return nil, err
     end
   end
 
-  err = csr:setPublicKey(domain_pkey)
+  err = csr:set_pubkey(domain_pkey)
   if err then
     return nil, err
   end

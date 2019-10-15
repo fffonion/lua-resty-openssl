@@ -8,6 +8,7 @@ local _M = {}
 local mt = {__index = _M}
 
 require "resty.openssl.ossl_typ"
+local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
 
 ffi.cdef [[
@@ -47,7 +48,7 @@ if OPENSSL_11 then
     EVP_MD_CTX *EVP_MD_CTX_new(void);
     void EVP_MD_CTX_free(EVP_MD_CTX *ctx);
   ]]
-else
+elseif OPENSSL_10 then
   ffi.cdef [[
     EVP_MD_CTX *EVP_MD_CTX_create(void);
     void EVP_MD_CTX_destroy(EVP_MD_CTX *ctx);

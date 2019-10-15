@@ -24,4 +24,7 @@ ffi.cdef [[
   int PEM_write_bio_X509_REQ(BIO *bp, X509_REQ *x);
   
   X509 *PEM_read_bio_X509(BIO *bp, X509 **x, pem_password_cb *cb, void *u);
+
+  // macro in pem.h
+  int PEM_write_bio_X509(BIO *bp, X509 *x);
 ]]

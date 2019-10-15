@@ -17,11 +17,28 @@ local mt = {__index = _M}
 
 require "resty.openssl.ossl_typ"
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
+local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
 
 local _M = {}
 
 local sk_pop_free_func
-if OPENSSL_10 then
+if OPENSSL_11 then
+  ffi.cdef [[
+    typedef struct stack_st OPENSSL_STACK;
+
+    typedef void (*OPENSSL_sk_freefunc)(void *);
+    OPENSSL_STACK *OPENSSL_sk_new_null(void);
+    int OPENSSL_sk_push(OPENSSL_STACK *st, const void *data);
+    void OPENSSL_sk_pop_free(OPENSSL_STACK *st, void (*func) (void *));
+    void *OPENSSL_sk_value(const OPENSSL_STACK *, int);
+  ]]
+  sk_pop_free_func = C.OPENSSL_sk_pop_free
+
+  _M.OPENSSL_sk_new_null = C.OPENSSL_sk_new_null
+  _M.OPENSSL_sk_push = C.OPENSSL_sk_push
+  _M.OPENSSL_sk_pop_free = C.OPENSSL_sk_pop_free
+  _M.OPENSSL_sk_value = C.OPENSSL_sk_value
+elseif OPENSSL_10 then
   ffi.cdef [[
     typedef struct stack_st _STACK;
     // i made this up
@@ -43,22 +60,6 @@ if OPENSSL_10 then
     end
     return st.data[n]
   end
-else
-  ffi.cdef [[
-    typedef struct stack_st OPENSSL_STACK;
-
-    typedef void (*OPENSSL_sk_freefunc)(void *);
-    OPENSSL_STACK *OPENSSL_sk_new_null(void);
-    int OPENSSL_sk_push(OPENSSL_STACK *st, const void *data);
-    void OPENSSL_sk_pop_free(OPENSSL_STACK *st, void (*func) (void *));
-    void *OPENSSL_sk_value(const OPENSSL_STACK *, int);
-  ]]
-  sk_pop_free_func = C.OPENSSL_sk_pop_free
-
-  _M.OPENSSL_sk_new_null = C.OPENSSL_sk_new_null
-  _M.OPENSSL_sk_push = C.OPENSSL_sk_push
-  _M.OPENSSL_sk_pop_free = C.OPENSSL_sk_pop_free
-  _M.OPENSSL_sk_value = C.OPENSSL_sk_value
 end
 
 _M.gc_of = function (typ)

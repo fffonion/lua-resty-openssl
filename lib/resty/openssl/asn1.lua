@@ -30,6 +30,8 @@ ffi.cdef [[
 
   typedef int time_t;
   ASN1_TIME *ASN1_TIME_set(ASN1_TIME *s, time_t t);
+
+  long ASN1_INTEGER_get(const ASN1_INTEGER *a);
 ]]
 
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
