@@ -1,28 +1,31 @@
 sudo: required
-dist: bionic
+dist: focal
 
 os: linux
+
+arch:
+  - amd64
 
 language: c
 compiler:
   - gcc
-  - clang
 
 cache:
   directories:
   - cache
-  - /opt/ssl
+  - /tmp/ssl
+  - /tmp/luajit21
 
 env:
   global:
     - JOBS=3
     - SH=bash
     - NGX_BUILD_JOBS=$JOBS
-    - LUAJIT_PREFIX=/opt/luajit21
+    - LUAJIT_PREFIX=/tmp/luajit21
     - LUAJIT_LIB=$LUAJIT_PREFIX/lib
     - LUAJIT_INC=$LUAJIT_PREFIX/include/luajit-2.1
     - LUA_INCLUDE_DIR=$LUAJIT_INC
-    - OPENSSL_PREFIX=/opt/ssl
+    - OPENSSL_PREFIX=/tmp/ssl
     - OPENSSL_LIB=$OPENSSL_PREFIX/lib
     - OPENSSL_INC=$OPENSSL_PREFIX/include
     - LD_LIBRARY_PATH=$LUAJIT_LIB:$LD_LIBRARY_PATH
@@ -40,10 +43,18 @@ env:
     - NGINX_VERSION=1.15.8 OPENSSL_VER=3.0.0-alpha6 NGINX_CC_OPTS=-Wno-error
     - NGINX_VERSION=1.17.8 OPENSSL_VER=3.0.0-alpha6 NGINX_CC_OPTS=-Wno-error
 
+matrix:
+  include:
+    - compiler: clang
+      env: NGINX_VERSION=1.15.8 OPENSSL_VER=1.1.1g
+    - arch: arm64
+      compiler: gcc
+      env: NGINX_VERSION=1.15.8 OPENSSL_VER=1.1.1g APT_PACKAGES=libpcre3-dev
+
 install:
   - export NGX_BUILD_CC=$CC
   - export PATH=$PWD/cache/work/nginx/sbin:$PWD/nginx-devel-utils:$PATH
-  - sudo apt-get install -qq -y cpanminus axel ca-certificates #valgrind
+  - sudo apt-get install -qq -y cpanminus axel ca-certificates $APT_PACKAGES #valgrind
   # perl cache
   - pushd cache
   - if [ ! -e perl ]; then sudo cpanm --notest Test::Nginx > build.log 2>&1 || (cat build.log && exit 1); cp -r /usr/local/share/perl/ .; else sudo cp -r perl /usr/local/share; fi
