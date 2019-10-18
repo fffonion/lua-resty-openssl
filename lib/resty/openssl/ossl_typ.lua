@@ -22,6 +22,8 @@ ffi.cdef(
   typedef struct x509_st X509;
   typedef struct X509_name_st X509_NAME;
   typedef struct X509_req_st X509_REQ;
+  typedef struct X509_crl_st X509_CRL;
+  typedef struct v3_ext_ctx X509V3_CTX;
   typedef struct asn1_string_st ASN1_INTEGER;
   typedef struct asn1_string_st ASN1_ENUMERATED;
   typedef struct asn1_string_st ASN1_BIT_STRING;
@@ -39,6 +41,7 @@ ffi.cdef(
   typedef struct asn1_string_st ASN1_UTF8STRING;
   typedef struct asn1_string_st ASN1_STRING;
   typedef struct asn1_object_st ASN1_OBJECT;
+  typedef struct conf_st CONF;
   typedef int ASN1_BOOLEAN;
   typedef int ASN1_NULL;
   typedef struct ec_key_st EC_KEY;

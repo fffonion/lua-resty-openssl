@@ -48,4 +48,23 @@ ffi.cdef [[
   // STACK_OF(X509_EXTENSION)
   int X509V3_add1_i2d(OPENSSL_STACK **x, int nid, void *value,
                     int crit, unsigned long flags);
+
+  // although the struct has plural form, it's not a stack
+  typedef struct BASIC_CONSTRAINTS_st {
+    int ca;
+    ASN1_INTEGER *pathlen;
+  } BASIC_CONSTRAINTS;
+  // DECLARE_ASN1_FUNCTIONS(BASIC_CONSTRAINTS), NYI
+  BASIC_CONSTRAINTS *BASIC_CONSTRAINTS_new(void);
+  void BASIC_CONSTRAINTS_free(BASIC_CONSTRAINTS *a);
+
+  void X509V3_set_ctx(X509V3_CTX *ctx, X509 *issuer, X509 *subject,
+    X509_REQ *req, X509_CRL *crl, int flags);
+
+  X509_EXTENSION *X509V3_EXT_nconf_nid(CONF *conf, X509V3_CTX *ctx, int ext_nid,
+                                     const char *value);
+  X509_EXTENSION *X509V3_EXT_nconf(CONF *conf, X509V3_CTX *ctx, const char *name,
+                                 const char *value);
+  int X509V3_EXT_print(BIO *out, X509_EXTENSION *ext, unsigned long flag,
+    int indent);
 ]]

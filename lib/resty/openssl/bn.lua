@@ -67,7 +67,7 @@ function _M:to_binary()
 end
 
 function _M.from_binary(s)
-  if not s or type(s) ~= "string" then
+  if type(s) ~= "string" then
     return nil, "expect a string at #1"
   end
 

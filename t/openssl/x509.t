@@ -85,7 +85,7 @@ x509.new: .*pem_lib.c.+
                 ngx.say("1 " .. err)
                 ngx.exit(0)
             end
-            local p, err = c:get_public_key()
+            local p, err = c:get_pubkey()
             if err then
                 ngx.say("2 " .. err)
                 ngx.exit(0)
@@ -94,7 +94,7 @@ x509.new: .*pem_lib.c.+
             pem = io.open("key.pem"):read("*a")
             local pkey = require("resty.openssl.pkey")
             local k, err = pkey.new(pem)
-            ngx.print(c:get_public_key():to_PEM() == k:to_PEM("public"))
+            ngx.print(c:get_pubkey():to_PEM() == k:to_PEM("public"))
             os.remove("key.pem")
             os.remove("cert.pem")
         }

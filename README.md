@@ -182,7 +182,7 @@ By default, it returns the public key.
 
 ## resty.openssl.bn
 
-Module to expose BIGNUM structure. This module is not exposed through `resty.openssl`.
+Module to expose BIGNUM structure.
 
 ### bn.new
 
@@ -193,6 +193,8 @@ Creates a BIGNUM instance. The first argument can be `BIGNUM *` cdata object, or
 or `nil` to creates a empty instance.
 
 ### bn.dup
+
+### bn.from_binary
 
 ### bn.istype
 
@@ -240,6 +242,9 @@ Updates the digest with one or more string.
 
 **syntax**: *digest:update(partial?, ...)*
 
+## resty.openssl.rand
+
+### rand.bytes
 
 ## resty.openssl.x509
 
@@ -253,9 +258,57 @@ Module to interact with certificate.
 
 Returns `true` if table is an instance of `x509`. Returns `false` otherwise.
 
+### x509:add_extension
+
+### x509:get_issuer_name
+
+### x509:set_issuer_name
+
 ### x509:get_lifetime
 
+### x509:set_lifetime
+
+### x509:get_not_before
+
+### x509:set_not_before
+
+### x509:get_not_after
+
+### x509:set_not_after
+
 ### x509:get_pubkey
+
+### x509:set_pubkey
+
+### x509:get_serial_number
+
+### x509:set_serial_number
+
+### x509:get_subject_name
+
+### x509:set_subject_name
+
+### x509:get_version
+
+### x509:set_version
+
+### x509:set_basic_constraints
+
+### x509:set_basic_constraints_critical
+
+### x509:sign
+
+## resty.openssl.x509.altname
+
+### altname.new
+
+### altname.istype
+
+**syntax**: *altname = digest.istype(table)*
+
+Returns `true` if table is an instance of `altname`. Returns `false` otherwise.
+
+### altname:add
 
 ## resty.openssl.x509.csr
 
@@ -279,17 +332,13 @@ Returns `true` if table is an instance of `csr`. Returns `false` otherwise.
 
 ### csr:to_PEM
 
-## resty.openssl.x509.altname
+## resty.openssl.x509.extension
 
-### altname.new
+### extension.new
 
-### altname.istype
+### extension.istype
 
-**syntax**: *altname = digest.istype(table)*
-
-Returns `true` if table is an instance of `altname`. Returns `false` otherwise.
-
-### altname:add
+**syntax**: *status = extension.istype(table)*
 
 ## resty.openssl.x509.name
 
@@ -305,15 +354,17 @@ Returns `true` if table is an instance of `name`. Returns `false` otherwise.
 
 ### name:add
 
+Returns `true` if table is an instance of `extension`. Returns `false` otherwise.
+
 Compatibility
 ====
 
-Although only a small combinations of CPU arch and OpenSSL version is tested, the library
+Although only a small combinations of CPU arch and OpenSSL version are tested, the library
 should function well as long as the linked OpenSSL library is API compatible. This means
-the same name of function is exported with same argument types.
+the same name of functions are exported with same argument types.
 
-For OpenSSL 1.0.2 series users however, ABI compatibility must be ensured as some struct members
-are accessed directly, meaning they are calculated to offset in assembly.
+For OpenSSL 1.0.2 series however, ABI compatibility must be ensured as some struct members
+are accessed directly, meaning they are accessed by memory offset in assembly.
 
 If you plan to use this library on an untested version of OpenSSL (like custom builds or pre releases),
 [this](https://abi-laboratory.pro/index.php?view=timeline&l=openssl) can be a good source to consult.

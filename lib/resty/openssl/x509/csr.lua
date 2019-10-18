@@ -10,6 +10,7 @@ local mt = {__index = _M}
 require "resty.openssl.ossl_typ"
 require "resty.openssl.evp"
 require "resty.openssl.objects"
+require "resty.openssl.x509"
 local stack_lib = require "resty.openssl.stack"
 local pkey_lib = require "resty.openssl.pkey"
 local altname_lib = require "resty.openssl.x509.altname"
@@ -35,23 +36,16 @@ ffi.cdef [[
   // STACK_OF(X509_EXTENSION)
   int X509_REQ_add_extensions(X509_REQ *req, OPENSSL_STACK *exts);
 
-  typedef struct X509_extension_st X509_EXTENSION;
-  X509_EXTENSION *X509_EXTENSION_new(void);
-  X509_EXTENSION *X509_EXTENSION_dup(X509_EXTENSION *a);
-  void X509_EXTENSION_free(X509_EXTENSION *a);
-
 ]]
 
 local function tostring(self, fmt)
-  local method
   if not fmt or fmt == 'PEM' then
-    method = 'PEM_write_bio_X509_REQ'
+    return util.read_using_bio(C.PEM_write_bio_X509_REQ, self.ctx)
   elseif fmt == 'DER' then
-    method = 'i2d_X509_REQ_bio'
+    return util.read_using_bio(C.i2d_X509_REQ_bio, self.ctx)
   else
     return nil, "can only write PEM or DER format, not " .. fmt
   end
-  return util.read_using_bio(method, self.ctx)
 end
 
 local _M = {}

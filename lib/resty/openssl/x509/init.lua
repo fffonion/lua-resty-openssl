@@ -21,20 +21,32 @@ local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
 
 ffi.cdef [[
-  // macros from asn1.h
+  // DECLARE_ASN1_FUNCTIONS(X509), NYI
   X509* X509_new(void);
   void X509_free(X509 *a);
+
+  typedef struct X509_extension_st X509_EXTENSION;
+  X509_EXTENSION *X509_EXTENSION_new(void);
+  X509_EXTENSION *X509_EXTENSION_dup(X509_EXTENSION *a);
+  void X509_EXTENSION_free(X509_EXTENSION *a);
 
   int X509_sign(X509 *x, EVP_PKEY *pkey, const EVP_MD *md);
 
   ASN1_TIME *X509_gmtime_adj(ASN1_TIME *s, long adj);
 
+  int X509_add_ext(X509 *x, X509_EXTENSION *ex, int loc);
+  X509_EXTENSION *X509_get_ext(const X509 *x, int loc);
+  int X509_get_ext_by_NID(const X509 *x, int nid, int lastpos);
+
+  int X509_EXTENSION_set_critical(X509_EXTENSION *ex, int crit);
+
   // needed by pkey
   EVP_PKEY *d2i_PrivateKey_bio(BIO *bp, EVP_PKEY **a);
   EVP_PKEY *d2i_PUBKEY_bio(BIO *bp, EVP_PKEY **a);
+
 ]]
 
--- accessors provides a openssl version neutral interface to lua layer
+-- accessors provides an openssl version neutral interface to lua layer
 -- it doesn't handle any error, expect that to be implemented in 
 -- _M.set_X or _M.get_X
 local accessors = {}
@@ -217,8 +229,6 @@ local attributes = {
   {
     -- name used in openssl
     field = "serial_number",
-    -- luaossl compaitbile name
-    alias = "serial",
     -- attribute type
     typ = "resty.openssl.bn",
     -- the optional type converter
@@ -227,11 +237,14 @@ local attributes = {
       if ctx == nil then
         return nil, format_error("x509:set:BN_to_ASN1_INTEGER")
       end
+      -- "A copy of the serial number is used internally
+      -- so serial should be freed up after use.""
       ffi_gc(ctx, C.ASN1_INTEGER_free)
       return ctx
     end,
     to = function(asn1_integer)
     end,
+    dup = true,
   },
   {
     field = "not_before",
@@ -247,18 +260,17 @@ local attributes = {
   },
   {
     field = "pubkey",
-    alias = "public_key",
     typ = "resty.openssl.pkey",
   },
   {
     field = "subject_name",
-    alias = "subject",
     typ = "resty.openssl.x509.name",
+    dup = true,
   },
   {
     field = "issuer_name",
-    alias = "issuer",
     typ = "resty.openssl.x509.name",
+    dup = true,
   },
   {
     field = "version",
@@ -316,22 +328,74 @@ for _, attribute in ipairs(attributes) do
     end
 
     local lib = require(typ)
-    -- if duplication of struct is supported
-    if lib.dup then
+    -- if the internal ptr is returned, ie we need copy it
+    if attribute.dup then
       return lib.dup(ctx)
     -- otherwise just contruct a lua table
     else
       return lib.new(ctx)
     end
   end
-
-  if attribute.alias then
-    _M['get_' .. attribute.alias] = _M['get_' .. field]
-    _M['set_' .. attribute.alias] = _M['set_' .. field]
-  end
   
 end
 
+function _M:add_extension(extension)
+  local extension_lib = require("resty.openssl.x509.extension")
+  if not extension_lib.istype(extension) then
+    return false, "expect a x509.extension instance at #1"
+  end
+
+  -- X509_add_ext returnes the stack on success, and NULL on error
+  if C.X509_add_ext(self.ctx, extension.ctx, -1) == nil then
+    return false, format_error("x509:add_extension")
+  end
+
+  return true
+end
+
+function _M:set_basic_constraints(cfg)
+  if type(cfg) ~= "table" then
+    return false, "expect a table at #1"
+  end
+
+  local bc = C.BASIC_CONSTRAINTS_new()
+  if bc == nil then
+    return false, format_error("x509:set_basic_constraints")
+  end
+
+  bc.ca = cfg.CA and 0xFF or 0
+
+  -- obj_mac.h: #define NID_basic_constraints           87
+  -- x509v3.h: # define X509V3_ADD_REPLACE              2L
+  local code = C.X509_add1_ext_i2d(self.ctx, 87, bc, 0, 0x2)
+  C.BASIC_CONSTRAINTS_free(bc)
+  if code ~= 1 then
+    return false, format_error("x509:set_basic_constraints:X509_add1_ext_i2d", code)
+  end
+
+  return true
+end
+
+function _M:set_basic_constraints_critical(crit)
+  local ext = ffi_new("X509_EXTENSION *")
+
+  -- obj_mac.h: #define NID_basic_constraints           87
+  local loc = C.X509_get_ext_by_NID(self.ctx, 87, -1)
+  if loc == -1 then
+    return false, format_error("x509:set_basic_constraints_critical:X509_get_ext_by_NID")
+  end
+  
+  local ext = C.X509_get_ext(self.ctx, loc)
+  if ext == nil then
+    return false, format_error("x509:set_basic_constraints_critical:X509_get_ext")
+  end
+
+  if C.X509_EXTENSION_set_critical(ext, crit and 1 or 0) ~= 1 then
+    return false, format_error("x509:set_basic_constraints_critical:X509_EXTENSION_set_critical")
+  end
+
+  return true
+end
 
 function _M:sign(pkey, digest)
   local pkey_lib = require("resty.openssl.pkey")
@@ -353,8 +417,7 @@ function _M:sign(pkey, digest)
 end
 
 function _M:to_PEM()
-  ngx.log(ngx.ERR, self.ctx == nil)
-  return util.read_using_bio("PEM_write_bio_X509", self.ctx)
+  return util.read_using_bio(C.PEM_write_bio_X509, self.ctx)
 end
 
 return _M

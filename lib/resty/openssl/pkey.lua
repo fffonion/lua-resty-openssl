@@ -187,22 +187,17 @@ local function load_pkey(txt, fmt, typ)
   return ctx, nil
 end
 
-local PEM_write_bio_PrivateKey_args = { null, null, 0, null, null }
-local PEM_write_bio_PUBKEY_args = {}
-
 local function tostring(self, fmt)
-  local method, args
   if fmt == 'private' or fmt == 'PrivateKey' then
-    method = 'PEM_write_bio_PrivateKey'
-    args = PEM_write_bio_PrivateKey_args
+    return util.read_using_bio(C.PEM_write_bio_PrivateKey,
+      self.ctx,
+      nil, nil, 0, nil, nil)
   elseif not fmt or fmt == 'public' or fmt == 'PublicKey' then
-    method = 'PEM_write_bio_PUBKEY'
-    args = PEM_write_bio_PUBKEY_args
+    return util.read_using_bio(C.PEM_write_bio_PUBKEY, self.ctx)
   else
     return nil, "can only export private or public key, not " .. fmt
   end
 
-  return util.read_using_bio(method, self.ctx, unpack(args))
 end
 
 local _M = {}

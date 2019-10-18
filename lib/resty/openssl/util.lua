@@ -10,8 +10,8 @@ require "resty.openssl.bio"
 local format_error = require("resty.openssl.err").format_error
 
 local function read_using_bio(f, ...)
-  if not C[f] then
-    return nil, "C." .. f .. "not defined"
+  if type(f) ~= "cdata" then -- should be explictly a function
+    return nil, "expect a function at #1"
   end
 
   local bio_method = C.BIO_s_mem()
@@ -27,7 +27,7 @@ local function read_using_bio(f, ...)
       return nil, "BIO_ctrl() failed: " .. code
   end
 
-  local code = C[f](bio, ...)
+  local code = f(bio, ...)
   if code ~= 1 then
       return nil, format_error(f, code)
   end

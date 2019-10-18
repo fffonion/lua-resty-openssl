@@ -10,11 +10,15 @@ local _M = {
   version = require("resty.openssl.version"),
   pkey = require("resty.openssl.pkey"),
   digest = require("resty.openssl.digest"),
+  bn = require("resty.openssl.bn"),
   x509 = require("resty.openssl.x509"),
   name = require("resty.openssl.x509.name"),
   altname = require("resty.openssl.x509.altname"),
   csr = require("resty.openssl.x509.csr"),
+  extension = require("resty.openssl.x509.extension"),
 }
+
+_M.bignum = _M.bn
 
 function _M.luaossl_compact()
   for tn, tbl in pairs(_M) do
@@ -41,6 +45,15 @@ function _M.luaossl_compact()
 
   _M.csr.setSubject = _M.csr.set_subject_name
   _M.csr.setPublicKey = _M.csr.set_pubkey
+
+  _M.x509.setPublicKey = _M.x509.set_pubkey
+  _M.x509.getPublicKey = _M.x509.get_pubkey
+  _M.x509.setSerial = _M.x509.set_serial_number
+  _M.x509.getSerial = _M.x509.get_serial_number
+  _M.x509.setSubject = _M.x509.set_subject_name
+  _M.x509.getSubject = _M.x509.get_subject_name
+  _M.x509.setIssuer = _M.x509.set_issuer_name
+  _M.x509.getIssuer = _M.x509.get_issuer_name
 end
 
 return _M
