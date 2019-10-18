@@ -37,8 +37,10 @@ Production.
 Synopsis
 ========
 
-This library uses the naming conversion close to original OpenSSL API.
-For example, a function called `X509_set_pubkey` will expect to exist as `resty.openssl.x509:set_pubkey`.
+This library is greatly inspired by [luaossl](https://github.com/wahern/luaossl), while uses the
+naming conversion closer to original OpenSSL API.
+For example, a function called `X509_set_pubkey` in OpenSSL C API will expect to exist
+as `resty.openssl.x509:set_pubkey`.
 *CamelCase*s are replaced to *underscore_case*s, for exmaple `X509_set_serialNumber` becomes
 `resty.openssl.x509:set_serial_number`.
 
@@ -48,18 +50,20 @@ Each Lua table returned by `new()` contains a cdata object `ctx`. User are not s
 
 ## resty.openssl
 
-This meta module provides a version sanity check and returns all exported modules to a local table
+This meta module provides a version sanity check and returns all exported modules to a local table.
 
 ```lua
-return {
+local _M = {
   _VERSION = '0.1.0',
   version = require("resty.openssl.version"),
   pkey = require("resty.openssl.pkey"),
+  digest = require("resty.openssl.digest"),
+  bn = require("resty.openssl.bn"),
   x509 = require("resty.openssl.x509"),
   name = require("resty.openssl.x509.name"),
   altname = require("resty.openssl.x509.altname"),
   csr = require("resty.openssl.x509.csr"),
-  digest = require("resty.openssl.digest")
+  extension = require("resty.openssl.x509.extension"),
 }
 ```
 
@@ -260,6 +264,8 @@ Returns `true` if table is an instance of `x509`. Returns `false` otherwise.
 
 ### x509:add_extension
 
+**syntax**: *status = x509:add_extension(extension)*
+
 ### x509:get_issuer_name
 
 ### x509:set_issuer_name
@@ -354,7 +360,13 @@ Returns `true` if table is an instance of `name`. Returns `false` otherwise.
 
 ### name:add
 
-Returns `true` if table is an instance of `extension`. Returns `false` otherwise.
+**syntax**: *name, err = name:add(nid, txt)*
+
+Adds an ASN.1 object to `name`. First arguments in the *text representation* of
+[NID](https://boringssl.googlesource.com/boringssl/+/HEAD/include/openssl/nid.h).
+Second argument is the plain text value for the ASN.1 object.
+
+Returns the name instance itself on success, or `nil` and an error on failure.
 
 Compatibility
 ====

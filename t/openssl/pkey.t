@@ -220,7 +220,7 @@ true
 --- no_error_log
 [error]
 
-=== TEST 9: Bail on bad digest or verify parameters
+=== TEST 9: Error on bad digest or verify parameters
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
