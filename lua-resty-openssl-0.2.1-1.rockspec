@@ -1,5 +1,5 @@
 package = "lua-resty-openssl"
-version = "0.2.0-1"
+version = "0.2.1-1"
 source = {
    url = "git+https://github.com/fffonion/lua-resty-openssl.git"
 }

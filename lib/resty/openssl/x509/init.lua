@@ -275,6 +275,11 @@ local attributes = {
   {
     field = "version",
     typ = "number",
+    -- Note: this is defined by standards (X.509 et al) to be one less than the certificate version.
+    -- So a version 3 certificate will return 2 and a version 1 certificate will return 0.
+    from = function(x)
+      return x - 1
+    end,
     to = tonumber,
   },
 }
