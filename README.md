@@ -42,7 +42,8 @@ naming conversion closer to original OpenSSL API.
 For example, a function called `X509_set_pubkey` in OpenSSL C API will expect to exist
 as `resty.openssl.x509:set_pubkey`.
 *CamelCase*s are replaced to *underscore_case*s, for exmaple `X509_set_serialNumber` becomes
-`resty.openssl.x509:set_serial_number`.
+`resty.openssl.x509:set_serial_number`. Another difference than `luaossl` is that errors are never thrown
+using `error()` but instead return as last parameter.
 
 Each Lua table returned by `new()` contains a cdata object `ctx`. User are not supposed to manully setting
 `ffi.gc` or calling corresponding destructor of the `ctx` struct (like `*_free` functions).
@@ -93,7 +94,7 @@ A boolean indicates whether the linked OpenSSL is 1.0 series.
 
 ## resty.openssl.pkey
 
-Module to provide EVP_PKEY infrastructure.
+Module to interact with private keys and public keys (EVP_PKEY).
 
 ### pkey.new
 
@@ -128,10 +129,12 @@ to create EC private key:
 to explictly decode the key using `format`, which can be a choice of `PER`, `DER` or `*`
 for auto detect.
 3. `nil` to create a 2048 bits RSA key.
+4. A `EVP_PKEY*` cdata pointer, to return a wrapped `pkey` instance. Normally user won't use this
+approach. User shouldn't free the pointer on their own, since the pointer is not copied.
 
 ### pkey.istype
 
-**syntax**: *status = pkey.istype(table)*
+**syntax**: *ok = pkey.istype(table)*
 
 Returns `true` if table is an instance of `pkey`. Returns `false` otherwise.
 
@@ -179,8 +182,8 @@ the same digest algorithm as used in `sign`.
 
 **syntax**: *pem, err = pk:to_PEM(private_or_public?)*
 
-Outputs private key or public key of pkey instance in PEM format. `private_or_public`
-must be a choice of `public`, `PublicKey`, `private`, `PrivateKey` or nil.
+Outputs private key or public key of `pkey` instance in PEM-formatted text.
+The first argument must be a choice of `public`, `PublicKey`, `private`, `PrivateKey` or nil.
 By default, it returns the public key.
 
 
@@ -190,27 +193,39 @@ Module to expose BIGNUM structure.
 
 ### bn.new
 
-**syntax**: *b, err = bn.new(bn_cdata?)*
 **syntax**: *b, err = bn.new(number?)*
 
-Creates a BIGNUM instance. The first argument can be `BIGNUM *` cdata object, or a Lua number,
-or `nil` to creates a empty instance.
+Creates a `bn` instance. The first argument can be a Lua number or `nil` to
+creates an empty instance.
 
 ### bn.dup
 
-### bn.from_binary
+**syntax**: *b, err = bn.new(bn_ptr_cdata)*
+
+Creates a `bn` instance from `BIGNUM*` cdata pointer.
 
 ### bn.istype
 
-**syntax**: *status = bn.istype(table)*
+**syntax**: *ok = bn.istype(table)*
 
 Returns `true` if table is an instance of `bn`. Returns `false` otherwise.
+
+### bn.from_binary
+
+Creates a `bn` instance from binary string.
+
+```lua
+local b, err = require("resty.openssl.bn").from_binary(ngx.decode_base64("WyU="))
+local bin, err = b:to_binary()
+ngx.say(ngx.encode_base64(bin))
+-- outputs "WyU="
+```
 
 ### bn:to_binary
 
 **syntax**: *bin, err = bn:to_binary()*
 
-Export the BIGNUM value in binary.
+Export the BIGNUM value in binary string.
 
 ```lua
 local b, err = require("resty.openssl.bn").new(23333)
@@ -221,140 +236,177 @@ ngx.say(ngx.encode_base64(bin))
 
 ## resty.openssl.digest
 
-Module to interact with message digest.
+Module to interact with message digest (EVP_MD).
 
 ### digest.new
 
 **syntax**: *d, err = digest.new(digest_name)*
 
-Creates a digest instance.`digest_name` is a string of digest algorithm name. To view
-a list of digest algorithms implemented, use `openssl list -digest-algorithms`.
+Creates a digest instance.`digest_name` is a case-insensitive string of digest algorithm name.
+To view a list of digest algorithms implemented, use `openssl list -digest-algorithms`.
 
 ### digest.istype
 
-**syntax**: *status = digest.istype(table)*
+**syntax**: *ok = digest.istype(table)*
 
 Returns `true` if table is an instance of `digest`. Returns `false` otherwise.
 
 ### digest:update
 
-**syntax**: *digest:update(partial, ...)*
+**syntax**: *err = digest:update(partial, ...)*
 
 Updates the digest with one or more string.
 
 ### digest:final
 
-**syntax**: *digest:update(partial?, ...)*
+**syntax**: *str, err = digest:final(partial?)*
+
+Returns the digest in raw binary string, optionally accept one string to digest.
+
+```lua
+local d, err = require("resty.openssl.digest").new("sha256")
+d:update("🦢")
+local digest, err = d:final()
+ngx.say(ngx.encode_base64(digest))
+-- outputs "tWW/2P/uOa/yIV1gRJySJLsHq1xwg0E1RWCvEUDlla0="
+-- OR:
+local d, err = require("resty.openssl.digest").new("sha256")
+local digest, err = d:final("🦢")
+ngx.say(ngx.encode_base64(digest))
+-- outputs "tWW/2P/uOa/yIV1gRJySJLsHq1xwg0E1RWCvEUDlla0="
+```
 
 ## resty.openssl.rand
 
+Module to interact with random number generator.
+
 ### rand.bytes
+
+**syntax**: *str, err = rand.bytes(length)*
+
+Generate random bytes with length of `length`. 
 
 ## resty.openssl.x509
 
-Module to interact with certificate.
+Module to interact with X.509 certificates.
 
 ### x509.new
 
+**syntax**: *crt, err = x509.new(pem)*
+
+**syntax**: *crt, err = x509.new()*
+
+Creates a `x509` instance. The first argument can be:
+
+1. PEM-formatted X.509 certificate `string`.
+2. `nil` to create an empty certificate.
+
 ### x509.istype
 
-**syntax**: *status = x509.istype(table)*
+**syntax**: *ok = x509.istype(table)*
 
 Returns `true` if table is an instance of `x509`. Returns `false` otherwise.
 
 ### x509:add_extension
 
-**syntax**: *status = x509:add_extension(extension)*
+**syntax**: *ok, err = x509:add_extension(extension)*
 
-### x509:get_issuer_name
+Adds an X.509 `extension` to certificate, the first argument must be a
+[resty.openssl.x509.extension](#restyopensslx509extension) instance.
 
-### x509:set_issuer_name
+```lua
+local extension, err = require("resty.openssl.extension").new({
+    "keyUsage", "critical,keyCertSign,cRLSign",
+})
+local x509, err = require("resty.openssl.x509").new()
+local ok, err = x509:add_extension(extension)
+```
+
+### x509:get_*, x509:set_*
+
+**syntax**: *ok, err = x509:set_attribute(instance)*
+
+**syntax**: *instance, err = x509:get_attribute()*
+
+Setters and getters for x509 attributes share the same syntax.
+
+| Attribute name | Type | Description |
+| ------------   | ---- | ----------- |
+| issuer_name   | x509.name | Issuer of the certificate |
+| not_before    | number | Unix timestamp when certificate is not valid before |
+| not_after     | number | Unix timestamp when certificate is not valid after |
+| pubkey        | pkey   | Public key of the certificate |
+| serial_number | bn     | Serial number of the certficate |
+| subject_name  | x509.name | Subject of the certificate |
+| version       | number | Version of the certificate, value is one less than version. For example, `2` represents `version 3` |
+
+Example:
+```lua
+local x509, err = require("resty.openssl.x509").new()
+err = x509:set_not_before(ngx.time())
+local not_before, err = x509:get_not_before()
+ngx.say(not_before)
+-- Outputs 1571875065
+```
 
 ### x509:get_lifetime
 
+**syntax**: *not_before, not_after, err = x509:get_lifetime()*
+
+A shortcut of `x509:get_not_before` plus `x509:get_not_after`
+
 ### x509:set_lifetime
 
-### x509:get_not_before
+**syntax**: *ok, err = x509:set_lifetime(not_before, not_after)*
 
-### x509:set_not_before
-
-### x509:get_not_after
-
-### x509:set_not_after
-
-### x509:get_pubkey
-
-### x509:set_pubkey
-
-### x509:get_serial_number
-
-### x509:set_serial_number
-
-### x509:get_subject_name
-
-### x509:set_subject_name
-
-### x509:get_version
-
-### x509:set_version
+A shortcut of `x509:set_not_before`
+plus `x509:set_not_after`.
 
 ### x509:set_basic_constraints
 
+**syntax**: *ok, err = x509:set_basic_constraints({CA = boolean})*
+
+Sets the basic constraints flag. Accepts a table which contains a key `CA` and a boolean value,
+indicating if the certificate is a CA or not.
+
 ### x509:set_basic_constraints_critical
+
+**syntax**: *ok, err = x509:set_basic_constraints_critical(boolean)*
+
+Sets the basic constraints critical flag.
 
 ### x509:sign
 
-## resty.openssl.x509.altname
+**syntax**: *ok, err = x509:sign(pkey)*
 
-### altname.new
+Sign the certificate using the private key specified by `pkey`. The first argument must be a 
+[resty.openssl.pkey](#restyopensslpkey) that stores private key.
 
-### altname.istype
+### x509:to_PEM
 
-**syntax**: *altname = digest.istype(table)*
+**syntax**: *pem, err = x509:to_PEM()*
 
-Returns `true` if table is an instance of `altname`. Returns `false` otherwise.
-
-### altname:add
-
-## resty.openssl.x509.csr
-
-Module to interact with certificate signing request.
-
-### csr.new
-
-### csr.istype
-
-**syntax**: *status = csr.istype(table)*
-
-Returns `true` if table is an instance of `csr`. Returns `false` otherwise.
-
-### csr:set_subject_name
-
-### csr:set_subject_alt
-
-### csr:set_pubkey
-
-### csr:tostring
-
-### csr:to_PEM
-
-## resty.openssl.x509.extension
-
-### extension.new
-
-### extension.istype
-
-**syntax**: *status = extension.istype(table)*
+Outputs the certificate in PEM-formatted text.
 
 ## resty.openssl.x509.name
 
+Module to interact with X.509 names.
+
 ### name.new
+
+**syntax**: *name, err = name.new()*
+
+Creates an empty `name` instance.
 
 ### name.dup
 
+**syntax**: *name, err = name.dup(name_ptr_cdata)*
+
+Creates a `name` instance from `X509_NAME*` cdata pointer.
+
 ### name.istype
 
-**syntax**: *status = name.istype(table)*
+**syntax**: *ok = name.istype(table)*
 
 Returns `true` if table is an instance of `name`. Returns `false` otherwise.
 
@@ -368,6 +420,153 @@ Second argument is the plain text value for the ASN.1 object.
 
 Returns the name instance itself on success, or `nil` and an error on failure.
 
+This function can be called multiple times in a chained fashion.
+
+```lua
+local name, err = require("resty.openssl.x509.name").new()
+local _, err = name:add("CN", "example.com")
+
+_, err = name
+    :add("C", "US")
+    :add("ST", "California")
+    :add("L", "San Francisco")
+
+```
+
+## resty.openssl.x509.altname
+
+Module to interact with GENERAL_NAMES, an extension to X.509 names.
+
+### altname.new
+
+**syntax**: *altname, err = altname.new()*
+
+Creates an empty `altname` instance.
+
+### altname.istype
+
+**syntax**: *altname = digest.istype(table)*
+
+Returns `true` if table is an instance of `altname`. Returns `false` otherwise.
+
+### altname:add
+
+**syntax**: *altname, err = altname:add(key, value)*
+
+Adds a name to altname stack, first argument is case-insensitive and can be selection of
+
+    RFC822Name
+    RFC822
+    RFC822
+    UniformResourceIdentifier
+    URI
+    DNSName
+    DNS
+    IPAddress
+    IP
+    DirName
+
+This function can be called multiple times in a chained fashion.
+
+```lua
+local altname, err = require("resty.openssl.x509").new()
+local _, err = altname:add("DNS", "example.com")
+
+_, err = altname
+    :add("DNS", "2.example.com")
+    :add("DnS", "3.example.com")
+-- Outputs 1571875065
+```
+
+## resty.openssl.x509.csr
+
+Module to interact with certificate signing request.
+
+### csr.new
+
+**syntax**: *csr, err = csr.new()*
+
+Create an empty `csr` instance.
+
+### csr.istype
+
+**syntax**: *ok = csr.istype(table)*
+
+Returns `true` if table is an instance of `csr`. Returns `false` otherwise.
+
+### csr:set_subject_name
+
+**syntax**: *ok = csr:set_subject_name(name)*
+
+Set subject of the certificate request,
+the first argument must be a [resty.openssl.x509.name](#restyopensslx509name) instance.
+
+### csr:set_subject_alt
+
+**syntax**: *ok = csr:set_subject_alt(name)*
+
+Set additional subject identifiers of the certificate request,
+the first argument must be a [resty.openssl.x509.altname](#restyopensslx509altname) instance.
+
+For now this function can be only called `once` for a `csr` instance.
+
+### csr:set_pubkey
+
+**syntax**: *ok = csr:set_pubkey(pkey)*
+
+Set public key of the certificate request,
+the first argument must be a [resty.openssl.pkey](#restyopensslpkey) instance.
+
+### csr:tostring
+
+**syntax**: *str, err = csr:tostring(pem_or_der?)*
+
+Outputs certificate request in PEM-formatted text or DER-formatted binary.
+The first argument can be a choice of `PEM` or `DER`; when omitted, this function outputs PEM by default.
+
+### csr:to_PEM
+
+**syntax**: *pem, err = csr:to_PEM(?)*
+
+Outputs CSR in PEM-formatted text.
+
+## resty.openssl.x509.extension
+
+Module to interact with X.509 extensions.
+
+### extension.new
+
+**syntax**: *ext, err = extension.new(name, value, data)*
+
+Creates a new `extension` instance. `name` and `value` are string in OpenSSL
+[arbitrary extension format](https://www.openssl.org/docs/man1.0.2/man5/x509v3_config.html).
+
+`data` can be a table or nil. Where data is a table, the following key will be looked up:
+
+```lua
+data = {
+    issuer = resty.openssl.x509 instance,
+    subject = resty.openssl.x509 instance,
+    request = resty.opensl.csr instance,
+}
+```
+
+Example:
+```lua
+local x509, err = require("resty.openssl.x509").new()
+local extension = require("resty.openssl.x509")
+local ext, err = extension.new("extendedKeyUsage", "serverAuth,clientAuth")
+ext, err =  extension.new("subjectKeyIdentifier", "hash", {
+    subject = crt
+})
+```
+
+### extension.istype
+
+**syntax**: *ok = extension.istype(table)*
+
+Returns `true` if table is an instance of `pkey`. Returns `false` otherwise.
+
 Compatibility
 ====
 
@@ -375,8 +574,12 @@ Although only a small combinations of CPU arch and OpenSSL version are tested, t
 should function well as long as the linked OpenSSL library is API compatible. This means
 the same name of functions are exported with same argument types.
 
-For OpenSSL 1.0.2 series however, ABI compatibility must be ensured as some struct members
+For OpenSSL 1.0.2 series however, binary/ABI compatibility must be ensured as some struct members
 are accessed directly, meaning they are accessed by memory offset in assembly.
+
+OpenSSL [keeps ABI/binary compatibility](https://wiki.openssl.org/index.php/Versioning)
+with minor releases or letter releases. Meaning all structs offsets and macro constants are kept
+same.
 
 If you plan to use this library on an untested version of OpenSSL (like custom builds or pre releases),
 [this](https://abi-laboratory.pro/index.php?view=timeline&l=openssl) can be a good source to consult.
