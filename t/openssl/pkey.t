@@ -162,7 +162,11 @@ pkey.new:load_pkey: .+
             ngx.say(params.d ~= nil)
             ngx.say(params.e ~= nil)
             ngx.say(params.n ~= nil)
-            ngx.say(ngx.encode_base64(params.e:to_binary()))
+            local b, err = params.e:to_binary()
+            if err then
+                ngx.log(ngx.ERR, err)
+            end
+            ngx.say(ngx.encode_base64(b))
         }
     }
 --- request

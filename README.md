@@ -538,7 +538,7 @@ Module to interact with X.509 extensions.
 
 **syntax**: *ext, err = extension.new(name, value, data)*
 
-Creates a new `extension` instance. `name` and `value` are string in OpenSSL
+Creates a new `extension` instance. `name` and `value` are strings in OpenSSL
 [arbitrary extension format](https://www.openssl.org/docs/man1.0.2/man5/x509v3_config.html).
 
 `data` can be a table or nil. Where data is a table, the following key will be looked up:
@@ -554,7 +554,7 @@ data = {
 Example:
 ```lua
 local x509, err = require("resty.openssl.x509").new()
-local extension = require("resty.openssl.x509")
+local extension = require("resty.openssl.x509.extension")
 local ext, err = extension.new("extendedKeyUsage", "serverAuth,clientAuth")
 ext, err =  extension.new("subjectKeyIdentifier", "hash", {
     subject = crt
@@ -575,10 +575,10 @@ should function well as long as the linked OpenSSL library is API compatible. Th
 the same name of functions are exported with same argument types.
 
 For OpenSSL 1.0.2 series however, binary/ABI compatibility must be ensured as some struct members
-are accessed directly, meaning they are accessed by memory offset in assembly.
+are accessed directly. They are accessed by memory offset in assembly.
 
 OpenSSL [keeps ABI/binary compatibility](https://wiki.openssl.org/index.php/Versioning)
-with minor releases or letter releases. Meaning all structs offsets and macro constants are kept
+with minor releases or letter releases. So all structs offsets and macro constants are kept
 same.
 
 If you plan to use this library on an untested version of OpenSSL (like custom builds or pre releases),
