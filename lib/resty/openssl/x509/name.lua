@@ -28,7 +28,7 @@ local mt = { __index = _M, __tostring = tostring }
 
 local x509_name_ptr_ct = ffi.typeof("X509_NAME*")
 
-function _M.new(name)
+function _M.new()
   local ctx = C.X509_NAME_new()
   if ctx == nil then
     return nil, "X509_NAME_new() failed"

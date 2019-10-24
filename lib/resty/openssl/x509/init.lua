@@ -165,7 +165,7 @@ function _M.new(cert)
     -- routine for load an existing cert
     local bio = C.BIO_new_mem_buf(cert, #cert)
     if bio == nil then
-      return nil, format_error("x509.new:BIO_new_mem_buf")
+      return nil, format_error("x509.new: BIO_new_mem_buf")
     end
 
     ctx = C.PEM_read_bio_X509(bio, nil, nil, nil)
@@ -235,7 +235,7 @@ local attributes = {
     from = function(bn_ctx)
       local ctx = C.BN_to_ASN1_INTEGER(bn_ctx, nil)
       if ctx == nil then
-        return nil, format_error("x509:set:BN_to_ASN1_INTEGER")
+        return nil, format_error("x509:set: BN_to_ASN1_INTEGER")
       end
       -- "A copy of the serial number is used internally
       -- so serial should be freed up after use.""
@@ -375,7 +375,7 @@ function _M:set_basic_constraints(cfg)
   local code = C.X509_add1_ext_i2d(self.ctx, 87, bc, 0, 0x2)
   C.BASIC_CONSTRAINTS_free(bc)
   if code ~= 1 then
-    return false, format_error("x509:set_basic_constraints:X509_add1_ext_i2d", code)
+    return false, format_error("x509:set_basic_constraints: X509_add1_ext_i2d", code)
   end
 
   return true
@@ -387,16 +387,16 @@ function _M:set_basic_constraints_critical(crit)
   -- obj_mac.h: #define NID_basic_constraints           87
   local loc = C.X509_get_ext_by_NID(self.ctx, 87, -1)
   if loc == -1 then
-    return false, format_error("x509:set_basic_constraints_critical:X509_get_ext_by_NID")
+    return false, format_error("x509:set_basic_constraints_critical: X509_get_ext_by_NID")
   end
   
   local ext = C.X509_get_ext(self.ctx, loc)
   if ext == nil then
-    return false, format_error("x509:set_basic_constraints_critical:X509_get_ext")
+    return false, format_error("x509:set_basic_constraints_critical: X509_get_ext")
   end
 
   if C.X509_EXTENSION_set_critical(ext, crit and 1 or 0) ~= 1 then
-    return false, format_error("x509:set_basic_constraints_critical:X509_EXTENSION_set_critical")
+    return false, format_error("x509:set_basic_constraints_critical: X509_EXTENSION_set_critical")
   end
 
   return true

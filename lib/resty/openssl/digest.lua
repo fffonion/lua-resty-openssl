@@ -48,20 +48,29 @@ end
 
 function _M:update(...)
   for _, s in ipairs({...}) do
-    C.EVP_DigestUpdate(self.ctx, s, #s)
+    if C.EVP_DigestUpdate(self.ctx, s, #s) ~= 1 then
+      return format_error("digest:update")
+    end
   end
+  return nil
 end
 
 local uint_ptr = ffi.typeof("unsigned int[1]")
 
 function _M:final(s)
   if s then
-    C.EVP_DigestUpdate(self.ctx, s, #s)
+    if C.EVP_DigestUpdate(self.ctx, s, #s) ~= 1 then
+      return nil, format_error("digest:final")
+    end
   end
   -- # define EVP_MAX_MD_SIZE                 64/* longest known is SHA512 */
   local buf = ffi_new('unsigned char[?]', 64)
   local length = uint_ptr()
+  -- no return value of EVP_DigestFinal_ex
   C.EVP_DigestFinal_ex(self.ctx, buf, length)
+  if length[0] == nil or length[0] <= 0 then
+    return nil, format_error("digest:final: EVP_DigestFinal_ex")
+  end
   return ffi_str(buf, length[0])
 end
 

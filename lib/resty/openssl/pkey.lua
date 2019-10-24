@@ -316,7 +316,9 @@ function _M:sign(digest)
   end
   local buf = ffi_new('unsigned char[?]', self.key_size)
   local length = uint_ptr()
-  local code = C.EVP_SignFinal(digest.ctx, buf, length, self.ctx)
+  if C.EVP_SignFinal(digest.ctx, buf, length, self.ctx) ~= 1 then
+    return nil, format_error("pkey:sign")
+  end
   return ffi_str(buf, length[0]), nil
 end
 
@@ -330,7 +332,7 @@ function _M:verify(signature, digest)
   elseif code == 1 then
     return true, nil
   end
-  return false, "EVP_VerifyFinal() failed"
+  return false, format_error("pkey:verify")
 end
 
 function _M:to_PEM(pub_or_priv)
