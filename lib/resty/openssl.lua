@@ -10,6 +10,7 @@ local _M = {
   version = require("resty.openssl.version"),
   pkey = require("resty.openssl.pkey"),
   digest = require("resty.openssl.digest"),
+  hmac = require("resty.openssl.hmac"),
   bn = require("resty.openssl.bn"),
   x509 = require("resty.openssl.x509"),
   name = require("resty.openssl.x509.name"),

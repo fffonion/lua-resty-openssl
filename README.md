@@ -242,8 +242,10 @@ Module to interact with message digest (EVP_MD).
 
 **syntax**: *d, err = digest.new(digest_name)*
 
-Creates a digest instance.`digest_name` is a case-insensitive string of digest algorithm name.
+Creates a digest instance. `digest_name` is a case-insensitive string of digest algorithm name.
 To view a list of digest algorithms implemented, use `openssl list -digest-algorithms`.
+
+If `digest_name` is omitted, it's by default to `sha1`.
 
 ### digest.istype
 
@@ -255,7 +257,7 @@ Returns `true` if table is an instance of `digest`. Returns `false` otherwise.
 
 **syntax**: *err = digest:update(partial, ...)*
 
-Updates the digest with one or more string.
+Updates the digest with one or more strings.
 
 ### digest:final
 
@@ -274,6 +276,50 @@ local d, err = require("resty.openssl.digest").new("sha256")
 local digest, err = d:final("🦢")
 ngx.say(ngx.encode_base64(digest))
 -- outputs "tWW/2P/uOa/yIV1gRJySJLsHq1xwg0E1RWCvEUDlla0="
+```
+
+## resty.openssl.hmac
+
+Module to interact with hash-based message authentication code (HMAC_CTX).
+
+### hmac.new
+
+**syntax**: *h, err = hmac.new(key, digest_name)*
+
+Creates a hmac instance. `digest_name` is a case-insensitive string of digest algorithm name.
+To view a list of digest algorithms implemented, use `openssl list -digest-algorithms`.
+
+If `digest_name` is omitted, it's by default to `sha1`.
+
+### hmac.istype
+
+**syntax**: *ok = hmac.istype(table)*
+
+Returns `true` if table is an instance of `hmac`. Returns `false` otherwise.
+
+### hmac:update
+
+**syntax**: *err = hmac:update(partial, ...)*
+
+Updates the HMAC with one or more strings.
+
+### hmac:final
+
+**syntax**: *str, err = hmac:final(partial?)*
+
+Returns the HMAC in raw binary string, optionally accept one string to digest.
+
+```lua
+local d, err = require("resty.openssl.hmac").new("goose", "sha256")
+d:update("🦢")
+local hmac, err = d:final()
+ngx.say(ngx.encode_base64(hmac))
+-- outputs "k2UcrRp25tj1Spff89mJF3fAVQ0lodq/tJT53EYXp0c="
+-- OR:
+local d, err = require("resty.openssl.hmac").new("goose", "sha256")
+local hmac, err = d:final("🦢")
+ngx.say(ngx.encode_base64(hmac))
+-- outputs "k2UcrRp25tj1Spff89mJF3fAVQ0lodq/tJT53EYXp0c="
 ```
 
 ## resty.openssl.rand

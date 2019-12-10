@@ -75,6 +75,22 @@ elseif OPENSSL_10 then
       // } pkeys[10];
       // size_t dirty_cnt_copy;
     };
+
+    // crypto/evp/evp.h
+    // only needed for openssl 1.0.x where initializer for HMAC_CTX is not avaiable
+    // HACK: renamed from env_md_ctx_st to evp_md_ctx_st to match typedef (lazily)
+    // it's an internal struct thus name is not exported so we will be fine
+    struct evp_md_ctx_st {
+      const EVP_MD *digest;
+      ENGINE *engine;             /* functional reference if 'digest' is
+                                   * ENGINE-provided */
+      unsigned long flags;
+      void *md_data;
+      /* Public key context for sign/verify */
+      EVP_PKEY_CTX *pctx;
+      /* Update function: usually copied from EVP_MD */
+      int (*update) (EVP_MD_CTX *ctx, const void *data, size_t count);
+    } /* EVP_MD_CTX */ ;
   ]]
 end
 
