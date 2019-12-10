@@ -1,13 +1,7 @@
 local ffi = require "ffi"
-
 local C = ffi.C
-local ffi_gc = ffi.gc
-local ffi_new = ffi.new
 local ffi_str = ffi.string
 local ffi_sizeof = ffi.sizeof
-
-local _M = {}
-local mt = {__index = _M}
 
 ffi.cdef [[
   unsigned long ERR_peek_error(void);

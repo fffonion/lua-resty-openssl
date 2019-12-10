@@ -1,12 +1,7 @@
 local ffi = require "ffi"
-
 local C = ffi.C
-local ffi_gc = ffi.gc
 local ffi_new = ffi.new
 local ffi_str = ffi.string
-
-local _M = {}
-local mt = {__index = _M}
 
 local format_error = require("resty.openssl.err").format_error
 

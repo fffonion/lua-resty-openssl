@@ -1,12 +1,5 @@
 local ffi = require "ffi"
 
-local C = ffi.C
-local ffi_gc = ffi.gc
-local ffi_new = ffi.new
-
-local _M = {}
-local mt = {__index = _M}
-
 ffi.cdef(
 [[
   typedef struct rsa_st RSA;

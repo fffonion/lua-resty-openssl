@@ -1,11 +1,6 @@
 local ffi = require "ffi"
-
 local C = ffi.C
 local ffi_gc = ffi.gc
-local ffi_new = ffi.new
-
-local _M = {}
-local mt = {__index = _M}
 
 require "resty.openssl.ossl_typ"
 require "resty.openssl.evp"
@@ -16,6 +11,8 @@ local pkey_lib = require "resty.openssl.pkey"
 local altname_lib = require "resty.openssl.x509.altname"
 local x509_name_lib = require "resty.openssl.x509.name"
 local util = require "resty.openssl.util"
+
+local _M = {}
 
 ffi.cdef [[
   X509_REQ *X509_REQ_new(void);

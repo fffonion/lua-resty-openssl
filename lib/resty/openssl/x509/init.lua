@@ -1,13 +1,7 @@
 local ffi = require "ffi"
-
 local C = ffi.C
 local ffi_gc = ffi.gc
 local ffi_new = ffi.new
-local ffi_cast = ffi.cast
-local ffi_string = ffi.string
-
-local _M = {}
-local mt = {__index = _M}
 
 require "resty.openssl.ossl_typ"
 require "resty.openssl.bio"

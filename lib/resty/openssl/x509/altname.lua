@@ -1,18 +1,12 @@
 local ffi = require "ffi"
-
 local C = ffi.C
 local ffi_gc = ffi.gc
-local ffi_new = ffi.new
 local ffi_cast = ffi.cast
-
-local _M = {}
-local mt = {__index = _M}
 
 require "resty.openssl.ossl_typ"
 require "resty.openssl.x509v3"
 local stack_lib = require "resty.openssl.stack"
 require "resty.openssl.asn1"
-
 
 local _M = {}
 local mt = { __index = _M, __tostring = tostring }

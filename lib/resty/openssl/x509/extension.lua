@@ -1,16 +1,11 @@
 local ffi = require "ffi"
-
 local C = ffi.C
 local ffi_gc = ffi.gc
 local ffi_new = ffi.new
 
-local _M = {}
-local mt = {__index = _M}
-
 require "resty.openssl.ossl_typ"
 require "resty.openssl.x509v3"
 require "resty.openssl.x509"
-local util = require "resty.openssl.util"
 local format_error = require("resty.openssl.err").format_error
 
 local _M = {}
@@ -40,7 +35,6 @@ local extension_types = {
   -- db,           -- NYI
 }
 function _M.new(name, value, data)
-  local cdata
   -- get a ptr and also zerofill the struct
   local x509_ctx_ptr = ffi_new('X509V3_CTX[1]')
   if type(name) ~= 'string' or type(value) ~= 'string' then

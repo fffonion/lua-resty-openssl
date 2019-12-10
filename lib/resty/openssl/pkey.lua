@@ -1,9 +1,7 @@
 local ffi = require "ffi"
-
 local C = ffi.C
 local ffi_gc = ffi.gc
 local ffi_new = ffi.new
-local ffi_cast = ffi.cast
 local ffi_str = ffi.string
 local null = ngx.null
 

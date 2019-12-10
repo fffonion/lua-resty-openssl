@@ -1,18 +1,17 @@
 local ffi = require "ffi"
-
 local C = ffi.C
 local ffi_gc = ffi.gc
 local ffi_new = ffi.new
 local ffi_str = ffi.string
-
-local _M = {}
-local mt = {__index = _M}
 
 require "resty.openssl.ossl_typ"
 require "resty.openssl.evp"
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
+
+local _M = {}
+local mt = {__index = _M}
 
 local md_ctx_ptr_ct = ffi.typeof('EVP_MD_CTX*')
 

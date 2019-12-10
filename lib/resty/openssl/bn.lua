@@ -1,16 +1,15 @@
 local ffi = require "ffi"
-
 local C = ffi.C
 local ffi_gc = ffi.gc
 local ffi_new = ffi.new
 local ffi_str = ffi.string
 local floor = math.floor
 
-local _M = {}
-local mt = {__index = _M}
-
 require "resty.openssl.ossl_typ"
 local format_error = require("resty.openssl.err").format_error
+
+local _M = {}
+local mt = {__index = _M}
 
 local BN_ULONG
 if ffi.abi('64bit') then
