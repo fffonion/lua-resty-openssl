@@ -4,7 +4,7 @@ local ffi_gc = ffi.gc
 local ffi_new = ffi.new
 local ffi_str = ffi.string
 
-require "resty.openssl.bio"
+require "resty.openssl.include.bio"
 local format_error = require("resty.openssl.err").format_error
 
 local function read_using_bio(f, ...)
@@ -18,7 +18,7 @@ local function read_using_bio(f, ...)
   end
   local bio = C.BIO_new(bio_method)
   ffi_gc(bio, C.BIO_free)
-  
+
   -- BIO_reset; #define BIO_CTRL_RESET 1
   local code = C.BIO_ctrl(bio, 1, 0, nil)
   if code ~= 1 then
@@ -29,12 +29,12 @@ local function read_using_bio(f, ...)
   if code ~= 1 then
       return nil, format_error(f, code)
   end
-  
+
   local buf = ffi_new("char *[1]")
-  
+
   -- BIO_get_mem_data; #define BIO_CTRL_INFO 3
   local length = C.BIO_ctrl(bio, 3, 0, buf)
-  
+
   return ffi_str(buf[0], length)
 end
 

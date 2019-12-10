@@ -13,7 +13,8 @@ local ok, version_num = pcall(function()
 end)
 
 if not ok then
-  ok, version_num = pcall(function()
+  local _
+  _, version_num = pcall(function()
     return C.SSLeay();
   end)
 end

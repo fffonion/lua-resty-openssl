@@ -635,7 +635,6 @@ TODO
 
 - review get0 function calls to ensure there's no double free
 - find a way to test memory leak
-- seperate cdef with lua implementation to allow cleaner dependency
 
 [Back to TOC](#table-of-contents)
 

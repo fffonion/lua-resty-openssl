@@ -4,8 +4,7 @@ local ffi_gc = ffi.gc
 local ffi_new = ffi.new
 local ffi_str = ffi.string
 
-require "resty.openssl.ossl_typ"
-require "resty.openssl.evp"
+require "resty.openssl.include.evp"
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11

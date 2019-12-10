@@ -5,31 +5,11 @@ local ffi_new = ffi.new
 local ffi_str = ffi.string
 local floor = math.floor
 
-require "resty.openssl.ossl_typ"
+require "resty.openssl.include.bn"
 local format_error = require("resty.openssl.err").format_error
 
 local _M = {}
 local mt = {__index = _M}
-
-local BN_ULONG
-if ffi.abi('64bit') then
-  BN_ULONG = 'unsigned long long'
-else -- 32bit
-  BN_ULONG = 'unsigned int'
-end
-
-ffi.cdef(
-[[
-  BIGNUM *BN_new(void);
-  void BN_free(BIGNUM *a);
-  BIGNUM *BN_dup(const BIGNUM *a);
-  int BN_add_word(BIGNUM *a, ]] .. BN_ULONG ..[[ w);
-  int BN_set_word(BIGNUM *a, ]] .. BN_ULONG ..[[ w);
-  int BN_num_bits(const BIGNUM *a);
-  BIGNUM *BN_bin2bn(const unsigned char *s, int len, BIGNUM *ret);
-  int BN_bn2bin(const BIGNUM *a, unsigned char *to);
-]]
-)
 
 local bn_ptr_ct = ffi.typeof('BIGNUM*')
 

@@ -1,56 +1,21 @@
 local ffi = require "ffi"
 local C = ffi.C
 local ffi_gc = ffi.gc
-local ffi_new = ffi.new
 
-require "resty.openssl.ossl_typ"
-require "resty.openssl.bio"
-require "resty.openssl.pem"
+require "resty.openssl.include.x509"
 local asn1_lib = require("resty.openssl.asn1")
 local digest_lib = require("resty.openssl.digest")
-local x509_name_lib = require("resty.openssl.x509.name")
 local util = require("resty.openssl.util")
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
 
-ffi.cdef [[
-  // DECLARE_ASN1_FUNCTIONS(X509), NYI
-  X509* X509_new(void);
-  void X509_free(X509 *a);
-
-  typedef struct X509_extension_st X509_EXTENSION;
-  X509_EXTENSION *X509_EXTENSION_new(void);
-  X509_EXTENSION *X509_EXTENSION_dup(X509_EXTENSION *a);
-  void X509_EXTENSION_free(X509_EXTENSION *a);
-
-  int X509_sign(X509 *x, EVP_PKEY *pkey, const EVP_MD *md);
-
-  ASN1_TIME *X509_gmtime_adj(ASN1_TIME *s, long adj);
-
-  int X509_add_ext(X509 *x, X509_EXTENSION *ex, int loc);
-  X509_EXTENSION *X509_get_ext(const X509 *x, int loc);
-  int X509_get_ext_by_NID(const X509 *x, int nid, int lastpos);
-
-  int X509_EXTENSION_set_critical(X509_EXTENSION *ex, int crit);
-
-  // needed by pkey
-  EVP_PKEY *d2i_PrivateKey_bio(BIO *bp, EVP_PKEY **a);
-  EVP_PKEY *d2i_PUBKEY_bio(BIO *bp, EVP_PKEY **a);
-
-]]
 
 -- accessors provides an openssl version neutral interface to lua layer
--- it doesn't handle any error, expect that to be implemented in 
+-- it doesn't handle any error, expect that to be implemented in
 -- _M.set_X or _M.get_X
 local accessors = {}
-ffi.cdef [[
-  int X509_set_pubkey(X509 *x, EVP_PKEY *pkey);
-  int X509_set_version(X509 *x, long version);
-  int X509_set_serialNumber(X509 *x, ASN1_INTEGER *serial);
-  int X509_set_subject_name(X509 *x, X509_NAME *name);
-  int X509_set_issuer_name(X509 *x, X509_NAME *name);
-]]
+
 accessors.set_pubkey = C.X509_set_pubkey
 accessors.set_version = C.X509_set_version
 accessors.set_serial_number = C.X509_set_serialNumber
@@ -58,17 +23,6 @@ accessors.set_subject_name = C.X509_set_subject_name
 accessors.set_issuer_name = C.X509_set_issuer_name
 
 if OPENSSL_11 then
-  ffi.cdef [[
-    int X509_set1_notBefore(X509 *x, const ASN1_TIME *tm);
-    int X509_set1_notAfter(X509 *x, const ASN1_TIME *tm);
-    /*const*/ ASN1_TIME *X509_get0_notBefore(const X509 *x);
-    /*const*/ ASN1_TIME *X509_get0_notAfter(const X509 *x);
-    EVP_PKEY *X509_get_pubkey(X509 *x);
-    long X509_get_version(const X509 *x);
-    const ASN1_INTEGER *X509_get0_serialNumber(X509 *x);
-    X509_NAME *X509_get_subject_name(const X509 *a);
-    X509_NAME *X509_get_issuer_name(const X509 *a);
-  ]]
   -- generally, use get1 if we return a lua table wrapped ctx which doesn't support dup.
   -- in that case, a new struct is returned from C api, and we will handle gc.
   -- openssl will increment the reference count for returned ptr, and won't free it when
@@ -85,35 +39,6 @@ if OPENSSL_11 then
   accessors.get_subject_name = C.X509_get_subject_name -- returns internal ptr, we dup it
   accessors.get_issuer_name = C.X509_get_issuer_name -- returns internal ptr, we dup it
 elseif OPENSSL_10 then
-  -- in openssl 1.0.x some getters are direct accessor to struct members (defiend by macros)
-  ffi.cdef [[
-    // crypto/x509/x509.h
-    typedef struct X509_val_st {
-      ASN1_TIME *notBefore;
-      ASN1_TIME *notAfter;
-    } X509_VAL;
-    // Note: this struct is trimmed
-    typedef struct x509_cinf_st {
-      /*ASN1_INTEGER*/ void *version;
-      /*ASN1_INTEGER*/ void *serialNumber;
-      /*X509_ALGOR*/ void *signature;
-      /*X509_NAME*/ void *issuer;
-      X509_VAL *validity;
-      // trimmed
-    } X509_CINF;
-    // Note: this struct is trimmed
-    struct x509_st {
-      X509_CINF *cert_info;
-      // trimmed
-    } X509;
-
-    int X509_set_notBefore(X509 *x, const ASN1_TIME *tm);
-    int X509_set_notAfter(X509 *x, const ASN1_TIME *tm);
-    EVP_PKEY *X509_get_pubkey(X509 *x);
-    ASN1_INTEGER *X509_get_serialNumber(X509 *x);
-    X509_NAME *X509_get_subject_name(const X509 *a);
-    X509_NAME *X509_get_issuer_name(const X509 *a);
-  ]]
   accessors.set_not_before = C.X509_set_notBefore
   accessors.get_not_before = function(x509)
     if x509 == nil or x509.cert_info == nil or x509.cert_info.validity == nil then
@@ -203,7 +128,6 @@ function _M:set_lifetime(not_before, not_after)
 end
 
 function _M:get_lifetime()
-  local err
   local not_before, err = self:get_not_before()
   if not_before == nil then
     return nil, nil, err
@@ -335,7 +259,7 @@ for _, attribute in ipairs(attributes) do
       return lib.new(ctx)
     end
   end
-  
+
 end
 
 function _M:add_extension(extension)
@@ -376,14 +300,12 @@ function _M:set_basic_constraints(cfg)
 end
 
 function _M:set_basic_constraints_critical(crit)
-  local ext = ffi_new("X509_EXTENSION *")
-
   -- obj_mac.h: #define NID_basic_constraints           87
   local loc = C.X509_get_ext_by_NID(self.ctx, 87, -1)
   if loc == -1 then
     return false, format_error("x509:set_basic_constraints_critical: X509_get_ext_by_NID")
   end
-  
+
   local ext = C.X509_get_ext(self.ctx, loc)
   if ext == nil then
     return false, format_error("x509:set_basic_constraints_critical: X509_get_ext")

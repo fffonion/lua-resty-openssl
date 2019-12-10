@@ -1,6 +1,6 @@
 local ffi = require "ffi"
 
-require "resty.openssl.ossl_typ"
+require "resty.openssl.include.ossl_typ"
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
 
@@ -49,4 +49,3 @@ elseif OPENSSL_10 then
     };
   ]]
 end
-  

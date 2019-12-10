@@ -4,43 +4,10 @@ local ffi_gc = ffi.gc
 local ffi_new = ffi.new
 local ffi_str = ffi.string
 
-require "resty.openssl.ossl_typ"
-require "resty.openssl.evp"
+require "resty.openssl.include.hmac"
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
-
-ffi.cdef [[
-  /*__owur*/ int HMAC_Init_ex(HMAC_CTX *ctx, const void *key, int len,
-  const EVP_MD *md, ENGINE *impl);
-  /*__owur*/ int HMAC_Update(HMAC_CTX *ctx, const unsigned char *data,
-                            size_t len);
-  /*__owur*/ int HMAC_Final(HMAC_CTX *ctx, unsigned char *md,
-                            unsigned int *len);
-]]
-
-if OPENSSL_11 then
-  ffi.cdef [[
-    HMAC_CTX *HMAC_CTX_new(void);
-    void HMAC_CTX_free(HMAC_CTX *ctx);
-  ]]
-elseif OPENSSL_10 then
-  ffi.cdef [[
-    // # define HMAC_MAX_MD_CBLOCK      128/* largest known is SHA512 */
-    struct hmac_ctx_st {
-      const EVP_MD *md;
-      EVP_MD_CTX md_ctx;
-      EVP_MD_CTX i_ctx;
-      EVP_MD_CTX o_ctx;
-      unsigned int key_length;
-      unsigned char key[128];
-    };
-
-    void HMAC_CTX_init(HMAC_CTX *ctx);
-    void HMAC_CTX_cleanup(HMAC_CTX *ctx);
-  ]]
-end
-
 
 local _M = {}
 local mt = {__index = _M}
@@ -99,7 +66,7 @@ function _M:final(s)
   local buf = ffi_new('unsigned char[?]', 64)
   local length = uint_ptr()
   if C.HMAC_Final(self.ctx, buf, length) ~= 1 then
-    return nil, format_error("digest:final: HMAC_Final")
+    return nil, format_error("hmac:final: HMAC_Final")
   end
   return ffi_str(buf, length[0])
 end

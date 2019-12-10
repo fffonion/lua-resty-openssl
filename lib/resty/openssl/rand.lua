@@ -3,11 +3,8 @@ local C = ffi.C
 local ffi_new = ffi.new
 local ffi_str = ffi.string
 
+require "resty.openssl.include.rand"
 local format_error = require("resty.openssl.err").format_error
-
-ffi.cdef [[
-  int RAND_bytes(unsigned char *buf, int num);
-]]
 
 local function bytes(length)
   if type(length) ~= "number" then

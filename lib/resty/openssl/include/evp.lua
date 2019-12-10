@@ -1,6 +1,6 @@
 local ffi = require "ffi"
 
-require "resty.openssl.ossl_typ"
+require "resty.openssl.include.ossl_typ"
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
 
@@ -14,7 +14,7 @@ ffi.cdef [[
   int EVP_PKEY_set1_EC_KEY(EVP_PKEY *pkey, EC_KEY *key);
   int EVP_PKEY_base_id(const EVP_PKEY *pkey);
   int EVP_PKEY_size(const EVP_PKEY *pkey);
-  
+
   /*__owur*/ int EVP_DigestInit_ex(EVP_MD_CTX *ctx, const EVP_MD *type,
                                  ENGINE *impl);
   /*__owur*/ int EVP_DigestUpdate(EVP_MD_CTX *ctx, const void *d,

@@ -3,20 +3,23 @@ local C = ffi.C
 local ffi_gc = ffi.gc
 local ffi_cast = ffi.cast
 
-require "resty.openssl.ossl_typ"
-require "resty.openssl.x509v3"
-local stack_lib = require "resty.openssl.stack"
-require "resty.openssl.asn1"
+require "resty.openssl.include.ossl_typ"
+require "resty.openssl.include.x509v3"
+require "resty.openssl.include.asn1"
+local stack_macro = require "resty.openssl.include.stack"
+local altname_macro = require "resty.openssl.include.x509.altname"
 
 local _M = {}
 local mt = { __index = _M, __tostring = tostring }
 
 local general_names_ptr_ct = ffi.typeof("GENERAL_NAMES*")
 
-local GENERAL_NAME_stack_gc = stack_lib.gc_of("GENERAL_NAME")
+local GENERAL_NAME_stack_gc = stack_macro.gc_of("GENERAL_NAME")
+
+local types = altname_macro.types
 
 function _M.new()
-  local raw = stack_lib.OPENSSL_sk_new_null()
+  local raw = stack_macro.OPENSSL_sk_new_null()
   if raw == nil then
     return nil, "OPENSSL_sk_new_null() failed"
   end
@@ -33,33 +36,6 @@ end
 
 function _M.istype(l)
   return l and l.ctx and ffi.istype(general_names_ptr_ct, l.ctx)
-end
-
-local GEN_OTHERNAME = 0
-local GEN_EMAIL = 1
-local GEN_DNS = 2
-local GEN_X400 = 3
-local GEN_DIRNAME = 4
-local GEN_EDIPARTY = 5
-local GEN_URI = 6
-local GEN_IPADD = 7
-local GEN_RID = 8
-
-local types = {
-  RFC822Name = GEN_EMAIL,
-  RFC822 = GEN_EMAIL,
-  RFC822 = GEN_EMAIL,
-  UniformResourceIdentifier = GEN_URI,
-  URI = GEN_URI,
-  DNSName = GEN_DNS,
-  DNS = GEN_DNS,
-  IPAddress = GEN_IPADD,
-  IP = GEN_IPADD,
-  DirName = GEN_DIRNAME,
-}
-
-for t, gid in pairs(types) do
-  types[t:lower()] = gid
 end
 
 function _M:add(typ, value)
@@ -86,10 +62,6 @@ function _M:add(typ, value)
     return nil, "GENERAL_NAME_new() failed"
   end
 
-  if gen_id == GEN_DIRNAME then
-  elseif gen_id == GEN_IPADD then
-  end
-
   gen.type = gen_type
 
   -- #define V_ASN1_IA5STRING                22
@@ -107,7 +79,7 @@ function _M:add(typ, value)
     return nil, "ASN1_STRING_set() failed: " .. code
   end
 
-  stack_lib.OPENSSL_sk_push(self.ctx, gen)
+  stack_macro.OPENSSL_sk_push(self.ctx, gen)
   return self
 end
 

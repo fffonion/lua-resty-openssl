@@ -2,38 +2,13 @@ local ffi = require "ffi"
 local C = ffi.C
 local ffi_gc = ffi.gc
 
-require "resty.openssl.ossl_typ"
-require "resty.openssl.evp"
-require "resty.openssl.objects"
-require "resty.openssl.x509"
-local stack_lib = require "resty.openssl.stack"
+require "resty.openssl.include.x509.csr"
+local stack_macro = require "resty.openssl.include.stack"
 local pkey_lib = require "resty.openssl.pkey"
 local altname_lib = require "resty.openssl.x509.altname"
 local x509_name_lib = require "resty.openssl.x509.name"
 local util = require "resty.openssl.util"
-
-local _M = {}
-
-ffi.cdef [[
-  X509_REQ *X509_REQ_new(void);
-  void X509_REQ_free(X509_REQ *req);
-
-  int X509_REQ_set_subject_name(X509_REQ *req, X509_NAME *name);
-  int X509_REQ_set_pubkey(X509_REQ *x, EVP_PKEY *pkey);
-  int X509_add1_ext_i2d(X509 *x, int nid, void *value, int crit,
-                      unsigned long flags);
-  int X509_REQ_get_attr_count(const X509_REQ *req);
-
-  int X509_REQ_sign(X509_REQ *x, EVP_PKEY *pkey, const EVP_MD *md);
-
-  int i2d_X509_REQ_bio(BIO *bp, X509_REQ *req);
-
-  // STACK_OF(X509_EXTENSION)
-  OPENSSL_STACK *X509_REQ_get_extensions(X509_REQ *req);
-  // STACK_OF(X509_EXTENSION)
-  int X509_REQ_add_extensions(X509_REQ *req, OPENSSL_STACK *exts);
-
-]]
+local format_error = require("resty.openssl.err").format_error
 
 local function tostring(self, fmt)
   if not fmt or fmt == 'PEM' then
@@ -52,7 +27,7 @@ local x509_req_ptr_ct = ffi.typeof("X509_REQ*")
 
 function _M.new()
   local ctx = C.X509_REQ_new()
-  if ctx == il then
+  if ctx == nil then
     return nil, "X509_REQ_new() failed"
   end
   ffi_gc(ctx, C.X509_REQ_free)
@@ -78,7 +53,7 @@ function _M:set_subject_name(name)
   end
 end
 
-local X509_EXTENSION_stack_gc = stack_lib.gc_of("X509_EXTENSION")
+local X509_EXTENSION_stack_gc = stack_macro.gc_of("X509_EXTENSION")
 local stack_ptr_type = ffi.typeof("struct stack_st *[1]")
 
 -- https://github.com/wahern/luaossl/blob/master/src/openssl.c

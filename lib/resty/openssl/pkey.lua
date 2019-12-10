@@ -5,15 +5,15 @@ local ffi_new = ffi.new
 local ffi_str = ffi.string
 local null = ngx.null
 
-local evp_lib = require "resty.openssl.evp"
-require "resty.openssl.rsa"
-require "resty.openssl.ec"
+require "resty.openssl.include.rsa"
+require "resty.openssl.include.ec"
+require "resty.openssl.include.bio"
+require "resty.openssl.include.pem"
+require "resty.openssl.include.objects"
+require "resty.openssl.include.x509"
+local evp_macro = require "resty.openssl.include.evp"
 local bn_lib = require "resty.openssl.bn"
-require "resty.openssl.bio"
-require "resty.openssl.pem"
-require "resty.openssl.objects"
 local util = require "resty.openssl.util"
-require "resty.openssl.x509"
 local digest_lib = require "resty.openssl.digest"
 local format_error = require("resty.openssl.err").format_error
 
@@ -293,13 +293,13 @@ end
 
 function _M:get_parameters()
   local key_type = C.EVP_PKEY_base_id(self.ctx)
-  if key_type == evp_lib.EVP_PKEY_RSA then
+  if key_type == evp_macro.EVP_PKEY_RSA then
     if OPENSSL_11 then
       return get_rsa_params_11(self.ctx)
     elseif OPENSSL_10 then
       return get_rsa_params_10(self.ctx)
     end
-  elseif key_type == evp_lib.EVP_PKEY_EC then
+  elseif key_type == evp_macro.EVP_PKEY_EC then
     return nil, "parameters of EC not supported"
   end
 

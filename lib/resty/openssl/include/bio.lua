@@ -1,6 +1,6 @@
 local ffi = require "ffi"
 
-require "resty.openssl.ossl_typ"
+require "resty.openssl.include.ossl_typ"
 
 ffi.cdef [[
   typedef struct bio_method_st BIO_METHOD;

@@ -1,7 +1,8 @@
 local ffi = require "ffi"
 
-require "resty.openssl.ossl_typ"
-require "resty.openssl.stack"
+require "resty.openssl.include.ossl_typ"
+require "resty.openssl.include.stack"
+require "resty.openssl.include.asn1"
 
 ffi.cdef [[
   typedef struct EDIPartyName_st EDIPARTYNAME;

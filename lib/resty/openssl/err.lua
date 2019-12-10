@@ -11,7 +11,6 @@ ffi.cdef [[
 ]]
 
 local int_ptr = ffi.typeof("int[1]")
-local ulong_ptr = ffi.typeof("unsigned long[1]")
 local constchar_ptrptr = ffi.typeof("const char*[1]")
 
 local function format_error(ctx, code)

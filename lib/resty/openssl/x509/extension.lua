@@ -3,27 +3,11 @@ local C = ffi.C
 local ffi_gc = ffi.gc
 local ffi_new = ffi.new
 
-require "resty.openssl.ossl_typ"
-require "resty.openssl.x509v3"
-require "resty.openssl.x509"
+require "resty.openssl.include.x509.extension"
 local format_error = require("resty.openssl.err").format_error
 
 local _M = {}
 local mt = { __index = _M, __tostring = tostring }
-
-ffi.cdef [[
-  void X509_EXTENSION_free(X509_EXTENSION *extension);
-
-  struct v3_ext_ctx {
-      int flags;
-      X509 *issuer_cert;
-      X509 *subject_cert;
-      X509_REQ *subject_req;
-      X509_CRL *crl;
-      /*X509V3_CONF_METHOD*/ void *db_meth;
-      void *db;
-  };
-]]
 
 local x509_extension_ptr_ct = ffi.typeof("X509_EXTENSION*")
 

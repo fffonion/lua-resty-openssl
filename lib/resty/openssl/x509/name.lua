@@ -2,20 +2,9 @@ local ffi = require "ffi"
 local C = ffi.C
 local ffi_gc = ffi.gc
 
-require "resty.openssl.ossl_typ"
-require "resty.openssl.asn1"
-require "resty.openssl.objects"
+require "resty.openssl.include.x509.name"
 
-ffi.cdef [[
-  X509_NAME * X509_NAME_new(void);
-  void X509_NAME_free(X509_NAME *name);
-  X509_NAME *X509_NAME_dup(X509_NAME *xn);
-  int X509_NAME_add_entry_by_OBJ(X509_NAME *name, const ASN1_OBJECT *obj, int type,
-                               const unsigned char *bytes, int len, int loc,
-                               int set);
-]]
-
-local MBSTRING_FLAG = 0x1000
+-- local MBSTRING_FLAG = 0x1000
 local MBSTRING_ASC  = 0x1001 -- (MBSTRING_FLAG|1)
 
 local _M = {}

@@ -1,6 +1,6 @@
 local ffi = require "ffi"
 
-require "resty.openssl.ossl_typ"
+require "resty.openssl.include.ossl_typ"
 
 ffi.cdef [[
   /** Enum for the point conversion form as defined in X9.62 (ECDSA)
@@ -15,7 +15,7 @@ ffi.cdef [[
     *  which solution of the quadratic equation y is  */
     POINT_CONVERSION_HYBRID = 6
   } point_conversion_form_t;
-    
+
   EC_KEY *EC_KEY_new(void);
   void EC_KEY_free(EC_KEY *key);
 
@@ -24,7 +24,7 @@ ffi.cdef [[
   void EC_GROUP_set_asn1_flag(EC_GROUP *group, int flag);
   void EC_GROUP_set_point_conversion_form(EC_GROUP *group,
     point_conversion_form_t form);
-  
+
   int EC_KEY_set_group(EC_KEY *key, const EC_GROUP *group);
   void EC_GROUP_free(EC_GROUP *group);
   int EC_KEY_generate_key(EC_KEY *key);
