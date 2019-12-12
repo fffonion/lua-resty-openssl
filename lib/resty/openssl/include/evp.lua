@@ -34,12 +34,33 @@ ffi.cdef [[
   int EVP_PKEY_get_default_digest_nid(EVP_PKEY *pkey, int *pnid);
   const EVP_MD *EVP_get_digestbyname(const char *name);
 
+
+  /*__owur*/ int EVP_CipherInit_ex(EVP_CIPHER_CTX *ctx,
+                           const EVP_CIPHER *cipher, ENGINE *impl,
+                           const unsigned char *key,
+                           const unsigned char *iv, int enc);
+  /*__owur*/ int EVP_CipherUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out,
+                           int *outl, const unsigned char *in, int inl);
+  /*__owur*/ int EVP_CipherFinal(EVP_CIPHER_CTX *ctx, unsigned char *outm,
+                           int *outl);
+
+  int EVP_CIPHER_CTX_block_size(const EVP_CIPHER_CTX *ctx);
+  int EVP_CIPHER_CTX_key_length(const EVP_CIPHER_CTX *ctx);
+  int EVP_CIPHER_CTX_iv_length(const EVP_CIPHER_CTX *ctx);
+  int EVP_CIPHER_CTX_set_padding(EVP_CIPHER_CTX *c, int pad);
+
+  const EVP_CIPHER *EVP_get_cipherbyname(const char *name);
+
 ]]
 
 if OPENSSL_11 then
   ffi.cdef [[
     EVP_MD_CTX *EVP_MD_CTX_new(void);
     void EVP_MD_CTX_free(EVP_MD_CTX *ctx);
+
+    EVP_CIPHER_CTX *EVP_CIPHER_CTX_new(void);
+    int EVP_CIPHER_CTX_reset(EVP_CIPHER_CTX *c);
+    void EVP_CIPHER_CTX_free(EVP_CIPHER_CTX *c);
   ]]
 elseif OPENSSL_10 then
   ffi.cdef [[
@@ -91,6 +112,31 @@ elseif OPENSSL_10 then
       /* Update function: usually copied from EVP_MD */
       int (*update) (EVP_MD_CTX *ctx, const void *data, size_t count);
     } /* EVP_MD_CTX */ ;
+
+    void EVP_CIPHER_CTX_init(EVP_CIPHER_CTX *a);
+    int EVP_CIPHER_CTX_cleanup(EVP_CIPHER_CTX *a);
+
+    // # define EVP_MAX_IV_LENGTH               16
+    // # define EVP_MAX_BLOCK_LENGTH            32
+
+    struct evp_cipher_ctx_st {
+      const EVP_CIPHER *cipher;
+      ENGINE *engine;             /* functional reference if 'cipher' is
+                                   * ENGINE-provided */
+      int encrypt;                /* encrypt or decrypt */
+      int buf_len;                /* number we have left */
+      unsigned char oiv[16]; /* original iv EVP_MAX_IV_LENGTH */
+      unsigned char iv[16]; /* working iv EVP_MAX_IV_LENGTH */
+      unsigned char buf[32]; /* saved partial block EVP_MAX_BLOCK_LENGTH */
+      int num;                    /* used by cfb/ofb/ctr mode */
+      void *app_data;             /* application stuff */
+      int key_len;                /* May change for variable length cipher */
+      unsigned long flags;        /* Various flags */
+      void *cipher_data;          /* per EVP data */
+      int final_used;
+      int block_mask;
+      unsigned char final[32]; /* possible final block EVP_MAX_BLOCK_LENGTH */
+    } /* EVP_CIPHER_CTX */ ;
   ]]
 end
 

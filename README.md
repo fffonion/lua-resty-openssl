@@ -11,10 +11,81 @@ Table of Contents
 - [Description](#description)
 - [Status](#status)
 - [Synopsis](#synopsis)
+  * [resty.openssl](#restyopenssl)
+    + [openssl.luaossl_compact](#opensslluaossl-compact)
+  * [resty.openssl.version](#restyopensslversion)
+    + [version_num](#version-num)
+    + [OPENSSL_11](#openssl-11)
+    + [OPENSSL_10](#openssl-10)
+  * [resty.openssl.pkey](#restyopensslpkey)
+    + [pkey.new](#pkeynew)
+    + [pkey.istype](#pkeyistype)
+    + [pkey:get_parameters](#pkey-get-parameters)
+    + [pkey:sign](#pkey-sign)
+    + [pkey:verify](#pkey-verify)
+    + [pkey:to_PEM](#pkey-to-pem)
+  * [resty.openssl.bn](#restyopensslbn)
+    + [bn.new](#bnnew)
+    + [bn.dup](#bndup)
+    + [bn.istype](#bnistype)
+    + [bn.from_binary](#bnfrom-binary)
+    + [bn:to_binary](#bn-to-binary)
+  * [resty.openssl.cipher](#restyopensslcipher)
+    + [cipher.new](#ciphernew)
+    + [cipher.istype](#cipheristype)
+    + [cipher:encrypt](#cipher-encrypt)
+    + [cipher:decrypt](#cipher-decrypt)
+    + [cipher:init](#cipher-init)
+    + [cipher:update](#cipher-update)
+    + [cipher:final](#cipher-final)
+  * [resty.openssl.digest](#restyopenssldigest)
+    + [digest.new](#digestnew)
+    + [digest.istype](#digestistype)
+    + [digest:update](#digest-update)
+    + [digest:final](#digest-final)
+  * [resty.openssl.hmac](#restyopensslhmac)
+    + [hmac.new](#hmacnew)
+    + [hmac.istype](#hmacistype)
+    + [hmac:update](#hmac-update)
+    + [hmac:final](#hmac-final)
+  * [resty.openssl.rand](#restyopensslrand)
+    + [rand.bytes](#randbytes)
+  * [resty.openssl.x509](#restyopensslx509)
+    + [x509.new](#x509new)
+    + [x509.istype](#x509istype)
+    + [x509:add_extension](#x509-add-extension)
+    + [x509:get_*, x509:set_*](#x509-get----x509-set--)
+    + [x509:get_lifetime](#x509-get-lifetime)
+    + [x509:set_lifetime](#x509-set-lifetime)
+    + [x509:set_basic_constraints](#x509-set-basic-constraints)
+    + [x509:set_basic_constraints_critical](#x509-set-basic-constraints-critical)
+    + [x509:sign](#x509-sign)
+    + [x509:to_PEM](#x509-to-pem)
+  * [resty.openssl.x509.name](#restyopensslx509name)
+    + [name.new](#namenew)
+    + [name.dup](#namedup)
+    + [name.istype](#nameistype)
+    + [name:add](#name-add)
+  * [resty.openssl.x509.altname](#restyopensslx509altname)
+    + [altname.new](#altnamenew)
+    + [altname.istype](#altnameistype)
+    + [altname:add](#altname-add)
+  * [resty.openssl.x509.csr](#restyopensslx509csr)
+    + [csr.new](#csrnew)
+    + [csr.istype](#csristype)
+    + [csr:set_subject_name](#csr-set-subject-name)
+    + [csr:set_subject_alt](#csr-set-subject-alt)
+    + [csr:set_pubkey](#csr-set-pubkey)
+    + [csr:tostring](#csr-tostring)
+    + [csr:to_PEM](#csr-to-pem)
+  * [resty.openssl.x509.extension](#restyopensslx509extension)
+    + [extension.new](#extensionnew)
+    + [extension.istype](#extensionistype)
 - [Compatibility](#compatibility)
 - [TODO](#todo)
 - [Copyright and License](#copyright-and-license)
 - [See Also](#see-also)
+
 
 
 Description
@@ -234,13 +305,117 @@ ngx.say(ngx.encode_base64(bin))
 -- outputs "WyU="
 ```
 
+## resty.openssl.cipher
+
+Module to interact with symmetric cryptography (EVP_CIPHER).
+
+### cipher.new
+
+**syntax**: *d, err = cipher.new(cipher_name)*
+
+Creates a cipher instance. `cipher_name` is a case-insensitive string of cipher algorithm name.
+To view a list of cipher algorithms implemented, use `openssl list -cipher-algorithms`.
+
+### cipher.istype
+
+**syntax**: *ok = cipher.istype(table)*
+
+Returns `true` if table is an instance of `cipher`. Returns `false` otherwise.
+
+### cipher:encrypt
+
+**syntax**: *s, err = cipher:encrypt(key, iv?, s, no_padding?)*
+
+Encrypt the text `s` with key `key` and IV `iv`. Returns the encrypted text in raw binary string
+and error if any.
+Optionally accepts a boolean `no_padding` which tells the cipher to enable or disable padding and default
+to `false` (enable padding). If `no_padding` is `true`, the length of `s` must then be a multiple of the
+block size or an error will occur.
+
+This function is a shorthand of `cipher:init` plus `cipher:final`.
+
+### cipher:decrypt
+
+**syntax**: *s, err = cipher:decrypt(key, iv?, s, no_padding?)*
+
+Decrypt the text `s` with key `key` and IV `iv`. Returns the decrypted text in raw binary string
+and error if any.
+Optionally accepts a boolean `no_padding` which tells the cipher to enable or disable padding and default
+to `false` (enable padding). If `no_padding` is `true`, the length of `s` must then be a multiple of the
+block size or an error will occur; also, padding in the decrypted text will not be removed.
+
+This function is a shorthand of `cipher:init` plus `cipher:final`.
+
+### cipher:init
+
+**syntax**: *err = cipher:init(key, iv?, opts?)*
+
+Initialize the cipher with key `key` and IV `iv`. The optional third argument is a table consists of:
+
+```lua
+{
+    is_encrypt = false,
+    no_padding = false,
+}
+```
+
+Calling function is needed before `cipher:update` and `cipher:final` but not
+`cipher:encrypt` or `cipher:decrypt`.
+
+### cipher:update
+
+**syntax**: *s, err = cipher:update(partial, ...)*
+
+Updates the cipher with one or more strings. If the cipher has larger than block size of data to flush,
+the function will return a non-empty string as first argument. This function can be used in a streaming
+fashion to encrypt or decrypt continous data stream.
+
+### cipher:final
+
+**syntax**: *s, err = cipher:final(partial?)*
+
+Returns the encrypted or decrypted text in raw binary string, optionally accept one string to encrypt or decrypt.
+
+```lua
+-- encryption
+local c, err = require("resty.openssl.cipher").new("aes256")
+c:init(string.rep("0", 32), string.rep("0", 16), {
+    is_encrypt = true,
+})
+d:update("🦢")
+local cipher, err = c:final()
+ngx.say(ngx.encode_base64(cipher))
+-- outputs "vGJRHufPYrbbnYYC0+BnwQ=="
+-- OR:
+local c, err = require("resty.openssl.cipher").new("aes256")
+local cipher, err = c:encrypt(string.rep("0", 32), string.rep("0", 16), "🦢")
+ngx.say(ngx.encode_base64(cipher))
+-- outputs "vGJRHufPYrbbnYYC0+BnwQ=="
+
+-- decryption
+local encrypted = ngx.decode_base64("vGJRHufPYrbbnYYC0+BnwQ==")
+local c, err = require("resty.openssl.cipher").new("aes256")
+c:init(string.rep("0", 32), string.rep("0", 16), {
+    is_encrypt = false,
+})
+d:update(encrypted)
+local cipher, err = c:final()
+ngx.say(ngx.encode_base64(cipher))
+-- outputs "🦢"
+-- OR:
+local c, err = require("resty.openssl.cipher").new("aes256")
+local cipher, err = c:decrypt(string.rep("0", 32), string.rep("0", 16), encrypted)
+ngx.say(ngx.encode_base64(cipher))
+-- outputs "🦢"
+```
+
 ## resty.openssl.digest
 
 Module to interact with message digest (EVP_MD).
 
 ### digest.new
 
-**syntax**: *d, err = digest.new(digest_name)*
+**syntax**: *d, err = digest.new(digest_name?)*
 
 Creates a digest instance. `digest_name` is a case-insensitive string of digest algorithm name.
 To view a list of digest algorithms implemented, use `openssl list -digest-algorithms`.
@@ -284,7 +459,7 @@ Module to interact with hash-based message authentication code (HMAC_CTX).
 
 ### hmac.new
 
-**syntax**: *h, err = hmac.new(key, digest_name)*
+**syntax**: *h, err = hmac.new(key, digest_name?)*
 
 Creates a hmac instance. `digest_name` is a case-insensitive string of digest algorithm name.
 To view a list of digest algorithms implemented, use `openssl list -digest-algorithms`.

@@ -58,8 +58,9 @@ local uint_ptr = ffi.typeof("unsigned int[1]")
 
 function _M:final(s)
   if s then
-    if C.HMAC_Update(self.ctx, s, #s) ~= 1 then
-      return nil, format_error("hmac:final")
+    local err = self:update(s)
+    if err then
+      return nil, err
     end
   end
   -- # define EVP_MAX_MD_SIZE                 64/* longest known is SHA512 */

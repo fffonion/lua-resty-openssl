@@ -57,8 +57,9 @@ local uint_ptr = ffi.typeof("unsigned int[1]")
 
 function _M:final(s)
   if s then
-    if C.EVP_DigestUpdate(self.ctx, s, #s) ~= 1 then
-      return nil, format_error("digest:final")
+    local err = self:update(s)
+    if err then
+      return nil, err
     end
   end
   -- # define EVP_MAX_MD_SIZE                 64/* longest known is SHA512 */

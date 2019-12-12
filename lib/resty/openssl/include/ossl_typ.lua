@@ -12,6 +12,7 @@ ffi.cdef(
   typedef struct evp_pkey_ctx_st EVP_PKEY_CTX;
   typedef struct evp_md_st EVP_MD;
   typedef struct evp_pkey_asn1_method_st EVP_PKEY_ASN1_METHOD;
+  typedef struct evp_cipher_ctx_st EVP_CIPHER_CTX;
   typedef struct engine_st ENGINE;
   typedef struct x509_st X509;
   typedef struct X509_name_st X509_NAME;

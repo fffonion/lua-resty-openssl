@@ -22,7 +22,7 @@ local _M = {
 _M.bignum = _M.bn
 
 function _M.luaossl_compact()
-  for tn, tbl in pairs(_M) do
+  for _, tbl in pairs(_M) do
     if type(tbl) == 'table' then
       setmetatable(tbl, {
         __index = function(t, k)
@@ -55,6 +55,13 @@ function _M.luaossl_compact()
   _M.x509.getSubject = _M.x509.get_subject_name
   _M.x509.setIssuer = _M.x509.set_issuer_name
   _M.x509.getIssuer = _M.x509.get_issuer_name
+
+  _M.cipher.encrypt = function(self, key, iv, padding)
+    return self, _M.cipher.init(self, key, iv, true, not padding)
+  end
+  _M.cipher.decrypt = function(self, key, iv, padding)
+    return self, _M.cipher.init(self, key, iv, false, not padding)
+  end
 end
 
 return _M
