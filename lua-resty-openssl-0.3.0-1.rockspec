@@ -1,0 +1,49 @@
+package = "lua-resty-openssl"
+version = "0.3.0-1"
+source = {
+   url = "git+https://github.com/fffonion/lua-resty-openssl.git"
+}
+description = {
+   detailed = "FFI-based OpenSSL binding for LuaJIT.",
+   homepage = "https://github.com/fffonion/lua-resty-openssl",
+   license = "BSD"
+}
+build = {
+   type = "builtin",
+   modules = {
+      ["resty.openssl"] = "lib/resty/openssl.lua",
+      ["resty.openssl.asn1"] = "lib/resty/openssl/asn1.lua",
+      ["resty.openssl.bn"] = "lib/resty/openssl/bn.lua",
+      ["resty.openssl.cipher"] = "lib/resty/openssl/cipher.lua",
+      ["resty.openssl.digest"] = "lib/resty/openssl/digest.lua",
+      ["resty.openssl.err"] = "lib/resty/openssl/err.lua",
+      ["resty.openssl.hmac"] = "lib/resty/openssl/hmac.lua",
+      ["resty.openssl.include.asn1"] = "lib/resty/openssl/include/asn1.lua",
+      ["resty.openssl.include.bio"] = "lib/resty/openssl/include/bio.lua",
+      ["resty.openssl.include.bn"] = "lib/resty/openssl/include/bn.lua",
+      ["resty.openssl.include.ec"] = "lib/resty/openssl/include/ec.lua",
+      ["resty.openssl.include.evp"] = "lib/resty/openssl/include/evp.lua",
+      ["resty.openssl.include.hmac"] = "lib/resty/openssl/include/hmac.lua",
+      ["resty.openssl.include.objects"] = "lib/resty/openssl/include/objects.lua",
+      ["resty.openssl.include.ossl_typ"] = "lib/resty/openssl/include/ossl_typ.lua",
+      ["resty.openssl.include.pem"] = "lib/resty/openssl/include/pem.lua",
+      ["resty.openssl.include.rand"] = "lib/resty/openssl/include/rand.lua",
+      ["resty.openssl.include.rsa"] = "lib/resty/openssl/include/rsa.lua",
+      ["resty.openssl.include.stack"] = "lib/resty/openssl/include/stack.lua",
+      ["resty.openssl.include.x509.altname"] = "lib/resty/openssl/include/x509/altname.lua",
+      ["resty.openssl.include.x509.csr"] = "lib/resty/openssl/include/x509/csr.lua",
+      ["resty.openssl.include.x509.extension"] = "lib/resty/openssl/include/x509/extension.lua",
+      ["resty.openssl.include.x509.init"] = "lib/resty/openssl/include/x509/init.lua",
+      ["resty.openssl.include.x509.name"] = "lib/resty/openssl/include/x509/name.lua",
+      ["resty.openssl.include.x509v3"] = "lib/resty/openssl/include/x509v3.lua",
+      ["resty.openssl.pkey"] = "lib/resty/openssl/pkey.lua",
+      ["resty.openssl.rand"] = "lib/resty/openssl/rand.lua",
+      ["resty.openssl.util"] = "lib/resty/openssl/util.lua",
+      ["resty.openssl.version"] = "lib/resty/openssl/version.lua",
+      ["resty.openssl.x509.altname"] = "lib/resty/openssl/x509/altname.lua",
+      ["resty.openssl.x509.csr"] = "lib/resty/openssl/x509/csr.lua",
+      ["resty.openssl.x509.extension"] = "lib/resty/openssl/x509/extension.lua",
+      ["resty.openssl.x509.init"] = "lib/resty/openssl/x509/init.lua",
+      ["resty.openssl.x509.name"] = "lib/resty/openssl/x509/name.lua"
+   }
+}
