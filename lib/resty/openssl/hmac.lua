@@ -5,6 +5,7 @@ local ffi_new = ffi.new
 local ffi_str = ffi.string
 
 require "resty.openssl.include.hmac"
+local evp_macro = require "resty.openssl.include.evp"
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
@@ -38,7 +39,10 @@ function _M.new(key, typ)
     return nil, format_error("hmac.new")
   end
 
-  return setmetatable({ ctx = ctx }, mt), nil
+  return setmetatable({
+    ctx = ctx,
+    md_size = C.EVP_MD_size(dtyp),
+  }, mt), nil
 end
 
 function _M.istype(l)
@@ -63,8 +67,8 @@ function _M:final(s)
       return nil, err
     end
   end
-  -- # define EVP_MAX_MD_SIZE                 64/* longest known is SHA512 */
-  local buf = ffi_new('unsigned char[?]', 64)
+
+  local buf = ffi_new('unsigned char[?]', self.md_size)
   local length = uint_ptr()
   if C.HMAC_Final(self.ctx, buf, length) ~= 1 then
     return nil, format_error("hmac:final: HMAC_Final")

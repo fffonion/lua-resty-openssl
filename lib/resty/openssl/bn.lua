@@ -45,6 +45,14 @@ function _M:to_binary()
   return buf, nil
 end
 
+function _M:to_hex()
+  local buf = C.BN_bn2hex(self.ctx)
+  if buf == nil then
+    return nil, format_error("bn:to_hex")
+  end
+  return ffi_str(buf), nil
+end
+
 function _M.from_binary(s)
   if type(s) ~= "string" then
     return nil, "expect a string at #1"

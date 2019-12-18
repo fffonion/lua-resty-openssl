@@ -30,6 +30,7 @@ ffi.cdef [[
                          EVP_PKEY *pkey);
   /*__owur*/ int EVP_VerifyFinal(EVP_MD_CTX *ctx, const unsigned char *sigbuf,
                            unsigned int siglen, EVP_PKEY *pkey);
+  int EVP_MD_size(const EVP_MD *md);
 
   int EVP_PKEY_get_default_digest_nid(EVP_PKEY *pkey, int *pnid);
   const EVP_MD *EVP_get_digestbyname(const char *name);

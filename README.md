@@ -32,6 +32,7 @@ Table of Contents
     + [bn.istype](#bnistype)
     + [bn.from_binary](#bnfrom_binary)
     + [bn:to_binary](#bnto_binary)
+    + [bn:to_hex](#bnto_hex)
   * [resty.openssl.cipher](#restyopensslcipher)
     + [cipher.new](#ciphernew)
     + [cipher.istype](#cipheristype)
@@ -56,6 +57,8 @@ Table of Contents
     + [x509.new](#x509new)
     + [x509.istype](#x509istype)
     + [x509:add_extension](#x509add_extension)
+    + [x509:digest](#x509digest)
+    + [x509:pubkey_digest](#x509pubkey_digest)
     + [x509:get_*, x509:set_*](#x509get_-x509set_)
     + [x509:get_lifetime](#x509get_lifetime)
     + [x509:set_lifetime](#x509set_lifetime)
@@ -185,11 +188,11 @@ and `DIR` are supported.
 ```lua
 local version = require("resty.openssl.version")
 ngx.say(string.format("%x", version.version_num))
--- Outputs 101000bf
+-- outputs "101000bf"
 ngx.say(version.version_text)
--- Outputs OpenSSL 1.1.0k  28 May 2019
+-- outputs "OpenSSL 1.1.0k  28 May 2019"
 ngx.say(version.version(version.PLATFORM))
--- Outputs darwin64-x86_64-cc
+-- outputs "darwin64-x86_64-cc"
 ```
 
 ### OPENSSL_11
@@ -336,11 +339,21 @@ ngx.say(ngx.encode_base64(bin))
 
 Export the BIGNUM value in binary string.
 
+
+### bn:to_hex
+
+**syntax**: *hex, err = bn:to_hex()*
+
+Export the BIGNUM value in hex encoded string.
+
 ```lua
 local b, err = require("resty.openssl.bn").new(23333)
 local bin, err = b:to_binary()
 ngx.say(ngx.encode_base64(bin))
 -- outputs "WyU="
+local hex, err = b:to_hex()
+ngx.say(hex)
+-- outputs "5B25"
 ```
 
 ## resty.openssl.cipher
@@ -449,7 +462,7 @@ ngx.say(cipher)
 
 ## resty.openssl.digest
 
-Module to interact with message digest (EVP_MD).
+Module to interact with message digest (EVP_MD_CTX).
 
 ### digest.new
 
@@ -581,6 +594,28 @@ local x509, err = require("resty.openssl.x509").new()
 local ok, err = x509:add_extension(extension)
 ```
 
+### x509:digest
+
+**syntax**: *d, err = x509:digest(digest_name?)*
+
+Returns a digest of the DER representation of the X509 certificate object in raw binary text.
+
+`digest_name` is a case-insensitive string of digest algorithm name.
+To view a list of digest algorithms implemented, use `openssl list -digest-algorithms`.
+
+If `digest_name` is omitted, it's by default to `sha1`.
+
+### x509:pubkey_digest
+
+**syntax**: *d, err = x509:pubkey_digest(digest_name?)*
+
+Returns a digest of the DER representation of the pubkey in the X509 object in raw binary text.
+
+`digest_name` is a case-insensitive string of digest algorithm name.
+To view a list of digest algorithms implemented, use `openssl list -digest-algorithms`.
+
+If `digest_name` is omitted, it's by default to `sha1`.
+
 ### x509:get_*, x509:set_*
 
 **syntax**: *ok, err = x509:set_attribute(instance)*
@@ -605,7 +640,7 @@ local x509, err = require("resty.openssl.x509").new()
 err = x509:set_not_before(ngx.time())
 local not_before, err = x509:get_not_before()
 ngx.say(not_before)
--- Outputs 1571875065
+-- outputs 1571875065
 ```
 
 ### x509:get_lifetime
@@ -712,7 +747,7 @@ Returns `true` if table is an instance of `altname`. Returns `false` otherwise.
 
 **syntax**: *altname, err = altname:add(key, value)*
 
-Adds a name to altname stack, first argument is case-insensitive and can be selection of
+Adds a name to altname stack, first argument is case-insensitive and can be one of
 
     RFC822Name
     RFC822
@@ -845,8 +880,8 @@ If you plan to use this library on an untested version of OpenSSL (like custom b
 TODO
 ====
 
-- review get0 function calls to ensure there's no double free
-- find a way to test memory leak
+- test memory leak
+- add tests for x509 getters/setters
 
 [Back to TOC](#table-of-contents)
 

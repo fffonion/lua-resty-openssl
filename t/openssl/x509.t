@@ -106,3 +106,76 @@ x509.new: .*pem_lib.c.+
 true"
 --- no_error_log
 [error]
+
+
+=== TEST 4: Calculates cert digest
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            os.execute("openssl req -newkey rsa:2048 -nodes -keyout key.pem -x509 -days 365 -out cert.pem -subj '/'")
+            local pem = io.open("cert.pem"):read("*a")
+            local x509 = require("resty.openssl.x509")
+            local c, err = x509.new(pem)
+            if err then
+                ngx.say("1 " .. err)
+                ngx.exit(0)
+            end
+            local dd, err = c:digest()
+            if err then
+                ngx.say("2 " .. err)
+                ngx.exit(0)
+            end
+            local bn, err = require("resty.openssl.bn").from_binary(dd)
+            if err then
+                ngx.say("3 " .. err)
+            end
+            local hex, err = bn:to_hex()
+            if err then
+                ngx.say("4 " .. err)
+            end
+            ngx.say(hex)
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+"[A-F0-9]{40}"
+--- no_error_log
+[error]
+
+=== TEST 5: Calculates pubkey digest
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            os.execute("openssl req -newkey rsa:2048 -nodes -keyout key.pem -x509 -days 365 -out cert.pem -subj '/'")
+            local pem = io.open("cert.pem"):read("*a")
+            local x509 = require("resty.openssl.x509")
+            local c, err = x509.new(pem)
+            if err then
+                ngx.say("1 " .. err)
+                ngx.exit(0)
+            end
+            local dd, err = c:pubkey_digest()
+            if err then
+                ngx.say("2 " .. err)
+                ngx.exit(0)
+            end
+            local bn, err = require("resty.openssl.bn").from_binary(dd)
+            if err then
+                ngx.say("3 " .. err)
+            end
+            local hex, err = bn:to_hex()
+            if err then
+                ngx.say("4 " .. err)
+            end
+            ngx.say(hex)
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+"[A-F0-9]{40}"
+--- no_error_log
+[error]

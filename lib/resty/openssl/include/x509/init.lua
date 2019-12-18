@@ -37,6 +37,10 @@ ffi.cdef [[
   int X509_set_subject_name(X509 *x, X509_NAME *name);
   int X509_set_issuer_name(X509 *x, X509_NAME *name);
 
+  int X509_pubkey_digest(const X509 *data, const EVP_MD *type,
+                       unsigned char *md, unsigned int *len);
+  int X509_digest(const X509 *data, const EVP_MD *type,
+                unsigned char *md, unsigned int *len);
 ]]
 
 if OPENSSL_11 then

@@ -1,8 +1,11 @@
 local ffi = require "ffi"
 local C = ffi.C
 local ffi_gc = ffi.gc
+local ffi_new = ffi.new
+local ffi_str = ffi.string
 
 require "resty.openssl.include.x509"
+local evp_macro = require "resty.openssl.include.evp"
 local asn1_lib = require("resty.openssl.asn1")
 local digest_lib = require("resty.openssl.digest")
 local util = require("resty.openssl.util")
@@ -335,6 +338,46 @@ function _M:sign(pkey, digest)
   end
 
   return true
+end
+
+local uint_ptr = ffi.typeof("unsigned int[1]")
+
+local function digest(self, cfunc, typ)
+  -- TODO: dedup the following with resty.openssl.digest
+  local ctx
+  if OPENSSL_11 then
+    ctx = C.EVP_MD_CTX_new()
+    ffi_gc(ctx, C.EVP_MD_CTX_free)
+  elseif OPENSSL_10 then
+    ctx = C.EVP_MD_CTX_create()
+    ffi_gc(ctx, C.EVP_MD_CTX_destroy)
+  end
+  if ctx == nil then
+    return nil, "failed to create EVP_MD_CTX"
+  end
+
+  local dtyp = C.EVP_get_digestbyname(typ or 'sha1')
+  if dtyp == nil then
+    return nil, string.format("invalid digest type \"%s\"", typ)
+  end
+
+  local md_size = C.EVP_MD_size(dtyp)
+  local buf = ffi_new('unsigned char[?]', md_size)
+  local length = uint_ptr()
+
+  if cfunc(self.ctx, dtyp, buf, length) ~= 1 then
+    return nil, format_error("x509:digest")
+  end
+
+  return ffi_str(buf, length[0])
+end
+
+function _M:digest(typ)
+  return digest(self, C.X509_digest, typ)
+end
+
+function _M:pubkey_digest(typ)
+  return digest(self, C.X509_pubkey_digest, typ)
 end
 
 function _M:to_PEM()

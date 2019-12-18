@@ -19,5 +19,6 @@ ffi.cdef(
   int BN_num_bits(const BIGNUM *a);
   BIGNUM *BN_bin2bn(const unsigned char *s, int len, BIGNUM *ret);
   int BN_bn2bin(const BIGNUM *a, unsigned char *to);
+  char *BN_bn2hex(const BIGNUM *a);
 ]]
 )

@@ -120,3 +120,28 @@ bn:to_binary failed
 "WyU="
 --- no_error_log
 [error]
+
+=== TEST 5: Export as hex string
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local bn, err = require("resty.openssl.bn").new(0x5b25)
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            local b, err = bn:to_hex()
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.print(b)
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"5B25"
+--- no_error_log
+[error]
