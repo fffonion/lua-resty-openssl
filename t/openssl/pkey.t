@@ -196,7 +196,7 @@ AQAB
                 ngx.log(ngx.ERR, err)
                 return
             end
-            err = digest:update("🕶️", "+1s")
+            local _, err = digest:update("🕶️", "+1s")
             if err then
                 ngx.log(ngx.ERR, err)
                 return

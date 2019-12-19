@@ -50,17 +50,17 @@ end
 function _M:update(...)
   for _, s in ipairs({...}) do
     if C.EVP_DigestUpdate(self.ctx, s, #s) ~= 1 then
-      return format_error("digest:update")
+      return false, format_error("digest:update")
     end
   end
-  return nil
+  return true, nil
 end
 
 local uint_ptr = ffi.typeof("unsigned int[1]")
 
 function _M:final(s)
   if s then
-    local err = self:update(s)
+    local _, err = self:update(s)
     if err then
       return nil, err
     end

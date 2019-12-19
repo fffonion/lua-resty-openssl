@@ -58,14 +58,14 @@ end
 function _M:init(key, iv, opts)
   opts = opts or {}
   if not key or #key ~= self.key_size then
-    return string.format("incorrect key size, expect %d", self.key_size)
+    return false, string.format("incorrect key size, expect %d", self.key_size)
   end
   if not iv or #iv ~= self.iv_size then
-    return string.format("incorrect iv size, expect %d", self.iv_size)
+    return false, string.format("incorrect iv size, expect %d", self.iv_size)
   end
 
   if C.EVP_CipherInit_ex(self.ctx, nil, nil, key, iv, opts.is_encrypt and 1 or 0) == 0 then
-    return format_error("cipher:init")
+    return false, format_error("cipher:init")
   end
 
   if opts.no_padding then
@@ -74,10 +74,12 @@ function _M:init(key, iv, opts)
   end
 
   self.initialized = true
+
+  return true
 end
 
 function _M:encrypt(key, iv, s, no_padding)
-  local err = self:init(key, iv, {
+  local _, err = self:init(key, iv, {
     is_encrypt = true,
     no_padding = no_padding,
   })
@@ -88,7 +90,7 @@ function _M:encrypt(key, iv, s, no_padding)
 end
 
 function _M:decrypt(key, iv, s, no_padding)
-  local err = self:init(key, iv, {
+  local _, err = self:init(key, iv, {
     is_encrypt = false,
     no_padding = no_padding,
   })

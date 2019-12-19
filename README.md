@@ -399,7 +399,7 @@ This function is a shorthand of `cipher:init` plus `cipher:final`.
 
 ### cipher:init
 
-**syntax**: *err = cipher:init(key, iv?, opts?)*
+**syntax**: *ok, err = cipher:init(key, iv?, opts?)*
 
 Initialize the cipher with key `key` and IV `iv`. The optional third argument is a table consists of:
 
@@ -471,7 +471,7 @@ Module to interact with message digest (EVP_MD_CTX).
 Creates a digest instance. `digest_name` is a case-insensitive string of digest algorithm name.
 To view a list of digest algorithms implemented, use `openssl list -digest-algorithms`.
 
-If `digest_name` is omitted, it's by default to `sha1`.
+If `digest_name` is omitted, it's default to `sha1`.
 
 ### digest.istype
 
@@ -481,7 +481,7 @@ Returns `true` if table is an instance of `digest`. Returns `false` otherwise.
 
 ### digest:update
 
-**syntax**: *err = digest:update(partial, ...)*
+**syntax**: *ok, err = digest:update(partial, ...)*
 
 Updates the digest with one or more strings.
 
@@ -515,7 +515,7 @@ Module to interact with hash-based message authentication code (HMAC_CTX).
 Creates a hmac instance. `digest_name` is a case-insensitive string of digest algorithm name.
 To view a list of digest algorithms implemented, use `openssl list -digest-algorithms`.
 
-If `digest_name` is omitted, it's by default to `sha1`.
+If `digest_name` is omitted, it's default to `sha1`.
 
 ### hmac.istype
 
@@ -525,7 +525,7 @@ Returns `true` if table is an instance of `hmac`. Returns `false` otherwise.
 
 ### hmac:update
 
-**syntax**: *err = hmac:update(partial, ...)*
+**syntax**: *ok, err = hmac:update(partial, ...)*
 
 Updates the HMAC with one or more strings.
 
@@ -603,7 +603,7 @@ Returns a digest of the DER representation of the X509 certificate object in raw
 `digest_name` is a case-insensitive string of digest algorithm name.
 To view a list of digest algorithms implemented, use `openssl list -digest-algorithms`.
 
-If `digest_name` is omitted, it's by default to `sha1`.
+If `digest_name` is omitted, it's default to `sha1`.
 
 ### x509:pubkey_digest
 
@@ -614,7 +614,7 @@ Returns a digest of the DER representation of the pubkey in the X509 object in r
 `digest_name` is a case-insensitive string of digest algorithm name.
 To view a list of digest algorithms implemented, use `openssl list -digest-algorithms`.
 
-If `digest_name` is omitted, it's by default to `sha1`.
+If `digest_name` is omitted, it's default to `sha1`.
 
 ### x509:get_*, x509:set_*
 

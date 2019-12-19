@@ -23,7 +23,7 @@ __DATA__
                 ngx.log(ngx.ERR, err)
                 return
             end
-            err = cipher:init(string.rep("0", 32), string.rep("0", 16), {
+            local ok, err = cipher:init(string.rep("0", 32), string.rep("0", 16), {
                 is_encrypt = true,
             })
             if err then
@@ -206,7 +206,7 @@ VhGyRCcMvlAgUjTYrqiWpg=="
                 ngx.log(ngx.ERR, err)
                 return
             end
-            local err = cipher:init(string.rep("0", 32), string.rep("0", 16), {
+            local ok, err = cipher:init(string.rep("0", 32), string.rep("0", 16), {
                 is_encrypt = true,
             })
             if err then
@@ -258,7 +258,7 @@ yP4vKOecDyao4AzxaTAzkA==
                 ngx.log(ngx.ERR, err)
                 return
             end
-            local err = cipher:init(string.rep("0", 32), string.rep("0", 16), {
+            local ok, err = cipher:init(string.rep("0", 32), string.rep("0", 16), {
                 is_encrypt = false,
             })
             if err then
