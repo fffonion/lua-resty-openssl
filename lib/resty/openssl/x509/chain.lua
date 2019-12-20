@@ -1,5 +1,6 @@
 local ffi = require "ffi"
 local C = ffi.C
+local ffi_gc = ffi.gc
 
 local stack_lib = require "resty.openssl.stack"
 local x509_lib = require "resty.openssl.x509"
@@ -9,16 +10,17 @@ local _M = {}
 
 local stack_ptr_ct = ffi.typeof("OPENSSL_STACK*")
 
-local STACK_OF = "X509"
-local mt = stack_lib.mt_of(STACK_OF, x509_lib, _M)
-local new = stack_lib.new_of(STACK_OF)
-local add = stack_lib.add_of(STACK_OF)
+local STACK = "X509"
+local mt = stack_lib.mt_of(STACK, x509_lib, _M)
+local gc = stack_lib.gc_of(STACK)
+local new = stack_lib.new_of(STACK)
+local add = stack_lib.add_of(STACK)
 
 function _M.new()
   local raw = new()
 
   local self = setmetatable({
-    stack_of = STACK_OF,
+    stack_of = STACK,
     ctx = raw,
   }, mt)
 
@@ -27,7 +29,23 @@ end
 
 function _M.istype(l)
   return l and l.ctx and ffi.istype(stack_ptr_ct, l.ctx)
-            and l.stack_of and l.stack_of == STACK_OF
+            and l.stack_of and l.stack_of == STACK
+end
+
+function _M.dup(ctx)
+  if not ffi.istype(stack_ptr_ct, ctx) then
+    return nil, "expect a stack ctx at #1"
+  end
+  local ctx = C.X509_chain_up_ref(ctx)
+  if ctx == nil then
+    return nil, "X509_chain_up_ref() failed"
+  end
+  ffi_gc(ctx, gc)
+
+  return setmetatable({
+    stack_of = STACK,
+    ctx = ctx,
+  }, mt)
 end
 
 function _M:add(x509)
@@ -47,6 +65,21 @@ function _M:add(x509)
   end
 
   return true
+end
+
+-- fallback function to iterate if LUAJIT_ENABLE_LUA52COMPAT not enabled
+function _M:all()
+  local ret = {}
+  local next_ = mt.__pairs(self)
+  while true do
+    local i, x509 = next_()
+    if x509 then
+      ret[i] = x509
+    else
+      break
+    end
+  end
+  return ret
 end
 
 return _M

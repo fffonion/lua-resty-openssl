@@ -7,7 +7,7 @@ use Cwd qw(cwd);
 my $pwd = cwd();
 
 our $HttpConfig = qq{
-    lua_package_path "$pwd/lib/?.lua;$pwd/lib/?/init.lua;;";
+    lua_package_path "$pwd/t/openssl/x509/?.lua;$pwd/lib/?.lua;$pwd/lib/?/init.lua;;";
 };
 
 
@@ -41,14 +41,7 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            os.execute("openssl req -newkey rsa:2048 -nodes -keyout key2.pem -x509 -days 365 -out cert2.pem -subj '/'")
-            local pem = io.open("cert2.pem"):read("*a")
-            local x509 = require("resty.openssl.x509")
-            local p, err = x509.new(pem)
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local cert, key = require("helper").create_self_signed()
             local chain = require("resty.openssl.x509.chain")
             local c, err = chain.new()
             if err then
@@ -56,19 +49,21 @@ __DATA__
                 return
             end
             for i=0,2,1 do
-                local ok, err = c:add(p)
+                local ok, err = c:add(cert)
                 if err then
                     ngx.log(ngx.ERR, err)
                     return
                 end
             end
             ngx.say(#c)
+            ngx.say(#c:all())
         }
     }
 --- request
     GET /t
 --- response_body eval
 "3
+3
 "
 --- no_error_log
 [error]
@@ -78,14 +73,7 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            os.execute("openssl req -newkey rsa:2048 -nodes -keyout key3.pem -x509 -days 365 -out cert3.pem -subj '/'")
-            local pem = io.open("cert3.pem"):read("*a")
-            local x509 = require("resty.openssl.x509")
-            local p, err = x509.new(pem)
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local cert, key = require("helper").create_self_signed()
             local chain = require("resty.openssl.x509.chain")
             local c, err = chain.new()
             if err then
@@ -93,7 +81,7 @@ __DATA__
                 return
             end
             for i=0,2,1 do
-                local ok, err = c:add(p)
+                local ok, err = c:add(cert)
                 if err then
                     ngx.log(ngx.ERR, err)
                     return
@@ -119,26 +107,19 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            os.execute("openssl req -newkey rsa:2048 -nodes -keyout key4.pem -x509 -days 365 -out cert4.pem -subj '/'")
-            local pem = io.open("cert4.pem"):read("*a")
-            local x509 = require("resty.openssl.x509")
-            local p, err = x509.new(pem)
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local cert, key = require("helper").create_self_signed()
             local chain = require("resty.openssl.x509.chain")
             local c, err = chain.new()
             if err then
                 ngx.log(ngx.ERR, err)
                 return
             end
-            local ok, err = c:add(p)
+            local ok, err = c:add(cert)
             if err then
                 ngx.log(ngx.ERR, err)
                 return
             end
-            p = nil
+            cert = nil
             collectgarbage("collect")
             ngx.say(#c[1]:digest())
         }
@@ -156,21 +137,14 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            os.execute("openssl req -newkey rsa:2048 -nodes -keyout key5.pem -x509 -days 365 -out cert5.pem -subj '/'")
-            local pem = io.open("cert5.pem"):read("*a")
-            local x509 = require("resty.openssl.x509")
-            local p, err = x509.new(pem)
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local cert, key = require("helper").create_self_signed()
             local chain = require("resty.openssl.x509.chain")
             local c, err = chain.new()
             if err then
                 ngx.log(ngx.ERR, err)
                 return
             end
-            local ok, err = c:add(p)
+            local ok, err = c:add(cert)
             if err then
                 ngx.log(ngx.ERR, err)
                 return
