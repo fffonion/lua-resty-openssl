@@ -5,7 +5,7 @@ local ffi_new = ffi.new
 local ffi_str = ffi.string
 
 require "resty.openssl.include.x509"
-local evp_macro = require "resty.openssl.include.evp"
+require "resty.openssl.include.evp"
 local asn1_lib = require("resty.openssl.asn1")
 local digest_lib = require("resty.openssl.digest")
 local util = require("resty.openssl.util")
@@ -66,7 +66,7 @@ elseif OPENSSL_10 then
 end
 
 local _M = {}
-local mt = { __index = _M, __tostring = tostring }
+local mt = { __index = _M }
 
 local x509_ptr_ct = ffi.typeof("X509*")
 
@@ -109,6 +109,20 @@ end
 
 function _M.istype(l)
   return l and l.ctx and ffi.istype(x509_ptr_ct, l.ctx)
+end
+
+function _M.dup(ctx)
+  if not ffi.istype(x509_ptr_ct, ctx) then
+    return nil, "expect a x509 ctx at #1"
+  end
+  local ctx = C.X509_dup(ctx)
+  ffi_gc(ctx, C.X509_free)
+
+  local self = setmetatable({
+    ctx = ctx,
+  }, mt)
+
+  return self, nil
 end
 
 function _M:set_lifetime(not_before, not_after)

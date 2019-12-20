@@ -14,22 +14,22 @@ local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
 
 local _M = {}
 
-local sk_pop_free_func
 if OPENSSL_11 then
   ffi.cdef [[
     typedef struct stack_st OPENSSL_STACK;
 
-    typedef void (*OPENSSL_sk_freefunc)(void *);
     OPENSSL_STACK *OPENSSL_sk_new_null(void);
     int OPENSSL_sk_push(OPENSSL_STACK *st, const void *data);
     void OPENSSL_sk_pop_free(OPENSSL_STACK *st, void (*func) (void *));
+    int OPENSSL_sk_num(const OPENSSL_STACK *);
     void *OPENSSL_sk_value(const OPENSSL_STACK *, int);
   ]]
-  sk_pop_free_func = C.OPENSSL_sk_pop_free
+  _M.OPENSSL_sk_pop_free = C.OPENSSL_sk_pop_free
 
   _M.OPENSSL_sk_new_null = C.OPENSSL_sk_new_null
   _M.OPENSSL_sk_push = C.OPENSSL_sk_push
   _M.OPENSSL_sk_pop_free = C.OPENSSL_sk_pop_free
+  _M.OPENSSL_sk_num = C.OPENSSL_sk_num
   _M.OPENSSL_sk_value = C.OPENSSL_sk_value
 elseif OPENSSL_10 then
   ffi.cdef [[
@@ -40,32 +40,16 @@ elseif OPENSSL_10 then
     _STACK *sk_new_null(void);
     int sk_push(_STACK *st, void *data);
     void sk_pop_free(_STACK *st, void (*func) (void *));
-    // sk_value is direct accessing member # define M_sk_value(sk,n)        ((sk) ? (sk)->data[n] : NULL)
+    int sk_num(const _STACK *);
+    void *sk_value(const _STACK *, int);
   ]]
-  sk_pop_free_func = C.sk_pop_free
+  _M.OPENSSL_sk_pop_free = C.sk_pop_free
 
   _M.OPENSSL_sk_new_null = C.sk_new_null
   _M.OPENSSL_sk_push = C.sk_push
   _M.OPENSSL_sk_pop_free = C.sk_pop_free
-  _M.OPENSSL_sk_value = function(st, n)
-    if st == nil then
-      return nil
-    end
-    return st.data[n]
-  end
-end
-
-_M.gc_of = function (typ)
-  if not typ then
-    error("expect a string at #1")
-  end
-  if not C[typ .. "_free"] then
-    error(typ .. "_free is not defined in ffi.cdef")
-  end
-  local f = C[typ .. "_free"]
-  return function (st)
-    sk_pop_free_func(st, f)
-  end
+  _M.OPENSSL_sk_num = C.sk_num
+  _M.OPENSSL_sk_value = C.sk_value
 end
 
 

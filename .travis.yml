@@ -48,7 +48,7 @@ install:
   # luajit
   - git clone -b v2.1-agentzh https://github.com/openresty/luajit2.git
   - pushd luajit2/
-  - make -j$JOBS CCDEBUG=-g Q= PREFIX=$LUAJIT_PREFIX CC=$CC XCFLAGS='-DLUA_USE_APICHECK -DLUA_USE_ASSERT' > build.log 2>&1 || (cat build.log && exit 1)
+  - make -j$JOBS CCDEBUG=-g Q= PREFIX=$LUAJIT_PREFIX CC=$CC XCFLAGS='-DLUA_USE_APICHECK -DLUA_USE_ASSERT -DLUAJIT_ENABLE_LUA52COMPAT' > build.log 2>&1 || (cat build.log && exit 1)
   - make install PREFIX=$LUAJIT_PREFIX > build.log 2>&1 || (cat build.log && exit 1)
   - popd
   # openssl

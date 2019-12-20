@@ -55,6 +55,7 @@ Table of Contents
     + [rand.bytes](#randbytes)
   * [resty.openssl.x509](#restyopensslx509)
     + [x509.new](#x509new)
+    + [x509.dup](#x509dup)
     + [x509.istype](#x509istype)
     + [x509:add_extension](#x509add_extension)
     + [x509:digest](#x509digest)
@@ -86,6 +87,10 @@ Table of Contents
   * [resty.openssl.x509.extension](#restyopensslx509extension)
     + [extension.new](#extensionnew)
     + [extension.istype](#extensionistype)
+  * [resty.openssl.x509.chain](#restyopensslx509chain)
+    + [chain.new](#chainnew)
+    + [chain:add](#chainadd)
+    + [chain:__metamethods](#chain__metamethods)
 - [Compatibility](#compatibility)
 - [TODO](#todo)
 - [Copyright and License](#copyright-and-license)
@@ -573,6 +578,12 @@ Creates a `x509` instance. The first argument can be:
 1. PEM-formatted X.509 certificate `string`.
 2. `nil` to create an empty certificate.
 
+### x509.dup
+
+**syntax**: *x509, err = x509.dup(x509_ptr_cdata)*
+
+Creates a `x509` instance from `X509*` cdata pointer.
+
 ### x509.istype
 
 **syntax**: *ok = x509.istype(table)*
@@ -859,6 +870,35 @@ ext, err =  extension.new("subjectKeyIdentifier", "hash", {
 **syntax**: *ok = extension.istype(table)*
 
 Returns `true` if table is an instance of `pkey`. Returns `false` otherwise.
+
+## resty.openssl.x509.chain
+
+Module to interact with X.509 stack.
+
+### chain.new
+
+**syntax**: *ch, err = chain.new()*
+
+Creates a new `chain` instance.
+
+### chain:add
+
+**syntax**: *ok, err = chain:add(x509)*
+
+Add a `X509` object to the chain. The first argument must be a
+[resty.openssl.x509](#restyopensslx509) instance.
+
+### chain:__metamethods
+
+**syntax**: *x509 = chain[index]*
+
+**syntax**: *for i, x509 in pairs(chain)*
+
+**syntax**: *for i, x509 in ipairs(chain)*
+
+Access the underlying stack element as it's a Lua table. Make sure your LuaJIT compiled
+with `-DLUAJIT_ENABLE_LUA52COMPAT` flag.
+
 
 Compatibility
 ====

@@ -1,29 +1,28 @@
 local ffi = require "ffi"
 local C = ffi.C
-local ffi_gc = ffi.gc
 local ffi_cast = ffi.cast
 
-require "resty.openssl.include.ossl_typ"
 require "resty.openssl.include.x509v3"
 require "resty.openssl.include.asn1"
-local stack_macro = require "resty.openssl.include.stack"
+local stack_lib = require "resty.openssl.stack"
 local altname_macro = require "resty.openssl.include.x509.altname"
 
 local _M = {}
-local mt = { __index = _M, __tostring = tostring }
+local mt = { __index = _M }
 
 local general_names_ptr_ct = ffi.typeof("GENERAL_NAMES*")
 
-local GENERAL_NAME_stack_gc = stack_macro.gc_of("GENERAL_NAME")
+local STACK_OF = "GENERAL_NAME"
+local new = stack_lib.new_of(STACK_OF)
+local add = stack_lib.add_of(STACK_OF)
 
 local types = altname_macro.types
 
 function _M.new()
-  local raw = stack_macro.OPENSSL_sk_new_null()
+  local raw = new()
   if raw == nil then
     return nil, "OPENSSL_sk_new_null() failed"
   end
-  ffi_gc(raw, GENERAL_NAME_stack_gc)
   local ctx = ffi_cast("GENERAL_NAMES*", raw)
 
   local self = setmetatable({
@@ -79,7 +78,11 @@ function _M:add(typ, value)
     return nil, "ASN1_STRING_set() failed: " .. code
   end
 
-  stack_macro.OPENSSL_sk_push(self.ctx, gen)
+  local _, err = add(self.ctx, gen)
+  if err then
+    C.GENERAL_NAME_free(gen)
+    return nil, err
+  end
   return self
 end
 

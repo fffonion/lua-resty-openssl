@@ -11,6 +11,7 @@ ffi.cdef [[
   // DECLARE_ASN1_FUNCTIONS(X509), NYI
   X509* X509_new(void);
   void X509_free(X509 *a);
+  X509 *X509_dup(X509 *x509);
 
   typedef struct X509_extension_st X509_EXTENSION;
   X509_EXTENSION *X509_EXTENSION_new(void);

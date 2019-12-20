@@ -3,7 +3,7 @@ local C = ffi.C
 local ffi_gc = ffi.gc
 
 require "resty.openssl.include.x509.csr"
-local stack_macro = require "resty.openssl.include.stack"
+local stack_lib = require "resty.openssl.stack"
 local pkey_lib = require "resty.openssl.pkey"
 local altname_lib = require "resty.openssl.x509.altname"
 local x509_name_lib = require "resty.openssl.x509.name"
@@ -53,7 +53,7 @@ function _M:set_subject_name(name)
   end
 end
 
-local X509_EXTENSION_stack_gc = stack_macro.gc_of("X509_EXTENSION")
+local X509_EXTENSION_stack_gc = stack_lib.gc_of("X509_EXTENSION")
 local stack_ptr_type = ffi.typeof("struct stack_st *[1]")
 
 -- https://github.com/wahern/luaossl/blob/master/src/openssl.c
