@@ -72,6 +72,10 @@ Table of Contents
     + [name.dup](#namedup)
     + [name.istype](#nameistype)
     + [name:add](#nameadd)
+    + [name:__metamethods](#name__metamethods)
+    + [name:each](#nameall)
+    + [name:all](#nameall)
+    + [name:find](#namefind)
   * [resty.openssl.x509.altname](#restyopensslx509altname)
     + [altname.new](#altnamenew)
     + [altname.istype](#altnameistype)
@@ -89,8 +93,19 @@ Table of Contents
     + [extension.istype](#extensionistype)
   * [resty.openssl.x509.chain](#restyopensslx509chain)
     + [chain.new](#chainnew)
+    + [chain.dup](#chaindup)
+    + [chain.istype](#chainistype)
     + [chain:add](#chainadd)
     + [chain:__metamethods](#chain__metamethods)
+    + [chain:all](#chainall)
+  * [resty.openssl.x509.store](#restyopensslx509store)
+    + [store.new](#storenew)
+    + [store.istype](#storeistype)
+    + [store:use_default](#storeuse_default)
+    + [store:add](#storeadd)
+    + [store:load_file](#storeload_file)
+    + [store:load_directory](#storeload_directory)
+    + [store:verify](#storeverify)
 - [Compatibility](#compatibility)
 - [TODO](#todo)
 - [Copyright and License](#copyright-and-license)
@@ -103,9 +118,6 @@ Description
 
 `lua-resty-openssl` is a FFI-based OpenSSL binding library, currently
 supports OpenSSL `1.1.1`, `1.1.0` and `1.0.2` series.
-
-The API is kept as same [luaossl](https://github.com/wahern/luaossl) while only a small sets
-of OpenSSL APIs are currently implemented.
 
 
 [Back to TOC](#table-of-contents)
@@ -147,6 +159,8 @@ local _M = {
   altname = require("resty.openssl.x509.altname"),
   csr = require("resty.openssl.x509.csr"),
   extension = require("resty.openssl.x509.extension"),
+  chain = require("resty.openssl.x509.chain"),
+  store = require("resty.openssl.x509.store"),
 }
 ```
 
@@ -157,6 +171,8 @@ local _M = {
 Provides `luaossl` flavored API which uses *camelCase* naming; user can expect drop in replacement.
 
 For example, `pkey:get_parameters` is mapped to `pkey:getParameters`.
+
+Note that not all `luaossl` API has been implemented, please check readme for source of truth.
 
 ## resty.openssl.version
 
@@ -317,7 +333,7 @@ creates an empty instance.
 
 ### bn.dup
 
-**syntax**: *b, err = bn.new(bn_ptr_cdata)*
+**syntax**: *b, err = bn.dup(bn_ptr_cdata)*
 
 Creates a `bn` instance from `BIGNUM*` cdata pointer.
 
@@ -717,7 +733,7 @@ Returns `true` if table is an instance of `name`. Returns `false` otherwise.
 
 ### name:add
 
-**syntax**: *name, err = name:add(nid, txt)*
+**syntax**: *name, err = name:add(nid_text, txt)*
 
 Adds an ASN.1 object to `name`. First arguments in the *text representation* of
 [NID](https://boringssl.googlesource.com/boringssl/+/HEAD/include/openssl/nid.h).
@@ -736,6 +752,86 @@ _, err = name
     :add("ST", "California")
     :add("L", "San Francisco")
 
+```
+
+### name:__metamethods
+
+**syntax**: *for k, obj in pairs(name)*
+
+**syntax**: *len = #name*
+
+Access the underlying name objects as it's a Lua table. Make sure your LuaJIT compiled
+with `-DLUAJIT_ENABLE_LUA52COMPAT` flag.
+
+Each returned object is a table where:
+
+```
+{
+  id: OID of the object,
+  nid: NID of the object,
+  sn: short name of the object,
+  ln: long name of the object,
+  blob: value of the object,
+}
+```
+
+```lua
+local name, err = require("resty.openssl.x509.name").new()
+local _, err = name:add("CN", "example.com")
+
+for k, obj in pairs(name) do
+  ngx.say(k, ":", require("cjson").encode(obj))
+end
+-- outputs 'CN: {"sn":"CN","id":"2.5.4.3","nid":13,"blob":"3.example.com","ln":"commonName"}'
+```
+
+### name:each
+
+**syntax**: *iter = name:each()*
+
+Return an iterator to traverse objects. Use this while `LUAJIT_ENABLE_LUA52COMPAT` is not enabled.
+
+```lua
+local name, err = require("resty.openssl.x509.name").new()
+local _, err = name:add("CN", "example.com")
+
+local iter = name:each()
+while true do
+  local k, obj = iter()
+  if not k then
+    break
+  end
+end
+```
+
+### name:all
+
+**syntax**: *objs, err = name:all()*
+
+Returns all `name` objects in a list. Use this while `LUAJIT_ENABLE_LUA52COMPAT` is not enabled.
+
+### name:find
+
+**syntax**: *obj, pos, err = name:find(nid_text, last_pos?)*
+
+Finds the ASN.1 object with the given *text representation* of
+[NID](https://boringssl.googlesource.com/boringssl/+/HEAD/include/openssl/nid.h) from the
+postition of `last_pos`. By omitting the `last_pos` parameter, `find` finds from the beginning.
+
+Returns the object in a table as same format as decribed [here](#name__metamethods), the position
+of the found object and error if any.
+
+```lua
+local name, err = require("resty.openssl.x509.name").new()
+local _, err = name:add("CN", "example.com")
+                    :add("CN", "example2.com")
+
+local obj, pos, err = name:find("CN")
+ngx.say(obj.blob, " at ", pos)
+-- outputs "example.com at 1"
+local obj, pos, err = name:find("2.5.4.3", 1)
+ngx.say(obj.blob, " at ", pos)
+-- outputs "example2.com at 2"
 ```
 
 ## resty.openssl.x509.altname
@@ -881,11 +977,25 @@ Module to interact with X.509 stack.
 
 Creates a new `chain` instance.
 
+### chain.dup
+
+**syntax**: *ch, err = chain.dup(chain_ptr_cdata)*
+
+Creates a `chain` instance from `STACK_OF(X509)` cdata pointer. The function creates a new
+stack and increases reference count for all elements by 1. But it won't duplicate the elements
+themselves.
+
+### chain.istype
+
+**syntax**: *ok = chain.istype(table)*
+
+Returns `true` if table is an instance of `chain`. Returns `false` otherwise.
+
 ### chain:add
 
 **syntax**: *ok, err = chain:add(x509)*
 
-Add a `X509` object to the chain. The first argument must be a
+Add a `x509` object to the chain. The first argument must be a
 [resty.openssl.x509](#restyopensslx509) instance.
 
 ### chain:__metamethods
@@ -899,6 +1009,67 @@ Add a `X509` object to the chain. The first argument must be a
 Access the underlying stack element as it's a Lua table. Make sure your LuaJIT compiled
 with `-DLUAJIT_ENABLE_LUA52COMPAT` flag.
 
+### chain:all
+
+**syntax**: *x509s, err = chain:all()*
+
+Return all `x509` objects in a list. Use this while `LUAJIT_ENABLE_LUA52COMPAT` is not enabled.
+
+## resty.openssl.x509.store
+
+Module to interact with X.509 certificate store (X509_STORE).
+
+### store.new
+
+**syntax**: *st, err = store.new()*
+
+Creates a new `store` instance.
+
+### store.istype
+
+**syntax**: *ok = store.istype(table)*
+
+Returns `true` if table is an instance of `store`. Returns `false` otherwise.
+
+### store:use_default
+
+**syntax**: *ok, err = store:use_default()*
+
+Loads certificates into the X509_STORE from the hardcoded default paths.
+
+Note that to load "default" CAs correctly, usually you need to install a CA
+certificates bundle. For example, the package in Debian/Ubuntu is called `ca-certificates`.
+
+### store:add
+
+**syntax**: *ok, err = store:add(x509)*
+
+Adds a X.509 object into store. The argument must be a [resty.openssl.x509](#restyopensslx509) instance.
+
+### store:load_file
+
+**syntax**: *ok, err = store:load_file(path)*
+
+Loads a X.509 certificate on file system into store.
+
+### store:load_directory
+
+**syntax**: *ok, err = store:load_directory(path)*
+
+Loads a directory of X.509 certificates on file system into store. The certificates in the directory
+must be in hashed form, as documented in
+[X509_LOOKUP_hash_dir(3)](https://www.openssl.org/docs/man1.1.1/man3/X509_LOOKUP_hash_dir.html).
+
+### store:verify
+
+**syntax**: *chain, err = store:verify(x509, chain?)*
+
+Verifies a X.509 object with the store. The first argument must be
+[resty.openssl.x509](#restyopensslx509) instance. Optionally accept a validation chain as second
+argument, which must be a [resty.openssl.x509.chain](#restyopensslx509chain) instance.
+
+Returns the proof of validation in a chain if verification succeed. Otherwise returns `nil` and
+error explaining the reason.
 
 Compatibility
 ====

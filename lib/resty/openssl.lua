@@ -17,6 +17,8 @@ local _M = {
   altname = require("resty.openssl.x509.altname"),
   csr = require("resty.openssl.x509.csr"),
   extension = require("resty.openssl.x509.extension"),
+  chain = require("resty.openssl.x509.chain"),
+  store = require("resty.openssl.x509.store"),
 }
 
 _M.bignum = _M.bn
@@ -61,6 +63,16 @@ function _M.luaossl_compact()
   end
   _M.cipher.decrypt = function(self, key, iv, padding)
     return self, _M.cipher.init(self, key, iv, false, not padding)
+  end
+
+  local store_verify = _M.store.verify
+  _M.store.verify = function(...)
+    local ok, err = store_verify(...)
+    if err then
+      return false, err
+    else
+      return true, ok
+    end
   end
 end
 

@@ -7,7 +7,7 @@ use Cwd qw(cwd);
 my $pwd = cwd();
 
 our $HttpConfig = qq{
-    lua_package_path "$pwd/lib/?.lua;$pwd/lib/?/init.lua;;";
+    lua_package_path "$pwd/t/openssl/x509/?.lua;$pwd/lib/?.lua;$pwd/lib/?/init.lua;;";
 };
 
 
@@ -77,26 +77,14 @@ x509.new: .*pem_lib.c.+
 --- config
     location =/t {
         content_by_lua_block {
-            os.execute("openssl req -newkey rsa:2048 -nodes -keyout key.pem -x509 -days 365 -out cert.pem -subj '/'")
-            local pem = io.open("cert.pem"):read("*a")
-            local x509 = require("resty.openssl.x509")
-            local c, err = x509.new(pem)
-            if err then
-                ngx.say("1 " .. err)
-                ngx.exit(0)
-            end
+            local c, key = require("helper").create_self_signed()
             local p, err = c:get_pubkey()
             if err then
                 ngx.say("2 " .. err)
                 ngx.exit(0)
             end
             ngx.say(p:to_PEM():sub(1, 26))
-            pem = io.open("key.pem"):read("*a")
-            local pkey = require("resty.openssl.pkey")
-            local k, err = pkey.new(pem)
-            ngx.print(c:get_pubkey():to_PEM() == k:to_PEM("public"))
-            os.remove("key.pem")
-            os.remove("cert.pem")
+            ngx.print(c:get_pubkey():to_PEM() == key:to_PEM("public"))
         }
     }
 --- request
@@ -113,34 +101,22 @@ true"
 --- config
     location =/t {
         content_by_lua_block {
-            os.execute("openssl req -newkey rsa:2048 -nodes -keyout key.pem -x509 -days 365 -out cert.pem -subj '/'")
-            local pem = io.open("cert.pem"):read("*a")
-            local x509 = require("resty.openssl.x509")
-            local c, err = x509.new(pem)
-            if err then
-                ngx.say("1 " .. err)
-                ngx.exit(0)
-            end
+            local f = io.open("t/fixtures/GlobalSign.pem"):read("*a")
+            local c, err = require("resty.openssl.x509").new(f)
             local dd, err = c:digest()
             if err then
                 ngx.say("2 " .. err)
                 ngx.exit(0)
             end
-            local bn, err = require("resty.openssl.bn").from_binary(dd)
-            if err then
-                ngx.say("3 " .. err)
-            end
-            local hex, err = bn:to_hex()
-            if err then
-                ngx.say("4 " .. err)
-            end
-            ngx.say(hex)
+            local h, err = require("helper").to_hex(dd)
+            ngx.say(h)
         }
     }
 --- request
     GET /t
---- response_body_like eval
-"[A-F0-9]{40}"
+--- response_body eval
+"B1BC968BD4F49D622AA89A81F2150152A41D829C
+"
 --- no_error_log
 [error]
 
@@ -149,33 +125,21 @@ true"
 --- config
     location =/t {
         content_by_lua_block {
-            os.execute("openssl req -newkey rsa:2048 -nodes -keyout key.pem -x509 -days 365 -out cert.pem -subj '/'")
-            local pem = io.open("cert.pem"):read("*a")
-            local x509 = require("resty.openssl.x509")
-            local c, err = x509.new(pem)
-            if err then
-                ngx.say("1 " .. err)
-                ngx.exit(0)
-            end
+            local f = io.open("t/fixtures/GlobalSign.pem"):read("*a")
+            local c, err = require("resty.openssl.x509").new(f)
             local dd, err = c:pubkey_digest()
             if err then
                 ngx.say("2 " .. err)
                 ngx.exit(0)
             end
-            local bn, err = require("resty.openssl.bn").from_binary(dd)
-            if err then
-                ngx.say("3 " .. err)
-            end
-            local hex, err = bn:to_hex()
-            if err then
-                ngx.say("4 " .. err)
-            end
-            ngx.say(hex)
+            local h, err = require("helper").to_hex(dd)
+            ngx.say(h)
         }
     }
 --- request
     GET /t
---- response_body_like eval
-"[A-F0-9]{40}"
+--- response_body eval
+"607B661A450D97CA89502F7D04CD34A8FFFCFD4B
+"
 --- no_error_log
 [error]

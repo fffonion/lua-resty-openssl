@@ -12,9 +12,9 @@ local mt = { __index = _M }
 
 local general_names_ptr_ct = ffi.typeof("GENERAL_NAMES*")
 
-local STACK_OF = "GENERAL_NAME"
-local new = stack_lib.new_of(STACK_OF)
-local add = stack_lib.add_of(STACK_OF)
+local STACK = "GENERAL_NAME"
+local new = stack_lib.new_of(STACK)
+local add = stack_lib.add_of(STACK)
 
 local types = altname_macro.types
 

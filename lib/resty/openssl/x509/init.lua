@@ -116,6 +116,10 @@ function _M.dup(ctx)
     return nil, "expect a x509 ctx at #1"
   end
   local ctx = C.X509_dup(ctx)
+  if ctx == nil then
+    return nil, "X509_dup() failed"
+  end
+
   ffi_gc(ctx, C.X509_free)
 
   local self = setmetatable({

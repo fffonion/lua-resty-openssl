@@ -38,6 +38,7 @@ _M.mt_of = function(typ, element_lib, index_tbl)
 
   local typ_ptr = typ .. "*"
 
+  -- starts from 0
   local function value_at(ctx, i)
     local elem = stack_macro.OPENSSL_sk_value(ctx, i)
     if elem == nil then
@@ -51,7 +52,7 @@ _M.mt_of = function(typ, element_lib, index_tbl)
   end
 
   local function iter(tbl)
-    local i = 0;
+    local i = 0
     local n = tonumber(stack_macro.OPENSSL_sk_num(tbl.ctx))
     return function()
       i = i + 1

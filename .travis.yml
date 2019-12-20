@@ -37,7 +37,7 @@ env:
 install:
   - export NGX_BUILD_CC=$CC
   - export PATH=$PWD/cache/work/nginx/sbin:$PWD/nginx-devel-utils:$PATH
-  - sudo apt-get install -qq -y cpanminus axel
+  - sudo apt-get install -qq -y cpanminus axel ca-certificates
   - sudo cpanm --notest Test::Nginx > build.log 2>&1 || (cat build.log && exit 1)
   - git clone https://github.com/openresty/openresty.git ./openresty
   - git clone https://github.com/openresty/nginx-devel-utils.git
@@ -53,6 +53,7 @@ install:
   - if [ ! -e $OPENSSL_PREFIX/include ]; then ./config shared --prefix=$OPENSSL_PREFIX -DPURIFY > build.log 2>&1 || (cat build.log && exit 1); fi
   - if [ ! -e $OPENSSL_PREFIX/include ]; then make -j$JOBS > build.log 2>&1 || (cat build.log && exit 1); fi
   - if [ ! -e $OPENSSL_PREFIX/include ]; then sudo make PATH=$PATH install_sw > build.log 2>&1 || (cat build.log && exit 1); fi
+  - mkdir -p $OPENSSL_PREFIX/certs/ && cp -r /etc/ssl/certs/* $OPENSSL_PREFIX/certs/
   - popd
   - pushd cache
   # luajit

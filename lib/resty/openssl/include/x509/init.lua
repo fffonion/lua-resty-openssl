@@ -3,6 +3,7 @@ local ffi = require "ffi"
 require "resty.openssl.include.ossl_typ"
 require "resty.openssl.include.bio"
 require "resty.openssl.include.pem"
+require "resty.openssl.include.stack"
 
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
@@ -12,6 +13,8 @@ ffi.cdef [[
   X509* X509_new(void);
   void X509_free(X509 *a);
   X509 *X509_dup(X509 *x509);
+  // STACK_OF(X509)
+  OPENSSL_STACK *X509_chain_up_ref(OPENSSL_STACK *chain);
 
   typedef struct X509_extension_st X509_EXTENSION;
   X509_EXTENSION *X509_EXTENSION_new(void);
@@ -42,6 +45,9 @@ ffi.cdef [[
                        unsigned char *md, unsigned int *len);
   int X509_digest(const X509 *data, const EVP_MD *type,
                 unsigned char *md, unsigned int *len);
+
+  const char *X509_verify_cert_error_string(long n);
+  int X509_verify_cert(X509_STORE_CTX *ctx);
 ]]
 
 if OPENSSL_11 then
