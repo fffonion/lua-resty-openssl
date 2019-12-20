@@ -201,7 +201,7 @@ end
 local _M = {}
 local mt = { __index = _M, __tostring = tostring }
 
-local evp_ptr_ct = ffi.typeof('EVP_PKEY*')
+local evp_pkey_ptr_ct = ffi.typeof('EVP_PKEY*')
 -- type
 -- bits
 -- exp
@@ -214,7 +214,7 @@ function _M.new(s, ...)
   elseif type(s) == 'string' then
     ctx, err = load_pkey(s, ...)
   elseif type(s) == 'cdata' then
-    if ffi.istype(evp_ptr_ct, s) then
+    if ffi.istype(evp_pkey_ptr_ct, s) then
       ctx = s
     else
       return nil, "expect a EVP_PKEY* cdata at #1"
@@ -244,7 +244,7 @@ function _M.new(s, ...)
 end
 
 function _M.istype(l)
-  return l and l.ctx and ffi.istype(evp_ptr_ct, l.ctx)
+  return l and l.ctx and ffi.istype(evp_pkey_ptr_ct, l.ctx)
 end
 
 local empty_table = {}
