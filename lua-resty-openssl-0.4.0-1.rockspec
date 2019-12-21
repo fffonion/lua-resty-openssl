@@ -1,5 +1,5 @@
 package = "lua-resty-openssl"
-version = "0.3.0-1"
+version = "0.4.0-1"
 source = {
    url = "git+https://github.com/fffonion/lua-resty-openssl.git"
 }
@@ -35,15 +35,19 @@ build = {
       ["resty.openssl.include.x509.extension"] = "lib/resty/openssl/include/x509/extension.lua",
       ["resty.openssl.include.x509.init"] = "lib/resty/openssl/include/x509/init.lua",
       ["resty.openssl.include.x509.name"] = "lib/resty/openssl/include/x509/name.lua",
+      ["resty.openssl.include.x509_vfy"] = "lib/resty/openssl/include/x509_vfy.lua",
       ["resty.openssl.include.x509v3"] = "lib/resty/openssl/include/x509v3.lua",
       ["resty.openssl.pkey"] = "lib/resty/openssl/pkey.lua",
       ["resty.openssl.rand"] = "lib/resty/openssl/rand.lua",
+      ["resty.openssl.stack"] = "lib/resty/openssl/stack.lua",
       ["resty.openssl.util"] = "lib/resty/openssl/util.lua",
       ["resty.openssl.version"] = "lib/resty/openssl/version.lua",
       ["resty.openssl.x509.altname"] = "lib/resty/openssl/x509/altname.lua",
+      ["resty.openssl.x509.chain"] = "lib/resty/openssl/x509/chain.lua",
       ["resty.openssl.x509.csr"] = "lib/resty/openssl/x509/csr.lua",
       ["resty.openssl.x509.extension"] = "lib/resty/openssl/x509/extension.lua",
       ["resty.openssl.x509.init"] = "lib/resty/openssl/x509/init.lua",
-      ["resty.openssl.x509.name"] = "lib/resty/openssl/x509/name.lua"
+      ["resty.openssl.x509.name"] = "lib/resty/openssl/x509/name.lua",
+      ["resty.openssl.x509.store"] = "lib/resty/openssl/x509/store.lua"
    }
 }
