@@ -63,7 +63,9 @@ Table of Contents
     + [x509:get_*, x509:set_*](#x509get_-x509set_)
     + [x509:get_lifetime](#x509get_lifetime)
     + [x509:set_lifetime](#x509set_lifetime)
+    + [x509:get_basic_constraints](#x509get_basic_constraints)
     + [x509:set_basic_constraints](#x509set_basic_constraints)
+    + [x509:get_basic_constraints_critical](#x509get_basic_constraints_critical)
     + [x509:set_basic_constraints_critical](#x509set_basic_constraints_critical)
     + [x509:sign](#x509sign)
     + [x509:to_PEM](#x509to_pem)
@@ -683,12 +685,39 @@ A shortcut of `x509:get_not_before` plus `x509:get_not_after`
 A shortcut of `x509:set_not_before`
 plus `x509:set_not_after`.
 
+### x509:get_basic_constraints
+
+**syntax**: *value, err = x509:get_basic_constraints(name?)*
+
+Reads the Basic Constraints flag. `name` is case-insensitive and can be either
+`CA` or `pathLen`. When `name` is ommited, this function returns a table containing
+both `CA` and `pathLen` value that can be directly fed into
+[x509:set_basic_constraints](#x509set_basic_constraints).
+
 ### x509:set_basic_constraints
 
-**syntax**: *ok, err = x509:set_basic_constraints({CA = boolean})*
+**syntax**: *ok, err = x509:set_basic_constraints(cfg)*
 
-Sets the basic constraints flag. Accepts a table which contains a key `CA` and a boolean value,
-indicating if the certificate is a CA or not.
+Set the Basic Constraints flag. Accepts a table which contains case-insensitive
+Basic Constraints keys
+
+1. `CA` a boolean indicating this certificate is a CA
+2. `PathLen` a number indicating the maximum CA Depth of the CA hierarchy
+that exists under a CA.
+
+```lua
+local x509 = require("resty.openssl.x509").new()
+x509.set_basic_constraints({
+  CA = false,
+  pathlEn = 0,
+})
+```
+
+### x509:get_basic_constraints_critical
+
+**syntax**: *critical, err = x509:set_basic_constraints_critical(boolean)*
+
+Gets the basic constraints critical flag.
 
 ### x509:set_basic_constraints_critical
 

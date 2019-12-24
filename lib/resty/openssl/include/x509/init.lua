@@ -28,8 +28,10 @@ ffi.cdef [[
   int X509_add_ext(X509 *x, X509_EXTENSION *ex, int loc);
   X509_EXTENSION *X509_get_ext(const X509 *x, int loc);
   int X509_get_ext_by_NID(const X509 *x, int nid, int lastpos);
+  void *X509_get_ext_d2i(const X509 *x, int nid, int *crit, int *idx);
 
   int X509_EXTENSION_set_critical(X509_EXTENSION *ex, int crit);
+  int X509_EXTENSION_get_critical(const X509_EXTENSION *ex);
 
   // needed by pkey
   EVP_PKEY *d2i_PrivateKey_bio(BIO *bp, EVP_PKEY **a);

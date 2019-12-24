@@ -143,3 +143,86 @@ true"
 "
 --- no_error_log
 [error]
+
+=== TEST 6: Reads basic constraints
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/GlobalSign.pem"):read("*a")
+            local c, err = require("resty.openssl.x509").new(f)
+            ngx.say(c:get_basic_constraints("ca"))
+            ngx.say(c:get_basic_constraints("pathlen"))
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"true
+0
+"
+--- no_error_log
+[error]
+
+=== TEST 7: Set basic constraints
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/GlobalSign.pem"):read("*a")
+            local c, err = require("resty.openssl.x509").new(f)
+            local ok, err = c:set_basic_constraints({
+                CA = false,
+                pathLen = 233,
+            })
+            if err then ngx.log(ngx.ERR, err) end
+            ngx.say(c:get_basic_constraints("ca"))
+            ngx.say(c:get_basic_constraints("pathlen"))
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"false
+233
+"
+--- no_error_log
+[error]
+
+=== TEST 8: Reads basic constraints critical
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/GlobalSign.pem"):read("*a")
+            local c, err = require("resty.openssl.x509").new(f)
+            ngx.say(c:get_basic_constraints_critical())
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"true
+"
+--- no_error_log
+[error]
+
+=== TEST 9: Set basic constraints critical
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/GlobalSign.pem"):read("*a")
+            local c, err = require("resty.openssl.x509").new(f)
+            local ok, err = c:set_basic_constraints_critical(false)
+            if err then ngx.log(ngx.ERR, err) end
+            ngx.say(c:get_basic_constraints_critical())
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"false
+"
+--- no_error_log
+[error]

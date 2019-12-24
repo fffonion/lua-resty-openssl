@@ -3,8 +3,10 @@ local C = ffi.C
 local ffi_gc = ffi.gc
 local ffi_new = ffi.new
 local ffi_str = ffi.string
+local ffi_cast = ffi.cast
 
 require "resty.openssl.include.x509"
+require "resty.openssl.include.x509v3"
 require "resty.openssl.include.evp"
 local asn1_lib = require("resty.openssl.asn1")
 local digest_lib = require("resty.openssl.digest")
@@ -301,13 +303,35 @@ function _M:set_basic_constraints(cfg)
   if type(cfg) ~= "table" then
     return false, "expect a table at #1"
   end
+  local cfg_lower = {}
+  for k, v in pairs(cfg) do
+    cfg_lower[string.lower(k)] = v
+  end
 
   local bc = C.BASIC_CONSTRAINTS_new()
   if bc == nil then
     return false, format_error("x509:set_basic_constraints")
   end
 
-  bc.ca = cfg.CA and 0xFF or 0
+  bc.ca = cfg_lower.ca and 0xFF or 0
+
+  local pathlen = cfg_lower.pathlen and tonumber(cfg_lower.pathlen)
+  if pathlen then
+    C.ASN1_INTEGER_free(bc.pathlen)
+
+    local pathlen_asn1 = C.ASN1_STRING_type_new(pathlen)
+    if pathlen_asn1 == nil then
+      C.BASIC_CONSTRAINTS_free(bc)
+      return false, format_error("x509:set_basic_constraints: ASN1_STRING_type_new")
+    end
+    bc.pathlen = pathlen_asn1
+
+    local code = C.ASN1_INTEGER_set(pathlen_asn1, pathlen)
+    if code ~= 1 then
+      C.BASIC_CONSTRAINTS_free(bc)
+      return false, format_error("x509:set_basic_constraints: ASN1_INTEGER_set", code)
+    end
+  end
 
   -- obj_mac.h: #define NID_basic_constraints           87
   -- x509v3.h: # define X509V3_ADD_REPLACE              2L
@@ -320,16 +344,63 @@ function _M:set_basic_constraints(cfg)
   return true
 end
 
-function _M:set_basic_constraints_critical(crit)
+function _M:get_basic_constraints(name)
   -- obj_mac.h: #define NID_basic_constraints           87
-  local loc = C.X509_get_ext_by_NID(self.ctx, 87, -1)
-  if loc == -1 then
-    return false, format_error("x509:set_basic_constraints_critical: X509_get_ext_by_NID")
+  local raw = C.X509_get_ext_d2i(self.ctx, 87, nil, nil)
+  if raw == nil then
+    return nil, format_error("x509:get_basic_constraints: X509_get_ext_d2i")
+  end
+  local bc = ffi_cast("BASIC_CONSTRAINTS*", raw)
+  local ret
+  local ca = bc.ca == 0xFF
+  local pathlen = tonumber(C.ASN1_INTEGER_get(bc.pathlen))
+  if string.lower(name) == 'ca' then
+    ret = ca
+  elseif string.lower(name) == 'pathlen' then
+    ret = pathlen
+  else
+    ret = {
+      ca = ca,
+      pathlen = pathlen
+    }
   end
 
-  local ext = C.X509_get_ext(self.ctx, loc)
+  C.BASIC_CONSTRAINTS_free(bc)
+
+  if ret == nil then
+    return nil, "name must be one of 'ca' or 'pathlen'"
+  else
+    return ret
+  end
+end
+
+local function get_x509_ext_by_nid(ctx, nid)
+  local loc = C.X509_get_ext_by_NID(ctx, nid, -1)
+  if loc == -1 then
+    return nil, format_error("get_x509_ext_by_nid: X509_get_ext_by_NID")
+  end
+
+  local ext = C.X509_get_ext(ctx, loc)
   if ext == nil then
-    return false, format_error("x509:set_basic_constraints_critical: X509_get_ext")
+    return nil, format_error("get_x509_ext_by_nid: X509_get_ext")
+  end
+  return ext
+end
+
+function _M:get_basic_constraints_critical()
+  local ext, err = get_x509_ext_by_nid(self.ctx, 87)
+  if err then
+    return false, err
+  end
+
+  return C.X509_EXTENSION_get_critical(ext) == 1
+end
+
+function _M:set_basic_constraints_critical(crit)
+  -- obj_mac.h: #define NID_basic_constraints           87
+  local ext, err = get_x509_ext_by_nid(self.ctx, 87)
+  if err then
+    return false, err
   end
 
   if C.X509_EXTENSION_set_critical(ext, crit and 1 or 0) ~= 1 then

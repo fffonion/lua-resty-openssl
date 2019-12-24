@@ -22,6 +22,7 @@ ffi.cdef [[
   typedef int time_t;
   ASN1_TIME *ASN1_TIME_set(ASN1_TIME *s, time_t t);
 
+  int ASN1_INTEGER_set(ASN1_INTEGER *a, long v);
   long ASN1_INTEGER_get(const ASN1_INTEGER *a);
 ]]
 
