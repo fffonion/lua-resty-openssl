@@ -12,8 +12,6 @@ ffi.cdef [[
 
   int X509_REQ_set_subject_name(X509_REQ *req, X509_NAME *name);
   int X509_REQ_set_pubkey(X509_REQ *x, EVP_PKEY *pkey);
-  int X509_add1_ext_i2d(X509 *x, int nid, void *value, int crit,
-                      unsigned long flags);
   int X509_REQ_get_attr_count(const X509_REQ *req);
 
   int X509_REQ_sign(X509_REQ *x, EVP_PKEY *pkey, const EVP_MD *md);

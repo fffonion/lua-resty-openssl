@@ -42,6 +42,8 @@ ffi.cdef [[
   int X509V3_add1_i2d(OPENSSL_STACK **x, int nid, void *value,
                     int crit, unsigned long flags);
 
+  int X509_add1_ext_i2d(X509 *x, int nid, void *value, int crit,
+                    unsigned long flags);
   // although the struct has plural form, it's not a stack
   typedef struct BASIC_CONSTRAINTS_st {
     int ca;
