@@ -151,22 +151,24 @@ This meta module provides a version sanity check and returns all exported module
 ```lua
 local _M = {
   _VERSION = '0.1.0',
-  version = require("resty.openssl.version"),
-  pkey = require("resty.openssl.pkey"),
+  bn = require("resty.openssl.bn"),
+  cipher = require("resty.openssl.cipher"),
   digest = require("resty.openssl.digest"),
   hmac = require("resty.openssl.hmac"),
-  bn = require("resty.openssl.bn"),
+  pkey = require("resty.openssl.pkey"),
+  rand = require("resty.openssl.rand"),
+  version = require("resty.openssl.version"),
   x509 = require("resty.openssl.x509"),
-  name = require("resty.openssl.x509.name"),
   altname = require("resty.openssl.x509.altname"),
+  chain = require("resty.openssl.x509.chain"),
   csr = require("resty.openssl.x509.csr"),
   extension = require("resty.openssl.x509.extension"),
-  chain = require("resty.openssl.x509.chain"),
+  name = require("resty.openssl.x509.name"),
   store = require("resty.openssl.x509.store"),
 }
 ```
 
-### openssl.luaossl_compact
+### openssl.luaossl_compat
 
 **syntax**: *openssl.luaossl_compact()*
 

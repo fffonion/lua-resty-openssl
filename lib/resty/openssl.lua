@@ -7,25 +7,41 @@ end
 
 local _M = {
   _VERSION = '0.4.1',
-  version = require("resty.openssl.version"),
-  pkey = require("resty.openssl.pkey"),
+  bn = require("resty.openssl.bn"),
+  cipher = require("resty.openssl.cipher"),
   digest = require("resty.openssl.digest"),
   hmac = require("resty.openssl.hmac"),
-  bn = require("resty.openssl.bn"),
+  pkey = require("resty.openssl.pkey"),
+  rand = require("resty.openssl.rand"),
+  version = require("resty.openssl.version"),
   x509 = require("resty.openssl.x509"),
-  name = require("resty.openssl.x509.name"),
   altname = require("resty.openssl.x509.altname"),
+  chain = require("resty.openssl.x509.chain"),
   csr = require("resty.openssl.x509.csr"),
   extension = require("resty.openssl.x509.extension"),
-  chain = require("resty.openssl.x509.chain"),
+  name = require("resty.openssl.x509.name"),
   store = require("resty.openssl.x509.store"),
 }
 
 _M.bignum = _M.bn
 
 function _M.luaossl_compact()
-  for _, tbl in pairs(_M) do
+  for mod, tbl in pairs(_M) do
     if type(tbl) == 'table' then
+      -- luaossl always error() out
+      for k, f in pairs(tbl) do
+        if type(f) == 'function' then
+          local of = f
+          tbl[k] = function(...)
+            local ret = { of(...) }
+            if ret and #ret > 1 and ret[#ret] then
+              error(mod .. "." .. k .. "(): " .. ret[#ret])
+            end
+            return unpack(ret)
+          end
+        end
+      end
+
       setmetatable(tbl, {
         __index = function(t, k)
           local tok
@@ -63,6 +79,16 @@ function _M.luaossl_compact()
   end
   _M.cipher.decrypt = function(self, key, iv, padding)
     return self, _M.cipher.init(self, key, iv, false, not padding)
+  end
+
+  local digest_update = _M.digest.update
+  _M.digest.update = function(self, ...)
+    local ok, err = digest_update(self, ...)
+    if ok then
+      return self
+    else
+      return nil, err
+    end
   end
 
   local store_verify = _M.store.verify

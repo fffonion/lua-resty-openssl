@@ -28,3 +28,25 @@ __DATA__
 10\d{4}[0-9a-f]f
 --- no_error_log
 [error]
+
+
+=== TEST 2: Luaossl compact pattern
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local openssl = require("resty.openssl")
+            openssl.luaossl_compact()
+            local pkey = require("resty.openssl.pkey")
+            local pok, perr = pcall(pkey.new, "not a key")
+            ngx.say(pok)
+            ngx.say(perr)
+        }
+    }
+--- request
+    GET /t
+--- response_body_like
+false
+.+pkey.new.+not enough data
+--- no_error_log
+[error]
