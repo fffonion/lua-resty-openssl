@@ -30,13 +30,13 @@ __DATA__
 [error]
 
 
-=== TEST 2: Luaossl compact pattern
+=== TEST 2: Luaossl compat pattern
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
         content_by_lua_block {
             local openssl = require("resty.openssl")
-            openssl.luaossl_compact()
+            openssl.luaossl_compat()
             local pkey = require("resty.openssl.pkey")
             local pok, perr = pcall(pkey.new, "not a key")
             ngx.say(pok)

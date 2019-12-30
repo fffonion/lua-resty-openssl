@@ -12,7 +12,7 @@ Table of Contents
 - [Status](#status)
 - [Synopsis](#synopsis)
   * [resty.openssl](#restyopenssl)
-    + [openssl.luaossl_compact](#opensslluaossl-compact)
+    + [openssl.luaossl_compat](#opensslluaossl-compat)
   * [resty.openssl.version](#restyopensslversion)
     + [version_num](#version_num)
     + [version_text](#version_text)
@@ -174,7 +174,7 @@ local _M = {
 
 ### openssl.luaossl_compat
 
-**syntax**: *openssl.luaossl_compact()*
+**syntax**: *openssl.luaossl_compat()*
 
 Provides `luaossl` flavored API which uses *camelCase* naming; user can expect drop in replacement.
 

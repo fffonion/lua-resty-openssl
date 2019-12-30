@@ -25,7 +25,7 @@ local _M = {
 
 _M.bignum = _M.bn
 
-function _M.luaossl_compact()
+function _M.luaossl_compat()
   for mod, tbl in pairs(_M) do
     if type(tbl) == 'table' then
       -- luaossl always error() out
@@ -101,5 +101,8 @@ function _M.luaossl_compact()
     end
   end
 end
+
+-- we made a typo sometime, this is going to be removed in next major release
+_M.luaossl_compact = _M.luaossl_compat
 
 return _M
