@@ -16,6 +16,7 @@ ffi.cdef [[
 
   ASN1_STRING *ASN1_STRING_type_new(int type);
   int ASN1_STRING_set(ASN1_STRING *str, const void *data, int len);
+  void ASN1_STRING_free(ASN1_STRING *a);
 
   ASN1_INTEGER *BN_to_ASN1_INTEGER(const BIGNUM *bn, ASN1_INTEGER *ai);
   BIGNUM *ASN1_INTEGER_to_BN(const ASN1_INTEGER *ai, BIGNUM *bn);

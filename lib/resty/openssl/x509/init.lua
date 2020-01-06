@@ -163,7 +163,11 @@ function _M:get_lifetime()
   return not_before, not_after, nil
 end
 
-local number_to_asn1 = function(tm) return C.ASN1_TIME_set(nil, tm) end
+local number_to_asn1 = function(tm)
+  local ctx = C.ASN1_TIME_set(nil, tm)
+  ffi_gc(ctx, C.ASN1_STRING_free)
+  return ctx
+end
 
 -- Generate getter/setters
 local attributes = {
