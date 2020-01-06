@@ -105,6 +105,7 @@ bn:to_binary failed
                 ngx.log(ngx.ERR, err)
                 return
             end
+            -- valgrind might warn about double free on this test because of the following
             require('ffi').C.BN_free(bn.ctx)
             local b, err = bn2:to_binary()
             if err then

@@ -6,6 +6,7 @@ local ffi_str = ffi.string
 local floor = math.floor
 
 require "resty.openssl.include.bn"
+local crypto_macro = require("resty.openssl.include.crypto")
 local format_error = require("resty.openssl.err").format_error
 
 local _M = {}
@@ -50,7 +51,9 @@ function _M:to_hex()
   if buf == nil then
     return nil, format_error("bn:to_hex")
   end
-  return ffi_str(buf), nil
+  local s = ffi_str(buf)
+  crypto_macro.OPENSSL_free(buf)
+  return s, nil
 end
 
 function _M.from_binary(s)
