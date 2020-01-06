@@ -18,6 +18,7 @@ ffi.cdef [[
   int ASN1_STRING_set(ASN1_STRING *str, const void *data, int len);
 
   ASN1_INTEGER *BN_to_ASN1_INTEGER(const BIGNUM *bn, ASN1_INTEGER *ai);
+  BIGNUM *ASN1_INTEGER_to_BN(const ASN1_INTEGER *ai, BIGNUM *bn);
 
   typedef int time_t;
   ASN1_TIME *ASN1_TIME_set(ASN1_TIME *s, time_t t);

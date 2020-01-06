@@ -173,6 +173,7 @@ local attributes = {
     -- attribute type
     typ = "resty.openssl.bn",
     -- the optional type converter
+    -- set
     from = function(bn_ctx)
       local ctx = C.BN_to_ASN1_INTEGER(bn_ctx, nil)
       if ctx == nil then
@@ -183,7 +184,16 @@ local attributes = {
       ffi_gc(ctx, C.ASN1_INTEGER_free)
       return ctx
     end,
-    to = function(asn1_integer)
+    -- get
+    to = function(asn1_integer_ctx)
+      -- returns the a new BIGNUM instance
+      local ctx = C.ASN1_INTEGER_to_BN(asn1_integer_ctx, nil)
+      if ctx == nil then
+        return nil, format_error("x509:set: BN_to_ASN1_INTEGER")
+      end
+      -- bn will be duplicated thus this ctx should be freed up
+      ffi_gc(ctx, C.BN_free)
+      return ctx
     end,
     dup = true,
   },
