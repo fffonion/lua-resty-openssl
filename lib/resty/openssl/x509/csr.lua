@@ -66,18 +66,20 @@ local function xr_modifyRequestedExtension(csr, target_nid, value, crit, flags)
 
   local sk = stack_ptr_type()
   sk[0] = C.X509_REQ_get_extensions(csr)
-  ffi_gc(sk[0], X509_EXTENSION_stack_gc)
 
   local code
   code = C.X509V3_add1_i2d(sk, target_nid, value, crit, flags)
+  local err
   if code ~= 1 then
-    return "X509V3_add1_i2d() failed: " .. code
+    err = "X509V3_add1_i2d() failed: " .. code
   end
   code = C.X509_REQ_add_extensions(csr, sk[0])
   if code ~= 1 then
-    return "X509_REQ_add_extensions() failed: " .. code
+    err = "X509_REQ_add_extensions() failed: " .. code
   end
 
+  X509_EXTENSION_stack_gc(sk[0])
+  return err
 end
 
 function _M:set_subject_alt(alt)
