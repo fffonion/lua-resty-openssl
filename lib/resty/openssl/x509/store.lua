@@ -22,6 +22,8 @@ function _M.new()
 
   local self = setmetatable({
     ctx = ctx,
+    _x509_refs = {},
+    _x509_refs_idx = 1,
   }, mt)
 
   return self, nil
@@ -48,6 +50,10 @@ function _M:add(item)
       C.X509_free(dup)
       return false, format_error("store:add: X509_STORE_add_cert")
     end
+    -- gc added X509 objects together with X509_store
+    self._x509_refs[self._x509_refs_idx] = dup
+    self._x509_refs_idx = self._x509_refs_idx + 1
+    ffi_gc(dup, C.X509_free)
   else
     return false, "expect a x509 instance at #1"
   end
