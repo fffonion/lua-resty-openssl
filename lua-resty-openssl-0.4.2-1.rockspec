@@ -1,5 +1,5 @@
 package = "lua-resty-openssl"
-version = "0.4.1-1"
+version = "0.4.2-1"
 source = {
    url = "git+https://github.com/fffonion/lua-resty-openssl.git"
 }
@@ -21,6 +21,7 @@ build = {
       ["resty.openssl.include.asn1"] = "lib/resty/openssl/include/asn1.lua",
       ["resty.openssl.include.bio"] = "lib/resty/openssl/include/bio.lua",
       ["resty.openssl.include.bn"] = "lib/resty/openssl/include/bn.lua",
+      ["resty.openssl.include.crypto"] = "lib/resty/openssl/include/crypto.lua",
       ["resty.openssl.include.ec"] = "lib/resty/openssl/include/ec.lua",
       ["resty.openssl.include.evp"] = "lib/resty/openssl/include/evp.lua",
       ["resty.openssl.include.hmac"] = "lib/resty/openssl/include/hmac.lua",
