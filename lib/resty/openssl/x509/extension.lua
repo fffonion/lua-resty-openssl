@@ -3,11 +3,14 @@ local C = ffi.C
 local ffi_gc = ffi.gc
 local ffi_new = ffi.new
 
+require "resty.openssl.include.x509"
 require "resty.openssl.include.x509.extension"
+local objects_lib = require "resty.openssl.objects"
+local util = require "resty.openssl.util"
 local format_error = require("resty.openssl.err").format_error
 
 local _M = {}
-local mt = { __index = _M, __tostring = tostring }
+local mt = { __index = _M }
 
 local x509_extension_ptr_ct = ffi.typeof("X509_EXTENSION*")
 
@@ -56,6 +59,54 @@ end
 
 function _M.istype(l)
   return l and l.ctx and ffi.istype(x509_extension_ptr_ct, l.ctx)
+end
+
+function _M.dup(ctx)
+  if not ffi.istype(x509_extension_ptr_ct, ctx) then
+    return nil, "expect a x509.extension ctx at #1"
+  end
+  local ctx = C.X509_EXTENSION_dup(ctx)
+  if ctx == nil then
+    return nil, "X509_EXTENSION_dup() failed"
+  end
+
+  ffi_gc(ctx, C.X509_EXTENSION_free)
+
+  local self = setmetatable({
+    ctx = ctx,
+  }, mt)
+
+  return self, nil
+end
+
+function _M:get_object()
+  -- retruns the internal pointer
+  local asn1 = C.X509_EXTENSION_get_object(self.ctx)
+
+  return objects_lib.obj2table(asn1)
+end
+
+function _M:get_critical()
+  return C.X509_EXTENSION_get_critical(self.ctx) == 1
+end
+
+function _M:set_critical(crit)
+  if C.X509_EXTENSION_set_critical(self.ctx, crit and 1 or 0) ~= 1 then
+    return false, format_error("x509.extension:set_critical")
+  end
+  return true
+end
+
+function _M:text()
+  return util.read_using_bio(C.X509V3_EXT_print, self.ctx, 0, 0)
+end
+
+mt.__tostring = function(tbl)
+  local txt, err = _M.text(tbl)
+  if err then
+    error(err)
+  end
+  return txt
 end
 
 
