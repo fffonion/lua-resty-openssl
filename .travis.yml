@@ -30,15 +30,18 @@ env:
     - TEST_NGINX_RANDOMIZE=1
     - LUACHECK_VER=0.21.1
   matrix:
-    - NGINX_VERSION=1.15.8 OPENSSL_VER=1.0.2t
+    - NGINX_VERSION=1.15.8 OPENSSL_VER=1.0.2u
     - NGINX_VERSION=1.15.8 OPENSSL_VER=1.1.0l
     - NGINX_VERSION=1.15.8 OPENSSL_VER=1.1.1d
 
 install:
   - export NGX_BUILD_CC=$CC
   - export PATH=$PWD/cache/work/nginx/sbin:$PWD/nginx-devel-utils:$PATH
-  - sudo apt-get install -qq -y cpanminus axel ca-certificates
-  - sudo cpanm --notest Test::Nginx > build.log 2>&1 || (cat build.log && exit 1)
+  - sudo apt-get install -qq -y cpanminus axel ca-certificates #valgrind
+  # perl cache
+  - pushd cache
+  - if [ ! -e perl ]; then sudo cpanm --notest Test::Nginx > build.log 2>&1 || (cat build.log && exit 1); cp -r /usr/local/share/perl/ .; else sudo cp -r perl /usr/local/share; fi
+  - popd
   - git clone https://github.com/openresty/openresty.git ./openresty
   - git clone https://github.com/openresty/nginx-devel-utils.git
   - git clone https://github.com/simpl/ngx_devel_kit.git ./ndk-nginx-module
@@ -62,6 +65,9 @@ install:
   - make -j$JOBS CCDEBUG=-g Q= PREFIX=$LUAJIT_PREFIX CC=$CC XCFLAGS='-DLUA_USE_APICHECK -DLUA_USE_ASSERT -DLUAJIT_ENABLE_LUA52COMPAT' > build.log 2>&1 || (cat build.log && exit 1)
   - make install PREFIX=$LUAJIT_PREFIX > build.log 2>&1 || (cat build.log && exit 1)
   - popd
+  # lua-cjson
+  - if [ ! -e lua-cjson ]; then git clone https://github.com/openresty/lua-cjson.git ./lua-cjson; fi
+  - pushd ./lua-cjson && make && sudo PATH=$PATH make install && popd
   # nginx
   - if [ ! -e work ]; then ngx-build $NGINX_VERSION --add-module=../ndk-nginx-module --add-module=../lua-nginx-module --with-http_ssl_module --with-cc-opt="-I$OPENSSL_INC" --with-ld-opt="-L$OPENSSL_LIB -Wl,-rpath,$OPENSSL_LIB" --with-debug > build.log 2>&1 || (cat build.log && exit 1); fi
   - nginx -V
