@@ -20,10 +20,19 @@ local types = {
   DirName = GEN_DIRNAME,
 }
 
+local literals = {
+  [GEN_EMAIL] = "email",
+  [GEN_DNS] = "DNS",
+  [GEN_DIRNAME] = "DirName",
+  [GEN_URI] = "URI",
+  [GEN_IPADD] = "IP",
+}
+
 for t, gid in pairs(types) do
   types[t:lower()] = gid
 end
 
 return {
   types = types,
+  literals = literals,
 }
