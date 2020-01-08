@@ -8,15 +8,10 @@ ffi.cdef [[
 
   typedef struct asn1_type_st ASN1_TYPE;
 
-  // macro in asn1.h
-  ASN1_OBJECT *ASN1_OBJECT_new(void);
-  void ASN1_OBJECT_free(ASN1_OBJECT *a);
-
-  void ASN1_INTEGER_free(ASN1_INTEGER *a);
+  ASN1_IA5STRING *ASN1_IA5STRING_new();
 
   ASN1_STRING *ASN1_STRING_type_new(int type);
   int ASN1_STRING_set(ASN1_STRING *str, const void *data, int len);
-  void ASN1_STRING_free(ASN1_STRING *a);
 
   ASN1_INTEGER *BN_to_ASN1_INTEGER(const BIGNUM *bn, ASN1_INTEGER *ai);
   BIGNUM *ASN1_INTEGER_to_BN(const ASN1_INTEGER *ai, BIGNUM *bn);
@@ -27,6 +22,24 @@ ffi.cdef [[
   int ASN1_INTEGER_set(ASN1_INTEGER *a, long v);
   long ASN1_INTEGER_get(const ASN1_INTEGER *a);
 ]]
+
+local function declare_asn1_functions(typ)
+  local t = {}
+  for i=1, 7 do
+    t[i] = typ
+  end
+
+  ffi.cdef(string.format([[
+    %s *%s_new(void);
+    void %s_free(%s *a);
+    %s *%s_dup(%s *a);
+  ]], unpack(t))
+  )
+end
+
+declare_asn1_functions("ASN1_INTEGER")
+declare_asn1_functions("ASN1_OBJECT")
+declare_asn1_functions("ASN1_STRING")
 
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
@@ -46,4 +59,5 @@ end
 
 return {
   ASN1_STRING_get0_data = ASN1_STRING_get0_data,
+  declare_asn1_functions = declare_asn1_functions,
 }

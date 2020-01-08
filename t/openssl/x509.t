@@ -144,7 +144,98 @@ true"
 --- no_error_log
 [error]
 
-=== TEST 6: Reads basic constraints
+=== TEST 6: Gets extension
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/Github.pem"):read("*a")
+            local c, err = require("resty.openssl.x509").new(f)
+            local ext, pos, err = c:get_extension("X509v3 Extended Key Usage")
+            if err then
+                ngx.say(err)
+                ngx.exit(0)
+            end
+            ngx.say(pos)
+            ngx.say(tostring(ext))
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"5
+TLS Web Server Authentication, TLS Web Client Authentication
+"
+--- no_error_log
+[error]
+
+=== TEST 7: Adds extension
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local c, err = require("resty.openssl.x509").new()
+            local ext, err = require("resty.openssl.x509.extension").new(
+                "extendedKeyUsage", "TLS Web Server Authentication"
+            )
+            if err then
+                ngx.say(err)
+                ngx.exit(0)
+            end
+            local ok, err = c:add_extension(ext)
+            if err then
+                ngx.say(err)
+                ngx.exit(0)
+            end
+            local ext, _, err = c:get_extension("X509v3 Extended Key Usage")
+            if err then
+                ngx.say(err)
+                ngx.exit(0)
+            end
+            ngx.say(tostring(ext))
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"TLS Web Server Authentication
+"
+--- no_error_log
+[error]
+
+=== TEST 8: Set extension
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/GlobalSign.pem"):read("*a")
+            local c, err = require("resty.openssl.x509").new(f)
+            local ext, err = require("resty.openssl.x509.extension").new(
+                "keyUsage", "Digital Signature, Key Encipherment"
+            )
+            local ok, err = c:set_extension(ext)
+            if err then
+                ngx.say(err)
+                ngx.exit(0)
+            end
+            local ext, _, err = c:get_extension("X509v3 Key Usage")
+            if err then
+                ngx.say(err)
+                ngx.exit(0)
+            end
+            ngx.say(tostring(ext))
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"Digital Signature, Key Encipherment
+"
+--- no_error_log
+[error]
+
+
+=== TEST 9: Reads basic constraints
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -153,6 +244,7 @@ true"
             local c, err = require("resty.openssl.x509").new(f)
             ngx.say(c:get_basic_constraints("ca"))
             ngx.say(c:get_basic_constraints("pathlen"))
+            collectgarbage("collect")
         }
     }
 --- request
@@ -164,7 +256,7 @@ true"
 --- no_error_log
 [error]
 
-=== TEST 7: Set basic constraints
+=== TEST 10: Set basic constraints
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -178,6 +270,7 @@ true"
             if err then ngx.log(ngx.ERR, err) end
             ngx.say(c:get_basic_constraints("ca"))
             ngx.say(c:get_basic_constraints("pathlen"))
+            collectgarbage("collect")
         }
     }
 --- request
@@ -189,7 +282,7 @@ true"
 --- no_error_log
 [error]
 
-=== TEST 8: Reads basic constraints critical
+=== TEST 11: Reads basic constraints critical
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -197,6 +290,7 @@ true"
             local f = io.open("t/fixtures/GlobalSign.pem"):read("*a")
             local c, err = require("resty.openssl.x509").new(f)
             ngx.say(c:get_basic_constraints_critical())
+            collectgarbage("collect")
         }
     }
 --- request
@@ -207,7 +301,7 @@ true"
 --- no_error_log
 [error]
 
-=== TEST 9: Set basic constraints critical
+=== TEST 12: Set basic constraints critical
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -217,12 +311,150 @@ true"
             local ok, err = c:set_basic_constraints_critical(false)
             if err then ngx.log(ngx.ERR, err) end
             ngx.say(c:get_basic_constraints_critical())
+            collectgarbage("collect")
         }
     }
 --- request
     GET /t
 --- response_body eval
 "false
+"
+--- no_error_log
+[error]
+
+
+=== TEST 13: Get subject alt name
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/Github.pem"):read("*a")
+            local c, err = require("resty.openssl.x509").new(f)
+            local altnames, err = c:get_subject_alt_name()
+            if err then ngx.log(ngx.ERR, err) end
+            for k, v in pairs(altnames) do
+                ngx.say(k, " ", v)
+            end
+            collectgarbage("collect")
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"DNS github.com
+DNS www.github.com
+"
+--- no_error_log
+[error]
+
+=== TEST 14: Set subject alt name
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/Github.pem"):read("*a")
+            local c, err = require("resty.openssl.x509").new(f)
+            local altnames, err = c:get_subject_alt_name()
+            if err then ngx.log(ngx.ERR, err) end
+            local _, err = altnames:add("DNS", "subdomain.github.com")
+            if err then ngx.log(ngx.ERR, err) end
+            ok, err = c:set_subject_alt_name(altnames)
+            if err then ngx.log(ngx.ERR, err) end
+            altnames, err = c:get_subject_alt_name()
+            for k, v in pairs(altnames) do
+                ngx.say(k, " ", v)
+            end
+            collectgarbage("collect")
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"DNS github.com
+DNS www.github.com
+DNS subdomain.github.com
+"
+--- no_error_log
+[error]
+
+=== TEST 15: Get authority info access
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/Github.pem"):read("*a")
+            local c, err = require("resty.openssl.x509").new(f)
+            local aia, err = c:get_info_access()
+            if err then ngx.log(ngx.ERR, err) end
+            local ffi = require "ffi"
+            for _, v in ipairs(aia) do
+                ngx.say(ffi.string(ffi.C.OBJ_nid2ln(v[1])), " - ", v[2], ":", v[3])
+            end
+            collectgarbage("collect")
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"OCSP - URI:http://ocsp.digicert.com
+CA Issuers - URI:http://cacerts.digicert.com/DigiCertSHA2ExtendedValidationServerCA.crt
+"
+--- no_error_log
+[error]
+
+=== TEST 16: Set authority info access
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/Github.pem"):read("*a")
+            local c, err = require("resty.openssl.x509").new(f)
+            local aia, err = c:get_info_access()
+            local _, err = aia:add("OCSP", "URI", "http://somedomain.com")
+            if err then ngx.log(ngx.ERR, err) end
+            ok, err = c:set_info_access(aia)
+            if err then ngx.log(ngx.ERR, err) end
+            aia, err = c:get_info_access()
+            local ffi = require "ffi"
+            for _, v in ipairs(aia) do
+                ngx.say(ffi.string(ffi.C.OBJ_nid2ln(v[1])), " - ", v[2], ":", v[3])
+            end
+            collectgarbage("collect")
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"OCSP - URI:http://ocsp.digicert.com
+CA Issuers - URI:http://cacerts.digicert.com/DigiCertSHA2ExtendedValidationServerCA.crt
+OCSP - URI:http://somedomain.com
+"
+--- no_error_log
+[error]
+
+=== TEST 17: Get CRL distribution points
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/Github.pem"):read("*a")
+            local c, err = require("resty.openssl.x509").new(f)
+            local cdp, err = c:get_crl_distribution_points()
+            if err then ngx.log(ngx.ERR, err) end
+            local ffi = require "ffi"
+            for _, altname in pairs(cdp) do
+                for k, v in pairs(altname) do
+                    ngx.say(k, " ", v)
+                end
+            end
+            collectgarbage("collect")
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+"URI http://crl3.digicert.com/sha2-ev-server-g2.crl
+URI http://crl4.digicert.com/sha2-ev-server-g2.crl
 "
 --- no_error_log
 [error]

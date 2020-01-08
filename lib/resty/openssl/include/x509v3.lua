@@ -2,7 +2,12 @@ local ffi = require "ffi"
 
 require "resty.openssl.include.ossl_typ"
 require "resty.openssl.include.stack"
-require "resty.openssl.include.asn1"
+local asn1_macro = require "resty.openssl.include.asn1"
+
+local BASIC_CONSTRAINTS = {
+  ca = "number",
+  pathlen = "ASN1_INTEGER",
+}
 
 ffi.cdef [[
   typedef struct EDIPartyName_st EDIPARTYNAME;
@@ -35,12 +40,13 @@ ffi.cdef [[
   // STACK_OF(GENERAL_NAME)
   typedef struct stack_st GENERAL_NAMES;
 
-  GENERAL_NAME *GENERAL_NAME_new(void);
-  void GENERAL_NAME_free(GENERAL_NAME *a);
-
   // STACK_OF(X509_EXTENSION)
   int X509V3_add1_i2d(OPENSSL_STACK **x, int nid, void *value,
                     int crit, unsigned long flags);
+  void *X509V3_EXT_d2i(X509_EXTENSION *ext);
+  X509_EXTENSION *X509V3_EXT_i2d(int ext_nid, int crit, void *ext_struc);
+  int X509V3_EXT_print(BIO *out, X509_EXTENSION *ext, unsigned long flag,
+                     int indent);
 
   int X509_add1_ext_i2d(X509 *x, int nid, void *value, int crit,
                     unsigned long flags);
@@ -49,9 +55,6 @@ ffi.cdef [[
     int ca;
     ASN1_INTEGER *pathlen;
   } BASIC_CONSTRAINTS;
-  // DECLARE_ASN1_FUNCTIONS(BASIC_CONSTRAINTS), NYI
-  BASIC_CONSTRAINTS *BASIC_CONSTRAINTS_new(void);
-  void BASIC_CONSTRAINTS_free(BASIC_CONSTRAINTS *a);
 
   void X509V3_set_ctx(X509V3_CTX *ctx, X509 *issuer, X509 *subject,
     X509_REQ *req, X509_CRL *crl, int flags);
@@ -62,4 +65,38 @@ ffi.cdef [[
                                  const char *value);
   int X509V3_EXT_print(BIO *out, X509_EXTENSION *ext, unsigned long flag,
     int indent);
+
+  // STACK_OF(ACCESS_DESCRIPTION)
+  typedef struct stack_st AUTHORITY_INFO_ACCESS;
+
+  typedef struct ACCESS_DESCRIPTION_st {
+    ASN1_OBJECT *method;
+    GENERAL_NAME *location;
+  } ACCESS_DESCRIPTION;
+
+  typedef struct DIST_POINT_NAME_st {
+    int type;
+    union {
+        GENERAL_NAMES *fullname;
+        // STACK_OF(X509_NAME_ENTRY)
+        OPENSSL_STACK *relativename;
+    } name;
+  /* If relativename then this contains the full distribution point name */
+      X509_NAME *dpname;
+  } DIST_POINT_NAME;
+
+  typedef struct DIST_POINT_st {
+    DIST_POINT_NAME *distpoint;
+    ASN1_BIT_STRING *reasons;
+    GENERAL_NAMES *CRLissuer;
+    int dp_reasons;
+  } DIST_POINT;
+
 ]]
+
+asn1_macro.declare_asn1_functions("X509_CRL")
+asn1_macro.declare_asn1_functions("GENERAL_NAME")
+asn1_macro.declare_asn1_functions("BASIC_CONSTRAINTS")
+asn1_macro.declare_asn1_functions("AUTHORITY_INFO_ACCESS") -- OCSP responder and CA
+asn1_macro.declare_asn1_functions("ACCESS_DESCRIPTION")
+asn1_macro.declare_asn1_functions("DIST_POINT") -- CRL distribution points

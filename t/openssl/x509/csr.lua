@@ -30,7 +30,7 @@ local function create_csr(domain_pkey, ...)
   end
 
   if alt then
-    err = csr:set_subject_alt(alt)
+    err = csr:set_subject_alt_name(alt)
     if err then
       return nil, err
     end
