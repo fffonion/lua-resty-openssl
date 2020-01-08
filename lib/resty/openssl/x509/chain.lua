@@ -11,10 +11,12 @@ local _M = {}
 local stack_ptr_ct = ffi.typeof("OPENSSL_STACK*")
 
 local STACK = "X509"
-local mt = stack_lib.mt_of(STACK, x509_lib, _M)
+local mt = stack_lib.mt_of(STACK, x509_lib.dup, _M)
 local gc = stack_lib.gc_of(STACK)
 local new = stack_lib.new_of(STACK)
 local add = stack_lib.add_of(STACK)
+
+_M.all = stack_lib.all_func(mt)
 
 function _M.new()
   local raw = new()
@@ -33,9 +35,10 @@ function _M.istype(l)
 end
 
 function _M.dup(ctx)
-  if not ffi.istype(stack_ptr_ct, ctx) then
+  if ctx == nil or not ffi.istype(stack_ptr_ct, ctx) then
     return nil, "expect a stack ctx at #1"
   end
+  -- sk_X509_dup plus up ref for each X509 element
   local ctx = C.X509_chain_up_ref(ctx)
   if ctx == nil then
     return nil, "X509_chain_up_ref() failed"
@@ -65,21 +68,6 @@ function _M:add(x509)
   end
 
   return true
-end
-
--- fallback function to iterate if LUAJIT_ENABLE_LUA52COMPAT not enabled
-function _M:all()
-  local ret = {}
-  local next_ = mt.__pairs(self)
-  while true do
-    local i, x509 = next_()
-    if x509 then
-      ret[i] = x509
-    else
-      break
-    end
-  end
-  return ret
 end
 
 return _M

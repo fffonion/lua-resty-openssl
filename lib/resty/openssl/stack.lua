@@ -27,13 +27,11 @@ end
 
 _M.gc_of = gc_of
 
-_M.mt_of = function(typ, element_lib, index_tbl)
+_M.mt_of = function(typ, convert, index_tbl)
   if type(typ) ~= "string" then
     error("expect a string at #1")
-  elseif type(element_lib) ~= "table" then
-    error("expect a table at #2")
-  elseif not element_lib.dup then
-    error("dup() must be implemented in the stack element type")
+  elseif type(convert) ~= "function" then
+    error("expect a function at #2")
   end
 
   local typ_ptr = typ .. "*"
@@ -44,7 +42,7 @@ _M.mt_of = function(typ, element_lib, index_tbl)
     if elem == nil then
       error(format_error("OPENSSL_sk_value"))
     end
-    local dup, err = element_lib.dup(ffi_cast(typ_ptr, elem))
+    local dup, err = convert(ffi_cast(typ_ptr, elem))
     if err then
       error(err)
     end
@@ -106,6 +104,40 @@ _M.add_of = function(typ)
       return false, "OPENSSL_sk_push() failed"
     end
     return true
+  end
+end
+
+local stack_ptr_ct = ffi.typeof("OPENSSL_STACK*")
+_M.dup_of = function(typ)
+  return function(ctx)
+    if ctx == nil or not ffi.istype(stack_ptr_ct, ctx) then
+      return nil, "expect a stack ctx at #1"
+    end
+    local ctx = stack_macro.OPENSSL_sk_dup(ctx)
+    if ctx == nil then
+      return nil, "OPENSSL_sk_dup() failed"
+    end
+    -- if the stack is duplicated: since we don't copy the elements
+    -- then we only control gc of the stack itself here
+    ffi_gc(ctx, stack_macro.OPENSSL_sk_free)
+    return ctx
+  end
+end
+
+-- fallback function to iterate if LUAJIT_ENABLE_LUA52COMPAT not enabled
+_M.all_func = function(mt)
+  return function(stack)
+    local ret = {}
+    local _next = mt.__pairs(stack)
+    while true do
+      local i, elem = _next()
+      if elem then
+        ret[i] = elem
+      else
+        break
+      end
+    end
+    return ret
   end
 end
 

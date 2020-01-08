@@ -82,7 +82,7 @@ local function xr_modifyRequestedExtension(csr, target_nid, value, crit, flags)
   return err
 end
 
-function _M:set_subject_alt(alt)
+function _M:set_subject_alt_name(alt)
   if not altname_lib.istype(alt) then
     return "expect a x509.altname instance at #1"
   end
@@ -90,6 +90,9 @@ function _M:set_subject_alt(alt)
   -- #define X509V3_ADD_REPLACE              2L
   return xr_modifyRequestedExtension(self.ctx, 85, alt.ctx, 0, 2)
 end
+
+-- backward compatibility
+_M.set_subject_alt = _M.set_subject_alt_name
 
 function _M:set_pubkey(pkey)
   if not pkey_lib.istype(pkey) then
@@ -116,9 +119,10 @@ function _M:sign(pkey)
   if name == nil then
     return "OBJ_nid2sn() failed"
   end
+  -- EVP_get_digestbynid is a macro
   local md = C.EVP_get_digestbyname(name)
   if md == nil then
-    return "EVP_get_digestbynid() failed"
+    return "EVP_get_digestbyname() failed"
   end
   local sz = C.X509_REQ_sign(self.ctx, pkey.ctx, md)
   if sz == 0 then

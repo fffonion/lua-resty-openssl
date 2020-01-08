@@ -5,6 +5,7 @@ local ffi_str = ffi.string
 local ffi_sizeof = ffi.sizeof
 
 require "resty.openssl.include.x509.name"
+local objects_lib = require "resty.openssl.objects"
 local asn1_macro = require "resty.openssl.include.asn1"
 
 -- local MBSTRING_FLAG = 0x1000
@@ -14,30 +15,18 @@ local _M = {}
 
 local x509_name_ptr_ct = ffi.typeof("X509_NAME*")
 
-local char_ptr = ffi.typeof('char[?]')
 -- starts from 0
 local function value_at(ctx, i)
   local entry = C.X509_NAME_get_entry(ctx, i)
   local obj = C.X509_NAME_ENTRY_get_object(entry)
-  local nid = C.OBJ_obj2nid(obj)
-
-  local buf = char_ptr(100)
-  local len = C.OBJ_obj2txt(buf, ffi_sizeof(buf), obj, 1)
-  local oid = ffi_str(buf, len)
+  local ret = objects_lib.obj2table(obj)
 
   local str = C.X509_NAME_ENTRY_get_data(entry)
-  local blob
   if str ~= nil then
-    blob = ffi_str(asn1_macro.ASN1_STRING_get0_data(str))
+    ret.blob = ffi_str(asn1_macro.ASN1_STRING_get0_data(str))
   end
 
-  return {
-    id = oid,
-    nid = nid,
-    sn = ffi_str(C.OBJ_nid2sn(nid)),
-    ln = ffi_str(C.OBJ_nid2ln(nid)),
-    blob = blob,
-  }
+  return ret
 end
 
 local function iter(tbl)
@@ -106,20 +95,20 @@ function _M:add(nid, txt)
   return self
 end
 
-function _M:find(nid, last_post)
+function _M:find(nid, last_pos)
   local asn1 = C.OBJ_txt2obj(nid, 0)
   if asn1 == nil then
     return nil, nil, "invalid NID text " .. (nid or "nil")
   end
   -- make 1-index array to 0-index
-  last_post = (last_post or 0) - 1
+  last_pos = (last_pos or 0) - 1
 
-  local idx = C.X509_NAME_get_index_by_OBJ(self.ctx, asn1, last_post)
-  if idx == -1 then
-    return nil, nil, nil
+  local pos = C.X509_NAME_get_index_by_OBJ(self.ctx, asn1, last_pos)
+  if pos == -1 then
+    return nil
   end
 
-  return value_at(self.ctx, idx), idx + 1
+  return value_at(self.ctx, pos), pos+1
 end
 
 -- fallback function to iterate if LUAJIT_ENABLE_LUA52COMPAT not enabled
