@@ -51,22 +51,26 @@ Table of Contents
     + [hmac.istype](#hmacistype)
     + [hmac:update](#hmacupdate)
     + [hmac:final](#hmac-final)
+  * [resty.openssl.objects](#restyopensslobjects)
+    + [objects.obj2table](#objectsobj2table)
+    + [objects.nid2table](#objectsnid2table)
+    + [objects.txt2nid](#objectstxt2nid)
   * [resty.openssl.rand](#restyopensslrand)
     + [rand.bytes](#randbytes)
   * [resty.openssl.x509](#restyopensslx509)
     + [x509.new](#x509new)
     + [x509.dup](#x509dup)
     + [x509.istype](#x509istype)
-    + [x509:add_extension](#x509add_extension)
     + [x509:digest](#x509digest)
     + [x509:pubkey_digest](#x509pubkey_digest)
     + [x509:get_*, x509:set_*](#x509get_-x509set_)
     + [x509:get_lifetime](#x509get_lifetime)
     + [x509:set_lifetime](#x509set_lifetime)
-    + [x509:get_basic_constraints](#x509get_basic_constraints)
-    + [x509:set_basic_constraints](#x509set_basic_constraints)
-    + [x509:get_basic_constraints_critical](#x509get_basic_constraints_critical)
-    + [x509:set_basic_constraints_critical](#x509set_basic_constraints_critical)
+    + [x509:get_extension](#x509get_extension)
+    + [x509:add_extension](#x509add_extension)
+    + [x509:set_extension](#x509set_extension)
+    + [x509:get_critical](#x509get_critical)
+    + [x509:set_critical](#x509set_critical)
     + [x509:sign](#x509sign)
     + [x509:to_PEM](#x509to_pem)
   * [resty.openssl.x509.name](#restyopensslx509name)
@@ -86,13 +90,19 @@ Table of Contents
     + [csr.new](#csrnew)
     + [csr.istype](#csristype)
     + [csr:set_subject_name](#csrset_subject_name)
-    + [csr:set_subject_alt](#csrset_subject_alt)
+    + [csr:set_subject_alt_name](#csrset_subject_alt_name)
     + [csr:set_pubkey](#csrset_pubkey)
     + [csr:tostring](#csrtostring)
     + [csr:to_PEM](#csrto_pem)
   * [resty.openssl.x509.extension](#restyopensslx509extension)
     + [extension.new](#extensionnew)
     + [extension.istype](#extensionistype)
+    + [extension:get_critical](#extensionget_critical)
+    + [extension:set_critical](#extensionset_critical)
+    + [extension:get_object](#extensionget_object)
+    + [extension:text](#extensiontext)
+  * [resty.openssl.x509.extension.dist_points](#restyopensslx509extensiondist_points)
+  * [resty.openssl.x509.extension.info_access](#restyopensslx509extensioninfo_access)
   * [resty.openssl.x509.chain](#restyopensslx509chain)
     + [chain.new](#chainnew)
     + [chain.dup](#chaindup)
@@ -655,6 +665,46 @@ ngx.say(ngx.encode_base64(hmac))
 
 [Back to TOC](#table-of-contents)
 
+## resty.openssl.objects
+
+Helpfer module on ASN1_OBJECT.
+
+[Back to TOC](#table-of-contents)
+
+### objects.obj2table
+
+**syntax**: *tbl = objects.bytes(asn1_obj)*
+
+Convert a ASN1_OBJECT cdata pointer to a Lua table where
+
+```
+{
+  id: OID of the object,
+  nid: NID of the object,
+  sn: short name of the object,
+  ln: long name of the object,
+}
+```
+
+[Back to TOC](#table-of-contents)
+
+### objects.nid2table
+
+**syntax**: *tbl, err = objects.nid2table(nid)*
+
+Convert a [NID](list_of_nids) to a Lua table, returns the same format as
+[objects.obj2table](#objectsobj2table)
+
+[Back to TOC](#table-of-contents)
+
+### objects.txt2nid
+
+**syntax**: *nid, err = objects.txt2nid(txt)*
+
+Convert a text representation to [NID](list_of_nids). 
+
+[Back to TOC](#table-of-contents)
+
 ## resty.openssl.rand
 
 Module to interact with random number generator.
@@ -704,23 +754,6 @@ Returns `true` if table is an instance of `x509`. Returns `false` otherwise.
 
 [Back to TOC](#table-of-contents)
 
-### x509:add_extension
-
-**syntax**: *ok, err = x509:add_extension(extension)*
-
-Adds an X.509 `extension` to certificate, the first argument must be a
-[resty.openssl.x509.extension](#restyopensslx509extension) instance.
-
-```lua
-local extension, err = require("resty.openssl.extension").new({
-    "keyUsage", "critical,keyCertSign,cRLSign",
-})
-local x509, err = require("resty.openssl.x509").new()
-local ok, err = x509:add_extension(extension)
-```
-
-[Back to TOC](#table-of-contents)
-
 ### x509:digest
 
 **syntax**: *d, err = x509:digest(digest_name?)*
@@ -765,16 +798,55 @@ Setters and getters for x509 attributes share the same syntax.
 | subject_name  | x509.name | Subject of the certificate |
 | version       | number | Version of the certificate, value is one less than version. For example, `2` represents `version 3` |
 
-Example:
+Additionally, getters and setters for extensions are also available:
+
+| Extension name | Type | Description |
+| ------------   | ---- | ----------- |
+| subject_alt_name   | x509.altname | [Subject Alternative Name](https://tools.ietf.org/html/rfc5280#section-4.2.1.6) of the certificate, SANs are usually used to define "additional Common Names"  |
+| issuer_alt_name    | x509.altname | [Issuer Alternative Name](https://tools.ietf.org/html/rfc5280#section-4.2.1.7) of the certificate |
+| basic_constraints  | table, { ca = bool, pathlen = int} | [Basic Constriants](https://tools.ietf.org/html/rfc5280#section-4.2.1.9) or the certificate  |
+| info_access        | x509.extension.info_access   | [Authority Information Access](https://tools.ietf.org/html/rfc5280#section-4.2.2.1) of the certificate, contains information like OCSP reponder URL. |
+| crl_distribution_points | x509.extension.dist_points     | [CRL Distribution Points](https://tools.ietf.org/html/rfc5280#section-4.2.1.13), contains information like Certificate Revocation List(CRL) URLs. |
+
+For all extensions, `get_{extension}_critical` and `set_{extension}_critical` is also supported to
+access the `critical` flag of the extension.
+
 ```lua
 local x509, err = require("resty.openssl.x509").new()
 err = x509:set_not_before(ngx.time())
 local not_before, err = x509:get_not_before()
 ngx.say(not_before)
 -- outputs 1571875065
+
+err = x509:set_basic_constraints_critical(true)
 ```
 
+If type is a table, setter requires a table with case-insentive keys to set;
+getter returns the value of the given case-insensitive key or a table of all keys if no key provided.
+
+```lua
+local x509, err = require("resty.openssl.x509").new()
+err = x509:set_basic_constraints({
+  cA = false,
+  pathlen = 0,
+})
+
+ngx.say(x509:get_basic_constraints("pathlen"))
+-- outputs 0
+
+ngx.say(x509:get_basic_constraints())
+-- outputs '{"ca":false,"pathlen":0}'
+```
+
+Note that user may also access the certain extension by [x509:get_extension](#x509get_extension) and
+[x509:set_extension](#x509set_extension), while the later two function gets or set
+[x509.extension](x509extension) instead. User may use getter and setters listed here if modification
+of current extensions is needed; use [x509:get_extension](#x509get_extension) or
+[x509:set_extension](#x509set_extension) if user are adding or replacing the whole extension or
+getters/setters are not implemented.
+
 [Back to TOC](#table-of-contents)
+
 
 ### x509:get_lifetime
 
@@ -793,51 +865,69 @@ plus `x509:set_not_after`.
 
 [Back to TOC](#table-of-contents)
 
-### x509:get_basic_constraints
+### x509:get_extension
 
-**syntax**: *value, err = x509:get_basic_constraints(name?)*
+**syntax**: *extension, pos, err = x509:get_extension(nid_or_txt, last_pos?)*
 
-Reads the Basic Constraints flag. `name` is case-insensitive and can be either
-`CA` or `pathLen`. When `name` is ommited, this function returns a table containing
-both `CA` and `pathLen` value that can be directly fed into
-[x509:set_basic_constraints](#x509set_basic_constraints).
+Get X.509 `extension` matching the given [NID](list_of_nids) to certificate, returns a
+[resty.openssl.x509.extension](#restyopensslx509extension) instance and the found position.
 
-[Back to TOC](#table-of-contents)
-
-### x509:set_basic_constraints
-
-**syntax**: *ok, err = x509:set_basic_constraints(cfg)*
-
-Set the Basic Constraints flag. Accepts a table which contains case-insensitive
-Basic Constraints keys
-
-1. `CA` a boolean indicating this certificate is a CA
-2. `PathLen` a number indicating the maximum CA Depth of the CA hierarchy
-that exists under a CA.
+If `last_pos` is defined, the function searchs from that position; otherwise it
+finds from beginning. Index is 1-based.
 
 ```lua
-local x509 = require("resty.openssl.x509").new()
-x509.set_basic_constraints({
-  CA = false,
-  pathlEn = 0,
-})
+local ext, pos, err = x509:get_extension("keyUsage")
 ```
 
 [Back to TOC](#table-of-contents)
 
-### x509:get_basic_constraints_critical
+### x509:add_extension
 
-**syntax**: *critical, err = x509:set_basic_constraints_critical(boolean)*
+**syntax**: *ok, err = x509:add_extension(extension)*
 
-Gets the basic constraints critical flag.
+Adds an X.509 `extension` to certificate, the first argument must be a
+[resty.openssl.x509.extension](#restyopensslx509extension) instance.
+
+```lua
+local extension, err = require("resty.openssl.extension").new({
+    "keyUsage", "critical,keyCertSign,cRLSign",
+})
+local x509, err = require("resty.openssl.x509").new()
+local ok, err = x509:add_extension(extension)
+```
 
 [Back to TOC](#table-of-contents)
 
-### x509:set_basic_constraints_critical
+### x509:set_extension
 
-**syntax**: *ok, err = x509:set_basic_constraints_critical(boolean)*
+**syntax**: *ok, err = x509:set_extension(extension, last_pos?)*
 
-Sets the basic constraints critical flag.
+Adds an X.509 `extension` to certificate, the first argument must be a
+[resty.openssl.x509.extension](#restyopensslx509extension) instance.
+The difference from [x509:add_extension](#x509add_extension) is that
+in this function if a `extension` with same type already exists,
+the old extension will be replaced.
+
+If `last_pos` is defined, the function replaces the same extension from that position;
+otherwise it finds from beginning. Index is 1-based. Returns `nil, nil` if not found.
+
+Note this function is not thread-safe.
+
+[Back to TOC](#table-of-contents)
+
+### x509:get_critical
+
+**syntax**: *ok, err = x509:get_critical(nid_or_txt)*
+
+Get critical flag of the X.509 `extension` matching the given [NID](list_of_nids) from certificate.
+
+[Back to TOC](#table-of-contents)
+
+### x509:set_critical
+
+**syntax**: *ok, err = x509:set_critical(nid_or_txt, crit?)*
+
+Set critical flag of the X.509 `extension` matching the given [NID](list_of_nids) to certificate.
 
 [Back to TOC](#table-of-contents)
 
@@ -892,8 +982,7 @@ Returns `true` if table is an instance of `name`. Returns `false` otherwise.
 
 **syntax**: *name, err = name:add(nid_text, txt)*
 
-Adds an ASN.1 object to `name`. First arguments in the *text representation* of
-[NID](https://boringssl.googlesource.com/boringssl/+/HEAD/include/openssl/nid.h).
+Adds an ASN.1 object to `name`. First arguments in the *text representation* of [NID](list_of_nids).
 Second argument is the plain text value for the ASN.1 object.
 
 Returns the name instance itself on success, or `nil` and an error on failure.
@@ -979,12 +1068,11 @@ Returns all `name` objects in a list. Use this while `LUAJIT_ENABLE_LUA52COMPAT`
 
 **syntax**: *obj, pos, err = name:find(nid_text, last_pos?)*
 
-Finds the ASN.1 object with the given *text representation* of
-[NID](https://boringssl.googlesource.com/boringssl/+/HEAD/include/openssl/nid.h) from the
+Finds the ASN.1 object with the given *text representation* of [NID](list_of_nids) from the
 postition of `last_pos`. By omitting the `last_pos` parameter, `find` finds from the beginning.
 
 Returns the object in a table as same format as decribed [here](#name__metamethods), the position
-of the found object and error if any.
+of the found object and error if any. Index is 1-based. Returns `nil, nil` if not found.
 
 ```lua
 local name, err = require("resty.openssl.x509.name").new()
@@ -1084,7 +1172,7 @@ the first argument must be a [resty.openssl.x509.name](#restyopensslx509name) in
 
 [Back to TOC](#table-of-contents)
 
-### csr:set_subject_alt
+### csr:set_subject_alt_name
 
 **syntax**: *ok = csr:set_subject_alt(name)*
 
@@ -1092,6 +1180,13 @@ Set additional subject identifiers of the certificate request,
 the first argument must be a [resty.openssl.x509.altname](#restyopensslx509altname) instance.
 
 For now this function can be only called `once` for a `csr` instance.
+
+[Back to TOC](#table-of-contents)
+
+### csr:set_subject_alt
+
+Same as [csr:set_subject_alt_name](#csrset_subject_alt), this function is deprecated to align
+with naming convension with other functions.
 
 [Back to TOC](#table-of-contents)
 
@@ -1161,6 +1256,60 @@ ext, err =  extension.new("subjectKeyIdentifier", "hash", {
 **syntax**: *ok = extension.istype(table)*
 
 Returns `true` if table is an instance of `pkey`. Returns `false` otherwise.
+
+[Back to TOC](#table-of-contents)
+
+### extension:get_critical
+
+**syntax**: *crit, err = extension:get_critical()*
+
+Returns `true` if extension has critical flag. Return `false` otherwise.
+
+[Back to TOC](#table-of-contents)
+
+### extension:set_critical
+
+**syntax**: *ok, err = extension:set_critical(crit?)*
+
+Set the critical flag of the extension.
+
+[Back to TOC](#table-of-contents)
+
+### extension:get_object
+
+**syntax**: *obj = extension:get_object()*
+
+Returns the name of extension as ASN.1 Object. User can further use helper functions in
+[resty.openssl.objects](#restyopensslobjects) to print human readable texts.
+
+[Back to TOC](#table-of-contents)
+
+### extension:text
+
+**syntax**: *txt, err = extension:text(table)*
+
+Returns the text representation of extension
+
+```lua
+local objects = require "resty.openssl.objects"
+-- extension is a Subject Key Identifier
+ngx.say(cjson.encode(objects.obj2table(extension:get_object())))
+-- outputs {"ln":"X509v3 Subject Key Identifier","nid":82,"sn":"subjectKeyIdentifier","id":"2.5.29.14"}
+ngx.say(extension:text())
+-- outputs C9:C2:53:61:66:9D:5F:AB:25:F4:26:CD:0F:38:9A:A8:49:EA:48:A9
+```
+
+[Back to TOC](#table-of-contents)
+
+## resty.openssl.x509.extension.dist_points
+
+Module to interact with CRL Ditribution Points extension (DIST_POINT stack).
+
+[Back to TOC](#table-of-contents)
+
+## resty.openssl.x509.extension.info_access
+
+Module to interact with Authority Information Access extension (AUTHORITY_INFO_ACCESS, ACCESS_DESCRIPTION stack).
 
 [Back to TOC](#table-of-contents)
 
@@ -1296,6 +1445,16 @@ argument, which must be a [resty.openssl.x509.chain](#restyopensslx509chain) ins
 Returns the proof of validation in a chain if verification succeed. Otherwise returns `nil` and
 error explaining the reason.
 
+General rule on garbage collection
+====
+
+- The creator will need to set the GC handler; the user must not free it.
+- For a stack:
+  - It's GC handler is sk_TYPE_pop_free if it's created by `new()`
+  - It's GC handler is sk_free if it's created by `dup()` (shallow copy), additionally
+  the stack needs to set GC handler for all elements added.
+
+
 Compatibility
 ====
 
@@ -1347,3 +1506,5 @@ See Also
 * [API/ABI changes review for OpenSSL](https://abi-laboratory.pro/index.php?view=timeline&l=openssl)
 
 [Back to TOC](#table-of-contents)
+
+[list_of_nids](https://github.com/openssl/openssl/blob/master/include/openssl/obj_mac.h)
