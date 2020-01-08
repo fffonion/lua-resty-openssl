@@ -30,8 +30,8 @@ __DATA__
                 ngx.log(ngx.ERR, err)
                 return
             end
-            -- valgrind might warn about double free on this test because of the following
-            require('ffi').C.X509_NAME_free(name.ctx)
+            name = nil
+            collectgarbage("collect")
             -- if name2.ctx is also freed this following will segfault
             local _, err = name2:add("CN", "example.com")
             if err then
