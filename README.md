@@ -71,6 +71,8 @@ Table of Contents
     + [x509:set_extension](#x509set_extension)
     + [x509:get_critical](#x509get_critical)
     + [x509:set_critical](#x509set_critical)
+    + [x509:get_ocsp_url](#x509get_ocsp_url)
+    + [x509:get_crl_url](#x509get_crl_url)
     + [x509:sign](#x509sign)
     + [x509:to_PEM](#x509to_pem)
   * [resty.openssl.x509.name](#restyopensslx509name)
@@ -78,14 +80,13 @@ Table of Contents
     + [name.dup](#namedup)
     + [name.istype](#nameistype)
     + [name:add](#nameadd)
-    + [name:__metamethods](#name__metamethods)
-    + [name:each](#nameall)
-    + [name:all](#nameall)
     + [name:find](#namefind)
+    + [name:__metamethods](#name__metamethods)
   * [resty.openssl.x509.altname](#restyopensslx509altname)
     + [altname.new](#altnamenew)
     + [altname.istype](#altnameistype)
     + [altname:add](#altnameadd)
+    + [altname:__metamethods](#altname__metamethods)
   * [resty.openssl.x509.csr](#restyopensslx509csr)
     + [csr.new](#csrnew)
     + [csr.istype](#csristype)
@@ -96,20 +97,30 @@ Table of Contents
     + [csr:to_PEM](#csrto_pem)
   * [resty.openssl.x509.extension](#restyopensslx509extension)
     + [extension.new](#extensionnew)
+    + [extension.dup](#extensiondup)
+    + [extension.from_data](#extensionfrom_data)
     + [extension.istype](#extensionistype)
     + [extension:get_critical](#extensionget_critical)
     + [extension:set_critical](#extensionset_critical)
     + [extension:get_object](#extensionget_object)
     + [extension:text](#extensiontext)
   * [resty.openssl.x509.extension.dist_points](#restyopensslx509extensiondist_points)
+    + [dist_points.new](#dist_pointsnew)
+    + [dist_points.dup](#dist_pointsdup)
+    + [dist_points.istype](#dist_pointsistype)
+    + [dist_points:__metamethods](#dist_points__metamethods)
   * [resty.openssl.x509.extension.info_access](#restyopensslx509extensioninfo_access)
+    + [info_access.new](#info_accessnew)
+    + [info_access.dup](#info_accessdup)
+    + [info_access.istype](#info_accessistype)
+    + [info_access:add](#info_accessadd)
+    + [info_access:__metamethods](#info_access__metamethods)
   * [resty.openssl.x509.chain](#restyopensslx509chain)
     + [chain.new](#chainnew)
     + [chain.dup](#chaindup)
     + [chain.istype](#chainistype)
     + [chain:add](#chainadd)
     + [chain:__metamethods](#chain__metamethods)
-    + [chain:all](#chainall)
   * [resty.openssl.x509.store](#restyopensslx509store)
     + [store.new](#storenew)
     + [store.istype](#storeistype)
@@ -118,6 +129,12 @@ Table of Contents
     + [store:load_file](#storeload_file)
     + [store:load_directory](#storeload_directory)
     + [store:verify](#storeverify)
+  * [Functions for stack-like objects](#functions-for-stack-like-objects)
+    + [metamethods](#metamethods)
+    + [each](#each)
+    + [all](#all)
+    + [count](#count)
+    + [index](#index)
 - [Compatibility](#compatibility)
 - [TODO](#todo)
 - [Copyright and License](#copyright-and-license)
@@ -295,7 +312,7 @@ to create EC private key:
 to explictly decode the key using `format`, which can be a choice of `PER`, `DER` or `*`
 for auto detect.
 3. `nil` to create a 2048 bits RSA key.
-4. A `EVP_PKEY*` cdata pointer, to return a wrapped `pkey` instance. Normally user won't use this
+4. A `EVP_PKEY*` pointer, to return a wrapped `pkey` instance. Normally user won't use this
 approach. User shouldn't free the pointer on their own, since the pointer is not copied.
 
 [Back to TOC](#table-of-contents)
@@ -385,7 +402,7 @@ creates an empty instance.
 
 **syntax**: *b, err = bn.dup(bn_ptr_cdata)*
 
-Creates a `bn` instance from `BIGNUM*` cdata pointer.
+Creates a `bn` instance from `BIGNUM*` pointer.
 
 [Back to TOC](#table-of-contents)
 
@@ -675,7 +692,7 @@ Helpfer module on ASN1_OBJECT.
 
 **syntax**: *tbl = objects.bytes(asn1_obj)*
 
-Convert a ASN1_OBJECT cdata pointer to a Lua table where
+Convert a ASN1_OBJECT pointer to a Lua table where
 
 ```
 {
@@ -692,7 +709,7 @@ Convert a ASN1_OBJECT cdata pointer to a Lua table where
 
 **syntax**: *tbl, err = objects.nid2table(nid)*
 
-Convert a [NID](list_of_nids) to a Lua table, returns the same format as
+Convert a [NID] to a Lua table, returns the same format as
 [objects.obj2table](#objectsobj2table)
 
 [Back to TOC](#table-of-contents)
@@ -701,7 +718,7 @@ Convert a [NID](list_of_nids) to a Lua table, returns the same format as
 
 **syntax**: *nid, err = objects.txt2nid(txt)*
 
-Convert a text representation to [NID](list_of_nids). 
+Convert a text representation to [NID]. 
 
 [Back to TOC](#table-of-contents)
 
@@ -742,7 +759,7 @@ Creates a `x509` instance. The first argument can be:
 
 **syntax**: *x509, err = x509.dup(x509_ptr_cdata)*
 
-Creates a `x509` instance from `X509*` cdata pointer.
+Creates a `x509` instance from `X509*` pointer.
 
 [Back to TOC](#table-of-contents)
 
@@ -790,23 +807,23 @@ Setters and getters for x509 attributes share the same syntax.
 
 | Attribute name | Type | Description |
 | ------------   | ---- | ----------- |
-| issuer_name   | x509.name | Issuer of the certificate |
+| issuer_name   | [x509.name](#restyopensslx509name) | Issuer of the certificate |
 | not_before    | number | Unix timestamp when certificate is not valid before |
 | not_after     | number | Unix timestamp when certificate is not valid after |
-| pubkey        | pkey   | Public key of the certificate |
-| serial_number | bn     | Serial number of the certficate |
-| subject_name  | x509.name | Subject of the certificate |
+| pubkey        | [pkey](#restyopensslpkey)   | Public key of the certificate |
+| serial_number | [bn](#restyopensslbn) | Serial number of the certficate |
+| subject_name  | [x509.name](#restyopensslx509name) | Subject of the certificate |
 | version       | number | Version of the certificate, value is one less than version. For example, `2` represents `version 3` |
 
 Additionally, getters and setters for extensions are also available:
 
 | Extension name | Type | Description |
 | ------------   | ---- | ----------- |
-| subject_alt_name   | x509.altname | [Subject Alternative Name](https://tools.ietf.org/html/rfc5280#section-4.2.1.6) of the certificate, SANs are usually used to define "additional Common Names"  |
-| issuer_alt_name    | x509.altname | [Issuer Alternative Name](https://tools.ietf.org/html/rfc5280#section-4.2.1.7) of the certificate |
-| basic_constraints  | table, { ca = bool, pathlen = int} | [Basic Constriants](https://tools.ietf.org/html/rfc5280#section-4.2.1.9) or the certificate  |
-| info_access        | x509.extension.info_access   | [Authority Information Access](https://tools.ietf.org/html/rfc5280#section-4.2.2.1) of the certificate, contains information like OCSP reponder URL. |
-| crl_distribution_points | x509.extension.dist_points     | [CRL Distribution Points](https://tools.ietf.org/html/rfc5280#section-4.2.1.13), contains information like Certificate Revocation List(CRL) URLs. |
+| subject_alt_name   | [x509.altname](#restyopensslx509altname) | [Subject Alternative Name](https://tools.ietf.org/html/rfc5280#section-4.2.1.6) of the certificate, SANs are usually used to define "additional Common Names"  |
+| issuer_alt_name    | [x509.altname](#restyopensslx509altname) | [Issuer Alternative Name](https://tools.ietf.org/html/rfc5280#section-4.2.1.7) of the certificate |
+| basic_constraints  | table, { ca = bool, pathlen = int} | [Basic Constriants](https://tools.ietf.org/html/rfc5280#section-4.2.1.9) of the certificate  |
+| info_access        | [x509.extension.info_access](#restyopensslx509extensioninfo_access) | [Authority Information Access](https://tools.ietf.org/html/rfc5280#section-4.2.2.1) of the certificate, contains information like OCSP reponder URL. |
+| crl_distribution_points | [x509.extension.dist_points](#restyopensslx509extensiondist_points) | [CRL Distribution Points](https://tools.ietf.org/html/rfc5280#section-4.2.1.13) of the certificate, contains information like Certificate Revocation List(CRL) URLs. |
 
 For all extensions, `get_{extension}_critical` and `set_{extension}_critical` is also supported to
 access the `critical` flag of the extension.
@@ -839,11 +856,13 @@ ngx.say(x509:get_basic_constraints())
 ```
 
 Note that user may also access the certain extension by [x509:get_extension](#x509get_extension) and
-[x509:set_extension](#x509set_extension), while the later two function gets or set
-[x509.extension](x509extension) instead. User may use getter and setters listed here if modification
+[x509:set_extension](#x509set_extension), while the later two function returns or requires
+[extension](#restyopensslx509extension) instead. User may use getter and setters listed here if modification
 of current extensions is needed; use [x509:get_extension](#x509get_extension) or
 [x509:set_extension](#x509set_extension) if user are adding or replacing the whole extension or
-getters/setters are not implemented.
+getters/setters are not implemented. If the getter returned a type of `x509.*` instance, it can be
+converted to a [extension](#restyopensslx509extension) instance by [extension:from_data](#extensionfrom_data),
+and thus used by [x509:get_extension](#x509get_extension) and [x509:set_extension](#x509set_extension) 
 
 [Back to TOC](#table-of-contents)
 
@@ -869,7 +888,7 @@ plus `x509:set_not_after`.
 
 **syntax**: *extension, pos, err = x509:get_extension(nid_or_txt, last_pos?)*
 
-Get X.509 `extension` matching the given [NID](list_of_nids) to certificate, returns a
+Get X.509 `extension` matching the given [NID] to certificate, returns a
 [resty.openssl.x509.extension](#restyopensslx509extension) instance and the found position.
 
 If `last_pos` is defined, the function searchs from that position; otherwise it
@@ -919,7 +938,7 @@ Note this function is not thread-safe.
 
 **syntax**: *ok, err = x509:get_critical(nid_or_txt)*
 
-Get critical flag of the X.509 `extension` matching the given [NID](list_of_nids) from certificate.
+Get critical flag of the X.509 `extension` matching the given [NID] from certificate.
 
 [Back to TOC](#table-of-contents)
 
@@ -927,7 +946,27 @@ Get critical flag of the X.509 `extension` matching the given [NID](list_of_nids
 
 **syntax**: *ok, err = x509:set_critical(nid_or_txt, crit?)*
 
-Set critical flag of the X.509 `extension` matching the given [NID](list_of_nids) to certificate.
+Set critical flag of the X.509 `extension` matching the given [NID] to certificate.
+
+[Back to TOC](#table-of-contents)
+
+### x509:get_ocsp_url
+
+**syntax**: *url_or_urls, err = x509:get_ocsp_url(return_all?)*
+
+Get OCSP URL(s) of the X.509 object. If `return_all` is set to true, returns a table
+containing all OCSP URLs; otherwise returns a string with first OCSP URL found.
+If none are found, returns `nil`.
+
+[Back to TOC](#table-of-contents)
+
+### x509:get_crl_url
+
+**syntax**: *url_or_urls, err = x509:get_crl_url(return_all?)*
+
+Get CRL URL(s) of the X.509 object. If `return_all` is set to true, returns a table
+containing all CRL URLs; otherwise returns a string with first CRL URL found.
+If none are found, returns `nil`.
 
 [Back to TOC](#table-of-contents)
 
@@ -966,7 +1005,7 @@ Creates an empty `name` instance.
 
 **syntax**: *name, err = name.dup(name_ptr_cdata)*
 
-Creates a `name` instance from `X509_NAME*` cdata pointer.
+Creates a `name` instance from `X509_NAME*` pointer.
 
 [Back to TOC](#table-of-contents)
 
@@ -982,7 +1021,7 @@ Returns `true` if table is an instance of `name`. Returns `false` otherwise.
 
 **syntax**: *name, err = name:add(nid_text, txt)*
 
-Adds an ASN.1 object to `name`. First arguments in the *text representation* of [NID](list_of_nids).
+Adds an ASN.1 object to `name`. First arguments in the *text representation* of [NID].
 Second argument is the plain text value for the ASN.1 object.
 
 Returns the name instance itself on success, or `nil` and an error on failure.
@@ -1002,14 +1041,44 @@ _, err = name
 
 [Back to TOC](#table-of-contents)
 
+### name:find
+
+**syntax**: *obj, pos, err = name:find(nid_text, last_pos?)*
+
+Finds the ASN.1 object with the given *text representation* of [NID] from the
+postition of `last_pos`. By omitting the `last_pos` parameter, `find` finds from the beginning.
+
+Returns the object in a table as same format as decribed [here](#name__metamethods), the position
+of the found object and error if any. Index is 1-based. Returns `nil, nil` if not found.
+
+```lua
+local name, err = require("resty.openssl.x509.name").new()
+local _, err = name:add("CN", "example.com")
+                    :add("CN", "example2.com")
+
+local obj, pos, err = name:find("CN")
+ngx.say(obj.blob, " at ", pos)
+-- outputs "example.com at 1"
+local obj, pos, err = name:find("2.5.4.3", 1)
+ngx.say(obj.blob, " at ", pos)
+-- outputs "example2.com at 2"
+```
+
+[Back to TOC](#table-of-contents)
+
 ### name:__metamethods
 
 **syntax**: *for k, obj in pairs(name)*
 
 **syntax**: *len = #name*
 
+**syntax**: *k, v = name[i]*
+
 Access the underlying name objects as it's a Lua table. Make sure your LuaJIT compiled
-with `-DLUAJIT_ENABLE_LUA52COMPAT` flag.
+with `-DLUAJIT_ENABLE_LUA52COMPAT` flag; otherwise use `all`, `each`, `index` and `count`
+instead.
+
+See also [functions for stack-like objects](#functions-for-stack-like-objects).
 
 Each returned object is a table where:
 
@@ -1031,60 +1100,6 @@ for k, obj in pairs(name) do
   ngx.say(k, ":", require("cjson").encode(obj))
 end
 -- outputs 'CN: {"sn":"CN","id":"2.5.4.3","nid":13,"blob":"3.example.com","ln":"commonName"}'
-```
-
-[Back to TOC](#table-of-contents)
-
-### name:each
-
-**syntax**: *iter = name:each()*
-
-Return an iterator to traverse objects. Use this while `LUAJIT_ENABLE_LUA52COMPAT` is not enabled.
-
-```lua
-local name, err = require("resty.openssl.x509.name").new()
-local _, err = name:add("CN", "example.com")
-
-local iter = name:each()
-while true do
-  local k, obj = iter()
-  if not k then
-    break
-  end
-end
-```
-
-[Back to TOC](#table-of-contents)
-
-### name:all
-
-**syntax**: *objs, err = name:all()*
-
-Returns all `name` objects in a list. Use this while `LUAJIT_ENABLE_LUA52COMPAT` is not enabled.
-
-[Back to TOC](#table-of-contents)
-
-### name:find
-
-**syntax**: *obj, pos, err = name:find(nid_text, last_pos?)*
-
-Finds the ASN.1 object with the given *text representation* of [NID](list_of_nids) from the
-postition of `last_pos`. By omitting the `last_pos` parameter, `find` finds from the beginning.
-
-Returns the object in a table as same format as decribed [here](#name__metamethods), the position
-of the found object and error if any. Index is 1-based. Returns `nil, nil` if not found.
-
-```lua
-local name, err = require("resty.openssl.x509.name").new()
-local _, err = name:add("CN", "example.com")
-                    :add("CN", "example2.com")
-
-local obj, pos, err = name:find("CN")
-ngx.say(obj.blob, " at ", pos)
--- outputs "example.com at 1"
-local obj, pos, err = name:find("2.5.4.3", 1)
-ngx.say(obj.blob, " at ", pos)
--- outputs "example2.com at 2"
 ```
 
 [Back to TOC](#table-of-contents)
@@ -1138,6 +1153,22 @@ _, err = altname
     :add("DNS", "2.example.com")
     :add("DnS", "3.example.com")
 ```
+
+[Back to TOC](#table-of-contents)
+
+### altname:__metamethods
+
+**syntax**: *for k, obj in pairs(name)*
+
+**syntax**: *len = #name*
+
+**syntax**: *k, v = name[i]*
+
+Access the underlying name objects as it's a Lua table. Make sure your LuaJIT compiled
+with `-DLUAJIT_ENABLE_LUA52COMPAT` flag; otherwise use `all`, `each`, `index` and `count`
+instead.
+
+See also [functions for stack-like objects](#functions-for-stack-like-objects).
 
 [Back to TOC](#table-of-contents)
 
@@ -1251,11 +1282,33 @@ ext, err =  extension.new("subjectKeyIdentifier", "hash", {
 
 [Back to TOC](#table-of-contents)
 
+### extension.dup
+
+**syntax**: *ext, err = extension.dup(extension_ptr_cdata)*
+
+Creates a new `extension` instance from `X509_EXTENSION*` pointer.
+
+[Back to TOC](#table-of-contents)
+
+### extension.from_data
+
+**syntax**: *ext, ok = extension.from_data(table, nid, crit?)*
+
+Creates a new `extension` instance. `table` can be instance of:
+
+- [x509.altname](#restyopensslx509altname)
+- [x509.extension.info_access](#restyopensslx509extensioninfo_access)
+- [x509.extension.dist_points](#restyopensslx509extensiondist_points)
+
+`nid` is a number of [NID] and `crit` is the critical flag of the extension.
+
+[Back to TOC](#table-of-contents)
+
 ### extension.istype
 
 **syntax**: *ok = extension.istype(table)*
 
-Returns `true` if table is an instance of `pkey`. Returns `false` otherwise.
+Returns `true` if table is an instance of `extension`. Returns `false` otherwise.
 
 [Back to TOC](#table-of-contents)
 
@@ -1263,13 +1316,13 @@ Returns `true` if table is an instance of `pkey`. Returns `false` otherwise.
 
 **syntax**: *crit, err = extension:get_critical()*
 
-Returns `true` if extension has critical flag. Return `false` otherwise.
+Returns `true` if extension is critical. Returns `false` otherwise.
 
 [Back to TOC](#table-of-contents)
 
 ### extension:set_critical
 
-**syntax**: *ok, err = extension:set_critical(crit?)*
+**syntax**: *ok, err = extension:set_critical(crit)*
 
 Set the critical flag of the extension.
 
@@ -1292,7 +1345,6 @@ Returns the text representation of extension
 
 ```lua
 local objects = require "resty.openssl.objects"
--- extension is a Subject Key Identifier
 ngx.say(cjson.encode(objects.obj2table(extension:get_object())))
 -- outputs {"ln":"X509v3 Subject Key Identifier","nid":82,"sn":"subjectKeyIdentifier","id":"2.5.29.14"}
 ngx.say(extension:text())
@@ -1303,13 +1355,106 @@ ngx.say(extension:text())
 
 ## resty.openssl.x509.extension.dist_points
 
-Module to interact with CRL Ditribution Points extension (DIST_POINT stack).
+Module to interact with CRL Ditribution Points data (DIST_POINT stack).
+
+[Back to TOC](#table-of-contents)
+
+### dist_points.new
+
+**syntax**: *dp, err = dist_points.new()*
+
+Creates a new `dist_points` instance.
+
+[Back to TOC](#table-of-contents)
+
+### dist_points.dup
+
+**syntax**: *dp, err = dist_points.dup(dist_points_ptr_cdata)*
+
+Creates a `dist_points` instance from `STACK_OF(DIST_POINT)` pointer. The function creates a new
+stack and increases reference count for all elements by 1. But it won't duplicate the elements
+themselves.
+
+[Back to TOC](#table-of-contents)
+
+### dist_points.istype
+
+**syntax**: *ok = dist_points.istype(table)*
+
+Returns `true` if table is an instance of `dist_points`. Returns `false` otherwise.
+
+[Back to TOC](#table-of-contents)
+
+### dist_points:__metamethods
+
+**syntax**: *for i, obj in ipairs(name)*
+
+**syntax**: *len = #name*
+
+**syntax**: *obj = name[i]*
+
+Access the underlying name objects as it's a Lua table. Make sure your LuaJIT compiled
+with `-DLUAJIT_ENABLE_LUA52COMPAT` flag; otherwise use `all`, `each`, `index` and `count`
+instead.
+
+See also [functions for stack-like objects](#functions-for-stack-like-objects).
 
 [Back to TOC](#table-of-contents)
 
 ## resty.openssl.x509.extension.info_access
 
-Module to interact with Authority Information Access extension (AUTHORITY_INFO_ACCESS, ACCESS_DESCRIPTION stack).
+Module to interact with Authority Information Access data (AUTHORITY_INFO_ACCESS, ACCESS_DESCRIPTION stack).
+
+[Back to TOC](#table-of-contents)
+
+### info_access.new
+
+**syntax**: *aia, err = info_access.new()*
+
+Creates a new `info_access` instance.
+
+[Back to TOC](#table-of-contents)
+
+### info_access.dup
+
+**syntax**: *aia, err = info_access.dup(info_access_ptr_cdata)*
+
+Creates a `info_access` instance from `AUTHORITY_INFO_ACCESS` pointer. The function creates a new
+stack and increases reference count for all elements by 1. But it won't duplicate the elements
+themselves.
+
+[Back to TOC](#table-of-contents)
+
+### info_access.istype
+
+**syntax**: *ok = info_access.istype(table)*
+
+Returns `true` if table is an instance of `info_access`. Returns `false` otherwise.
+
+[Back to TOC](#table-of-contents)
+
+### info_access:add
+
+**syntax**: *ok, err = info_access:add(x509)*
+
+Add a `x509` object to the info_access. The first argument must be a
+[resty.openssl.x509](#restyopensslx509) instance.
+
+[Back to TOC](#table-of-contents)
+
+### info_access:__metamethods
+
+**syntax**: *for i, obj in ipairs(name)*
+
+**syntax**: *len = #name*
+
+**syntax**: *obj = name[i]*
+
+Access the underlying name objects as it's a Lua table. Make sure your LuaJIT compiled
+with `-DLUAJIT_ENABLE_LUA52COMPAT` flag; otherwise use `all`, `each`, `index` and `count`
+instead.
+
+See also [functions for stack-like objects](#functions-for-stack-like-objects).
 
 [Back to TOC](#table-of-contents)
 
@@ -1331,7 +1476,7 @@ Creates a new `chain` instance.
 
 **syntax**: *ch, err = chain.dup(chain_ptr_cdata)*
 
-Creates a `chain` instance from `STACK_OF(X509)` cdata pointer. The function creates a new
+Creates a `chain` instance from `STACK_OF(X509)` pointer. The function creates a new
 stack and increases reference count for all elements by 1. But it won't duplicate the elements
 themselves.
 
@@ -1356,22 +1501,17 @@ Add a `x509` object to the chain. The first argument must be a
 
 ### chain:__metamethods
 
-**syntax**: *x509 = chain[index]*
+**syntax**: *for i, obj in ipairs(name)*
 
-**syntax**: *for i, x509 in pairs(chain)*
+**syntax**: *len = #name*
 
-**syntax**: *for i, x509 in ipairs(chain)*
+**syntax**: *obj = name[i]*
 
-Access the underlying stack element as it's a Lua table. Make sure your LuaJIT compiled
-with `-DLUAJIT_ENABLE_LUA52COMPAT` flag.
+Access the underlying name objects as it's a Lua table. Make sure your LuaJIT compiled
+with `-DLUAJIT_ENABLE_LUA52COMPAT` flag; otherwise use `all`, `each`, `index` and `count`
+instead.
 
-[Back to TOC](#table-of-contents)
-
-### chain:all
-
-**syntax**: *x509s, err = chain:all()*
-
-Return all `x509` objects in a list. Use this while `LUAJIT_ENABLE_LUA52COMPAT` is not enabled.
+See also [functions for stack-like objects](#functions-for-stack-like-objects).
 
 [Back to TOC](#table-of-contents)
 
@@ -1445,14 +1585,94 @@ argument, which must be a [resty.openssl.x509.chain](#restyopensslx509chain) ins
 Returns the proof of validation in a chain if verification succeed. Otherwise returns `nil` and
 error explaining the reason.
 
-General rule on garbage collection
+[Back to TOC](#table-of-contents)
+
+## Functions for stack-like objects
+
+[Back to TOC](#table-of-contents)
+
+### metamethods
+
+**syntax**: *for k, obj in pairs(x)*
+
+**syntax**: *for k, obj in ipairs(x)*
+
+**syntax**: *len = #x*
+
+**syntax**: *obj = x[i]*
+
+Access the underlying name objects as it's a Lua table. Make sure your LuaJIT compiled
+with `-DLUAJIT_ENABLE_LUA52COMPAT` flag.
+
+Each object may only support either `pairs` or `ipairs`. Index is 1-based.
+
+```lua
+local name, err = require("resty.openssl.x509.name").new()
+local _, err = name:add("CN", "example.com")
+
+for k, obj in pairs(name) do
+  ngx.say(k, ":", require("cjson").encode(obj))
+end
+-- outputs 'CN: {"sn":"CN","id":"2.5.4.3","nid":13,"blob":"3.example.com","ln":"commonName"}'
+```
+
+[Back to TOC](#table-of-contents)
+
+### each
+
+**syntax**: *iter = x:each()*
+
+Return an iterator to traverse objects. Use this while `LUAJIT_ENABLE_LUA52COMPAT` is not enabled.
+
+```lua
+local name, err = require("resty.openssl.x509.name").new()
+local _, err = name:add("CN", "example.com")
+
+local iter = name:each()
+while true do
+  local k, obj = iter()
+  if not k then
+    break
+  end
+end
+```
+
+[Back to TOC](#table-of-contents)
+
+### all
+
+**syntax**: *objs, err = x:all()*
+
+Returns all objects in the table. Use this while `LUAJIT_ENABLE_LUA52COMPAT` is not enabled.
+
+[Back to TOC](#table-of-contents)
+
+### count
+
+**syntax**: *len = x:count()*
+
+Returns count of objects of the table. Use this while `LUAJIT_ENABLE_LUA52COMPAT` is not enabled.
+
+[Back to TOC](#table-of-contents)
+
+### index
+
+**syntax**: *obj = x:index(i)*
+
+Returns objects at index of `i` of the table, index is 1-based. If index is out of bound, `nil` is returned.
+
+[Back to TOC](#table-of-contents)
+
+General rules on garbage collection
 ====
 
-- The creator will need to set the GC handler; the user must not free it.
+- The creator set the GC handler; the user must not free it.
 - For a stack:
-  - It's GC handler is sk_TYPE_pop_free if it's created by `new()`
-  - It's GC handler is sk_free if it's created by `dup()` (shallow copy), additionally
-  the stack needs to set GC handler for all elements added.
+  - If it's created by `new()`: set GC handler to sk_TYPE_pop_free 
+  - If it's created by `dup()` (shallow copy):
+    - If elements support reference counter: increase ref count for all elements by 1; set GC handler to sk_TYPE_pop_free
+    - Otherwise: set GC handler to sk_free , additionally
+  - Additionally, the stack duplicates the element when it's added to stack, a GC handler for the duplicate
 
 
 Compatibility
@@ -1475,7 +1695,6 @@ If you plan to use this library on an untested version of OpenSSL (like custom b
 TODO
 ====
 
-- test memory leak
 - add tests for x509 getters/setters
 
 [Back to TOC](#table-of-contents)
@@ -1507,4 +1726,4 @@ See Also
 
 [Back to TOC](#table-of-contents)
 
-[list_of_nids](https://github.com/openssl/openssl/blob/master/include/openssl/obj_mac.h)
+[NID]: https://github.com/openssl/openssl/blob/master/include/openssl/obj_mac.h
