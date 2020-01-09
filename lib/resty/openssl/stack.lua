@@ -50,6 +50,7 @@ _M.mt_of = function(typ, convert, index_tbl)
   end
 
   local function iter(tbl)
+    if not tbl then error("instance is nil") end
     local i = 0
     local n = tonumber(stack_macro.OPENSSL_sk_num(tbl.ctx))
     return function()
@@ -64,9 +65,11 @@ _M.mt_of = function(typ, convert, index_tbl)
     __pairs = iter,
     __ipairs = iter,
     __len = function(tbl)
+      if not tbl then error("instance is nil") end
       return tonumber(stack_macro.OPENSSL_sk_num(tbl.ctx))
     end,
     __index = function(tbl, k)
+      if not tbl then error("instance is nil") end
       local i = tonumber(k)
       if not i then
         return index_tbl[k]
@@ -96,6 +99,7 @@ end
 _M.add_of = function(typ)
   local ptr = ffi.typeof(typ .. "*")
   return function(stack, ctx)
+    if not stack then error("instance is nil") end
     if ctx == nil or not ffi.istype(ptr, ctx) then
       return false, "expect a " .. typ .. "* at #1"
     end
@@ -108,7 +112,7 @@ _M.add_of = function(typ)
 end
 
 local stack_ptr_ct = ffi.typeof("OPENSSL_STACK*")
-_M.dup_of = function(typ)
+_M.dup_of = function(_)
   return function(ctx)
     if ctx == nil or not ffi.istype(stack_ptr_ct, ctx) then
       return nil, "expect a stack ctx at #1"
@@ -127,6 +131,7 @@ end
 -- fallback function to iterate if LUAJIT_ENABLE_LUA52COMPAT not enabled
 _M.all_func = function(mt)
   return function(stack)
+    if not stack then error("stack is nil") end
     local ret = {}
     local _next = mt.__pairs(stack)
     while true do
