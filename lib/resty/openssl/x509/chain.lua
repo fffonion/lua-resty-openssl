@@ -11,12 +11,10 @@ local _M = {}
 local stack_ptr_ct = ffi.typeof("OPENSSL_STACK*")
 
 local STACK = "X509"
-local mt = stack_lib.mt_of(STACK, x509_lib.dup, _M)
 local gc = stack_lib.gc_of(STACK)
 local new = stack_lib.new_of(STACK)
 local add = stack_lib.add_of(STACK)
-
-_M.all = stack_lib.all_func(mt)
+local mt = stack_lib.mt_of(STACK, x509_lib.dup, _M)
 
 function _M.new()
   local raw = new()
@@ -69,5 +67,10 @@ function _M:add(x509)
 
   return true
 end
+
+_M.all = stack_lib.all_func(mt)
+_M.each = mt.__ipairs
+_M.index = mt.__index
+_M.count = mt.__len
 
 return _M

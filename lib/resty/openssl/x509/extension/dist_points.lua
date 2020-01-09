@@ -1,7 +1,4 @@
 local ffi = require "ffi"
-local C = ffi.C
-local ffi_cast = ffi.cast
-local ffi_str = ffi.string
 
 require "resty.openssl.include.x509"
 require "resty.openssl.include.x509v3"
@@ -9,7 +6,6 @@ local altname_lib = require "resty.openssl.x509.altname"
 local stack_lib = require "resty.openssl.stack"
 
 local _M = {}
-local mt
 
 local stack_ptr_ct = ffi.typeof("OPENSSL_STACK*")
 
@@ -22,7 +18,7 @@ local cdp_decode_fullname = function(ctx)
   return altname_lib.dup(ctx.distpoint.name.fullname)
 end
 
-mt = stack_lib.mt_of(STACK, cdp_decode_fullname, _M)
+local mt = stack_lib.mt_of(STACK, cdp_decode_fullname, _M)
 
 function _M.new()
   local ctx = new()
@@ -69,5 +65,9 @@ _M.all = function(stack)
   end
   return ret
 end
+
+_M.each = mt.__ipairs
+_M.index = mt.__index
+_M.count = mt.__len
 
 return _M

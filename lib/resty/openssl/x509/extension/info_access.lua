@@ -9,7 +9,6 @@ local altname_lib = require "resty.openssl.x509.altname"
 local stack_lib = require "resty.openssl.stack"
 
 local _M = {}
-local mt
 
 local authority_info_access_ptr_ct = ffi.typeof("AUTHORITY_INFO_ACCESS*")
 
@@ -18,14 +17,13 @@ local new = stack_lib.new_of(STACK)
 local add = stack_lib.add_of(STACK)
 local dup = stack_lib.dup_of(STACK)
 
-
 local aia_decode = function(ctx)
   local nid = C.OBJ_obj2nid(ctx.method)
   local gn = altname_lib.gn_decode(ctx.location)
   return { nid, unpack(gn) }
 end
 
-mt = stack_lib.mt_of(STACK, aia_decode, _M)
+local mt = stack_lib.mt_of(STACK, aia_decode, _M)
 local mt__pairs = mt.__pairs
 mt.__pairs = function(tbl)
   local f = mt__pairs(tbl)
@@ -126,5 +124,9 @@ _M.all = function(stack)
   end
   return ret
 end
+
+_M.each = mt.__ipairs
+_M.index = mt.__index
+_M.count = mt.__len
 
 return _M

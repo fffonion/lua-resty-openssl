@@ -11,7 +11,6 @@ local stack_lib = require "resty.openssl.stack"
 local altname_macro = require "resty.openssl.include.x509.altname"
 
 local _M = {}
-local mt
 
 local general_names_ptr_ct = ffi.typeof("GENERAL_NAMES*")
 
@@ -45,7 +44,7 @@ end
 -- shared with info_access
 _M.gn_decode = gn_decode
 
-mt = stack_lib.mt_of(STACK, gn_decode, _M)
+local mt = stack_lib.mt_of(STACK, gn_decode, _M)
 local mt__pairs = mt.__pairs
 mt.__pairs = function(tbl)
   local f = mt__pairs(tbl)
@@ -158,18 +157,22 @@ function _M:add(typ, value)
   return self
 end
 
-_M.all = function(stack)
+_M.all = function(self)
   local ret = {}
-  local _next = mt.__ipairs(stack)
+  local _next = mt.__pairs(self)
   while true do
-    local i, e = _next()
-    if i then
-      ret[i] = e
+    local k, v = _next()
+    if k then
+      ret[k] = v
     else
       break
     end
   end
   return ret
 end
+
+_M.each = mt.__pairs
+_M.index = mt.__index
+_M.count = mt.__len
 
 return _M
