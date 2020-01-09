@@ -452,9 +452,74 @@ OCSP - URI:http://somedomain.com
     }
 --- request
     GET /t
---- response_body_like eval
+--- response_body eval
 "URI http://crl3.digicert.com/sha2-ev-server-g2.crl
 URI http://crl4.digicert.com/sha2-ev-server-g2.crl
 "
+--- no_error_log
+[error]
+
+=== TEST 18: Set CRL distribution points
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            -- NYI
+        }
+    }
+--- request
+    GET /t
+--- no_error_log
+[error]
+
+=== TEST 19: Get OCSP url
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/Github.pem"):read("*a")
+            local c, err = require("resty.openssl.x509").new(f)
+
+            local ocsp, err = c:get_ocsp_url()
+            if err then ngx.log(ngx.ERR, err) end
+            ngx.say(ocsp)
+
+            local ocsp, err = c:get_ocsp_url(true)
+            if err then ngx.log(ngx.ERR, err) end
+            ngx.say(require("cjson").encode(ocsp))
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+'http://ocsp.digicert.com
+["http:\/\/ocsp.digicert.com"]
+'
+--- no_error_log
+[error]
+
+=== TEST 20: Get CRL url
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/Github.pem"):read("*a")
+            local c, err = require("resty.openssl.x509").new(f)
+
+            local crl, err = c:get_crl_url()
+            if err then ngx.log(ngx.ERR, err) end
+            ngx.say(crl)
+
+            local crl, err = c:get_crl_url(true)
+            if err then ngx.log(ngx.ERR, err) end
+            ngx.say(require("cjson").encode(crl))
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+'http://crl3.digicert.com/sha2-ev-server-g2.crl
+["http:\/\/crl3.digicert.com\/sha2-ev-server-g2.crl","http:\/\/crl4.digicert.com\/sha2-ev-server-g2.crl"]
+'
 --- no_error_log
 [error]

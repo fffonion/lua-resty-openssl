@@ -55,7 +55,7 @@ __DATA__
                 end
             end
             ngx.say(#c)
-            ngx.say(#c:all())
+            ngx.say(c:count())
         }
     }
 --- request

@@ -79,6 +79,26 @@ function _M.dup(ctx)
   return self, nil
 end
 
+function _M.from_data(any, nid, crit)
+  if type(any) ~= "table" or type(any.ctx) ~= "cdata" then
+    return nil, "expect a table with ctx at #1"
+  elseif type(nid) ~= "number" then
+    return nil, "expect a table at #2"
+  end
+
+  local ctx = C.X509V3_EXT_i2d(nid, crit and 1 or 0, any.ctx)
+  if ctx == nil then
+    return nil, format_error("extension:from_data: X509V3_EXT_i2d")
+  end
+  ffi_gc(ctx, C.X509_EXTENSION_free)
+
+  local self = setmetatable({
+    ctx = ctx,
+  }, mt)
+
+  return self, nil
+end
+
 function _M:get_object()
   -- retruns the internal pointer
   local asn1 = C.X509_EXTENSION_get_object(self.ctx)

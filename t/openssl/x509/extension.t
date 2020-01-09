@@ -191,3 +191,29 @@ CA Issuers - URI:http://cacerts.digicert.com/DigiCertSHA2ExtendedValidationServe
 --- no_error_log
 [error]
 
+=== TEST 7: Creates extension by data
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local altname = require("resty.openssl.x509.altname").new()
+            altname:add("DNS", "test.com")
+            altname:add("DNS", "test2.com")
+            local extension = require("resty.openssl.x509.extension")
+            local c, err = extension.from_data(altname, 85, false)
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.say(require("cjson").encode(c:get_object()))
+            ngx.say(tostring(c))
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+'{"ln":"X509v3 Subject Alternative Name","nid":85,"sn":"subjectAltName","id":"2.5.29.17"}
+DNS:test.com, DNS:test2.com
+'
+--- no_error_log
+[error]

@@ -10,6 +10,10 @@ local BASIC_CONSTRAINTS = {
 }
 
 ffi.cdef [[
+  // STACK_OF(OPENSSL_STRING)
+  OPENSSL_STACK *X509_get1_ocsp(X509 *x);
+  void X509_email_free(OPENSSL_STACK *sk);
+
   typedef struct EDIPartyName_st EDIPARTYNAME;
 
   typedef struct otherName_st OTHERNAME;

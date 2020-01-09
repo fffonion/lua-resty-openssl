@@ -9,6 +9,7 @@ require "resty.openssl.include.x509"
 require "resty.openssl.include.x509v3"
 require "resty.openssl.include.evp"
 require "resty.openssl.include.objects"
+local stack_macro = require("resty.openssl.include.stack")
 local stack_lib = require("resty.openssl.stack")
 local asn1_lib = require("resty.openssl.asn1")
 local digest_lib = require("resty.openssl.digest")
@@ -166,15 +167,89 @@ function _M:get_lifetime()
   return not_before, not_after, nil
 end
 
+-- note: index is 0 based
+local OPENSSL_STRING_value_at = function(ctx, i)
+  local ct = ffi_cast("OPENSSL_STRING", stack_macro.OPENSSL_sk_value(ctx, i))
+  if ct == nil then
+    return nil
+  end
+  return ffi_str(ct)
+end
+
+function _M:get_ocsp_url(return_all)
+  local st = C.X509_get1_ocsp(self.ctx)
+  local ret
+  if return_all then
+    ret = {}
+    local count = stack_macro.OPENSSL_sk_num(st)
+    for i=0,count do
+      ret[i+1] = OPENSSL_STRING_value_at(st, i)
+    end
+  else
+    ret = OPENSSL_STRING_value_at(st, 0)
+  end
+
+  C.X509_email_free(st)
+  return ret
+end
+
+function _M:get_ocsp_request()
+
+end
+
+function _M:get_crl_url(return_all)
+  local cdp, err = self:get_crl_distribution_points()
+  if err then
+    return nil, err
+  end
+
+  if cdp:count() == 0 then
+    return
+  end
+
+  if return_all then
+    local ret = {}
+    local cdp_iter = cdp:each()
+    while true do
+      local _, gn = cdp_iter()
+      if not gn then
+        break
+      end
+      local gn_iter = gn:each()
+      while true do
+        local k, v = gn_iter()
+        if not k then
+          break
+        elseif k == "URI" then
+          table.insert(ret, v)
+        end
+      end
+    end
+    return ret
+  else
+    local gn, err = cdp:index(1)
+    if err then
+      return nil, err
+    end
+    local iter = gn:each()
+    while true do
+      local k, v = iter()
+      if not k then
+        break
+      elseif k == "URI" then
+        return v
+      end
+    end
+  end
+end
+
 function _M:sign(pkey, digest)
   local pkey_lib = require("resty.openssl.pkey")
   if not pkey_lib.istype(pkey) then
     return false, "expect a pkey instance at #1"
   end
-  if digest then
-    if not digest_lib.istype(digest) then
-      return false, "expect a digest instance at #2"
-    end
+  if digest and  not digest_lib.istype(digest) then
+    return false, "expect a digest instance at #2"
   end
 
   -- returns size of signature if success
@@ -301,6 +376,7 @@ else
     error("X509_delete_ext undefined")
   end
 end
+
 function _M:set_extension(extension, last_pos)
   if not extension_lib.istype(extension) then
     return false, "expect a x509.extension instance at #1"

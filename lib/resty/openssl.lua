@@ -12,6 +12,7 @@ local _M = {
   digest = require("resty.openssl.digest"),
   hmac = require("resty.openssl.hmac"),
   pkey = require("resty.openssl.pkey"),
+  objects = require("resty.openssl.objects"),
   rand = require("resty.openssl.rand"),
   version = require("resty.openssl.version"),
   x509 = require("resty.openssl.x509"),
@@ -73,6 +74,7 @@ function _M.luaossl_compat()
   _M.x509.getSubject = _M.x509.get_subject_name
   _M.x509.setIssuer = _M.x509.set_issuer_name
   _M.x509.getIssuer = _M.x509.get_issuer_name
+  _M.x509.getOCSP = _M.x509.get_ocsp_url
 
   _M.cipher.encrypt = function(self, key, iv, padding)
     return self, _M.cipher.init(self, key, iv, true, not padding)
