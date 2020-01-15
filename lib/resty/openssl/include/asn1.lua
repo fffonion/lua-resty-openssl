@@ -10,6 +10,7 @@ ffi.cdef [[
 
   ASN1_IA5STRING *ASN1_IA5STRING_new();
 
+  int ASN1_STRING_type(const ASN1_STRING *x);
   ASN1_STRING *ASN1_STRING_type_new(int type);
   int ASN1_STRING_set(ASN1_STRING *str, const void *data, int len);
 
