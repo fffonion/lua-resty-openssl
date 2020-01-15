@@ -2,6 +2,12 @@
 ## [Unreleased]
 
 
+<a name="0.4.3"></a>
+## [0.4.3] - 2020-01-15
+### fix
+- **asn1:** support GENERALIZEDTIME string format [cc6326f](https://github.com/fffonion/lua-resty-openssl/commit/cc6326fed1bc53e64042d4742208ed68d7bb42ac)
+
+
 <a name="0.4.2"></a>
 ## [0.4.2] - 2020-01-06
 ### fix
@@ -73,7 +79,8 @@
 <a name="init"></a>
 ## init - 2019-09-25
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.4.2...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.4.3...HEAD
+[0.4.3]: https://github.com/fffonion/lua-resty-openssl/compare/0.4.2...0.4.3
 [0.4.2]: https://github.com/fffonion/lua-resty-openssl/compare/0.4.1...0.4.2
 [0.4.1]: https://github.com/fffonion/lua-resty-openssl/compare/0.4.0...0.4.1
 [0.4.0]: https://github.com/fffonion/lua-resty-openssl/compare/0.3.0...0.4.0
