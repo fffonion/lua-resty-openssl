@@ -48,13 +48,13 @@ __DATA__
     location =/t {
         content_by_lua_block {
             local csr = require("resty.openssl.x509.csr").new()
-            err = csr:set_subject_name("not a subject")
+            ok, err = csr:set_subject_name("not a subject")
             ngx.say(err)
-            err = csr:set_subject_alt("not an alt")
+            ok, err = csr:set_subject_alt_name("not an alt")
             ngx.say(err)
-            err = csr:set_pubkey("not a pkey")
+            ok, err = csr:set_pubkey("not a pkey")
             ngx.say(err)
-            err = csr:sign("not a pkey")
+            ok, err = csr:sign("not a pkey")
             ngx.say(err)
         }
     }
