@@ -79,11 +79,13 @@ function _M.dup(ctx)
   if ctx == nil or not ffi.istype(general_names_ptr_ct, ctx) then
     return nil, "expect a GENERAL_NAMES* ctx at #1"
   end
-  ctx = dup(ctx)
+  local dup_ctx = dup(ctx)
 
   return setmetatable({
-    cast = ffi_cast("GENERAL_NAMES*", ctx),
-    ctx = ctx,
+    cast = ffi_cast("GENERAL_NAMES*", dup_ctx),
+    ctx = dup_ctx,
+    -- don't let lua gc the original stack to keep its elements
+    _dupped_from = ctx,
     _is_dup = true,
     _elem_refs = {},
     _elem_refs_idx = 1,

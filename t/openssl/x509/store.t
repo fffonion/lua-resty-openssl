@@ -152,13 +152,13 @@ store:load_file.+
                 ngx.log(ngx.ERR, err)
                 return
             end
-            local chain, err = s:verify(cert1)
+            local chain, err = s:verify(cert1, nil, true)
             if err then
                 ngx.log(ngx.ERR, err)
                 return
             end
             ngx.say(#chain)
-            local chain, err = s:verify(cert3)
+            local chain, err = s:verify(cert3, nil, true)
             ngx.say(err)
             ngx.say(chain == nil)
         }
@@ -194,7 +194,7 @@ true
             local f = io.open("t/fixtures/GlobalSign.pem"):read("*a")
             local c, err = require("resty.openssl.x509").new(f)
 
-            local chain, err = s:verify(c)
+            local chain, err = s:verify(c, nil, true)
             if err then
                 ngx.log(ngx.ERR, err)
                 return
@@ -229,7 +229,7 @@ true
             local f = io.open("t/fixtures/GlobalSign.pem"):read("*a")
             local c, err = require("resty.openssl.x509").new(f)
 
-            local chain, err = s:verify(c)
+            local chain, err = s:verify(c, nil, true)
             if err then
                 ngx.log(ngx.ERR, err)
                 return
@@ -272,7 +272,7 @@ true
             local c, err = x509.new(f)
             ngx.say(helper.to_hex(c:digest()))
 
-            local chain, err = s:verify(c)
+            local chain, err = s:verify(c, nil, true)
             if err then
                 ngx.log(ngx.ERR, err)
                 return

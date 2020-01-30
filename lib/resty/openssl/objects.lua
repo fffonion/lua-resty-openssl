@@ -1,6 +1,5 @@
 local ffi = require "ffi"
 local C = ffi.C
-local ffi_gc = ffi.gc
 local ffi_str = ffi.string
 local ffi_sizeof = ffi.sizeof
 
@@ -38,8 +37,24 @@ local function txt2nid(txt)
   return nid
 end
 
+local function txtnid2nid(txt_nid)
+  local nid
+  if type(txt_nid) == "string" then
+    nid = C.OBJ_txt2nid(txt_nid)
+    if nid == 0 then
+      return nil, "invalid NID text " .. nid
+    end
+  elseif type(txt_nid) == "number" then
+    nid = txt_nid
+  else
+    return nil, "expect string or number at #1"
+  end
+  return nid
+end
+
 return {
   obj2table = obj2table,
   nid2table = nid2table,
   txt2nid = txt2nid,
+  txtnid2nid = txtnid2nid,
 }

@@ -5,7 +5,7 @@ require "resty.openssl.include.x509v3"
 require "resty.openssl.include.x509"
 local asn1_macro = require "resty.openssl.include.asn1"
 
-asn1_macro.declare_asn1_functions("X509_NAME")
+asn1_macro.declare_asn1_functions("X509_EXTENSION")
 
 ffi.cdef [[
   struct v3_ext_ctx {

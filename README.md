@@ -74,7 +74,24 @@ Table of Contents
     + [x509:get_ocsp_url](#x509get_ocsp_url)
     + [x509:get_crl_url](#x509get_crl_url)
     + [x509:sign](#x509sign)
+    + [x509:verify](#x509verify)
     + [x509:to_PEM](#x509to_pem)
+  * [resty.openssl.x509.csr](#restyopensslx509csr)
+    + [csr.new](#csrnew)
+    + [csr.istype](#csristype)
+    + [csr:get_*, csr:set_*](#csrget_-csrset_)
+    + [csr:sign](#csrsign)
+    + [csr:verify](#csrverify)
+    + [csr:tostring](#csrtostring)
+    + [csr:to_PEM](#csrto_pem)
+  * [resty.openssl.x509.crl](#restyopensslx509crl)
+    + [crl.new](#crlnew)
+    + [crl.istype](#crlistype)
+    + [crl:get_*, crl:set_*](#crlget_-crlset_)
+    + [crl:sign](#crlsign)
+    + [crl:verify](#crlverify)
+    + [crl:tostring](#crltostring)
+    + [crl:to_PEM](#crlto_pem)
   * [resty.openssl.x509.name](#restyopensslx509name)
     + [name.new](#namenew)
     + [name.dup](#namedup)
@@ -87,14 +104,6 @@ Table of Contents
     + [altname.istype](#altnameistype)
     + [altname:add](#altnameadd)
     + [altname:__metamethods](#altname__metamethods)
-  * [resty.openssl.x509.csr](#restyopensslx509csr)
-    + [csr.new](#csrnew)
-    + [csr.istype](#csristype)
-    + [csr:set_subject_name](#csrset_subject_name)
-    + [csr:set_subject_alt_name](#csrset_subject_alt_name)
-    + [csr:set_pubkey](#csrset_pubkey)
-    + [csr:tostring](#csrtostring)
-    + [csr:to_PEM](#csrto_pem)
   * [resty.openssl.x509.extension](#restyopensslx509extension)
     + [extension.new](#extensionnew)
     + [extension.dup](#extensiondup)
@@ -175,10 +184,11 @@ Each Lua table returned by `new()` contains a cdata object `ctx`. User are not s
 
 ## resty.openssl
 
-This meta module provides a version sanity check and returns all exported modules to a local table.
+This meta module provides a version sanity check against linked OpenSSL library
+and returns all exported modules to a table.
 
 ```lua
-local _M = {
+return {
   _VERSION = '0.1.0',
   bn = require("resty.openssl.bn"),
   cipher = require("resty.openssl.cipher"),
@@ -402,7 +412,7 @@ creates an empty instance.
 
 **syntax**: *b, err = bn.dup(bn_ptr_cdata)*
 
-Creates a `bn` instance from `BIGNUM*` pointer.
+Duplicates a `BIGNUM*` to create a new `bn` instance.
 
 [Back to TOC](#table-of-contents)
 
@@ -759,7 +769,7 @@ Creates a `x509` instance. The first argument can be:
 
 **syntax**: *x509, err = x509.dup(x509_ptr_cdata)*
 
-Creates a `x509` instance from `X509*` pointer.
+Duplicates a `X509*` to create a new `x509` instance.
 
 [Back to TOC](#table-of-contents)
 
@@ -956,7 +966,7 @@ Set critical flag of the X.509 `extension` matching the given [NID] to certifica
 
 Get OCSP URL(s) of the X.509 object. If `return_all` is set to true, returns a table
 containing all OCSP URLs; otherwise returns a string with first OCSP URL found.
-If none are found, returns `nil`.
+Returns `nil` if the extension is not found.
 
 [Back to TOC](#table-of-contents)
 
@@ -966,16 +976,28 @@ If none are found, returns `nil`.
 
 Get CRL URL(s) of the X.509 object. If `return_all` is set to true, returns a table
 containing all CRL URLs; otherwise returns a string with first CRL URL found.
-If none are found, returns `nil`.
+Returns `nil` if the extension is not found.
 
 [Back to TOC](#table-of-contents)
 
 ### x509:sign
 
-**syntax**: *ok, err = x509:sign(pkey)*
+**syntax**: *ok, err = x509:sign(pkey, digest?)*
 
 Sign the certificate using the private key specified by `pkey`. The first argument must be a 
-[resty.openssl.pkey](#restyopensslpkey) that stores private key.
+[resty.openssl.pkey](#restyopensslpkey) that stores private key. Optionally accept `digest`
+parameter to set digest method, whichmust be a [resty.openssl.digest](#restyopenssldigest) instance.
+Returns a boolean indicating if signing is successful and error if any.
+
+[Back to TOC](#table-of-contents)
+
+### x509:verify
+
+**syntax**: *ok, err = x509:verify(pkey)*
+
+Verify the certificate using the public key specified by `pkey`. The first argument must be a 
+[resty.openssl.pkey](#restyopensslpkey). Returns a boolean indicating if verification is
+successful and error if any.
 
 [Back to TOC](#table-of-contents)
 
@@ -984,6 +1006,104 @@ Sign the certificate using the private key specified by `pkey`. The first argume
 **syntax**: *pem, err = x509:to_PEM()*
 
 Outputs the certificate in PEM-formatted text.
+
+[Back to TOC](#table-of-contents)
+
+## resty.openssl.x509.csr
+
+Module to interact with certificate signing request (X509_REQ).
+
+[Back to TOC](#table-of-contents)
+
+### csr.new
+
+**syntax**: *csr, err = csr.new()*
+
+Create an empty `csr` instance.
+
+[Back to TOC](#table-of-contents)
+
+### csr.istype
+
+**syntax**: *ok = csr.istype(table)*
+
+Returns `true` if table is an instance of `csr`. Returns `false` otherwise.
+
+[Back to TOC](#table-of-contents)
+
+### csr:get_*, csr:set_*
+
+**syntax**: *ok, err = csr:set_attribute(instance)*
+
+**syntax**: *instance, err = csr:get_attribute()*
+
+Setters and getters for x509 attributes share the same syntax.
+
+| Attribute name | Type | Description |
+| ------------   | ---- | ----------- |
+| pubkey        | [pkey](#restyopensslpkey)   | Public key of the certificate request |
+| subject_name  | [x509.name](#restyopensslx509name) | Subject of the certificate request |
+| version       | number | Version of the certificate request, value is one less than version. For example, `2` represents `version 3` |
+
+Additionally, getters and setters for extensions are also available:
+
+| Extension name | Type | Description |
+| ------------   | ---- | ----------- |
+| subject_alt_name   | [x509.altname](#restyopensslx509altname) | [Subject Alternative Name](https://tools.ietf.org/html/rfc5280#section-4.2.1.6) of the certificate request, SANs are usually used to define "additional Common Names"  |
+
+
+```lua
+local csr, err = require("resty.openssl.csr").new()
+err = csr:set_version(3)
+local version, err = csr:get_version()
+ngx.say(version)
+-- outputs 3
+```
+
+[Back to TOC](#table-of-contents)
+
+### csr:set_subject_alt
+
+Same as [csr:set_subject_alt_name](#csrget_-csrset_), this function is deprecated to align
+with naming convension with other functions.
+
+[Back to TOC](#table-of-contents)
+
+### csr:sign
+
+**syntax**: *ok, err = csr:sign(pkey, digest?)*
+
+Sign the certificate request using the private key specified by `pkey`. The first argument must be a 
+[resty.openssl.pkey](#restyopensslpkey) that stores private key. Optionally accept `digest`
+parameter to set digest method, whichmust be a [resty.openssl.digest](#restyopenssldigest) instance.
+Returns a boolean indicating if signing is successful and error if any.
+
+[Back to TOC](#table-of-contents)
+
+### csr:verify
+
+**syntax**: *ok, err = csr:verify(pkey)*
+
+Verify the certificate request using the public key specified by `pkey`. The first argument must be a 
+[resty.openssl.pkey](#restyopensslpkey). Returns a boolean indicating if verification is
+successful and error if any.
+
+[Back to TOC](#table-of-contents)
+
+### csr:tostring
+
+**syntax**: *str, err = csr:tostring(pem_or_der?)*
+
+Outputs certificate request in PEM-formatted text or DER-formatted binary.
+The first argument can be a choice of `PEM` or `DER`; when omitted, this function outputs PEM by default.
+
+[Back to TOC](#table-of-contents)
+
+### csr:to_PEM
+
+**syntax**: *pem, err = csr:to_PEM(?)*
+
+Outputs CSR in PEM-formatted text.
 
 [Back to TOC](#table-of-contents)
 
@@ -1005,7 +1125,7 @@ Creates an empty `name` instance.
 
 **syntax**: *name, err = name.dup(name_ptr_cdata)*
 
-Creates a `name` instance from `X509_NAME*` pointer.
+Duplicates a `X509_NAME*` to create a new `name` instance.
 
 [Back to TOC](#table-of-contents)
 
@@ -1074,7 +1194,7 @@ ngx.say(obj.blob, " at ", pos)
 
 **syntax**: *k, v = name[i]*
 
-Access the underlying name objects as it's a Lua table. Make sure your LuaJIT compiled
+Access the underlying objects as it's a Lua table. Make sure your LuaJIT compiled
 with `-DLUAJIT_ENABLE_LUA52COMPAT` flag; otherwise use `all`, `each`, `index` and `count`
 instead.
 
@@ -1158,92 +1278,17 @@ _, err = altname
 
 ### altname:__metamethods
 
-**syntax**: *for k, obj in pairs(name)*
+**syntax**: *for k, obj in pairs(altname)*
 
-**syntax**: *len = #name*
+**syntax**: *len = #altname*
 
-**syntax**: *k, v = name[i]*
+**syntax**: *k, v = altname[i]*
 
-Access the underlying name objects as it's a Lua table. Make sure your LuaJIT compiled
+Access the underlying objects as it's a Lua table. Make sure your LuaJIT compiled
 with `-DLUAJIT_ENABLE_LUA52COMPAT` flag; otherwise use `all`, `each`, `index` and `count`
 instead.
 
 See also [functions for stack-like objects](#functions-for-stack-like-objects).
-
-[Back to TOC](#table-of-contents)
-
-## resty.openssl.x509.csr
-
-Module to interact with certificate signing request.
-
-[Back to TOC](#table-of-contents)
-
-### csr.new
-
-**syntax**: *csr, err = csr.new()*
-
-Create an empty `csr` instance.
-
-[Back to TOC](#table-of-contents)
-
-### csr.istype
-
-**syntax**: *ok = csr.istype(table)*
-
-Returns `true` if table is an instance of `csr`. Returns `false` otherwise.
-
-[Back to TOC](#table-of-contents)
-
-### csr:set_subject_name
-
-**syntax**: *ok = csr:set_subject_name(name)*
-
-Set subject of the certificate request,
-the first argument must be a [resty.openssl.x509.name](#restyopensslx509name) instance.
-
-[Back to TOC](#table-of-contents)
-
-### csr:set_subject_alt_name
-
-**syntax**: *ok = csr:set_subject_alt(name)*
-
-Set additional subject identifiers of the certificate request,
-the first argument must be a [resty.openssl.x509.altname](#restyopensslx509altname) instance.
-
-For now this function can be only called `once` for a `csr` instance.
-
-[Back to TOC](#table-of-contents)
-
-### csr:set_subject_alt
-
-Same as [csr:set_subject_alt_name](#csrset_subject_alt), this function is deprecated to align
-with naming convension with other functions.
-
-[Back to TOC](#table-of-contents)
-
-### csr:set_pubkey
-
-**syntax**: *ok = csr:set_pubkey(pkey)*
-
-Set public key of the certificate request,
-the first argument must be a [resty.openssl.pkey](#restyopensslpkey) instance.
-
-[Back to TOC](#table-of-contents)
-
-### csr:tostring
-
-**syntax**: *str, err = csr:tostring(pem_or_der?)*
-
-Outputs certificate request in PEM-formatted text or DER-formatted binary.
-The first argument can be a choice of `PEM` or `DER`; when omitted, this function outputs PEM by default.
-
-[Back to TOC](#table-of-contents)
-
-### csr:to_PEM
-
-**syntax**: *pem, err = csr:to_PEM(?)*
-
-Outputs CSR in PEM-formatted text.
 
 [Back to TOC](#table-of-contents)
 
@@ -1355,7 +1400,7 @@ ngx.say(extension:text())
 
 ## resty.openssl.x509.extension.dist_points
 
-Module to interact with CRL Ditribution Points data (DIST_POINT stack).
+Module to interact with CRL Distribution Points(DIST_POINT stack).
 
 [Back to TOC](#table-of-contents)
 
@@ -1371,7 +1416,7 @@ Creates a new `dist_points` instance.
 
 **syntax**: *dp, err = dist_points.dup(dist_points_ptr_cdata)*
 
-Creates a `dist_points` instance from `STACK_OF(DIST_POINT)` pointer. The function creates a new
+Duplicates a `STACK_OF(DIST_POINT)` to create a new `dist_points` instance. The function creates a new
 stack and increases reference count for all elements by 1. But it won't duplicate the elements
 themselves.
 
@@ -1387,13 +1432,13 @@ Returns `true` if table is an instance of `dist_points`. Returns `false` otherwi
 
 ### dist_points:__metamethods
 
-**syntax**: *for i, obj in ipairs(name)*
+**syntax**: *for i, obj in ipairs(dist_points)*
 
-**syntax**: *len = #name*
+**syntax**: *len = #dist_points*
 
-**syntax**: *obj = name[i]*
+**syntax**: *obj = dist_points[i]*
 
-Access the underlying name objects as it's a Lua table. Make sure your LuaJIT compiled
+Access the underlying objects as it's a Lua table. Make sure your LuaJIT compiled
 with `-DLUAJIT_ENABLE_LUA52COMPAT` flag; otherwise use `all`, `each`, `index` and `count`
 instead.
 
@@ -1419,7 +1464,7 @@ Creates a new `info_access` instance.
 
 **syntax**: *aia, err = info_access.dup(info_access_ptr_cdata)*
 
-Creates a `info_access` instance from `AUTHORITY_INFO_ACCESS` pointer. The function creates a new
+Duplicates a `AUTHORITY_INFO_ACCESS` to create a new `info_access` instance. The function creates a new
 stack and increases reference count for all elements by 1. But it won't duplicate the elements
 themselves.
 
@@ -1444,13 +1489,13 @@ Add a `x509` object to the info_access. The first argument must be a
 
 ### info_access:__metamethods
 
-**syntax**: *for i, obj in ipairs(name)*
+**syntax**: *for i, obj in ipairs(info_access)*
 
-**syntax**: *len = #name*
+**syntax**: *len = #info_access*
 
-**syntax**: *obj = name[i]*
+**syntax**: *obj = info_access[i]*
 
-Access the underlying name objects as it's a Lua table. Make sure your LuaJIT compiled
+Access the underlying objects as it's a Lua table. Make sure your LuaJIT compiled
 with `-DLUAJIT_ENABLE_LUA52COMPAT` flag; otherwise use `all`, `each`, `index` and `count`
 instead.
 
@@ -1476,7 +1521,7 @@ Creates a new `chain` instance.
 
 **syntax**: *ch, err = chain.dup(chain_ptr_cdata)*
 
-Creates a `chain` instance from `STACK_OF(X509)` pointer. The function creates a new
+Duplicates a `STACK_OF(X509)` to create a new `chain` instance. The function creates a new
 stack and increases reference count for all elements by 1. But it won't duplicate the elements
 themselves.
 
@@ -1501,13 +1546,13 @@ Add a `x509` object to the chain. The first argument must be a
 
 ### chain:__metamethods
 
-**syntax**: *for i, obj in ipairs(name)*
+**syntax**: *for i, obj in ipairs(chain)*
 
-**syntax**: *len = #name*
+**syntax**: *len = #chain*
 
-**syntax**: *obj = name[i]*
+**syntax**: *obj = chain[i]*
 
-Access the underlying name objects as it's a Lua table. Make sure your LuaJIT compiled
+Access the underlying objects as it's a Lua table. Make sure your LuaJIT compiled
 with `-DLUAJIT_ENABLE_LUA52COMPAT` flag; otherwise use `all`, `each`, `index` and `count`
 instead.
 
@@ -1576,14 +1621,14 @@ must be in hashed form, as documented in
 
 ### store:verify
 
-**syntax**: *chain, err = store:verify(x509, chain?)*
+**syntax**: *chain, err = store:verify(x509, chain?, return_chain?)*
 
 Verifies a X.509 object with the store. The first argument must be
 [resty.openssl.x509](#restyopensslx509) instance. Optionally accept a validation chain as second
 argument, which must be a [resty.openssl.x509.chain](#restyopensslx509chain) instance.
 
-Returns the proof of validation in a chain if verification succeed. Otherwise returns `nil` and
-error explaining the reason.
+If verification succeed, and `return_chain` is set to true, returns the proof of validation; otherwise
+returns `true`. If verification failed, returns `nil` and error explaining the reason.
 
 [Back to TOC](#table-of-contents)
 
@@ -1601,7 +1646,7 @@ error explaining the reason.
 
 **syntax**: *obj = x[i]*
 
-Access the underlying name objects as it's a Lua table. Make sure your LuaJIT compiled
+Access the underlying objects as it's a Lua table. Make sure your LuaJIT compiled
 with `-DLUAJIT_ENABLE_LUA52COMPAT` flag.
 
 Each object may only support either `pairs` or `ipairs`. Index is 1-based.
@@ -1669,10 +1714,15 @@ General rules on garbage collection
 - The creator set the GC handler; the user must not free it.
 - For a stack:
   - If it's created by `new()`: set GC handler to sk_TYPE_pop_free 
+    - The gc handler for elements being added to stack should not be set. Instead, rely on the gc
+      handler of the stack to free each individual elements.
   - If it's created by `dup()` (shallow copy):
-    - If elements support reference counter: increase ref count for all elements by 1; set GC handler to sk_TYPE_pop_free
-    - Otherwise: set GC handler to sk_free , additionally
-  - Additionally, the stack duplicates the element when it's added to stack, a GC handler for the duplicate
+    - If elements support reference counter (like X509): increase ref count for all elements by 1;
+      set GC handler to sk_TYPE_pop_free.
+    - If not, set GC handler to sk_free
+      - Additionally, the stack duplicates the element when it's added to stack, a GC handler for the duplicate
+        must be set. But a reference should be kept in Lua land to prevent premature
+        gc of individual elements. (See x509.altname)
 
 
 Compatibility

@@ -98,7 +98,6 @@ ffi.cdef [[
 
 ]]
 
-asn1_macro.declare_asn1_functions("X509_CRL")
 asn1_macro.declare_asn1_functions("GENERAL_NAME")
 asn1_macro.declare_asn1_functions("BASIC_CONSTRAINTS")
 asn1_macro.declare_asn1_functions("AUTHORITY_INFO_ACCESS") -- OCSP responder and CA

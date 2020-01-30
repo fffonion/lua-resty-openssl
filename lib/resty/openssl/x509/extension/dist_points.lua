@@ -42,10 +42,12 @@ function _M.dup(ctx)
   if ctx == nil or not ffi.istype(stack_ptr_ct, ctx) then
     return nil, "expect a stack ctx at #1"
   end
-  ctx = dup(ctx)
+  local dup_ctx = dup(ctx)
 
   return setmetatable({
-    ctx = ctx,
+    ctx = dup_ctx,
+    -- don't let lua gc the original stack to keep its elements
+    _dupped_from = ctx,
     _is_dup = true,
     _elem_refs = {},
     _elem_refs_idx = 1,

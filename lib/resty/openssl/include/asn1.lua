@@ -54,6 +54,11 @@ if OPENSSL_11 then
 elseif OPENSSL_10 then
   ffi.cdef[[
     unsigned char *ASN1_STRING_data(ASN1_STRING *x);
+    typedef struct ASN1_ENCODING_st {
+      unsigned char *enc;         /* DER encoding */
+      long len;                   /* Length of encoding */
+      int modified;               /* set to 1 if 'enc' is invalid */
+    } ASN1_ENCODING;
   ]]
   ASN1_STRING_get0_data = C.ASN1_STRING_data
 end

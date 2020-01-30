@@ -14,38 +14,31 @@ our $HttpConfig = qq{
 run_tests();
 
 __DATA__
-=== TEST 1: Loads a pem cert (FLICKY)
+=== TEST 1: Loads a pem cert
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
         content_by_lua_block {
-            os.execute("openssl req -newkey rsa:2048 -nodes -keyout key.pem -x509 -days 365 -out cert.pem -subj '/'")
-            ngx.update_time()
-            local nb_expected = math.floor(ngx.now())
-            local na_expected = math.floor(nb_expected + 365 * 86400)
-            local pem = io.open("cert.pem"):read("*a")
-            local x509 = require("resty.openssl.x509")
-            local p, err = x509.new(pem)
+            local f = io.open("t/fixtures/Github.pem"):read("*a")
+            local c, err = require("resty.openssl.x509").new(f)
             if err then
                 ngx.say("1 " .. err)
                 ngx.exit(0)
             end
-            local not_before, not_after, err = p:get_lifetime()
+            local not_before, not_after, err = c:get_lifetime()
             if err then
                 ngx.say("2 " .. err)
                 ngx.exit(0)
             end
-            ngx.say(not_before == nb_expected or {not_before, "!=", nb_expected})
-            ngx.say(not_after == na_expected or {not_after, "!=", na_expected})
-            os.remove("key.pem")
-            os.remove("cert.pem")
+            ngx.say(not_before)
+            ngx.say(not_after)
         }
     }
 --- request
     GET /t
 --- response_body eval
-"true
-true
+"1525737600
+1591185600
 "
 --- no_error_log
 [error]
@@ -66,7 +59,7 @@ true
     GET /t
 --- response_body_like eval
 "expect nil or a string at #1
-x509.new: .*pem_lib.c.+
+x509.new: .*ASN1_get_object:header too long
 "
 --- no_error_log
 [error]
@@ -414,7 +407,7 @@ CA Issuers - URI:http://cacerts.digicert.com/DigiCertSHA2ExtendedValidationServe
             if err then ngx.log(ngx.ERR, err) end
             ok, err = c:set_info_access(aia)
             if err then ngx.log(ngx.ERR, err) end
-            aia, err = c:get_info_access()
+            local aia, err = c:get_info_access()
             local ffi = require "ffi"
             for _, v in ipairs(aia) do
                 ngx.say(ffi.string(ffi.C.OBJ_nid2ln(v[1])), " - ", v[2], ":", v[3])

@@ -16,6 +16,7 @@ ffi.cdef [[
   OPENSSL_STACK *X509_STORE_get0_objects(X509_STORE *v);*/
 
   int X509_STORE_add_cert(X509_STORE *ctx, X509 *x);
+  int X509_STORE_add_crl(X509_STORE *ctx, X509_CRL *x);
   int X509_STORE_load_locations(X509_STORE *ctx,
                               const char *file, const char *dir);
   int X509_STORE_set_default_paths(X509_STORE *ctx);

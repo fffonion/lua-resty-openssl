@@ -30,8 +30,7 @@ setter_conv_tmpl = {
     if code ~= 1 then
       return false, format_error("x509:set_{type}: ASN1_INTEGER_set", code)
     end
-  end
-'''
+  end'''
 }
 
 c2t_assign_locals = '''

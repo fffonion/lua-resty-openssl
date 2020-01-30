@@ -6,6 +6,7 @@ local ffi_str = ffi.string
 local x509_vfy_macro = require "resty.openssl.include.x509_vfy"
 local x509_lib = require "resty.openssl.x509"
 local chain_lib = require "resty.openssl.x509.chain"
+local crl_lib = require "resty.openssl.x509.crl"
 local format_error = require("resty.openssl.err").format_error
 
 local _M = {}
@@ -41,8 +42,9 @@ function _M:use_default()
 end
 
 function _M:add(item)
+  local dup
   if x509_lib.istype(item) then
-    local dup = C.X509_dup(item.ctx)
+    dup = C.X509_dup(item.ctx)
     if dup == nil then
       return false, "X509_dup() failed"
     end
@@ -50,13 +52,24 @@ function _M:add(item)
       C.X509_free(dup)
       return false, format_error("store:add: X509_STORE_add_cert")
     end
-    -- X509_STORE doesn't have stack gc handler, we need to gc by ourselves
-    self._elem_refs[self._elem_refs_idx] = dup
-    self._elem_refs_idx = self._elem_refs_idx + 1
     ffi_gc(dup, C.X509_free)
+  elseif crl_lib.istype(item) then
+    dup = C.X509_CRL_dup(item.ctx)
+    if dup == nil then
+      return false, "X509_CRL_dup() failed"
+    end
+    if C.X509_STORE_add_crl(self.ctx, dup) ~= 1 then
+      C.X509_CRL_free(dup)
+      return false, format_error("store:add: X509_STORE_add_crl")
+    end
+    ffi_gc(dup, C.X509_CRL_free)
   else
     return false, "expect a x509 instance at #1"
   end
+
+  -- X509_STORE doesn't have stack gc handler, we need to gc by ourselves
+  self._elem_refs[self._elem_refs_idx] = dup
+  self._elem_refs_idx = self._elem_refs_idx + 1
 
   return true
 end
@@ -85,7 +98,7 @@ function _M:load_directory(path)
   return true
 end
 
-function _M:verify(x509, chain)
+function _M:verify(x509, chain, return_chain)
   if not x509_lib.istype(x509) then
     return nil, "expect a x509 instance at #1"
   elseif chain and not chain_lib.istype(chain) then
@@ -114,16 +127,15 @@ function _M:verify(x509, chain)
 
   local code = C.X509_verify_cert(ctx)
   if code == 1 then -- verified
-    local ret_chain_ctx = x509_vfy_macro.X509_STORE_CTX_get0_chain(ctx)
-    local ret_chain, err = chain_lib.dup(ret_chain_ctx)
-    if err then
-      return nil, err
+    if not return_chain then
+      return true, nil
     end
-    return ret_chain, err
+    local ret_chain_ctx = x509_vfy_macro.X509_STORE_CTX_get0_chain(ctx)
+    return chain_lib.dup(ret_chain_ctx)
   elseif code == 0 then -- unverified
     local vfy_code = C.X509_STORE_CTX_get_error(ctx)
 
-		return nil, ffi_str(C.X509_verify_cert_error_string(vfy_code))
+    return nil, ffi_str(C.X509_verify_cert_error_string(vfy_code))
   end
 
   -- error

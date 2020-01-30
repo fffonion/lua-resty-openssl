@@ -14,21 +14,24 @@ local stack_lib = require("resty.openssl.stack")
 local asn1_lib = require("resty.openssl.asn1")
 local digest_lib = require("resty.openssl.digest")
 local extension_lib = require("resty.openssl.x509.extension")
-local util = require("resty.openssl.util")
+local pkey_lib = require("resty.openssl.pkey")
+local txtnid2nid = require("resty.openssl.objects").txtnid2nid
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
-
 
 -- accessors provides an openssl version neutral interface to lua layer
 -- it doesn't handle any error, expect that to be implemented in
 -- _M.set_X or _M.get_X
 local accessors = {}
 
+accessors.get_pubkey = C.X509_get_pubkey -- returns new evp_pkey instance, don't need to dup
 accessors.set_pubkey = C.X509_set_pubkey
 accessors.set_version = C.X509_set_version
 accessors.set_serial_number = C.X509_set_serialNumber
+accessors.get_subject_name = C.X509_get_subject_name -- returns internal ptr, we dup it
 accessors.set_subject_name = C.X509_set_subject_name
+accessors.get_issuer_name = C.X509_get_issuer_name -- returns internal ptr, we dup it
 accessors.set_issuer_name = C.X509_set_issuer_name
 
 if OPENSSL_11 then
@@ -38,37 +41,35 @@ if OPENSSL_11 then
   -- parent struct is freed.
   -- otherwise, use get0, which returns an internal pointer, we don't need to free it up.
   -- it will be gone together with the parent struct.
-  accessors.set_not_before = C.X509_set1_notBefore
   accessors.get_not_before = C.X509_get0_notBefore -- returns internal ptr, we convert to number
-  accessors.set_not_after = C.X509_set1_notAfter
+  accessors.set_not_before = C.X509_set1_notBefore
   accessors.get_not_after = C.X509_get0_notAfter -- returns internal ptr, we convert to number
-  accessors.get_pubkey = C.X509_get_pubkey -- returns new evp_pkey instance, don't need to dup
+  accessors.set_not_after = C.X509_set1_notAfter
   accessors.get_version = C.X509_get_version -- returns int
   accessors.get_serial_number = C.X509_get0_serialNumber -- returns internal ptr, we convert to bn
-  accessors.get_subject_name = C.X509_get_subject_name -- returns internal ptr, we dup it
   accessors.get_issuer_name = C.X509_get_issuer_name -- returns internal ptr, we dup it
 elseif OPENSSL_10 then
-  accessors.set_not_before = C.X509_set_notBefore
   accessors.get_not_before = function(x509)
     if x509 == nil or x509.cert_info == nil or x509.cert_info.validity == nil then
       return nil
     end
     return x509.cert_info.validity.notBefore
   end
-  accessors.set_not_after = C.X509_set_notAfter
+  accessors.set_not_before = C.X509_set_notBefore
   accessors.get_not_after = function(x509)
     if x509 == nil or x509.cert_info == nil or x509.cert_info.validity == nil then
       return nil
     end
     return x509.cert_info.validity.notAfter
   end
-  accessors.get_pubkey = C.X509_get_pubkey -- returns new evp_pkey instance, don't need to dup
+  accessors.set_not_after = C.X509_set_notAfter
   accessors.get_version = function(x509)
+    if x509 == nil or x509.cert_info == nil or x509.cert_info.validity == nil then
+      return nil
+    end
     return C.ASN1_INTEGER_get(x509.cert_info.version)
   end
   accessors.get_serial_number = C.X509_get_serialNumber -- returns internal ptr, we convert to bn
-  accessors.get_subject_name = C.X509_get_subject_name -- returns internal ptr, we dup it
-  accessors.get_issuer_name = C.X509_get_issuer_name -- returns internal ptr, we dup it
 end
 
 local _M = {}
@@ -77,7 +78,7 @@ local mt = { __index = _M }
 local x509_ptr_ct = ffi.typeof("X509*")
 
 -- only PEM format is supported for now
-function _M.new(cert)
+function _M.new(cert, fmt)
   local ctx
   if not cert then
     -- routine for create a new cert
@@ -96,7 +97,19 @@ function _M.new(cert)
       return nil, format_error("x509.new: BIO_new_mem_buf")
     end
 
-    ctx = C.PEM_read_bio_X509(bio, nil, nil, nil)
+    fmt = fmt or "*"
+    while true do
+      if fmt == "PEM" or fmt == "*" then
+        ctx = C.PEM_read_bio_X509(bio, nil, nil, nil)
+        if ctx ~= nil then
+          break
+        end
+      end
+      if fmt == "DER" or fmt == "*" then
+        ctx = C.d2i_X509_bio(bio, nil)
+      end
+      break
+    end
     C.BIO_free(bio)
     if ctx == nil then
       return nil, format_error("x509.new")
@@ -243,23 +256,6 @@ function _M:get_crl_url(return_all)
   end
 end
 
-function _M:sign(pkey, digest)
-  local pkey_lib = require("resty.openssl.pkey")
-  if not pkey_lib.istype(pkey) then
-    return false, "expect a pkey instance at #1"
-  end
-  if digest and  not digest_lib.istype(digest) then
-    return false, "expect a digest instance at #2"
-  end
-
-  -- returns size of signature if success
-  if C.X509_sign(self.ctx, pkey.ctx, digest and digest.ctx) == 0 then
-    return false, format_error("x509:sign")
-  end
-
-  return true
-end
-
 local uint_ptr = ffi.typeof("unsigned int[1]")
 
 local function digest(self, cfunc, typ)
@@ -300,39 +296,62 @@ function _M:pubkey_digest(typ)
   return digest(self, C.X509_pubkey_digest, typ)
 end
 
-function _M:to_PEM()
-  return util.read_using_bio(C.PEM_write_bio_X509, self.ctx)
-end
+-- START AUTO GENERATED CODE
 
-local function get_x509_ext_by_nid(ctx, nid, pos)
-  local loc = C.X509_get_ext_by_NID(ctx, nid, pos or -1)
-  if loc == -1 then
-    return nil, nil, format_error("get_x509_ext_by_nid: X509_get_ext_by_NID")
+-- AUTO GENERATED
+function _M:sign(pkey, digest)
+  if not pkey_lib.istype(pkey) then
+    return false, "expect a pkey instance at #1"
+  end
+  if digest and not digest_lib.istype(digest) then
+    return false, "expect a digest instance at #2"
   end
 
-  local ext = C.X509_get_ext(ctx, loc)
-  if ext == nil then
-    return nil, nil, format_error("get_x509_ext_by_nid: X509_get_ext")
-  end
-  return ext, loc
-end
-
-local function get_x509_ext_by_txt_nid(ctx, txt_nid, pos)
-  local nid
-  if type(txt_nid) == "string" then
-    nid = C.OBJ_txt2nid(txt_nid)
-    if nid == 0 then
-      return nil, nil, "invalid NID text " .. nid
-    end
-  elseif type(txt_nid) == "number" then
-    nid = txt_nid
-  else
-    return nil, nil, "expect string or number at #1"
+  -- returns size of signature if success
+  if C.X509_sign(self.ctx, pkey.ctx, digest and digest.ctx) == 0 then
+    return false, format_error("x509:sign")
   end
 
-  return get_x509_ext_by_nid(ctx, nid, pos)
+  return true
 end
 
+-- AUTO GENERATED
+function _M:verify(pkey)
+  if not pkey_lib.istype(pkey) then
+    return false, "expect a pkey instance at #1"
+  end
+
+  local code = C.X509_verify(self.ctx, pkey.ctx)
+  if code == 1 then
+    return true
+  elseif code == 0 then
+    return false
+  else -- typically -1
+    return false, format_error("x509:verify", code)
+  end
+
+  return true
+end
+
+-- AUTO GENERATED
+local function get_extension(ctx, nid_txt, last_pos)
+  last_pos = (last_pos or 0) - 1
+  local nid, err = txtnid2nid(nid_txt)
+  if err then
+    return nil, nil, err
+  end
+  local pos = C.X509_get_ext_by_NID(ctx, nid, last_pos)
+  if pos == -1 then
+    return nil
+  end
+  local ctx = C.X509_get_ext(ctx, pos)
+  if ctx == nil then
+    return nil, nil, format_error("x509:get_extension")
+  end
+  return ctx, pos
+end
+
+-- AUTO GENERATED
 function _M:add_extension(extension)
   if not extension_lib.istype(extension) then
     return false, "expect a x509.extension instance at #1"
@@ -347,15 +366,11 @@ function _M:add_extension(extension)
   return true
 end
 
+-- AUTO GENERATED
 function _M:get_extension(nid_txt, last_pos)
-  last_pos = (last_pos or 0) - 1
-
-  local ctx, pos, err = get_x509_ext_by_txt_nid(self.ctx, nid_txt, last_pos)
+  local ctx, pos, err = get_extension(self.ctx, nid_txt, last_pos)
   if err then
     return nil, nil, err
-  end
-  if pos == -1 then
-    return nil
   end
   local ext, err = extension_lib.dup(ctx)
   if err then
@@ -377,6 +392,7 @@ else
   end
 end
 
+-- AUTO GENERATED
 function _M:set_extension(extension, last_pos)
   if not extension_lib.istype(extension) then
     return false, "expect a x509.extension instance at #1"
@@ -385,67 +401,43 @@ function _M:set_extension(extension, last_pos)
   last_pos = (last_pos or 0) - 1
 
   local nid = extension:get_object().nid
-  local _, pos, err = get_x509_ext_by_nid(self.ctx, nid, last_pos)
-  if err then
-    return false, err
+  local pos = C.X509_get_ext_by_NID(self.ctx, nid, last_pos)
+  if pos == -1 then
+    return nil
   end
 
   local removed = X509_delete_ext(self.ctx, pos)
   C.X509_EXTENSION_free(removed)
 
   if C.X509_add_ext(self.ctx, extension.ctx, pos) == nil then
-    return false, format_error("x509:add_extension")
+    return false, format_error("x509:set_extension")
   end
 
   return true
 end
 
-
-function _M:set_critical(nid_txt, crit)
-  local ext, _, err = get_x509_ext_by_txt_nid(self.ctx, nid_txt)
-  if err then
-    return false, err
-  end
-
-  if C.X509_EXTENSION_set_critical(ext, crit and 1 or 0) ~= 1 then
-    return false, format_error("X509_EXTENSION_set_critical")
-  end
-
-  return true
-end
-
-function _M:get_critical(nid_txt)
-  local ext, _, err = get_x509_ext_by_txt_nid(self.ctx, nid_txt)
+-- AUTO GENERATED
+function _M:set_extension_critical(nid_txt, crit, last_pos)
+  local ctx, _, err = get_extension(self.ctx, nid_txt, last_pos)
   if err then
     return nil, err
   end
 
-  return C.X509_EXTENSION_get_critical(ext) == 1
-end
-
--- START AUTO GENERATED CODE
-
--- AUTO GENERATED
-function _M:set_serial_number(toset)
-
-  local lib = require("resty.openssl.bn")
-  if lib.istype and not lib.istype(toset) then
-    return false, "expect a resty.openssl.bn instance at #1"
-  end
-  toset = toset.ctx
-  toset = C.BN_to_ASN1_INTEGER(toset, nil)
-  if toset == nil then
-    return false, format_error("x509:set: BN_to_ASN1_INTEGER")
-  end
-  -- "A copy of the serial number is used internally
-  -- so serial should be freed up after use.""
-  ffi_gc(toset, C.ASN1_INTEGER_free)
-
-  if accessors.set_serial_number(self.ctx, toset) == 0 then
-    return false, format_error("x509:set_serial_number")
+  if C.X509_EXTENSION_set_critical(ctx, crit and 1 or 0) ~= 1 then
+    return false, format_error("x509:set_extension_critical")
   end
 
   return true
+end
+
+-- AUTO GENERATED
+function _M:get_extension_critical(nid_txt, last_pos)
+  local ctx, _, err = get_extension(self.ctx, nid_txt, last_pos)
+  if err then
+    return nil, err
+  end
+
+  return C.X509_EXTENSION_get_critical(ctx) == 1
 end
 
 -- AUTO GENERATED
@@ -469,16 +461,23 @@ function _M:get_serial_number()
 end
 
 -- AUTO GENERATED
-function _M:set_not_before(toset)
-
-  if type(toset) ~= "number" then
-    return false, "expect a number at #1"
+function _M:set_serial_number(toset)
+  local lib = require("resty.openssl.bn")
+  if lib.istype and not lib.istype(toset) then
+    return false, "expect a bn instance at #1"
   end
-  toset = C.ASN1_TIME_set(nil, toset)
-  ffi_gc(toset, C.ASN1_STRING_free)
+  toset = toset.ctx
 
-  if accessors.set_not_before(self.ctx, toset) == 0 then
-    return false, format_error("x509:set_not_before")
+  toset = C.BN_to_ASN1_INTEGER(toset, nil)
+  if toset == nil then
+    return false, format_error("x509:set: BN_to_ASN1_INTEGER")
+  end
+  -- "A copy of the serial number is used internally
+  -- so serial should be freed up after use.""
+  ffi_gc(toset, C.ASN1_INTEGER_free)
+
+  if accessors.set_serial_number(self.ctx, toset) == 0 then
+    return false, format_error("x509:set_serial_number")
   end
 
   return true
@@ -497,16 +496,16 @@ function _M:get_not_before()
 end
 
 -- AUTO GENERATED
-function _M:set_not_after(toset)
-
+function _M:set_not_before(toset)
   if type(toset) ~= "number" then
     return false, "expect a number at #1"
   end
+
   toset = C.ASN1_TIME_set(nil, toset)
   ffi_gc(toset, C.ASN1_STRING_free)
 
-  if accessors.set_not_after(self.ctx, toset) == 0 then
-    return false, format_error("x509:set_not_after")
+  if accessors.set_not_before(self.ctx, toset) == 0 then
+    return false, format_error("x509:set_not_before")
   end
 
   return true
@@ -525,15 +524,16 @@ function _M:get_not_after()
 end
 
 -- AUTO GENERATED
-function _M:set_pubkey(toset)
-
-  local lib = require("resty.openssl.pkey")
-  if lib.istype and not lib.istype(toset) then
-    return false, "expect a resty.openssl.pkey instance at #1"
+function _M:set_not_after(toset)
+  if type(toset) ~= "number" then
+    return false, "expect a number at #1"
   end
-  toset = toset.ctx
-  if accessors.set_pubkey(self.ctx, toset) == 0 then
-    return false, format_error("x509:set_pubkey")
+
+  toset = C.ASN1_TIME_set(nil, toset)
+  ffi_gc(toset, C.ASN1_STRING_free)
+
+  if accessors.set_not_after(self.ctx, toset) == 0 then
+    return false, format_error("x509:set_not_after")
   end
 
   return true
@@ -545,22 +545,20 @@ function _M:get_pubkey()
   if got == nil then
     return nil, format_error("x509:get_pubkey")
   end
-
   local lib = require("resty.openssl.pkey")
   -- returned a copied instance directly
   return lib.new(got)
 end
 
 -- AUTO GENERATED
-function _M:set_subject_name(toset)
-
-  local lib = require("resty.openssl.x509.name")
+function _M:set_pubkey(toset)
+  local lib = require("resty.openssl.pkey")
   if lib.istype and not lib.istype(toset) then
-    return false, "expect a resty.openssl.x509.name instance at #1"
+    return false, "expect a pkey instance at #1"
   end
   toset = toset.ctx
-  if accessors.set_subject_name(self.ctx, toset) == 0 then
-    return false, format_error("x509:set_subject_name")
+  if accessors.set_pubkey(self.ctx, toset) == 0 then
+    return false, format_error("x509:set_pubkey")
   end
 
   return true
@@ -572,22 +570,20 @@ function _M:get_subject_name()
   if got == nil then
     return nil, format_error("x509:get_subject_name")
   end
-
   local lib = require("resty.openssl.x509.name")
   -- the internal ptr is returned, ie we need to copy it
   return lib.dup(got)
 end
 
 -- AUTO GENERATED
-function _M:set_issuer_name(toset)
-
+function _M:set_subject_name(toset)
   local lib = require("resty.openssl.x509.name")
   if lib.istype and not lib.istype(toset) then
-    return false, "expect a resty.openssl.x509.name instance at #1"
+    return false, "expect a x509.name instance at #1"
   end
   toset = toset.ctx
-  if accessors.set_issuer_name(self.ctx, toset) == 0 then
-    return false, format_error("x509:set_issuer_name")
+  if accessors.set_subject_name(self.ctx, toset) == 0 then
+    return false, format_error("x509:set_subject_name")
   end
 
   return true
@@ -599,24 +595,20 @@ function _M:get_issuer_name()
   if got == nil then
     return nil, format_error("x509:get_issuer_name")
   end
-
   local lib = require("resty.openssl.x509.name")
   -- the internal ptr is returned, ie we need to copy it
   return lib.dup(got)
 end
 
 -- AUTO GENERATED
-function _M:set_version(toset)
-
-  if type(toset) ~= "number" then
-    return false, "expect a number at #1"
+function _M:set_issuer_name(toset)
+  local lib = require("resty.openssl.x509.name")
+  if lib.istype and not lib.istype(toset) then
+    return false, "expect a x509.name instance at #1"
   end
-  -- Note: this is defined by standards (X.509 et al) to be one less than the certificate version.
-  -- So a version 3 certificate will return 2 and a version 1 certificate will return 0.
-  toset = toset - 1
-
-  if accessors.set_version(self.ctx, toset) == 0 then
-    return false, format_error("x509:set_version")
+  toset = toset.ctx
+  if accessors.set_issuer_name(self.ctx, toset) == 0 then
+    return false, format_error("x509:set_issuer_name")
   end
 
   return true
@@ -634,29 +626,25 @@ function _M:get_version()
   return got
 end
 
-local NID_subject_alt_name = C.OBJ_sn2nid("subjectAltName")
-assert(NID_subject_alt_name ~= 0)
-
--- AUTO GENERATED: EXTENSIONS
-function _M:set_subject_alt_name(toset)
-
-  local lib = require("resty.openssl.x509.altname")
-  if lib.istype and not lib.istype(toset) then
-    return false, "expect a resty.openssl.x509.altname instance at #1"
+-- AUTO GENERATED
+function _M:set_version(toset)
+  if type(toset) ~= "number" then
+    return false, "expect a number at #1"
   end
-  toset = toset.ctx
-  -- x509v3.h: # define X509V3_ADD_REPLACE              2L
-  if C.X509_add1_ext_i2d(self.ctx, NID_subject_alt_name, toset, 0, 0x2) ~= 1 then
-    return false, format_error("x509:set_subject_alt_name")
+
+  -- Note: this is defined by standards (X.509 et al) to be one less than the certificate version.
+  -- So a version 3 certificate will return 2 and a version 1 certificate will return 0.
+  toset = toset - 1
+
+  if accessors.set_version(self.ctx, toset) == 0 then
+    return false, format_error("x509:set_version")
   end
 
   return true
 end
 
--- AUTO GENERATED: EXTENSIONS
-function _M:set_subject_alt_name_critical(crit)
-  return _M.set_critical(self, NID_subject_alt_name, crit)
-end
+local NID_subject_alt_name = C.OBJ_sn2nid("subjectAltName")
+assert(NID_subject_alt_name ~= 0)
 
 -- AUTO GENERATED: EXTENSIONS
 function _M:get_subject_alt_name()
@@ -669,41 +657,41 @@ function _M:get_subject_alt_name()
   -- Note: here we only free the stack itself not elements
   -- since there seems no way to increase ref count for a GENERAL_NAME
   -- we left the elements referenced by the new-dup'ed stack
-  ffi_gc(got, stack_lib.gc_of("GENERAL_NAME"))
-  got = ffi_cast("GENERAL_NAMES*", got)
+  local got_ref = got
+  ffi_gc(got_ref, stack_lib.gc_of("GENERAL_NAME"))
+  got = ffi_cast("GENERAL_NAMES*", got_ref)
   local lib = require("resty.openssl.x509.altname")
   -- the internal ptr is returned, ie we need to copy it
   return lib.dup(got)
 end
 
 -- AUTO GENERATED: EXTENSIONS
-function _M:get_subject_alt_name_critical()
-  return _M.get_critical(self, NID_subject_alt_name)
-end
-
-local NID_issuer_alt_name = C.OBJ_sn2nid("issuerAltName")
-assert(NID_issuer_alt_name ~= 0)
-
--- AUTO GENERATED: EXTENSIONS
-function _M:set_issuer_alt_name(toset)
-
+function _M:set_subject_alt_name(toset)
   local lib = require("resty.openssl.x509.altname")
   if lib.istype and not lib.istype(toset) then
-    return false, "expect a resty.openssl.x509.altname instance at #1"
+    return false, "expect a x509.altname instance at #1"
   end
   toset = toset.ctx
   -- x509v3.h: # define X509V3_ADD_REPLACE              2L
-  if C.X509_add1_ext_i2d(self.ctx, NID_issuer_alt_name, toset, 0, 0x2) ~= 1 then
-    return false, format_error("x509:set_issuer_alt_name")
+  if C.X509_add1_ext_i2d(self.ctx, NID_subject_alt_name, toset, 0, 0x2) ~= 1 then
+    return false, format_error("x509:set_subject_alt_name")
   end
 
   return true
 end
 
 -- AUTO GENERATED: EXTENSIONS
-function _M:set_issuer_alt_name_critical(crit)
-  return _M.set_critical(self, NID_issuer_alt_name, crit)
+function _M:set_subject_alt_name_critical(crit)
+  return _M.set_extension_critical(self, NID_subject_alt_name, crit)
 end
+
+-- AUTO GENERATED: EXTENSIONS
+function _M:get_subject_alt_name_critical()
+  return _M.get_extension_critical(self, NID_subject_alt_name)
+end
+
+local NID_issuer_alt_name = C.OBJ_sn2nid("issuerAltName")
+assert(NID_issuer_alt_name ~= 0)
 
 -- AUTO GENERATED: EXTENSIONS
 function _M:get_issuer_alt_name()
@@ -716,68 +704,41 @@ function _M:get_issuer_alt_name()
   -- Note: here we only free the stack itself not elements
   -- since there seems no way to increase ref count for a GENERAL_NAME
   -- we left the elements referenced by the new-dup'ed stack
-  ffi_gc(got, stack_lib.gc_of("GENERAL_NAME"))
-  got = ffi_cast("GENERAL_NAMES*", got)
+  local got_ref = got
+  ffi_gc(got_ref, stack_lib.gc_of("GENERAL_NAME"))
+  got = ffi_cast("GENERAL_NAMES*", got_ref)
   local lib = require("resty.openssl.x509.altname")
   -- the internal ptr is returned, ie we need to copy it
   return lib.dup(got)
 end
 
 -- AUTO GENERATED: EXTENSIONS
-function _M:get_issuer_alt_name_critical()
-  return _M.get_critical(self, NID_issuer_alt_name)
-end
-
-local NID_basic_constraints = C.OBJ_sn2nid("basicConstraints")
-assert(NID_basic_constraints ~= 0)
-
--- AUTO GENERATED: EXTENSIONS
-function _M:set_basic_constraints(toset)
-
-  if type(toset) ~= "table" then
-    return false, "expect a table at #1"
+function _M:set_issuer_alt_name(toset)
+  local lib = require("resty.openssl.x509.altname")
+  if lib.istype and not lib.istype(toset) then
+    return false, "expect a x509.altname instance at #1"
   end
-  local cfg_lower = {}
-  for k, v in pairs(toset) do
-    cfg_lower[string.lower(k)] = v
-  end
-
-  toset = C.BASIC_CONSTRAINTS_new()
-  if toset == nil then
-    return false, format_error("x509:set_BASIC_CONSTRAINTS")
-  end
-  ffi_gc(toset, C.BASIC_CONSTRAINTS_free)
-
-  toset.ca = cfg_lower.ca and 0xFF or 0
-  local pathlen = cfg_lower.pathlen and tonumber(cfg_lower.pathlen)
-  if pathlen then
-    C.ASN1_INTEGER_free(toset.pathlen)
-
-    local asn1 = C.ASN1_STRING_type_new(pathlen)
-    if asn1 == nil then
-      return false, format_error("x509:set_BASIC_CONSTRAINTS: ASN1_STRING_type_new")
-    end
-    toset.pathlen = asn1
-
-    local code = C.ASN1_INTEGER_set(asn1, pathlen)
-    if code ~= 1 then
-      return false, format_error("x509:set_BASIC_CONSTRAINTS: ASN1_INTEGER_set", code)
-    end
-  end
-
-
+  toset = toset.ctx
   -- x509v3.h: # define X509V3_ADD_REPLACE              2L
-  if C.X509_add1_ext_i2d(self.ctx, NID_basic_constraints, toset, 0, 0x2) ~= 1 then
-    return false, format_error("x509:set_basic_constraints")
+  if C.X509_add1_ext_i2d(self.ctx, NID_issuer_alt_name, toset, 0, 0x2) ~= 1 then
+    return false, format_error("x509:set_issuer_alt_name")
   end
 
   return true
 end
 
 -- AUTO GENERATED: EXTENSIONS
-function _M:set_basic_constraints_critical(crit)
-  return _M.set_critical(self, NID_basic_constraints, crit)
+function _M:set_issuer_alt_name_critical(crit)
+  return _M.set_extension_critical(self, NID_issuer_alt_name, crit)
 end
+
+-- AUTO GENERATED: EXTENSIONS
+function _M:get_issuer_alt_name_critical()
+  return _M.get_extension_critical(self, NID_issuer_alt_name)
+end
+
+local NID_basic_constraints = C.OBJ_sn2nid("basicConstraints")
+assert(NID_basic_constraints ~= 0)
 
 -- AUTO GENERATED: EXTENSIONS
 function _M:get_basic_constraints(name)
@@ -809,33 +770,59 @@ function _M:get_basic_constraints(name)
 end
 
 -- AUTO GENERATED: EXTENSIONS
-function _M:get_basic_constraints_critical()
-  return _M.get_critical(self, NID_basic_constraints)
-end
-
-local NID_info_access = C.OBJ_sn2nid("authorityInfoAccess")
-assert(NID_info_access ~= 0)
-
--- AUTO GENERATED: EXTENSIONS
-function _M:set_info_access(toset)
-
-  local lib = require("resty.openssl.x509.extension.info_access")
-  if lib.istype and not lib.istype(toset) then
-    return false, "expect a resty.openssl.x509.extension.info_access instance at #1"
+function _M:set_basic_constraints(toset)
+  if type(toset) ~= "table" then
+    return false, "expect a table at #1"
   end
-  toset = toset.ctx
+
+  local cfg_lower = {}
+  for k, v in pairs(toset) do
+    cfg_lower[string.lower(k)] = v
+  end
+
+  toset = C.BASIC_CONSTRAINTS_new()
+  if toset == nil then
+    return false, format_error("x509:set_BASIC_CONSTRAINTS")
+  end
+  ffi_gc(toset, C.BASIC_CONSTRAINTS_free)
+
+  toset.ca = cfg_lower.ca and 0xFF or 0
+  local pathlen = cfg_lower.pathlen and tonumber(cfg_lower.pathlen)
+  if pathlen then
+    C.ASN1_INTEGER_free(toset.pathlen)
+
+    local asn1 = C.ASN1_STRING_type_new(pathlen)
+    if asn1 == nil then
+      return false, format_error("x509:set_BASIC_CONSTRAINTS: ASN1_STRING_type_new")
+    end
+    toset.pathlen = asn1
+
+    local code = C.ASN1_INTEGER_set(asn1, pathlen)
+    if code ~= 1 then
+      return false, format_error("x509:set_BASIC_CONSTRAINTS: ASN1_INTEGER_set", code)
+    end
+  end
+
   -- x509v3.h: # define X509V3_ADD_REPLACE              2L
-  if C.X509_add1_ext_i2d(self.ctx, NID_info_access, toset, 0, 0x2) ~= 1 then
-    return false, format_error("x509:set_info_access")
+  if C.X509_add1_ext_i2d(self.ctx, NID_basic_constraints, toset, 0, 0x2) ~= 1 then
+    return false, format_error("x509:set_basic_constraints")
   end
 
   return true
 end
 
 -- AUTO GENERATED: EXTENSIONS
-function _M:set_info_access_critical(crit)
-  return _M.set_critical(self, NID_info_access, crit)
+function _M:set_basic_constraints_critical(crit)
+  return _M.set_extension_critical(self, NID_basic_constraints, crit)
 end
+
+-- AUTO GENERATED: EXTENSIONS
+function _M:get_basic_constraints_critical()
+  return _M.get_extension_critical(self, NID_basic_constraints)
+end
+
+local NID_info_access = C.OBJ_sn2nid("authorityInfoAccess")
+assert(NID_info_access ~= 0)
 
 -- AUTO GENERATED: EXTENSIONS
 function _M:get_info_access()
@@ -848,41 +835,41 @@ function _M:get_info_access()
   -- Note: here we only free the stack itself not elements
   -- since there seems no way to increase ref count for a ACCESS_DESCRIPTION
   -- we left the elements referenced by the new-dup'ed stack
-  ffi_gc(got, stack_lib.gc_of("ACCESS_DESCRIPTION"))
-  got = ffi_cast("AUTHORITY_INFO_ACCESS*", got)
+  local got_ref = got
+  ffi_gc(got_ref, stack_lib.gc_of("ACCESS_DESCRIPTION"))
+  got = ffi_cast("AUTHORITY_INFO_ACCESS*", got_ref)
   local lib = require("resty.openssl.x509.extension.info_access")
   -- the internal ptr is returned, ie we need to copy it
   return lib.dup(got)
 end
 
 -- AUTO GENERATED: EXTENSIONS
-function _M:get_info_access_critical()
-  return _M.get_critical(self, NID_info_access)
-end
-
-local NID_crl_distribution_points = C.OBJ_sn2nid("crlDistributionPoints")
-assert(NID_crl_distribution_points ~= 0)
-
--- AUTO GENERATED: EXTENSIONS
-function _M:set_crl_distribution_points(toset)
-
-  local lib = require("resty.openssl.x509.extension.dist_points")
+function _M:set_info_access(toset)
+  local lib = require("resty.openssl.x509.extension.info_access")
   if lib.istype and not lib.istype(toset) then
-    return false, "expect a resty.openssl.x509.extension.dist_points instance at #1"
+    return false, "expect a x509.extension.info_access instance at #1"
   end
   toset = toset.ctx
   -- x509v3.h: # define X509V3_ADD_REPLACE              2L
-  if C.X509_add1_ext_i2d(self.ctx, NID_crl_distribution_points, toset, 0, 0x2) ~= 1 then
-    return false, format_error("x509:set_crl_distribution_points")
+  if C.X509_add1_ext_i2d(self.ctx, NID_info_access, toset, 0, 0x2) ~= 1 then
+    return false, format_error("x509:set_info_access")
   end
 
   return true
 end
 
 -- AUTO GENERATED: EXTENSIONS
-function _M:set_crl_distribution_points_critical(crit)
-  return _M.set_critical(self, NID_crl_distribution_points, crit)
+function _M:set_info_access_critical(crit)
+  return _M.set_extension_critical(self, NID_info_access, crit)
 end
+
+-- AUTO GENERATED: EXTENSIONS
+function _M:get_info_access_critical()
+  return _M.get_extension_critical(self, NID_info_access)
+end
+
+local NID_crl_distribution_points = C.OBJ_sn2nid("crlDistributionPoints")
+assert(NID_crl_distribution_points ~= 0)
 
 -- AUTO GENERATED: EXTENSIONS
 function _M:get_crl_distribution_points()
@@ -895,17 +882,39 @@ function _M:get_crl_distribution_points()
   -- Note: here we only free the stack itself not elements
   -- since there seems no way to increase ref count for a DIST_POINT
   -- we left the elements referenced by the new-dup'ed stack
-  ffi_gc(got, stack_lib.gc_of("DIST_POINT"))
-  got = ffi_cast("OPENSSL_STACK*", got)
+  local got_ref = got
+  ffi_gc(got_ref, stack_lib.gc_of("DIST_POINT"))
+  got = ffi_cast("OPENSSL_STACK*", got_ref)
   local lib = require("resty.openssl.x509.extension.dist_points")
   -- the internal ptr is returned, ie we need to copy it
   return lib.dup(got)
 end
 
 -- AUTO GENERATED: EXTENSIONS
-function _M:get_crl_distribution_points_critical()
-  return _M.get_critical(self, NID_crl_distribution_points)
+function _M:set_crl_distribution_points(toset)
+  local lib = require("resty.openssl.x509.extension.dist_points")
+  if lib.istype and not lib.istype(toset) then
+    return false, "expect a x509.extension.dist_points instance at #1"
+  end
+  toset = toset.ctx
+  -- x509v3.h: # define X509V3_ADD_REPLACE              2L
+  if C.X509_add1_ext_i2d(self.ctx, NID_crl_distribution_points, toset, 0, 0x2) ~= 1 then
+    return false, format_error("x509:set_crl_distribution_points")
+  end
+
+  return true
 end
+
+-- AUTO GENERATED: EXTENSIONS
+function _M:set_crl_distribution_points_critical(crit)
+  return _M.set_extension_critical(self, NID_crl_distribution_points, crit)
+end
+
+-- AUTO GENERATED: EXTENSIONS
+function _M:get_crl_distribution_points_critical()
+  return _M.get_extension_critical(self, NID_crl_distribution_points)
+end
+
 
 -- END AUTO GENERATED CODE
 

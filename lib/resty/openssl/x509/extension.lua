@@ -17,8 +17,8 @@ local x509_extension_ptr_ct = ffi.typeof("X509_EXTENSION*")
 local extension_types = {
   issuer  = "resty.openssl.x509",
   subject = "resty.openssl.x509",
-  request = "resty.openssl.csr",
-  -- crl     = "", -- NYI
+  request = "resty.openssl.x509.csr",
+  crl     = "resty.openssl.x509.crl",
   -- db,           -- NYI
 }
 function _M.new(name, value, data)

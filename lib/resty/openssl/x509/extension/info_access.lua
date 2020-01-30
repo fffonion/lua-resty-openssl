@@ -58,11 +58,13 @@ function _M.dup(ctx)
   if ctx == nil or not ffi.istype(authority_info_access_ptr_ct, ctx) then
     return nil, "expect a AUTHORITY_INFO_ACCESS* ctx at #1"
   end
-  ctx = dup(ctx)
+  local dup_ctx = dup(ctx)
 
   return setmetatable({
-    ctx = ctx,
-    cast = ffi_cast("AUTHORITY_INFO_ACCESS*", ctx),
+    ctx = dup_ctx,
+    cast = ffi_cast("AUTHORITY_INFO_ACCESS*", dup_ctx),
+    -- don't let lua gc the original stack to keep its elements
+    _dupped_from = ctx,
     _is_dup = true,
     _elem_refs = {},
     _elem_refs_idx = 1,

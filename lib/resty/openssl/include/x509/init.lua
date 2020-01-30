@@ -9,13 +9,18 @@ local asn1_macro = require "resty.openssl.include.asn1"
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
 
+asn1_macro.declare_asn1_functions("X509")
+
 ffi.cdef [[
+  X509 *d2i_X509_bio(BIO *bp, X509 **x509);
+
   // STACK_OF(X509)
   OPENSSL_STACK *X509_chain_up_ref(OPENSSL_STACK *chain);
 
   typedef struct X509_extension_st X509_EXTENSION;
 
   int X509_sign(X509 *x, EVP_PKEY *pkey, const EVP_MD *md);
+  int X509_verify(X509 *a, EVP_PKEY *r);
 
   ASN1_TIME *X509_gmtime_adj(ASN1_TIME *s, long adj);
 
@@ -34,10 +39,14 @@ ffi.cdef [[
   EVP_PKEY *d2i_PrivateKey_bio(BIO *bp, EVP_PKEY **a);
   EVP_PKEY *d2i_PUBKEY_bio(BIO *bp, EVP_PKEY **a);
 
+  EVP_PKEY *X509_get_pubkey(X509 *x);
   int X509_set_pubkey(X509 *x, EVP_PKEY *pkey);
   int X509_set_version(X509 *x, long version);
   int X509_set_serialNumber(X509 *x, ASN1_INTEGER *serial);
+
+  X509_NAME *X509_get_subject_name(const X509 *a);
   int X509_set_subject_name(X509 *x, X509_NAME *name);
+  X509_NAME *X509_get_issuer_name(const X509 *a);
   int X509_set_issuer_name(X509 *x, X509_NAME *name);
 
   int X509_pubkey_digest(const X509 *data, const EVP_MD *type,
@@ -49,20 +58,14 @@ ffi.cdef [[
   int X509_verify_cert(X509_STORE_CTX *ctx);
 ]]
 
-asn1_macro.declare_asn1_functions("X509")
-asn1_macro.declare_asn1_functions("X509_EXTENSION")
-
 if OPENSSL_11 then
   ffi.cdef [[
     int X509_set1_notBefore(X509 *x, const ASN1_TIME *tm);
     int X509_set1_notAfter(X509 *x, const ASN1_TIME *tm);
     /*const*/ ASN1_TIME *X509_get0_notBefore(const X509 *x);
     /*const*/ ASN1_TIME *X509_get0_notAfter(const X509 *x);
-    EVP_PKEY *X509_get_pubkey(X509 *x);
     long X509_get_version(const X509 *x);
     const ASN1_INTEGER *X509_get0_serialNumber(X509 *x);
-    X509_NAME *X509_get_subject_name(const X509 *a);
-    X509_NAME *X509_get_issuer_name(const X509 *a);
 
     X509_EXTENSION *X509_delete_ext(X509 *x, int loc);
   ]]
@@ -79,7 +82,7 @@ elseif OPENSSL_10 then
       /*ASN1_INTEGER*/ void *version;
       /*ASN1_INTEGER*/ void *serialNumber;
       /*X509_ALGOR*/ void *signature;
-      /*X509_NAME*/ void *issuer;
+      X509_NAME *issuer;
       X509_VAL *validity;
       X509_NAME *subject;
       /*X509_PUBKEY*/ void *key;
@@ -97,10 +100,7 @@ elseif OPENSSL_10 then
 
     int X509_set_notBefore(X509 *x, const ASN1_TIME *tm);
     int X509_set_notAfter(X509 *x, const ASN1_TIME *tm);
-    EVP_PKEY *X509_get_pubkey(X509 *x);
     ASN1_INTEGER *X509_get_serialNumber(X509 *x);
-    X509_NAME *X509_get_subject_name(const X509 *a);
-    X509_NAME *X509_get_issuer_name(const X509 *a);
 
     // STACK_OF(X509_EXTENSION)
     X509_EXTENSION *X509v3_delete_ext(OPENSSL_STACK *x, int loc);

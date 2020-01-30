@@ -16,9 +16,6 @@ local format_error = require("resty.openssl.err").format_error
 local _M = {}
 
 local function gc_of(typ)
-  if not C[typ .. "_free"] then
-    error(typ .. "_free is not defined in ffi.cdef")
-  end
   local f = C[typ .. "_free"]
   return function (st)
     stack_macro.OPENSSL_sk_pop_free(st, f)
