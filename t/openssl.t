@@ -47,6 +47,6 @@ __DATA__
     GET /t
 --- response_body_like
 false
-.+pkey.new.+not enough data
+.+pkey.new.+
 --- no_error_log
 [error]

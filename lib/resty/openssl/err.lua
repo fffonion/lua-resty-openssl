@@ -5,7 +5,7 @@ local ffi_sizeof = ffi.sizeof
 
 ffi.cdef [[
   unsigned long ERR_peek_error(void);
-  unsigned long ERR_get_error_line(const char **file, int *line);
+  unsigned long ERR_peek_last_error_line(const char **file, int *line);
   void ERR_clear_error(void);
   void ERR_error_string_n(unsigned long e, char *buf, size_t len);
 ]]
@@ -22,7 +22,7 @@ local function format_error(ctx, code)
   if C.ERR_peek_error() ~= 0 then
     local line = int_ptr()
     local path = constchar_ptrptr()
-    local code = C.ERR_get_error_line(path, line)
+    local code = C.ERR_peek_last_error_line(path, line)
 
     local abs_path = ffi_str(path[0])
     -- ../crypto/asn1/a_d2i_fp.c => crypto/asn1/a_d2i_fp.c

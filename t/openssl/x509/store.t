@@ -120,7 +120,7 @@ __DATA__
     GET /t
 --- response_body_like eval
 "false
-store:load_file.+system library.+
+store:load_file.+system lib.*
 false
 store:load_file.+
 "
