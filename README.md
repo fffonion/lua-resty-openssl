@@ -2,7 +2,7 @@
 
 FFI-based OpenSSL binding for LuaJIT, supporting OpenSSL 1.1 and 1.0.2 series
 
-![Build Status](https://travis-ci.com/fffonion/lua-resty-openssl.svg?branch=master)
+![Build Status](https://travis-ci.com/fffonion/lua-resty-openssl.svg?branch=master) ![luarocks](https://img.shields.io/luarocks/v/fffonion/lua-resty-openssl?color=%232c3e67)
 
 
 Table of Contents
@@ -88,6 +88,11 @@ Table of Contents
     + [crl.new](#crlnew)
     + [crl.istype](#crlistype)
     + [crl:get_*, crl:set_*](#crlget_-crlset_)
+    + [crl:get_extension](#crlget_extension)
+    + [crl:add_extension](#crladd_extension)
+    + [crl:set_extension](#crlset_extension)
+    + [crl:get_critical](#crlget_critical)
+    + [crl:set_critical](#crlset_critical)
     + [crl:sign](#crlsign)
     + [crl:verify](#crlverify)
     + [crl:tostring](#crltostring)
@@ -754,14 +759,12 @@ Module to interact with X.509 certificates.
 
 ### x509.new
 
-**syntax**: *crt, err = x509.new(pem)*
+**syntax**: *crt, err = x509.new(txt?, fmt?)*
 
-**syntax**: *crt, err = x509.new()*
+Creates a `x509` instance. `txt` can be **PEM** or **DER** formatted text;
+`fmt` is a choice of `PEM`, `DER` to load specific format, or `*` for auto detect.
 
-Creates a `x509` instance. The first argument can be:
-
-1. PEM-formatted X.509 certificate `string`.
-2. `nil` to create an empty certificate.
+When `txt` is omitted, `new()` creates an empty `x509` instance.
 
 [Back to TOC](#table-of-contents)
 
@@ -984,7 +987,7 @@ Returns `nil` if the extension is not found.
 
 **syntax**: *ok, err = x509:sign(pkey, digest?)*
 
-Sign the certificate using the private key specified by `pkey`. The first argument must be a 
+Sign the certificate using the private key specified by `pkey`, which must be a 
 [resty.openssl.pkey](#restyopensslpkey) that stores private key. Optionally accept `digest`
 parameter to set digest method, whichmust be a [resty.openssl.digest](#restyopenssldigest) instance.
 Returns a boolean indicating if signing is successful and error if any.
@@ -995,9 +998,9 @@ Returns a boolean indicating if signing is successful and error if any.
 
 **syntax**: *ok, err = x509:verify(pkey)*
 
-Verify the certificate using the public key specified by `pkey`. The first argument must be a 
-[resty.openssl.pkey](#restyopensslpkey). Returns a boolean indicating if verification is
-successful and error if any.
+Verify the certificate signature using the public key specified by `pkey`, which
+must be a [resty.openssl.pkey](#restyopensslpkey). Returns a boolean indicating if
+verification is successful and error if any.
 
 [Back to TOC](#table-of-contents)
 
@@ -1017,9 +1020,12 @@ Module to interact with certificate signing request (X509_REQ).
 
 ### csr.new
 
-**syntax**: *csr, err = csr.new()*
+**syntax**: *csr, err = csr.new(txt?, fmt?)*
 
-Create an empty `csr` instance.
+Create an empty `csr` instance. `txt` can be **PEM** or **DER** formatted text;
+`fmt` is a choice of `PEM`, `DER` to load specific format, or `*` for auto detect.
+
+When `txt` is omitted, `new()` creates an empty `csr` instance.
 
 [Back to TOC](#table-of-contents)
 
@@ -1073,7 +1079,7 @@ with naming convension with other functions.
 
 **syntax**: *ok, err = csr:sign(pkey, digest?)*
 
-Sign the certificate request using the private key specified by `pkey`. The first argument must be a 
+Sign the certificate request using the private key specified by `pkey`, which must be a 
 [resty.openssl.pkey](#restyopensslpkey) that stores private key. Optionally accept `digest`
 parameter to set digest method, whichmust be a [resty.openssl.digest](#restyopenssldigest) instance.
 Returns a boolean indicating if signing is successful and error if any.
@@ -1084,15 +1090,15 @@ Returns a boolean indicating if signing is successful and error if any.
 
 **syntax**: *ok, err = csr:verify(pkey)*
 
-Verify the certificate request using the public key specified by `pkey`. The first argument must be a 
-[resty.openssl.pkey](#restyopensslpkey). Returns a boolean indicating if verification is
-successful and error if any.
+Verify the CSR signature using the public key specified by `pkey`, which
+must be a [resty.openssl.pkey](#restyopensslpkey). Returns a boolean indicating if
+verification is successful and error if any.
 
 [Back to TOC](#table-of-contents)
 
 ### csr:tostring
 
-**syntax**: *str, err = csr:tostring(pem_or_der?)*
+**syntax**: *str, err = csr:tostring(fmt?)*
 
 Outputs certificate request in PEM-formatted text or DER-formatted binary.
 The first argument can be a choice of `PEM` or `DER`; when omitted, this function outputs PEM by default.
@@ -1104,6 +1110,174 @@ The first argument can be a choice of `PEM` or `DER`; when omitted, this functio
 **syntax**: *pem, err = csr:to_PEM(?)*
 
 Outputs CSR in PEM-formatted text.
+
+[Back to TOC](#table-of-contents)
+
+## resty.openssl.crl
+
+Module to interact with X509_CRL(certificate revocation list).
+
+[Back to TOC](#table-of-contents)
+
+### crl.new
+
+**syntax**: *crt, err = crl.new(txt?, fmt?)*
+
+Creates a `crl` instance. `txt` can be **PEM** or **DER** formatted text;
+`fmt` is a choice of `PEM`, `DER` to load specific format, or `*` for auto detect.
+
+When `txt` is omitted, `new()` creates an empty `crl` instance.
+
+[Back to TOC](#table-of-contents)
+
+### crl.dup
+
+**syntax**: *crl, err = crl.dup(crl_ptr_cdata)*
+
+Duplicates a `X509_CRL*` to create a new `crl` instance.
+
+[Back to TOC](#table-of-contents)
+
+### crl.istype
+
+**syntax**: *ok = crl.istype(table)*
+
+Returns `true` if table is an instance of `crl`. Returns `false` otherwise.
+
+[Back to TOC](#table-of-contents)
+
+### crl:get_*, crl:set_*
+
+**syntax**: *ok, err = crl:set_attribute(instance)*
+
+**syntax**: *instance, err = crl:get_attribute()*
+
+Setters and getters for crl attributes share the same syntax.
+
+| Attribute name | Type | Description |
+| ------------   | ---- | ----------- |
+| issuer_name   | [x509.name](#restyopensslx509name) | Issuer of the CRL |
+| last_update    | number | Unix timestamp when CRL is not valid before |
+| next_update     | number | Unix timestamp when CRL is not valid after |
+| version       | number | Version of the certificate, value is one less than version. For example, `2` represents `version 3` |
+
+Additionally, getters and setters for extensions are also available:
+
+| Extension name | Type | Description |
+| ------------   | ---- | ----------- |
+
+For all extensions, `get_{extension}_critical` and `set_{extension}_critical` is also supported to
+access the `critical` flag of the extension.
+
+```lua
+local crl, err = require("resty.openssl.crl").new()
+err = crl:set_next_update(ngx.time())
+local not_before, err = crl:get_next_update()
+ngx.say(not_before)
+-- outputs 1571875065
+```
+
+Note that user may also access the certain extension by [crl:get_extension](#crlget_extension) and
+[crl:set_extension](#crlset_extension), while the later two function returns or requires
+[extension](#restyopensslcrlextension) instead. User may use getter and setters listed here if modification
+of current extensions is needed; use [crl:get_extension](#crlget_extension) or
+[crl:set_extension](#crlset_extension) if user are adding or replacing the whole extension or
+getters/setters are not implemented. If the getter returned a type of `crl.*` instance, it can be
+converted to a [extension](#restyopensslcrlextension) instance by [extension:from_data](#extensionfrom_data),
+and thus used by [crl:get_extension](#crlget_extension) and [crl:set_extension](#crlset_extension) 
+
+[Back to TOC](#table-of-contents)
+
+
+### crl:get_extension
+
+**syntax**: *extension, pos, err = crl:get_extension(nid_or_txt, last_pos?)*
+
+Get X.509 `extension` matching the given [NID] to CRL, returns a
+[resty.openssl.x509.extension](#restyopensslx509extension) instance and the found position.
+
+If `last_pos` is defined, the function searchs from that position; otherwise it
+finds from beginning. Index is 1-based.
+
+[Back to TOC](#table-of-contents)
+
+### crl:add_extension
+
+**syntax**: *ok, err = crl:add_extension(extension)*
+
+Adds an X.509 `extension` to CRL, the first argument must be a
+[resty.openssl.x509.extension](#restyopensslx509extension) instance.
+
+[Back to TOC](#table-of-contents)
+
+### crl:set_extension
+
+**syntax**: *ok, err = crl:set_extension(extension, last_pos?)*
+
+Adds an X.509 `extension` to CRL, the first argument must be a
+[resty.openssl.x509.extension](#restyopensslx509extension) instance.
+The difference from [crl:add_extension](#crladd_extension) is that
+in this function if a `extension` with same type already exists,
+the old extension will be replaced.
+
+If `last_pos` is defined, the function replaces the same extension from that position;
+otherwise it finds from beginning. Index is 1-based. Returns `nil, nil` if not found.
+
+Note this function is not thread-safe.
+
+[Back to TOC](#table-of-contents)
+
+### crl:get_critical
+
+**syntax**: *ok, err = crl:get_critical(nid_or_txt)*
+
+Get critical flag of the X.509 `extension` matching the given [NID] from CRL.
+
+[Back to TOC](#table-of-contents)
+
+### crl:set_critical
+
+**syntax**: *ok, err = crl:set_critical(nid_or_txt, crit?)*
+
+Set critical flag of the X.509 `extension` matching the given [NID] to CRL.
+
+[Back to TOC](#table-of-contents)
+
+### crl:sign
+
+**syntax**: *ok, err = crl:sign(pkey, digest?)*
+
+Sign the CRL using the private key specified by `pkey`, which must be a 
+[resty.openssl.pkey](#restyopensslpkey) that stores private key. Optionally accept `digest`
+parameter to set digest method, whichmust be a [resty.openssl.digest](#restyopenssldigest) instance.
+Returns a boolean indicating if signing is successful and error if any.
+
+[Back to TOC](#table-of-contents)
+
+### crl:verify
+
+**syntax**: *ok, err = crl:verify(pkey)*
+
+Verify the CRL signature using the public key specified by `pkey`, which
+must be a [resty.openssl.pkey](#restyopensslpkey). Returns a boolean indicating if
+verification is successful and error if any.
+
+[Back to TOC](#table-of-contents)
+
+### crl:tostring
+
+**syntax**: *str, err = crl:tostring(fmt?)*
+
+Outputs CRL in PEM-formatted text or DER-formatted binary.
+The first argument can be a choice of `PEM` or `DER`; when omitted, this function outputs PEM by default.
+
+[Back to TOC](#table-of-contents)
+
+### crl:to_PEM
+
+**syntax**: *pem, err = crl:to_PEM()*
+
+Outputs the CRL in PEM-formatted text.
 
 [Back to TOC](#table-of-contents)
 
