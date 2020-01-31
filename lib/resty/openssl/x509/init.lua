@@ -191,11 +191,16 @@ end
 
 function _M:get_ocsp_url(return_all)
   local st = C.X509_get1_ocsp(self.ctx)
+
+  local count = stack_macro.OPENSSL_sk_num(st)
+  if count == 0 then
+    return
+  end
+
   local ret
   if return_all then
     ret = {}
-    local count = stack_macro.OPENSSL_sk_num(st)
-    for i=0,count do
+    for i=0,count-1 do
       ret[i+1] = OPENSSL_STRING_value_at(st, i)
     end
   else
