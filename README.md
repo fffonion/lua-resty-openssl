@@ -25,6 +25,8 @@ Table of Contents
     + [pkey:get_parameters](#pkeyget_parameters)
     + [pkey:sign](#pkeysign)
     + [pkey:verify](#pkeyverify)
+    + [pkey:encrypt](#pkeyencrypt)
+    + [pkey:decrypt](#pkeydecrypt)
     + [pkey:to_PEM](#pkeyto_pem)
   * [resty.openssl.bn](#restyopensslbn)
     + [bn.new](#bnnew)
@@ -387,11 +389,57 @@ successful and `false` otherwise. Note when verfication failed `err` will not be
 
 [Back to TOC](#table-of-contents)
 
+### pkey:encrypt
+
+**syntax**: *cipher_txt, err = pk:encrypt(txt, padding?)*
+
+Encrypts plain text `txt` with `pkey` instance, which must loaded a public key.
+
+When key is a RSA key, the function accepts an optional second argument `padding` which can be:
+
+```lua
+  pkey.PADDINGS = {
+    RSA_PKCS1_PADDING       = 1,
+    RSA_SSLV23_PADDING      = 2,
+    RSA_NO_PADDING          = 3,
+    RSA_PKCS1_OAEP_PADDING  = 4,
+    RSA_X931_PADDING        = 5,
+    RSA_PKCS1_PSS_PADDING   = 6,
+  }
+```
+
+If omitted, `padding` is default to `pkey.PADDINGS.RSA_PKCS1_PADDING`.
+
+[Back to TOC](#table-of-contents)
+
+### pkey:decrypt
+
+**syntax**: *txt, err = pk:decrypt(cipher_txt, padding?)*
+
+Decrypts cipher text `cipher_txt` with pkey instance, which must loaded a private key.
+
+The optional second argument `padding` has same meaning in [pkey:encrypt](#pkeyencrypt).
+
+```lua
+local pkey = require("resty.openssl.pkey")
+local privkey, err = pkey.new()
+local pub_pem = privkey:to_PEM("public")
+local pubkey, err = pkey.new(pub_pem)
+local s, err = pubkey:encrypt("🦢", pkey.PADDINGS.RSA_PKCS1_PADDING)
+ngx.say(#s)
+-- Outputs 256
+local decrypted, err = privkey:decrypt(s)
+ngx.say(decrypted)
+-- Outputs "🦢"
+```
+
+[Back to TOC](#table-of-contents)
+
 ### pkey:to_PEM
 
 **syntax**: *pem, err = pk:to_PEM(private_or_public?)*
 
-Outputs private key or public key of `pkey` instance in PEM-formatted text.
+Outputs private key or public key of pkey instance in PEM-formatted text.
 The first argument must be a choice of `public`, `PublicKey`, `private`, `PrivateKey` or nil.
 By default, it returns the public key.
 

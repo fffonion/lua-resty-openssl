@@ -5,7 +5,7 @@ local ffi_new = ffi.new
 local ffi_str = ffi.string
 local null = ngx.null
 
-require "resty.openssl.include.rsa"
+local rsa_macro = require "resty.openssl.include.rsa"
 require "resty.openssl.include.ec"
 require "resty.openssl.include.bio"
 require "resty.openssl.include.pem"
@@ -182,6 +182,8 @@ local function load_pkey(txt, fmt, typ)
   if ctx == nil then
     return nil, format_error("pkey.new:load_pkey")
   end
+  -- clear errors occur when trying
+  C.ERR_clear_error()
   return ctx, nil
 end
 
@@ -228,6 +230,7 @@ function _M.new(s, ...)
   end
 
   local key_size = C.EVP_PKEY_size(ctx)
+  local key_type = C.EVP_PKEY_base_id(ctx)
 
   if err then
     return nil, err
@@ -235,6 +238,10 @@ function _M.new(s, ...)
 
   local self = setmetatable({
     ctx = ctx,
+    pkey_ctx = nil,
+    rsa_padding = nil,
+    buf = ffi_new('unsigned char[?]', key_size),
+    key_type = key_type,
     key_size = key_size,
   }, mt)
 
@@ -292,18 +299,90 @@ local function get_rsa_params_10(pkey)
 end
 
 function _M:get_parameters()
-  local key_type = C.EVP_PKEY_base_id(self.ctx)
-  if key_type == evp_macro.EVP_PKEY_RSA then
+  if self.key_type == evp_macro.EVP_PKEY_RSA then
     if OPENSSL_11 then
       return get_rsa_params_11(self.ctx)
     elseif OPENSSL_10 then
       return get_rsa_params_10(self.ctx)
     end
-  elseif key_type == evp_macro.EVP_PKEY_EC then
+  elseif self.key_type == evp_macro.EVP_PKEY_EC then
     return nil, "parameters of EC not supported"
   end
 
   return nil, "key type not supported"
+end
+
+local size_t_ptr = ffi.typeof("size_t[1]")
+
+local function asymmetric_routine(self, s, is_encrypt, padding)
+  local pkey_ctx
+
+  if self.key_type == evp_macro.EVP_PKEY_RSA then
+    if padding then
+      padding = tonumber(padding)
+      if not padding then
+        return nil, "invalid padding: " .. tostring(padding)
+      end
+    else
+      padding = rsa_macro.paddings.RSA_PKCS1_PADDING
+    end
+  end
+
+  if self.pkey_ctx ~= nil and
+      (self.key_type ~= evp_macro.EVP_PKEY_RSA or self.rsa_padding == padding) then
+        pkey_ctx = self.pkey_ctx
+  else
+    pkey_ctx = C.EVP_PKEY_CTX_new(self.ctx, nil)
+    if pkey_ctx == nil then
+      return nil, format_error("pkey: EVP_PKEY_CTX_new()")
+    end
+    ffi_gc(pkey_ctx, C.EVP_PKEY_CTX_free)
+    self.pkey_ctx = pkey_ctx
+  end
+
+  local f, fint
+  if is_encrypt then
+    fint = C.EVP_PKEY_encrypt_init
+    f = C.EVP_PKEY_encrypt
+  else
+    fint = C.EVP_PKEY_decrypt_init
+    f = C.EVP_PKEY_decrypt
+  end
+
+  local code = fint(pkey_ctx)
+  if code < 1 then
+    return nil, format_error("pkey: EVP_PKEY_encrypt/decrypt_init", code)
+  end
+
+  -- EVP_PKEY_CTX_ctrl must be called after *_init
+  if self.key_type == evp_macro.EVP_PKEY_RSA and padding then
+    local code = C.EVP_PKEY_CTX_ctrl(pkey_ctx, evp_macro.EVP_PKEY_RSA, -1,
+                          evp_macro.EVP_PKEY_CTRL_RSA_PADDING,
+                          padding, nil)
+    if code ~= 1 then
+      return nil, format_error("pkey: EVP_PKEY_CTX_ctrl")
+    end
+    self.rsa_padding = padding
+  end
+
+  local length = size_t_ptr()
+  length[0] = self.key_size
+
+  if f(pkey_ctx, self.buf, length, s, #s) <= 0 then
+    return nil, format_error("pkey: EVP_PKEY_encrypt/decrypt")
+  end
+
+  return ffi_str(self.buf, length[0]), nil
+end
+
+_M.PADDINGS = rsa_macro.paddings
+
+function _M:encrypt(s, padding)
+  return asymmetric_routine(self, s, true, padding)
+end
+
+function _M:decrypt(s, padding)
+  return asymmetric_routine(self, s, false, padding)
 end
 
 local uint_ptr = ffi.typeof("unsigned int[1]")
@@ -312,12 +391,11 @@ function _M:sign(digest)
   if not digest_lib.istype(digest) then
     return nil, "expect a digest instance at #1"
   end
-  local buf = ffi_new('unsigned char[?]', self.key_size)
   local length = uint_ptr()
-  if C.EVP_SignFinal(digest.ctx, buf, length, self.ctx) ~= 1 then
+  if C.EVP_SignFinal(digest.ctx, self.buf, length, self.ctx) ~= 1 then
     return nil, format_error("pkey:sign")
   end
-  return ffi_str(buf, length[0]), nil
+  return ffi_str(self.buf, length[0]), nil
 end
 
 function _M:verify(signature, digest)

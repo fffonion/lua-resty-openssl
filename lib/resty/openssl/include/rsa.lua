@@ -49,3 +49,14 @@ elseif OPENSSL_10 then
     };
   ]]
 end
+
+return {
+  paddings = {
+    RSA_PKCS1_PADDING       = 1,
+    RSA_SSLV23_PADDING      = 2,
+    RSA_NO_PADDING          = 3,
+    RSA_PKCS1_OAEP_PADDING  = 4,
+    RSA_X931_PADDING        = 5,
+    RSA_PKCS1_PSS_PADDING   = 6,
+  }
+}

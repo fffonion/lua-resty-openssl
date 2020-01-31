@@ -269,3 +269,42 @@ expect a digest instance at #2
 "-----BEGIN PUBLIC KEY-----"
 --- no_error_log
 [error]
+
+=== TEST 11: Encrypt and decrypt
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local privkey, err = require("resty.openssl.pkey").new()
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            local pubkey, err = require("resty.openssl.pkey").new(assert(privkey:to_PEM("public")))
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+
+            local s, err = pubkey:encrypt("23333")
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.say(#s)
+            local decrypted, err = privkey:decrypt(s)
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.say(decrypted)
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"256
+23333
+"
+--- no_error_log
+[error]

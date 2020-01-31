@@ -15,6 +15,19 @@ ffi.cdef [[
   int EVP_PKEY_base_id(const EVP_PKEY *pkey);
   int EVP_PKEY_size(const EVP_PKEY *pkey);
 
+  EVP_PKEY_CTX *EVP_PKEY_CTX_new(EVP_PKEY *pkey, ENGINE *e);
+  void EVP_PKEY_CTX_free(EVP_PKEY_CTX *ctx);
+  int EVP_PKEY_CTX_ctrl(EVP_PKEY_CTX *ctx, int keytype, int optype,
+                      int cmd, int p1, void *p2);
+  int EVP_PKEY_encrypt_init(EVP_PKEY_CTX *ctx);
+  int EVP_PKEY_encrypt(EVP_PKEY_CTX *ctx,
+                        unsigned char *out, size_t *outlen,
+                        const unsigned char *in, size_t inlen);
+  int EVP_PKEY_decrypt_init(EVP_PKEY_CTX *ctx);
+  int EVP_PKEY_decrypt(EVP_PKEY_CTX *ctx,
+                        unsigned char *out, size_t *outlen,
+                        const unsigned char *in, size_t inlen);
+
   /*__owur*/ int EVP_DigestInit_ex(EVP_MD_CTX *ctx, const EVP_MD *type,
                                  ENGINE *impl);
   /*__owur*/ int EVP_DigestUpdate(EVP_MD_CTX *ctx, const void *d,
@@ -145,4 +158,7 @@ return {
   EVP_PKEY_RSA = 6,
   EVP_PKEY_DH = 28,
   EVP_PKEY_EC = 408,
+
+  EVP_PKEY_ALG_CTRL = 0x1000,
+  EVP_PKEY_CTRL_RSA_PADDING = 0x1000 + 1,
 }
