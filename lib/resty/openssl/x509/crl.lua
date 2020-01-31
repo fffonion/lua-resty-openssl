@@ -118,6 +118,24 @@ function _M.istype(l)
   return l and l and l.ctx and ffi.istype(x509_crl_ptr_ct, l.ctx)
 end
 
+function _M.dup(ctx)
+  if not ffi.istype(x509_crl_ptr_ct, ctx) then
+    return nil, "expect a x509.crl ctx at #1"
+  end
+  local ctx = C.X509_CRL_dup(ctx)
+  if ctx == nil then
+    return nil, "X509_CRL_dup() failed"
+  end
+
+  ffi_gc(ctx, C.X509_CRL_free)
+
+  local self = setmetatable({
+    ctx = ctx,
+  }, mt)
+
+  return self, nil
+end
+
 function _M:tostring(fmt)
   return tostring(self, fmt)
 end

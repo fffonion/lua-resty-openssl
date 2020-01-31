@@ -43,28 +43,35 @@ end
 
 function _M:add(item)
   local dup
+  local err
   if x509_lib.istype(item) then
     dup = C.X509_dup(item.ctx)
     if dup == nil then
       return false, "X509_dup() failed"
     end
+    -- ref counter of dup is increased by 1
     if C.X509_STORE_add_cert(self.ctx, dup) ~= 1 then
-      C.X509_free(dup)
-      return false, format_error("store:add: X509_STORE_add_cert")
+      err = format_error("store:add: X509_STORE_add_cert")
     end
-    ffi_gc(dup, C.X509_free)
+    -- decrease the dup ctx ref count immediately to make leak test happy
+    C.X509_free(dup)
   elseif crl_lib.istype(item) then
     dup = C.X509_CRL_dup(item.ctx)
     if dup == nil then
       return false, "X509_CRL_dup() failed"
     end
+    -- ref counter of dup is increased by 1
     if C.X509_STORE_add_crl(self.ctx, dup) ~= 1 then
-      C.X509_CRL_free(dup)
-      return false, format_error("store:add: X509_STORE_add_crl")
+      err = format_error("store:add: X509_STORE_add_crl")
     end
-    ffi_gc(dup, C.X509_CRL_free)
+    -- decrease the dup ctx ref count immediately to make leak test happy
+    C.X509_CRL_free(dup)
   else
-    return false, "expect a x509 instance at #1"
+    return false, "expect an x509 or crl instance at #1"
+  end
+
+  if err then
+    return false, err
   end
 
   -- X509_STORE doesn't have stack gc handler, we need to gc by ourselves
