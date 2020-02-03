@@ -130,4 +130,15 @@ function _M:each()
   return iter(self)
 end
 
+-- for use of test only
+function _M:_tostring()
+  local all = self:all()
+  local values = {}
+  for k, v in pairs(all) do
+    table.insert(values, k .. "=" .. v.blob)
+  end
+  table.sort(values)
+  return table.concat(values, "/")
+end
+
 return _M

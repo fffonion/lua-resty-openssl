@@ -77,6 +77,7 @@ Table of Contents
     + [x509:get_crl_url](#x509get_crl_url)
     + [x509:sign](#x509sign)
     + [x509:verify](#x509verify)
+    + [x509:tostring](#x509tostring)
     + [x509:to_PEM](#x509to_pem)
   * [resty.openssl.x509.csr](#restyopensslx509csr)
     + [csr.new](#csrnew)
@@ -1049,6 +1050,15 @@ Returns a boolean indicating if signing is successful and error if any.
 Verify the certificate signature using the public key specified by `pkey`, which
 must be a [resty.openssl.pkey](#restyopensslpkey). Returns a boolean indicating if
 verification is successful and error if any.
+
+[Back to TOC](#table-of-contents)
+
+### x509:tostring
+
+**syntax**: *str, err = x509:tostring(fmt?)*
+
+Outputs certificate in PEM-formatted text or DER-formatted binary.
+The first argument can be a choice of `PEM` or `DER`; when omitted, this function outputs PEM by default.
 
 [Back to TOC](#table-of-contents)
 

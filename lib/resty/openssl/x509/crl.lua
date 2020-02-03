@@ -19,6 +19,7 @@ local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
 local accessors = {}
 
 accessors.set_issuer_name = C.X509_CRL_set_issuer_name
+accessors.set_version = C.X509_CRL_set_version
 
 if OPENSSL_11 then
   accessors.get_last_update = C.X509_CRL_get0_lastUpdate
@@ -91,6 +92,14 @@ function _M.new(crl, fmt)
         ctx = C.PEM_read_bio_X509_CRL(bio, nil, nil, nil)
         if ctx ~= nil then
           break
+        elseif fmt == "*" then
+          -- BIO_reset; #define BIO_CTRL_RESET 1
+          local code = C.BIO_ctrl(bio, 1, 0, nil)
+          if code ~= 1 then
+              return nil, "BIO_ctrl() failed: " .. code
+          end
+          -- clear errors occur when trying
+          C.ERR_clear_error()
         end
       end
       if fmt == "DER" or fmt == "*" then
@@ -399,7 +408,7 @@ function _M:set_version(toset)
 end
 
 
--- END AUTO GENERATED CODE
+--- END AUTO GENERATED CODE
 
 return _M
 

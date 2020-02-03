@@ -12,6 +12,7 @@ local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
 asn1_macro.declare_asn1_functions("X509")
 
 ffi.cdef [[
+  int i2d_X509_bio(BIO *bp, X509 *x509);
   X509 *d2i_X509_bio(BIO *bp, X509 **x509);
 
   // STACK_OF(X509)

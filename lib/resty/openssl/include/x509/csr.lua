@@ -31,6 +31,7 @@ ffi.cdef [[
   int X509_REQ_verify(X509_REQ *a, EVP_PKEY *r);
 
   int i2d_X509_REQ_bio(BIO *bp, X509_REQ *req);
+  X509_REQ *d2i_X509_REQ_bio(BIO *bp, X509_REQ **req);
 
   // STACK_OF(X509_EXTENSION)
   OPENSSL_STACK *X509_REQ_get_extensions(X509_REQ *req);

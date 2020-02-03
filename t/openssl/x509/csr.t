@@ -10,11 +10,102 @@ our $HttpConfig = qq{
     lua_package_path "$pwd/t/openssl/x509/?.lua;$pwd/lib/?.lua;$pwd/lib/?/init.lua;$pwd/../lib/?.lua;$pwd/../lib/?/init.lua;;";
 };
 
+no_long_string();
 
 run_tests();
 
 __DATA__
-=== TEST 1: Generates CSR with RSA pkey correctly
+=== TEST 1: Loads a csr
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/test.csr"):read("*a")
+            local c, err = require("resty.openssl.x509.csr").new(f)
+            if err then
+                ngx.say(err)
+                return
+            end
+            ngx.say("ok")
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"ok
+"
+--- no_error_log
+[error]
+
+=== TEST 2: Converts and loads PEM format
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/test.csr"):read("*a")
+            local c, err = require("resty.openssl.x509.csr").new(f)
+            if err then
+                ngx.say(err)
+                return
+            end
+            local pem, err = c:tostring("PEM")
+            if err then
+                ngx.say(err)
+                return
+            end
+            for _, typ in ipairs({"PEM", "*", false}) do
+              local c2, err = require("resty.openssl.x509.csr").new(pem, typ)
+              if err then
+                  ngx.say(err)
+                  return
+              end
+            end
+            local c2, err = require("resty.openssl.x509.csr").new(pem, "DER")
+            ngx.say(err)
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+"x509.csr.new.+nested asn1 error.+"
+--- no_error_log
+[error]
+
+=== TEST 3: Converts and loads DER format
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/test.csr"):read("*a")
+            local c, err = require("resty.openssl.x509.csr").new(f)
+            if err then
+                ngx.say(err)
+                return
+            end
+            local pem, err = c:tostring("DER")
+            if err then
+                ngx.say(err)
+                return
+            end
+            for _, typ in ipairs({"DER", "*", false}) do
+              local c2, err = require("resty.openssl.x509.csr").new(pem, typ)
+              if err then
+                  ngx.say(err)
+                  return
+              end
+            end
+            local c2, err = require("resty.openssl.x509.csr").new(pem, "PEM")
+            ngx.say(err)
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+"x509.csr.new.+no start line.+"
+--- no_error_log
+[error]
+
+=== TEST 4: Generates CSR with RSA pkey correctly
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -42,7 +133,7 @@ __DATA__
 --- no_error_log
 [error]
 
-=== TEST 2: Rejects invalid arguments
+=== TEST 5: Rejects invalid arguments
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -68,3 +159,217 @@ expect a pkey instance at #1
 "
 --- no_error_log
 [error]
+
+# START AUTO GENERATED CODE
+
+
+=== TEST 6: x509.csr:get_subject_name (AUTOGEN)
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/test.csr"):read("*a")
+            local c, err = require("resty.openssl.x509.csr").new(f)
+            if err then
+              ngx.log(ngx.ERR, err)
+              ngx.exit(0)
+            end
+
+            local get, err = c:get_subject_name()
+            if err then
+              ngx.log(ngx.ERR, err)
+              ngx.exit(0)
+            end
+            get = get:_tostring()
+            ngx.print(get)
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"C=US/CN=test.mars/L=San Francisco/O=Mars Co./OU=Terraforming Department/ST=California"
+--- no_error_log
+[error]
+
+=== TEST 7: x509.csr:set_subject_name (AUTOGEN)
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/test.csr"):read("*a")
+            local c, err = require("resty.openssl.x509.csr").new(f)
+            if err then
+              ngx.log(ngx.ERR, err)
+              ngx.exit(0)
+            end
+            local toset = require("resty.openssl.x509.name").new():add('CN', 'earth.galaxy')
+            local ok, err = c:set_subject_name(toset)
+            if err then
+              ngx.log(ngx.ERR, err)
+              ngx.exit(0)
+            end
+
+            local get, err = c:get_subject_name()
+            if err then
+              ngx.log(ngx.ERR, err)
+              ngx.exit(0)
+            end
+            get = get:_tostring()
+            toset = toset:_tostring()
+            if get ~= toset then
+              ngx.say(get)
+              ngx.say(toset)
+            else
+              ngx.print("ok")
+            end
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"ok"
+--- no_error_log
+[error]
+
+=== TEST 6: x509.csr:get_pubkey (AUTOGEN)
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/test.csr"):read("*a")
+            local c, err = require("resty.openssl.x509.csr").new(f)
+            if err then
+              ngx.log(ngx.ERR, err)
+              ngx.exit(0)
+            end
+
+            local get, err = c:get_pubkey()
+            if err then
+              ngx.log(ngx.ERR, err)
+              ngx.exit(0)
+            end
+            get = get:to_PEM()
+            ngx.print(get)
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAy00jcwmJKMr9+/RwQd0G
+CAvw685rqAJD1uKuBotlHTeN95xHI+xZCsRpFblAdhtaDb5Xlc33Fn+cjJ8nF2WS
+1HslaZVM51m3sePsDlufBuVCKh+7KqQk64pNejYBasSR+jG7WWEjivR8yclQouJZ
+T7WaF6SEET2dxiqXWAWmSbT4J3heP4b3xAAEqsa9kZJX9vQNOB5mqOyvrtqlULNm
+WJkKjf8gOtuZePfopEHuyUK2YGVBHCciIfHKeBsIPc2EMajEZYSl0N5/1i4zFxdU
+XlLP/qQqafrc2noEz6lv5LXbK2v4T05/5L+klJzcVnCnWnVsaYAUkaEJ5kNyIHpU
+AQIDAQAB
+-----END PUBLIC KEY-----
+"
+--- no_error_log
+[error]
+
+=== TEST 7: x509.csr:set_pubkey (AUTOGEN)
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/test.csr"):read("*a")
+            local c, err = require("resty.openssl.x509.csr").new(f)
+            if err then
+              ngx.log(ngx.ERR, err)
+              ngx.exit(0)
+            end
+            local toset = require("resty.openssl.pkey").new()
+            local ok, err = c:set_pubkey(toset)
+            if err then
+              ngx.log(ngx.ERR, err)
+              ngx.exit(0)
+            end
+
+            local get, err = c:get_pubkey()
+            if err then
+              ngx.log(ngx.ERR, err)
+              ngx.exit(0)
+            end
+            get = get:to_PEM()
+            toset = toset:to_PEM()
+            if get ~= toset then
+              ngx.say(get)
+              ngx.say(toset)
+            else
+              ngx.print("ok")
+            end
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"ok"
+--- no_error_log
+[error]
+
+=== TEST 6: x509.csr:get_version (AUTOGEN)
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/test.csr"):read("*a")
+            local c, err = require("resty.openssl.x509.csr").new(f)
+            if err then
+              ngx.log(ngx.ERR, err)
+              ngx.exit(0)
+            end
+
+            local get, err = c:get_version()
+            if err then
+              ngx.log(ngx.ERR, err)
+              ngx.exit(0)
+            end
+            ngx.print(get)
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"1"
+--- no_error_log
+[error]
+
+=== TEST 7: x509.csr:set_version (AUTOGEN)
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/test.csr"):read("*a")
+            local c, err = require("resty.openssl.x509.csr").new(f)
+            if err then
+              ngx.log(ngx.ERR, err)
+              ngx.exit(0)
+            end
+            local toset = ngx.time()
+            local ok, err = c:set_version(toset)
+            if err then
+              ngx.log(ngx.ERR, err)
+              ngx.exit(0)
+            end
+
+            local get, err = c:get_version()
+            if err then
+              ngx.log(ngx.ERR, err)
+              ngx.exit(0)
+            end
+            if get ~= toset then
+              ngx.say(get)
+              ngx.say(toset)
+            else
+              ngx.print("ok")
+            end
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"ok"
+--- no_error_log
+[error]
+# END AUTO GENERATED CODE

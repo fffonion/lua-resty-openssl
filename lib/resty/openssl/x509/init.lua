@@ -15,6 +15,7 @@ local asn1_lib = require("resty.openssl.asn1")
 local digest_lib = require("resty.openssl.digest")
 local extension_lib = require("resty.openssl.x509.extension")
 local pkey_lib = require("resty.openssl.pkey")
+local util = require "resty.openssl.util"
 local txtnid2nid = require("resty.openssl.objects").txtnid2nid
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
@@ -72,8 +73,19 @@ elseif OPENSSL_10 then
   accessors.get_serial_number = C.X509_get_serialNumber -- returns internal ptr, we convert to bn
 end
 
+local function tostring(self, fmt)
+  if not fmt or fmt == 'PEM' then
+    return util.read_using_bio(C.PEM_write_bio_X509, self.ctx)
+  elseif fmt == 'DER' then
+    return util.read_using_bio(C.i2d_X509_bio, self.ctx)
+  else
+    return nil, "can only write PEM or DER format, not " .. fmt
+  end
+end
+
 local _M = {}
-local mt = { __index = _M }
+local mt = { __index = _M, __tostring = tostring }
+
 
 local x509_ptr_ct = ffi.typeof("X509*")
 
@@ -103,6 +115,14 @@ function _M.new(cert, fmt)
         ctx = C.PEM_read_bio_X509(bio, nil, nil, nil)
         if ctx ~= nil then
           break
+        elseif fmt == "*" then
+          -- BIO_reset; #define BIO_CTRL_RESET 1
+          local code = C.BIO_ctrl(bio, 1, 0, nil)
+          if code ~= 1 then
+              return nil, "BIO_ctrl() failed: " .. code
+          end
+          -- clear errors occur when trying
+          C.ERR_clear_error()
         end
       end
       if fmt == "DER" or fmt == "*" then
@@ -146,6 +166,14 @@ function _M.dup(ctx)
   }, mt)
 
   return self, nil
+end
+
+function _M:tostring(fmt)
+  return tostring(self, fmt)
+end
+
+function _M:to_PEM()
+  return tostring(self, "PEM")
 end
 
 function _M:set_lifetime(not_before, not_after)
@@ -921,6 +949,6 @@ function _M:get_crl_distribution_points_critical()
 end
 
 
--- END AUTO GENERATED CODE
+--- END AUTO GENERATED CODE
 
 return _M

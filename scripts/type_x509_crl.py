@@ -5,17 +5,20 @@ defines = {
     "has_extension_accessor_by_nid": True,
     "extensions_in_struct":"crl.extensions",
     "has_sign_verify": True,
+    "sample": "TrustAsiaEVTLSProCAG2.crl",
     "fields":
 [
 {
     "field": "issuer_name",
     "type": "x509.name",
     "dup": True,
+    "sample_printable": "C=CN/CN=TrustAsia EV TLS Pro CA G2/O=TrustAsia Technologies, Inc.",
 },
 
 {
     "field": "last_update",
     "type": "number",
+    "sample_printable": 1580684546,
     "set_converter": '''
   toset = C.ASN1_TIME_set(nil, toset)
   ffi_gc(toset, C.ASN1_STRING_free)
@@ -28,6 +31,7 @@ defines = {
 {
     "field": "next_update",
     "type": "number",
+    "sample_printable": 1581289346,
     "set_converter": '''
   toset = C.ASN1_TIME_set(nil, toset)
   ffi_gc(toset, C.ASN1_STRING_free)
@@ -40,6 +44,7 @@ defines = {
 {
     "field": "version",
     "type": "number",
+    "sample_printable": 2,
     "set_converter":
 '''
   -- Note: this is defined by standards (X.509 et al) to be one less than the certificate version.

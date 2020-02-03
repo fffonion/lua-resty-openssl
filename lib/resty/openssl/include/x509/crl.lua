@@ -27,6 +27,7 @@ ffi.cdef [[
   int X509_CRL_verify(X509_CRL *a, EVP_PKEY *r);
 
   int i2d_X509_CRL_bio(BIO *bp, X509_CRL *crl);
+  X509_CRL *d2i_X509_CRL_bio(BIO *bp, X509_CRL **crl);
 ]]
 
 if OPENSSL_11 then

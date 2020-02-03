@@ -7,6 +7,7 @@ defines = {
     "has_extension_accessor_by_nid": True,
     "extensions_in_struct":"cert_info.extensions",
     "has_sign_verify": True,
+    "sample": "Github.pem",
     "fields":
 [
 {
@@ -14,6 +15,10 @@ defines = {
     "field": "serial_number",
     # attribute type
     "type": "bn",
+    # this struct will be copied during return
+    "dup": True,
+    # the value of sample used in tests
+    "sample_printable": "0A0630427F5BBCED6957396593B6451F",
     # the optional type converter
     "set_converter":
 '''
@@ -35,12 +40,12 @@ defines = {
   -- bn will be duplicated thus this ctx should be freed up
   ffi_gc(got, C.BN_free)
 ''',
-    "dup": True,
 },
 
 {
     "field": "not_before",
     "type": "number",
+    "sample_printable": 1525737600,
     "set_converter": '''
   toset = C.ASN1_TIME_set(nil, toset)
   ffi_gc(toset, C.ASN1_STRING_free)
@@ -53,6 +58,7 @@ defines = {
 {
     "field": "not_after",
     "type": "number",
+    "sample_printable": 1591185600,
     "set_converter": '''
   toset = C.ASN1_TIME_set(nil, toset)
   ffi_gc(toset, C.ASN1_STRING_free)
@@ -65,23 +71,36 @@ defines = {
 {
     "field": "pubkey",
     "type": "pkey",
+    "sample_printable": '''-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxjyq8jyXDDrBTyitcnB9
+0865tWBzpHSbindG/XqYQkzFMBlXmqkzC+FdTRBYyneZw5Pz+XWQvL+74JW6LsWN
+c2EF0xCEqLOJuC9zjPAqbr7uroNLghGxYf13YdqbG5oj/4x+ogEG3dF/U5YIwVr6
+58DKyESMV6eoYV9mDVfTuJastkqcwero+5ZAKfYVMLUEsMwFtoTDJFmVf6JlkOWw
+sxp1WcQ/MRQK1cyqOoUFUgYylgdh3yeCDPeF22Ax8AlQxbcaI+GwfQL1FB7Jy+h+
+KjME9lE/UpgV6Qt2R1xNSmvFCBWu+NFX6epwFP/JRbkMfLz0beYFUvmMgLtwVpEP
+SwIDAQAB
+-----END PUBLIC KEY-----
+''',
 },
 
 {
     "field": "subject_name",
     "type": "x509.name",
     "dup": True,
+    "sample_printable": "C=US/CN=github.com/L=San Francisco/O=GitHub, Inc./ST=California/businessCategory=Private Organization/jurisdictionC=US/jurisdictionST=Delaware/serialNumber=5157550",
 },
 
 {
     "field": "issuer_name",
     "type": "x509.name",
     "dup": True,
+    "sample_printable": "C=US/CN=DigiCert SHA2 Extended Validation Server CA/O=DigiCert Inc/OU=www.digicert.com",
 },
 
 {
     "field": "version",
     "type": "number",
+    "sample_printable": 3,
     "set_converter":
 '''
   -- Note: this is defined by standards (X.509 et al) to be one less than the certificate version.
@@ -101,6 +120,7 @@ defines = {
     "type": "x509.altname",
     "dup": True,
     "extension": "subjectAltName",
+    "sample_printable": 'DNS=www.github.com',
     "get_converter": '''
   -- Note: here we only free the stack itself not elements
   -- since there seems no way to increase ref count for a GENERAL_NAME
@@ -115,6 +135,7 @@ defines = {
     "type": "x509.altname",
     "dup": True,
     "extension": "issuerAltName",
+    "skip_tests": True, # need to find a good sample
     "get_converter": '''
   -- Note: here we only free the stack itself not elements
   -- since there seems no way to increase ref count for a GENERAL_NAME

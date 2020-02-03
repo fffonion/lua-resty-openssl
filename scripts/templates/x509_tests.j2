@@ -1,0 +1,117 @@
+{%- set idx = test_idx %}
+{%- for f in module.fields %}
+  {%- if f.type in tests.types and not f.skip_tests%}
+
+=== TEST {{ idx }}: {{ modname }}:get_{{ f.field }} (AUTOGEN)
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/{{ module.sample }}"):read("*a")
+            local c, err = require("resty.openssl.{{ modname }}").new(f)
+            if err then
+              ngx.log(ngx.ERR, err)
+              ngx.exit(0)
+            end
+
+            local get, err = c:get_{{ f.field }}()
+            if err then
+              ngx.log(ngx.ERR, err)
+              ngx.exit(0)
+            end
+            {%- if tests.types[f.type].print %}
+            get = get:{{ tests.types[f.type].print }}()
+            {%- endif %}
+            ngx.print(get)
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"{{ f.sample_printable }}"
+--- no_error_log
+[error]
+    {%- set idx = idx + 1 %}
+
+=== TEST {{ idx }}: {{ modname }}:set_{{ f.field }} (AUTOGEN)
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/{{ module.sample }}"):read("*a")
+            local c, err = require("resty.openssl.{{ modname }}").new(f)
+            if err then
+              ngx.log(ngx.ERR, err)
+              ngx.exit(0)
+            end
+
+            {%- if f.type not in LUA_TYPES %}
+            local toset = require("resty.openssl.{{ f.type }}").{{ tests.types[f.type].new_from }}
+            {%- else %}
+            local toset = {{ tests.types[f.type].new_from }}
+            {%- endif %}
+            local ok, err = c:set_{{ f.field }}(toset)
+            if err then
+              ngx.log(ngx.ERR, err)
+              ngx.exit(0)
+            end
+
+            local get, err = c:get_{{ f.field }}()
+            if err then
+              ngx.log(ngx.ERR, err)
+              ngx.exit(0)
+            end
+
+            {%- if tests.types[f.type].print %}
+            get = get:{{ tests.types[f.type].print }}()
+            toset = toset:{{ tests.types[f.type].print }}()
+            {%- endif %}
+            if get ~= toset then
+              ngx.say(get)
+              ngx.say(toset)
+            else
+              ngx.print("ok")
+            end
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"ok"
+--- no_error_log
+[error]
+    {%- set idx = idx + 1 %}
+  {%- endif %}
+  {%- if f.extension and not f.skip_tests %}
+
+=== TEST {{ idx + 1 }}: {{ modname }}:get/set_{{ f.field }}_critical (AUTOGEN)
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/{{ module.sample }}"):read("*a")
+            local c, err = require("resty.openssl.{{ modname }}").new(f)
+
+            local crit, err = c:get_{{ f.field }}_critical()
+            if err then
+              ngx.log(ngx.ERR, err)
+              ngx.exit(0)
+            end
+
+            local ok, err = c:set_{{ f.field }}_critical(not crit)
+            if err then
+              ngx.log(ngx.ERR, err)
+              ngx.exit(0)
+            end
+            ngx.say(c:get_{{ f.field }}_critical() == not crit)
+        }
+    }
+--- request
+    GET /t
+--- response_body
+true
+--- no_error_log
+[error]
+    {%- set idx = idx + 1 %}
+  {%- endif %}
+{%- endfor %}

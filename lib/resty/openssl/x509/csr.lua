@@ -6,6 +6,7 @@ require "resty.openssl.include.pem"
 require "resty.openssl.include.x509.csr"
 require "resty.openssl.include.x509.extension"
 require "resty.openssl.include.x509v3"
+require "resty.openssl.include.asn1"
 local stack_lib = require "resty.openssl.stack"
 local pkey_lib = require "resty.openssl.pkey"
 local altname_lib = require "resty.openssl.x509.altname"
@@ -37,7 +38,7 @@ elseif OPENSSL_10 then
     if csr == nil or csr.req_info == nil then
       return nil
     end
-    return csr.req_info.version
+    return C.ASN1_INTEGER_get(csr.req_info.version)
   end
 end
 
@@ -76,6 +77,14 @@ function _M.new(csr, fmt)
         ctx = C.PEM_read_bio_X509_REQ(bio, nil, nil, nil)
         if ctx ~= nil then
           break
+        elseif fmt == "*" then
+          -- BIO_reset; #define BIO_CTRL_RESET 1
+          local code = C.BIO_ctrl(bio, 1, 0, nil)
+          if code ~= 1 then
+              return nil, "BIO_ctrl() failed: " .. code
+          end
+          -- clear errors occur when trying
+          C.ERR_clear_error()
         end
       end
       if fmt == "DER" or fmt == "*" then
@@ -269,7 +278,7 @@ function _M:set_version(toset)
 end
 
 
--- END AUTO GENERATED CODE
+--- END AUTO GENERATED CODE
 
 return _M
 
