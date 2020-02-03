@@ -6,7 +6,7 @@ end
 
 
 local _M = {
-  _VERSION = '0.4.3',
+  _VERSION = '0.5.0',
   bn = require("resty.openssl.bn"),
   cipher = require("resty.openssl.cipher"),
   digest = require("resty.openssl.digest"),
@@ -19,6 +19,7 @@ local _M = {
   altname = require("resty.openssl.x509.altname"),
   chain = require("resty.openssl.x509.chain"),
   csr = require("resty.openssl.x509.csr"),
+  crl = require("resty.openssl.x509.crl"),
   extension = require("resty.openssl.x509.extension"),
   name = require("resty.openssl.x509.name"),
   store = require("resty.openssl.x509.store"),

@@ -209,6 +209,7 @@ return {
   altname = require("resty.openssl.x509.altname"),
   chain = require("resty.openssl.x509.chain"),
   csr = require("resty.openssl.x509.csr"),
+  crl = require("resty.openssl.x509.crl"),
   extension = require("resty.openssl.x509.extension"),
   name = require("resty.openssl.x509.name"),
   store = require("resty.openssl.x509.store"),
