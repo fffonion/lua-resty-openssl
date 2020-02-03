@@ -1828,9 +1828,11 @@ certificates bundle. For example, the package in Debian/Ubuntu is called `ca-cer
 
 ### store:add
 
-**syntax**: *ok, err = store:add(x509)*
+**syntax**: *ok, err = store:add(x509_or_crl)*
 
-Adds a X.509 object into store. The argument must be a [resty.openssl.x509](#restyopensslx509) instance.
+Adds a X.509 or a CRL object into store.
+The argument must be a [resty.openssl.x509](#restyopensslx509) instance or a
+[resty.openssl.x509.store](#restyopensslx509store) instance.
 
 [Back to TOC](#table-of-contents)
 
@@ -1860,8 +1862,9 @@ Verifies a X.509 object with the store. The first argument must be
 [resty.openssl.x509](#restyopensslx509) instance. Optionally accept a validation chain as second
 argument, which must be a [resty.openssl.x509.chain](#restyopensslx509chain) instance.
 
-If verification succeed, and `return_chain` is set to true, returns the proof of validation; otherwise
-returns `true`. If verification failed, returns `nil` and error explaining the reason.
+If verification succeed, and `return_chain` is set to true, returns the proof of validation as a 
+[resty.openssl.x509.chain](#restyopensslx509chain); otherwise
+returns `true` only. If verification failed, returns `nil` and error explaining the reason.
 
 [Back to TOC](#table-of-contents)
 
