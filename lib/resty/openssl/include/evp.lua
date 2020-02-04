@@ -10,8 +10,7 @@ ffi.cdef [[
 
   struct rsa_st *EVP_PKEY_get0_RSA(EVP_PKEY *pkey);
   struct ec_key_st *EVP_PKEY_get0_EC_KEY(EVP_PKEY *pkey);
-  int EVP_PKEY_set1_RSA(EVP_PKEY *pkey, RSA *key);
-  int EVP_PKEY_set1_EC_KEY(EVP_PKEY *pkey, EC_KEY *key);
+  int EVP_PKEY_assign(EVP_PKEY *pkey, int type, void *key);
   int EVP_PKEY_base_id(const EVP_PKEY *pkey);
   int EVP_PKEY_size(const EVP_PKEY *pkey);
 

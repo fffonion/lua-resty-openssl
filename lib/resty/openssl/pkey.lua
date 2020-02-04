@@ -30,40 +30,32 @@ local function generate_key(config)
 
   local type = config.type or 'RSA'
 
-  local code, failure
+  local code, key, key_type
 
   if type == "RSA" then
+    key_type = evp_macro.EVP_PKEY_RSA
     local bits = config.bits or 2048
     if bits > 4294967295 then
       return nil, "bits out of range"
     end
     local exp = C.BN_new()
+    ffi_gc(exp, C.BN_free)
     if exp == nil then
       return nil, "BN_new() failed"
     end
     C.BN_set_word(exp, config.exp or 65537)
-    local rsa = C.RSA_new()
-    if rsa == nil then
-      C.BN_free(exp)
+
+    key = C.RSA_new()
+    if key == nil then
       return nil, "RSA_new() failed"
     end
-    code = C.RSA_generate_key_ex(rsa, bits, exp, nil)
+    code = C.RSA_generate_key_ex(key, bits, exp, nil)
     if code ~= 1 then
-      failure = 'RSA_generate_key_ex'
-      goto rsa_pkey_free
-    end
-    code = C.EVP_PKEY_set1_RSA(ctx, rsa)
-    if code ~= 1 then
-      failure = 'EVP_PKEY_set1_RSA'
-      goto rsa_pkey_free
-    end
-::rsa_pkey_free::
-    C.BN_free(exp)
-    C.RSA_free(rsa)
-    if code ~= 1 then
-      return nil, "error in " .. failure
+      C.RSA_free(key)
+      return nil, "RSA_generate_key_ex() failed"
     end
   elseif type == "EC" then
+    key_type = evp_macro.EVP_PKEY_EC
     local curve = config.curve or 'prime192v1'
     local nid = C.OBJ_ln2nid(curve)
     if nid == 0 then
@@ -73,28 +65,30 @@ local function generate_key(config)
     if group == nil then
       return nil, "EC_GROUP_new_by_curve_name() failed"
     end
+    ffi_gc(group, C.EC_GROUP_free)
     -- # define OPENSSL_EC_NAMED_CURVE     0x001
     C.EC_GROUP_set_asn1_flag(group, 1)
     C.EC_GROUP_set_point_conversion_form(group, C.POINT_CONVERSION_UNCOMPRESSED)
-    local key = C.EC_KEY_new()
+
+    key = C.EC_KEY_new()
     if key == nil then
-      C.EC_GROUP_free(group)
       return nil, "EC_KEY_new() failed"
     end
-
-    C.EC_KEY_set_group(key, group);
-    C.EC_GROUP_free(group)
-
-    local code = C.EC_KEY_generate_key(key)
+    C.EC_KEY_set_group(key, group)
+    code = C.EC_KEY_generate_key(key)
     if code == 0 then
-			C.EC_KEY_free(key);
+			C.EC_KEY_free(key)
 			return nil, "EC_KEY_generate_key() failed"
 		end
-
-    C.EVP_PKEY_set1_EC_KEY(ctx, key)
-		C.EC_KEY_free(key);
   else
     return nil, "unsupported type " .. type
+  end
+
+  -- don't need to free `key`, it will be freed together with EVP_PKEY_free
+  code = C.EVP_PKEY_assign(ctx, key_type, key)
+  if code ~= 1 then
+    C.EVP_PKEY_free(ctx)
+    return nil, "EVP_PKEY_assign() failed"
   end
 
   return ctx, nil
