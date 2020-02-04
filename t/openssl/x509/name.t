@@ -6,8 +6,16 @@ use Cwd qw(cwd);
 
 my $pwd = cwd();
 
+my $use_luacov = $ENV{'TEST_NGINX_USE_LUACOV'} // '';
+
 our $HttpConfig = qq{
-    lua_package_path "$pwd/t/openssl/x509/?.lua;$pwd/lib/?.lua;$pwd/lib/?/init.lua;$pwd/../lib/?.lua;$pwd/../lib/?/init.lua;;";
+    lua_package_path "$pwd/lib/?.lua;$pwd/lib/?/init.lua;;";
+    init_by_lua_block {
+        if "1" == "$use_luacov" then
+            require 'luacov.tick'
+            jit.off()
+        end
+    }
 };
 
 
