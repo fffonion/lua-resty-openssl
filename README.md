@@ -1629,7 +1629,7 @@ Returns the name of extension as ASN.1 Object. User can further use helper funct
 
 ### extension:text
 
-**syntax**: *txt, err = extension:text(table)*
+**syntax**: *txt, err = extension:text()*
 
 Returns the text representation of extension
 
@@ -1640,6 +1640,14 @@ ngx.say(cjson.encode(objects.obj2table(extension:get_object())))
 ngx.say(extension:text())
 -- outputs C9:C2:53:61:66:9D:5F:AB:25:F4:26:CD:0F:38:9A:A8:49:EA:48:A9
 ```
+
+[Back to TOC](#table-of-contents)
+
+### extension:tostring
+
+**syntax**: *txt, err = extension:tostring()*
+
+Same as [extension:text](#extensiontext).
 
 [Back to TOC](#table-of-contents)
 

@@ -117,9 +117,11 @@ function _M:set_critical(crit)
   return true
 end
 
-function _M:text()
+function _M:tostring()
   return util.read_using_bio(C.X509V3_EXT_print, self.ctx, 0, 0)
 end
+
+_M.text = _M.tostring
 
 mt.__tostring = function(tbl)
   local txt, err = _M.text(tbl)
