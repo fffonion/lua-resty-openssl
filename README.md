@@ -365,7 +365,7 @@ parameter of RSA key is supported. Each value of the returned table is a
 [resty.openssl.bn](#restyopensslbn) instance.
 
 ```lua
-local pk, err = require("resty.openssl").pkey.new()
+local pk, err = require("resty.openssl.pkey").new()
 local parameters, err = pk:get_parameters()
 local e = parameters.e
 ngx.say(ngx.encode_base64(e:to_binary()))
@@ -383,8 +383,8 @@ instance. The `digest` parameter must be a [resty.openssl.digest](#restyopenssld
 instance. Returns the signed raw binary and error if any.
 
 ```lua
-local pk, err = require("resty.openssl").pkey.new()
-local digest, err = require("resty.openssl").digest.new("SHA256")
+local pk, err = require("resty.openssl.pkey").new()
+local digest, err = require("resty.openssl.digest").new("SHA256")
 digest:update("dog")
 local signature, err = pk:sign(digest)
 ngx.say(ngx.encode_base64(signature))
@@ -1998,10 +1998,6 @@ same.
 If you plan to use this library on an untested version of OpenSSL (like custom builds or pre releases),
 [this](https://abi-laboratory.pro/index.php?view=timeline&l=openssl) can be a good source to consult.
 
-TODO
-====
-
-- add tests for x509 getters/setters
 
 [Back to TOC](#table-of-contents)
 
@@ -2011,7 +2007,7 @@ Copyright and License
 
 This module is licensed under the BSD license.
 
-Copyright (C) 2019, by fffonion <fffonion@gmail.com>.
+Copyright (C) 2019-2020, by fffonion <fffonion@gmail.com>.
 
 All rights reserved.
 
