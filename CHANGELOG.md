@@ -2,6 +2,16 @@
 ## [Unreleased]
 
 
+<a name="0.5.1"></a>
+## [0.5.1] - 2020-02-04
+### feat
+- **pkey:** load encrypted PEM key [7fa7a29](https://github.com/fffonion/lua-resty-openssl/commit/7fa7a29882bbcef294f83cd1f66b9960344a0e07)
+- **x509.extension:** add tostring() as synonym to text() [87c162d](https://github.com/fffonion/lua-resty-openssl/commit/87c162de9fa7bb3e3930bd760ff7dfece30f1b49)
+
+### fix
+- **x509.crl:** fix creating empty crl instance [046ca36](https://github.com/fffonion/lua-resty-openssl/commit/046ca36228f639c191c81a7b84dfedfc523d0340)
+
+
 <a name="0.5.0"></a>
 ## [0.5.0] - 2020-02-03
 ### feat
@@ -103,7 +113,8 @@
 <a name="init"></a>
 ## init - 2019-09-25
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.0...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.1...HEAD
+[0.5.1]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.0...0.5.1
 [0.5.0]: https://github.com/fffonion/lua-resty-openssl/compare/0.4.3...0.5.0
 [0.4.3]: https://github.com/fffonion/lua-resty-openssl/compare/0.4.2...0.4.3
 [0.4.2]: https://github.com/fffonion/lua-resty-openssl/compare/0.4.1...0.4.2
