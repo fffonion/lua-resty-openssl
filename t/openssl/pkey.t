@@ -18,6 +18,8 @@ our $HttpConfig = qq{
     }
 };
 
+no_long_string();
+
 run_tests();
 
 __DATA__
@@ -313,6 +315,78 @@ expect a digest instance at #2
 --- response_body eval
 "256
 23333
+"
+--- no_error_log
+[error]
+
+
+=== TEST 12: Loads encrypted PEM pkey with passphrase
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/ec_key_encrypted.pem"):read("*a")
+            local privkey, err = require("resty.openssl.pkey").new(f, {
+                format = "PEM",
+                type = "pr",
+                passphrase = "wrongpasswrod",
+            })
+            ngx.say(err)
+            local privkey, err = require("resty.openssl.pkey").new(f, {
+                format = "PEM",
+                type = "pr",
+                passphrase = "123456",
+            })
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.say("ok")
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+"pkey.new.+bad decrypt
+ok
+"
+--- no_error_log
+[error]
+
+
+=== TEST 13: Loads encrypted PEM pkey with passphrase callback
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/ec_key_encrypted.pem"):read("*a")
+            local privkey, err = require("resty.openssl.pkey").new(f, {
+                format = "PEM",
+                type = "pr",
+                passphrase_cb = function()
+                    return "wrongpassword"
+                end,
+            })
+            ngx.say(err)
+            local privkey, err = require("resty.openssl.pkey").new(f, {
+                format = "PEM",
+                type = "pr",
+                passphrase_cb = function()
+                    return "123456"
+                end,
+            })
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.say("ok")
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+"pkey.new.+bad decrypt
+ok
 "
 --- no_error_log
 [error]

@@ -77,6 +77,15 @@ function _M.luaossl_compat()
   _M.x509.getIssuer = _M.x509.get_issuer_name
   _M.x509.getOCSP = _M.x509.get_ocsp_url
 
+  local pkey_new = _M.pkey.new
+  _M.pkey.new = function(a, b)
+    if type(a) == "string" then
+      return pkey_new(a, b and unpack(b))
+    else
+      return pkey_new(a, b)
+    end
+  end
+
   _M.cipher.encrypt = function(self, key, iv, padding)
     return self, _M.cipher.init(self, key, iv, true, not padding)
   end

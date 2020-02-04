@@ -302,34 +302,46 @@ Module to interact with private keys and public keys (EVP_PKEY).
 
 **syntax**: *pk, err = pkey.new(config)*
 
-**syntax**: *pk, err = pkey.new(string, format?)*
+**syntax**: *pk, err = pkey.new(string, opts?)*
 
 **syntax**: *pk, err = pkey.new()*
 
 Creates a new pkey instance. The first argument can be:
 
-1. A table which defaults to:
+1. A `config` table to create a new PKEY pair. Which defaults to:
 
 ```lua
-{
-    type = 'RSA',
-    bits = 2048,
-    exp = 65537
-}
+pkey.new({
+  type = 'RSA',
+  bits = 2048,
+  exp = 65537
+})
 ```
 
 to create EC private key:
 
 ```lua
-{
-    type = 'EC',
-    curve = 'primve196v1',
-}
+pkey.new({
+  type = 'EC',
+  curve = 'primve196v1',
+})
 ```
 
-2. A string of private or public key in PEM or DER format; optionally tells the library
-to explictly decode the key using `format`, which can be a choice of `PER`, `DER` or `*`
-for auto detect.
+2. A `string` of private or public key in PEM or DER format; optionally accpet a table `opts`
+to explictly load `format` and key `type`. When loading a key in PEM format,
+`passphrase` or `passphrase_cb` may be provided to decrypt the key.
+
+```lua
+pkey.new(pem_or_der_text, {
+  format = "*", -- choice of "PEM", "DER" or "*" for auto detect
+  type = "*", -- choice of "p"r for privatekey, "pu" for public key and "*" for auto detect
+  passphrase = "secret password", -- the PEM encryption passphrase
+  passphrase_cb = function()
+    return "secret password"
+  end, -- the PEM encryption passphrase callback function
+}
+
+```
 3. `nil` to create a 2048 bits RSA key.
 4. A `EVP_PKEY*` pointer, to return a wrapped `pkey` instance. Normally user won't use this
 approach. User shouldn't free the pointer on their own, since the pointer is not copied.

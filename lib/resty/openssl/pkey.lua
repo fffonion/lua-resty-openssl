@@ -3,6 +3,8 @@ local C = ffi.C
 local ffi_gc = ffi.gc
 local ffi_new = ffi.new
 local ffi_str = ffi.string
+local ffi_cast = ffi.cast
+local ffi_copy = ffi.copy
 local null = ngx.null
 
 local rsa_macro = require "resty.openssl.include.rsa"
@@ -143,13 +145,13 @@ for typ, fs in pairs(typ_funcs) do
   load_pkey_try_funcs[typ] = fs
 end
 
-local function load_pkey(txt, fmt, typ)
-  fmt = fmt or '*'
+local function load_pkey(txt, opts)
+  local fmt = opts.format or '*'
   if fmt ~= 'PEM' and fmt ~= 'DER' and fmt ~= '*' then
     return nil, "expecting 'DER', 'PEM' or '*' at #2"
   end
 
-  typ = typ or '*'
+  local typ = opts.type or '*'
   if typ ~= 'pu' and typ ~= 'pr' and typ ~= '*' then
     return nil, "expecting 'pr', 'pu' or '*' at #3"
   end
@@ -165,6 +167,7 @@ local function load_pkey(txt, fmt, typ)
   local ctx
 
   local fs = load_pkey_try_funcs[fmt][typ]
+  local passphrase_cb
   for f, arg in pairs(fs) do
     -- #define BIO_CTRL_RESET 1
     local code = C.BIO_ctrl(bio, 1, 0, nil)
@@ -172,11 +175,36 @@ local function load_pkey(txt, fmt, typ)
       return nil, "BIO_ctrl() failed"
     end
 
+    if fmt == "PEM" or fmt == "*" then
+      if opts.passphrase then
+        local passphrase = opts.passphrase
+        if type(passphrase) ~= "string" then
+          return nil, "passphrase must be a string"
+        end
+        arg = { null, nil, passphrase }
+      elseif opts.passphrase_cb then
+        passphrase_cb = ffi_cast("pem_password_cb*", function(buf, size)
+          local p = opts.passphrase_cb()
+          local len = #p -- 1 byte for \0
+          if len > size then
+            ngx.log(ngx.WARN, "passphrase truncated from ", len, " to ", size)
+            len = size
+          end
+          ffi_copy(buf, p, len)
+          return len
+        end)
+        arg = { null, passphrase_cb, null }
+      end
+    end
+
     ctx = C[f](bio, unpack(arg))
     if ctx ~= nil then
       ngx.log(ngx.DEBUG, "loaded pkey using ", f)
       break
     end
+  end
+  if passphrase_cb ~= nil then
+    passphrase_cb:free()
   end
 
   if ctx == nil then
@@ -203,18 +231,16 @@ end
 local _M = {}
 local mt = { __index = _M, __tostring = tostring }
 
+local empty_table = {}
 local evp_pkey_ptr_ct = ffi.typeof('EVP_PKEY*')
--- type
--- bits
--- exp
--- curve
-function _M.new(s, ...)
+
+function _M.new(s, opts)
   local ctx, err
   s = s or {}
   if type(s) == 'table' then
     ctx, err = generate_key(s)
   elseif type(s) == 'string' then
-    ctx, err = load_pkey(s, ...)
+    ctx, err = load_pkey(s, opts or empty_table)
   elseif type(s) == 'cdata' then
     if ffi.istype(evp_pkey_ptr_ct, s) then
       ctx = s
@@ -254,7 +280,6 @@ function _M.istype(l)
   return l and l.ctx and ffi.istype(evp_pkey_ptr_ct, l.ctx)
 end
 
-local empty_table = {}
 local bn_ptrptr_ct = ffi.typeof("const BIGNUM *[1]")
 local function get_rsa_params_11(pkey)
   -- {"n", "e", "d", "p", "q", "dmp1", "dmq1", "iqmp"}
@@ -286,7 +311,7 @@ local function get_rsa_params_10(pkey)
   -- {"n", "e", "d", "p", "q", "dmp1", "dmq1", "iqmp"}
 
   return setmetatable(empty_table, {
-    __index = function(tbl, k)
+    __index = function(_, k)
       if k == 'n' then
         return bn_lib.dup(pkey.pkey.rsa.n)
       elseif k == 'e' then

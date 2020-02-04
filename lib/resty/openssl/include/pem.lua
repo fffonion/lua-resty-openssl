@@ -6,9 +6,13 @@ require "resty.openssl.include.ossl_typ"
 ffi.cdef [[
   typedef int pem_password_cb (char *buf, int size, int rwflag, void *userdata);
   EVP_PKEY *PEM_read_bio_PrivateKey(BIO *bp, EVP_PKEY **x,
-    pem_password_cb *cb, void *u);
+  // the following signature has been modified to avoid ffi.cast
+    pem_password_cb *cb, const char *u);
+  //  pem_password_cb *cb, void *u);
   EVP_PKEY *PEM_read_bio_PUBKEY(BIO *bp, EVP_PKEY **x,
-    pem_password_cb *cb, void *u);
+  // the following signature has been modified to avoid ffi.cast
+    pem_password_cb *cb, const char *u);
+  //  pem_password_cb *cb, void *u);
   int PEM_write_bio_PrivateKey(BIO *bp, EVP_PKEY *x, const EVP_CIPHER *enc,
     unsigned char *kstr, int klen,
     pem_password_cb *cb, void *u);
