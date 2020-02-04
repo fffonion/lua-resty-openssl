@@ -75,7 +75,7 @@ local x509_crl_ptr_ct = ffi.typeof("X509_CRL*")
 function _M.new(crl, fmt)
   local ctx
   if not crl then
-    C.X509_CRL_new()
+    ctx = C.X509_CRL_new()
     if ctx == nil then
       return nil, "X509_CRL_new() failed"
     end
