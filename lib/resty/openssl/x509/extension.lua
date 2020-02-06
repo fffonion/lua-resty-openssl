@@ -21,12 +21,16 @@ local extension_types = {
   crl     = "resty.openssl.x509.crl",
   -- db,           -- NYI
 }
-function _M.new(name, value, data)
+function _M.new(txtnid, value, data)
+  local nid, err = objects_lib.txtnid2nid(txtnid)
+  if err then
+    return nil, err
+  end
+  if type(value) ~= 'string' then
+    return nil, "expect string at #2"
+  end
   -- get a ptr and also zerofill the struct
   local x509_ctx_ptr = ffi_new('X509V3_CTX[1]')
-  if type(name) ~= 'string' or type(value) ~= 'string' then
-    return nil, "expect both strings at #1 and #2"
-  end
 
   if type(data) == 'table' then
     local args = {}
@@ -44,7 +48,7 @@ function _M.new(name, value, data)
     return nil, "expect nil or a table at #3"
   end
 
-  local ctx = C.X509V3_EXT_nconf(nil, x509_ctx_ptr[0], name, value)
+  local ctx = C.X509V3_EXT_nconf_nid(nil, x509_ctx_ptr[0], nid, value)
   if ctx == nil then
     return nil, format_error("x509.extension.new")
   end

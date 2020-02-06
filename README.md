@@ -913,7 +913,7 @@ ngx.say(not_before)
 err = x509:set_basic_constraints_critical(true)
 ```
 
-If type is a table, setter requires a table with case-insentive keys to set;
+If type is a table, setter requires a table with case-insensitive keys to set;
 getter returns the value of the given case-insensitive key or a table of all keys if no key provided.
 
 ```lua

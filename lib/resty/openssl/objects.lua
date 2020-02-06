@@ -57,4 +57,5 @@ return {
   nid2table = nid2table,
   txt2nid = txt2nid,
   txtnid2nid = txtnid2nid,
+  create = C.OBJ_create,
 }

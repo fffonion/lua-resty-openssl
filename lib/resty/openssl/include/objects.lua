@@ -13,4 +13,5 @@ ffi.cdef [[
   const char *OBJ_nid2sn(int n);
   int OBJ_obj2nid(const ASN1_OBJECT *o);
   const ASN1_OBJECT *OBJ_nid2obj(int n);
+  int OBJ_create(const char *oid, const char *sn, const char *ln);
 ]]
