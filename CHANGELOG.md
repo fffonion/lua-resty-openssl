@@ -2,6 +2,15 @@
 ## [Unreleased]
 
 
+<a name="0.5.2"></a>
+## [0.5.2] - 2020-02-09
+### feat
+- **x509.extension:** allow to create an extension by NID [6d66a2d](https://github.com/fffonion/lua-resty-openssl/commit/6d66a2d9fa7cc36cc2e6c85a78ad2236e525f3b0)
+
+### fix
+- **pkey:** decrease copy by 1 when generating key [bcc38e9](https://github.com/fffonion/lua-resty-openssl/commit/bcc38e9fc5e733a8f3f9d09e5eef1e2eb3c15d4d)
+
+
 <a name="0.5.1"></a>
 ## [0.5.1] - 2020-02-04
 ### feat
@@ -113,7 +122,8 @@
 <a name="init"></a>
 ## init - 2019-09-25
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.1...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.2...HEAD
+[0.5.2]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.1...0.5.2
 [0.5.1]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.0...0.5.1
 [0.5.0]: https://github.com/fffonion/lua-resty-openssl/compare/0.4.3...0.5.0
 [0.4.3]: https://github.com/fffonion/lua-resty-openssl/compare/0.4.2...0.4.3
