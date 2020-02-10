@@ -1566,6 +1566,20 @@ local ext, err = extension.new("extendedKeyUsage", "serverAuth,clientAuth")
 ext, err =  extension.new("subjectKeyIdentifier", "hash", {
     subject = crt
 })
+-- Example with an unknown nid
+local objects = require("resty.openssl.objects")
+local id_pe_acmeIdentifier = "1.3.6.1.5.5.7.1.31"
+local nid = objects.txt2nid(id_pe_acmeIdentifier)
+if not nid or nid == 0 then
+  -- adds the NID to internal lookup table
+  nid = objects.create(
+    id_pe_acmeIdentifier, -- nid
+    "pe-acmeIdentifier",  -- sn
+    "ACME Identifier"     -- ln
+  )
+end
+-- Creates the extension with value of a ASN1_OCTET_STRING \xaa
+local ext, err = extension.new(nid, "DER:0401AA")
 ```
 
 [Back to TOC](#table-of-contents)
