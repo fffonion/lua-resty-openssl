@@ -12,7 +12,8 @@ Table of Contents
 - [Status](#status)
 - [Synopsis](#synopsis)
   * [resty.openssl](#restyopenssl)
-    + [openssl.luaossl_compat](#opensslluaossl-compat)
+    + [openssl.luaossl_compat](#opensslluaossl_compat)
+    + [openssl.resty_hmac_compat](#opensslresty_hmac_compat)
   * [resty.openssl.version](#restyopensslversion)
     + [version_num](#version_num)
     + [version_text](#version_text)
@@ -230,6 +231,15 @@ Note that not all `luaossl` API has been implemented, please check readme for so
 
 [Back to TOC](#table-of-contents)
 
+### openssl.resty_hmac_compat
+
+**syntax**: *openssl.resty_hmac_compat()*
+
+Call this function before `require("resty.hmac")` to allow these two libraries play nice with
+each other. This function is not available with OpenSSL 1.0.
+
+[Back to TOC](#table-of-contents)
+
 ## resty.openssl.version
 
 A module to provide version info.
@@ -302,46 +312,34 @@ Module to interact with private keys and public keys (EVP_PKEY).
 
 **syntax**: *pk, err = pkey.new(config)*
 
-**syntax**: *pk, err = pkey.new(string, opts?)*
+**syntax**: *pk, err = pkey.new(string, format?)*
 
 **syntax**: *pk, err = pkey.new()*
 
 Creates a new pkey instance. The first argument can be:
 
-1. A `config` table to create a new PKEY pair. Which defaults to:
+1. A table which defaults to:
 
 ```lua
-pkey.new({
-  type = 'RSA',
-  bits = 2048,
-  exp = 65537
-})
+{
+    type = 'RSA',
+    bits = 2048,
+    exp = 65537
+}
 ```
 
 to create EC private key:
 
 ```lua
-pkey.new({
-  type = 'EC',
-  curve = 'primve196v1',
-})
-```
-
-2. A `string` of private or public key in PEM or DER format; optionally accpet a table `opts`
-to explictly load `format` and key `type`. When loading a key in PEM format,
-`passphrase` or `passphrase_cb` may be provided to decrypt the key.
-
-```lua
-pkey.new(pem_or_der_text, {
-  format = "*", -- choice of "PEM", "DER" or "*" for auto detect
-  type = "*", -- choice of "p"r for privatekey, "pu" for public key and "*" for auto detect
-  passphrase = "secret password", -- the PEM encryption passphrase
-  passphrase_cb = function()
-    return "secret password"
-  end, -- the PEM encryption passphrase callback function
+{
+    type = 'EC',
+    curve = 'primve196v1',
 }
-
 ```
+
+2. A string of private or public key in PEM or DER format; optionally tells the library
+to explictly decode the key using `format`, which can be a choice of `PER`, `DER` or `*`
+for auto detect.
 3. `nil` to create a 2048 bits RSA key.
 4. A `EVP_PKEY*` pointer, to return a wrapped `pkey` instance. Normally user won't use this
 approach. User shouldn't free the pointer on their own, since the pointer is not copied.
@@ -365,7 +363,7 @@ parameter of RSA key is supported. Each value of the returned table is a
 [resty.openssl.bn](#restyopensslbn) instance.
 
 ```lua
-local pk, err = require("resty.openssl.pkey").new()
+local pk, err = require("resty.openssl").pkey.new()
 local parameters, err = pk:get_parameters()
 local e = parameters.e
 ngx.say(ngx.encode_base64(e:to_binary()))
@@ -383,8 +381,8 @@ instance. The `digest` parameter must be a [resty.openssl.digest](#restyopenssld
 instance. Returns the signed raw binary and error if any.
 
 ```lua
-local pk, err = require("resty.openssl.pkey").new()
-local digest, err = require("resty.openssl.digest").new("SHA256")
+local pk, err = require("resty.openssl").pkey.new()
+local digest, err = require("resty.openssl").digest.new("SHA256")
 digest:update("dog")
 local signature, err = pk:sign(digest)
 ngx.say(ngx.encode_base64(signature))
@@ -913,7 +911,7 @@ ngx.say(not_before)
 err = x509:set_basic_constraints_critical(true)
 ```
 
-If type is a table, setter requires a table with case-insensitive keys to set;
+If type is a table, setter requires a table with case-insentive keys to set;
 getter returns the value of the given case-insensitive key or a table of all keys if no key provided.
 
 ```lua
@@ -1629,7 +1627,7 @@ Returns the name of extension as ASN.1 Object. User can further use helper funct
 
 ### extension:text
 
-**syntax**: *txt, err = extension:text()*
+**syntax**: *txt, err = extension:text(table)*
 
 Returns the text representation of extension
 
@@ -1640,14 +1638,6 @@ ngx.say(cjson.encode(objects.obj2table(extension:get_object())))
 ngx.say(extension:text())
 -- outputs C9:C2:53:61:66:9D:5F:AB:25:F4:26:CD:0F:38:9A:A8:49:EA:48:A9
 ```
-
-[Back to TOC](#table-of-contents)
-
-### extension:tostring
-
-**syntax**: *txt, err = extension:tostring()*
-
-Same as [extension:text](#extensiontext).
 
 [Back to TOC](#table-of-contents)
 
@@ -1848,11 +1838,9 @@ certificates bundle. For example, the package in Debian/Ubuntu is called `ca-cer
 
 ### store:add
 
-**syntax**: *ok, err = store:add(x509_or_crl)*
+**syntax**: *ok, err = store:add(x509)*
 
-Adds a X.509 or a CRL object into store.
-The argument must be a [resty.openssl.x509](#restyopensslx509) instance or a
-[resty.openssl.x509.store](#restyopensslx509store) instance.
+Adds a X.509 object into store. The argument must be a [resty.openssl.x509](#restyopensslx509) instance.
 
 [Back to TOC](#table-of-contents)
 
@@ -1882,9 +1870,8 @@ Verifies a X.509 object with the store. The first argument must be
 [resty.openssl.x509](#restyopensslx509) instance. Optionally accept a validation chain as second
 argument, which must be a [resty.openssl.x509.chain](#restyopensslx509chain) instance.
 
-If verification succeed, and `return_chain` is set to true, returns the proof of validation as a 
-[resty.openssl.x509.chain](#restyopensslx509chain); otherwise
-returns `true` only. If verification failed, returns `nil` and error explaining the reason.
+If verification succeed, and `return_chain` is set to true, returns the proof of validation; otherwise
+returns `true`. If verification failed, returns `nil` and error explaining the reason.
 
 [Back to TOC](#table-of-contents)
 
@@ -1998,6 +1985,10 @@ same.
 If you plan to use this library on an untested version of OpenSSL (like custom builds or pre releases),
 [this](https://abi-laboratory.pro/index.php?view=timeline&l=openssl) can be a good source to consult.
 
+TODO
+====
+
+- add tests for x509 getters/setters
 
 [Back to TOC](#table-of-contents)
 
@@ -2007,7 +1998,7 @@ Copyright and License
 
 This module is licensed under the BSD license.
 
-Copyright (C) 2019-2020, by fffonion <fffonion@gmail.com>.
+Copyright (C) 2019, by fffonion <fffonion@gmail.com>.
 
 All rights reserved.
 

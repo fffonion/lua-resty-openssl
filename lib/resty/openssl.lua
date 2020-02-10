@@ -117,4 +117,31 @@ end
 -- we made a typo sometime, this is going to be removed in next major release
 _M.luaossl_compact = _M.luaossl_compat
 
+local resty_hmac_compat_patched = false
+function _M.resty_hmac_compat()
+  if resty_hmac_compat_patched then
+    return
+  end
+  if _M.version.OPENSSL_10 then
+    error("use resty_hmac_compat in OpenSSL 1.0 is not supported")
+  end
+
+  require("resty.openssl.include.evp")
+  require("ffi").cdef [[
+    // originally named evp_cipher_ctx_st in evp.lua
+    struct evp_md_ctx_st {
+      const EVP_MD *digest;
+      ENGINE *engine;             /* functional reference if 'digest' is
+                                  * ENGINE-provided */
+      unsigned long flags;
+      void *md_data;
+      /* Public key context for sign/verify */
+      EVP_PKEY_CTX *pctx;
+      /* Update function: usually copied from EVP_MD */
+      int (*update) (EVP_MD_CTX *ctx, const void *data, size_t count);
+    }/* EVP_MD_CTX */ ;
+  ]]
+  resty_hmac_compat_patched = true
+end
+
 return _M

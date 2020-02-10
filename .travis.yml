@@ -49,6 +49,8 @@ install:
   - git clone https://github.com/openresty/no-pool-nginx.git ./no-pool-nginx
   - git clone https://github.com/openresty/lua-resty-core.git ../lua-resty-core
   - git clone https://github.com/openresty/lua-resty-lrucache.git ../lua-resty-lrucache
+  - git clone https://github.com/jkeys089/lua-resty-hmac ../lua-resty-hmac
+  - git clone https://github.com/openresty/lua-resty-string ../lua-resty-string
   # openssl
   # openssl 1.0.2 config doesn't work correctly on a cached directory
   - wget https://www.openssl.org/source/openssl-$OPENSSL_VER.tar.gz -O - | tar zxf -

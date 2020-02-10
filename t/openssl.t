@@ -9,7 +9,7 @@ my $pwd = cwd();
 my $use_luacov = $ENV{'TEST_NGINX_USE_LUACOV'} // '';
 
 our $HttpConfig = qq{
-    lua_package_path "$pwd/lib/?.lua;$pwd/lib/?/init.lua;;";
+    lua_package_path "$pwd/lib/?.lua;$pwd/lib/?/init.lua;$pwd/../lua-resty-hmac/lib/?.lua;$pwd/../lua-resty-string/lib/?.lua;;";
     init_by_lua_block {
         if "1" == "$use_luacov" then
             require 'luacov.tick'
@@ -56,5 +56,40 @@ __DATA__
 --- response_body_like
 false
 .+pkey.new.+
+--- no_error_log
+[error]
+
+=== TEST 3: lua-resty-hmac compat
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local openssl = require("resty.openssl")
+            if openssl.version.OPENSSL_10 then
+                -- noop
+                local pok, perr = pcall(openssl.resty_hmac_compat)
+                ngx.say(pok)
+                ngx.say("-size of C type is unknown or too large-")
+                ngx.say(true)
+                ngx.say(ngx.null)
+            else
+                require("resty.openssl.hmac")
+                local pok, perr = pcall(require, "resty.hmac")
+                ngx.say(pok)
+                ngx.say(perr)
+                openssl.resty_hmac_compat()
+                local pok, perr = pcall(require, "resty.hmac")
+                ngx.say(pok)
+                ngx.say(perr)
+            end
+        }
+    }
+--- request
+    GET /t
+--- response_body_like
+false
+.+size of C type is unknown or too large.+
+true
+null
 --- no_error_log
 [error]
