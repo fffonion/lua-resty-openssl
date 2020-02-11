@@ -15,7 +15,7 @@ defines = {
     "field": "serial_number",
     # attribute type
     "type": "bn",
-    # this struct will be copied during return
+    # this struct should be copied during return
     "dup": True,
     # the value of sample used in tests
     "sample_printable": "0A0630427F5BBCED6957396593B6451F",

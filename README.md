@@ -333,7 +333,7 @@ to create EC private key:
 ```lua
 {
     type = 'EC',
-    curve = 'primve196v1',
+    curve = 'prime192v1',
 }
 ```
 
@@ -1085,6 +1085,9 @@ Outputs the certificate in PEM-formatted text.
 
 Module to interact with certificate signing request (X509_REQ).
 
+See [examples/csr.lua](https://github.com/fffonion/lua-resty-openssl/blob/master/examples/csr.lua)
+for an example to generate CSR.
+
 [Back to TOC](#table-of-contents)
 
 ### csr.new
@@ -1566,21 +1569,10 @@ local ext, err = extension.new("extendedKeyUsage", "serverAuth,clientAuth")
 ext, err =  extension.new("subjectKeyIdentifier", "hash", {
     subject = crt
 })
--- Example with an unknown nid
-local objects = require("resty.openssl.objects")
-local id_pe_acmeIdentifier = "1.3.6.1.5.5.7.1.31"
-local nid = objects.txt2nid(id_pe_acmeIdentifier)
-if not nid or nid == 0 then
-  -- adds the NID to internal lookup table
-  nid = objects.create(
-    id_pe_acmeIdentifier, -- nid
-    "pe-acmeIdentifier",  -- sn
-    "ACME Identifier"     -- ln
-  )
-end
--- Creates the extension with value of a ASN1_OCTET_STRING \xaa
-local ext, err = extension.new(nid, "DER:0401AA")
 ```
+
+See [examples/tls-alpn-01.lua](https://github.com/fffonion/lua-resty-openssl/blob/master/examples/tls-alpn-01.lua)
+for an example to create extension with an unknown nid.
 
 [Back to TOC](#table-of-contents)
 
@@ -1968,6 +1960,16 @@ Returns objects at index of `i` of the table, index is 1-based. If index is out 
 General rules on garbage collection
 ====
 
+- When a type is added or returned to another type, it's internal cdata is always copied.
+```lua
+local name = require("resty.openssl.x509.name"):add("CN", "example.com")
+local x509 = require("resty.openssl.x509").new()
+-- `name` is copied when added to x509
+x509:set_subject_name(name)
+
+name:add("L", "Mars")
+-- subject_name in x509 will not be modified
+```
 - The creator set the GC handler; the user must not free it.
 - For a stack:
   - If it's created by `new()`: set GC handler to sk_TYPE_pop_free 
@@ -1980,6 +1982,8 @@ General rules on garbage collection
       - Additionally, the stack duplicates the element when it's added to stack, a GC handler for the duplicate
         must be set. But a reference should be kept in Lua land to prevent premature
         gc of individual elements. (See x509.altname)
+
+[Back to TOC](#table-of-contents)
 
 
 Compatibility
@@ -1998,11 +2002,6 @@ same.
 
 If you plan to use this library on an untested version of OpenSSL (like custom builds or pre releases),
 [this](https://abi-laboratory.pro/index.php?view=timeline&l=openssl) can be a good source to consult.
-
-TODO
-====
-
-- add tests for x509 getters/setters
 
 [Back to TOC](#table-of-contents)
 
