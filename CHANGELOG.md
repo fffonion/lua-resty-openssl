@@ -2,6 +2,12 @@
 ## [Unreleased]
 
 
+<a name="0.5.3"></a>
+## [0.5.3] - 2020-02-11
+### feat
+- **openssl:** lua-resty-hmac compat [fad844f](https://github.com/fffonion/lua-resty-openssl/commit/fad844f804abe8d73b7d4b7655d562fdb3d84ebf)
+
+
 <a name="0.5.2"></a>
 ## [0.5.2] - 2020-02-09
 ### feat
@@ -122,7 +128,8 @@
 <a name="init"></a>
 ## init - 2019-09-25
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.2...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.3...HEAD
+[0.5.3]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.2...0.5.3
 [0.5.2]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.1...0.5.2
 [0.5.1]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.0...0.5.1
 [0.5.0]: https://github.com/fffonion/lua-resty-openssl/compare/0.4.3...0.5.0
