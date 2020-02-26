@@ -64,6 +64,12 @@ function _M:add(item)
     if C.X509_STORE_add_crl(self.ctx, dup) ~= 1 then
       err = format_error("store:add: X509_STORE_add_crl")
     end
+
+    -- define X509_V_FLAG_CRL_CHECK                   0x4
+    -- enables CRL checking for the certificate chain leaf certificate.
+    -- An error occurs if a suitable CRL cannot be found.
+    -- Note: this does not check for certificates in the chain.
+    C.X509_STORE_set_flags(self.ctx, 0x4)
     -- decrease the dup ctx ref count immediately to make leak test happy
     C.X509_CRL_free(dup)
   else

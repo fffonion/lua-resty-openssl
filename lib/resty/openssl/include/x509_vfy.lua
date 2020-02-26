@@ -28,6 +28,8 @@ ffi.cdef [[
                         X509 *x509, OPENSSL_STACK *chain);
 
   int X509_STORE_CTX_get_error(X509_STORE_CTX *ctx);
+
+  int X509_STORE_set_flags(X509_STORE *ctx, unsigned long flags);
 ]]
 
 local _M = {}
