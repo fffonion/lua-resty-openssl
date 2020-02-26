@@ -175,7 +175,7 @@ function _M:sign(pkey, digest)
 
   -- returns size of signature if success
   if C.X509_REQ_sign(self.ctx, pkey.ctx, digest and digest.ctx) == 0 then
-    return false, format_error("csr:sign")
+    return false, format_error("x509.csr:sign")
   end
 
   return true
@@ -193,7 +193,7 @@ function _M:verify(pkey)
   elseif code == 0 then
     return false
   else -- typically -1
-    return false, format_error("csr:verify", code)
+    return false, format_error("x509.csr:verify", code)
   end
 
   return true
@@ -202,7 +202,7 @@ end
 function _M:get_subject_name()
   local got = accessors.get_subject_name(self.ctx)
   if got == nil then
-    return nil, format_error("csr:get_subject_name")
+    return nil
   end
   local lib = require("resty.openssl.x509.name")
   -- the internal ptr is returned, ie we need to copy it
@@ -217,7 +217,7 @@ function _M:set_subject_name(toset)
   end
   toset = toset.ctx
   if accessors.set_subject_name(self.ctx, toset) == 0 then
-    return false, format_error("csr:set_subject_name")
+    return false, format_error("x509.csr:set_subject_name")
   end
 
   return true
@@ -227,7 +227,7 @@ end
 function _M:get_pubkey()
   local got = accessors.get_pubkey(self.ctx)
   if got == nil then
-    return nil, format_error("csr:get_pubkey")
+    return nil
   end
   local lib = require("resty.openssl.pkey")
   -- returned a copied instance directly
@@ -242,7 +242,7 @@ function _M:set_pubkey(toset)
   end
   toset = toset.ctx
   if accessors.set_pubkey(self.ctx, toset) == 0 then
-    return false, format_error("csr:set_pubkey")
+    return false, format_error("x509.csr:set_pubkey")
   end
 
   return true
@@ -252,7 +252,7 @@ end
 function _M:get_version()
   local got = accessors.get_version(self.ctx)
   if got == nil then
-    return nil, format_error("csr:get_version")
+    return nil
   end
 
   got = tonumber(got) + 1
@@ -271,14 +271,14 @@ function _M:set_version(toset)
   toset = toset - 1
 
   if accessors.set_version(self.ctx, toset) == 0 then
-    return false, format_error("csr:set_version")
+    return false, format_error("x509.csr:set_version")
   end
 
   return true
 end
 
 
---- END AUTO GENERATED CODE
+-- END AUTO GENERATED CODE
 
 return _M
 

@@ -329,6 +329,8 @@ function _M:pubkey_digest(typ)
   return digest(self, C.X509_pubkey_digest, typ)
 end
 
+local int_ptr = ffi.typeof("int[1]")
+
 -- START AUTO GENERATED CODE
 
 -- AUTO GENERATED
@@ -477,7 +479,7 @@ end
 function _M:get_serial_number()
   local got = accessors.get_serial_number(self.ctx)
   if got == nil then
-    return nil, format_error("x509:get_serial_number")
+    return nil
   end
 
   -- returns a new BIGNUM instance
@@ -520,7 +522,7 @@ end
 function _M:get_not_before()
   local got = accessors.get_not_before(self.ctx)
   if got == nil then
-    return nil, format_error("x509:get_not_before")
+    return nil
   end
 
   got = asn1_lib.asn1_to_unix(got)
@@ -548,7 +550,7 @@ end
 function _M:get_not_after()
   local got = accessors.get_not_after(self.ctx)
   if got == nil then
-    return nil, format_error("x509:get_not_after")
+    return nil
   end
 
   got = asn1_lib.asn1_to_unix(got)
@@ -576,7 +578,7 @@ end
 function _M:get_pubkey()
   local got = accessors.get_pubkey(self.ctx)
   if got == nil then
-    return nil, format_error("x509:get_pubkey")
+    return nil
   end
   local lib = require("resty.openssl.pkey")
   -- returned a copied instance directly
@@ -601,7 +603,7 @@ end
 function _M:get_subject_name()
   local got = accessors.get_subject_name(self.ctx)
   if got == nil then
-    return nil, format_error("x509:get_subject_name")
+    return nil
   end
   local lib = require("resty.openssl.x509.name")
   -- the internal ptr is returned, ie we need to copy it
@@ -626,7 +628,7 @@ end
 function _M:get_issuer_name()
   local got = accessors.get_issuer_name(self.ctx)
   if got == nil then
-    return nil, format_error("x509:get_issuer_name")
+    return nil
   end
   local lib = require("resty.openssl.x509.name")
   -- the internal ptr is returned, ie we need to copy it
@@ -651,7 +653,7 @@ end
 function _M:get_version()
   local got = accessors.get_version(self.ctx)
   if got == nil then
-    return nil, format_error("x509:get_version")
+    return nil
   end
 
   got = tonumber(got) + 1
@@ -681,9 +683,17 @@ assert(NID_subject_alt_name ~= 0)
 
 -- AUTO GENERATED: EXTENSIONS
 function _M:get_subject_alt_name()
+  local crit = int_ptr()
   -- X509_get_ext_d2i returns internal pointer, always dup
-  local got = C.X509_get_ext_d2i(self.ctx, NID_subject_alt_name, nil, nil)
-  if got == nil then
+  -- for now this function always returns the first found extension
+  local got = C.X509_get_ext_d2i(self.ctx, NID_subject_alt_name, crit, nil)
+  crit = tonumber(crit[0])
+  if crit == -1 then -- not found
+    return nil
+  elseif crit == -2 then
+    return nil, "extension of subject_alt_name occurs more than one times, " ..
+                "this is not yet implemented. Please use get_extension instead."
+  elseif got == nil then
     return nil, format_error("x509:get_subject_alt_name")
   end
 
@@ -728,9 +738,17 @@ assert(NID_issuer_alt_name ~= 0)
 
 -- AUTO GENERATED: EXTENSIONS
 function _M:get_issuer_alt_name()
+  local crit = int_ptr()
   -- X509_get_ext_d2i returns internal pointer, always dup
-  local got = C.X509_get_ext_d2i(self.ctx, NID_issuer_alt_name, nil, nil)
-  if got == nil then
+  -- for now this function always returns the first found extension
+  local got = C.X509_get_ext_d2i(self.ctx, NID_issuer_alt_name, crit, nil)
+  crit = tonumber(crit[0])
+  if crit == -1 then -- not found
+    return nil
+  elseif crit == -2 then
+    return nil, "extension of issuer_alt_name occurs more than one times, " ..
+                "this is not yet implemented. Please use get_extension instead."
+  elseif got == nil then
     return nil, format_error("x509:get_issuer_alt_name")
   end
 
@@ -775,9 +793,17 @@ assert(NID_basic_constraints ~= 0)
 
 -- AUTO GENERATED: EXTENSIONS
 function _M:get_basic_constraints(name)
+  local crit = int_ptr()
   -- X509_get_ext_d2i returns internal pointer, always dup
-  local got = C.X509_get_ext_d2i(self.ctx, NID_basic_constraints, nil, nil)
-  if got == nil then
+  -- for now this function always returns the first found extension
+  local got = C.X509_get_ext_d2i(self.ctx, NID_basic_constraints, crit, nil)
+  crit = tonumber(crit[0])
+  if crit == -1 then -- not found
+    return nil
+  elseif crit == -2 then
+    return nil, "extension of basic_constraints occurs more than one times, " ..
+                "this is not yet implemented. Please use get_extension instead."
+  elseif got == nil then
     return nil, format_error("x509:get_basic_constraints")
   end
 
@@ -859,9 +885,17 @@ assert(NID_info_access ~= 0)
 
 -- AUTO GENERATED: EXTENSIONS
 function _M:get_info_access()
+  local crit = int_ptr()
   -- X509_get_ext_d2i returns internal pointer, always dup
-  local got = C.X509_get_ext_d2i(self.ctx, NID_info_access, nil, nil)
-  if got == nil then
+  -- for now this function always returns the first found extension
+  local got = C.X509_get_ext_d2i(self.ctx, NID_info_access, crit, nil)
+  crit = tonumber(crit[0])
+  if crit == -1 then -- not found
+    return nil
+  elseif crit == -2 then
+    return nil, "extension of info_access occurs more than one times, " ..
+                "this is not yet implemented. Please use get_extension instead."
+  elseif got == nil then
     return nil, format_error("x509:get_info_access")
   end
 
@@ -906,9 +940,17 @@ assert(NID_crl_distribution_points ~= 0)
 
 -- AUTO GENERATED: EXTENSIONS
 function _M:get_crl_distribution_points()
+  local crit = int_ptr()
   -- X509_get_ext_d2i returns internal pointer, always dup
-  local got = C.X509_get_ext_d2i(self.ctx, NID_crl_distribution_points, nil, nil)
-  if got == nil then
+  -- for now this function always returns the first found extension
+  local got = C.X509_get_ext_d2i(self.ctx, NID_crl_distribution_points, crit, nil)
+  crit = tonumber(crit[0])
+  if crit == -1 then -- not found
+    return nil
+  elseif crit == -2 then
+    return nil, "extension of crl_distribution_points occurs more than one times, " ..
+                "this is not yet implemented. Please use get_extension instead."
+  elseif got == nil then
     return nil, format_error("x509:get_crl_distribution_points")
   end
 
@@ -949,6 +991,6 @@ function _M:get_crl_distribution_points_critical()
 end
 
 
---- END AUTO GENERATED CODE
+-- END AUTO GENERATED CODE
 
 return _M

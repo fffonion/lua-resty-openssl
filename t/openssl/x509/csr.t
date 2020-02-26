@@ -239,7 +239,7 @@ expect a pkey instance at #1
 --- no_error_log
 [error]
 
-=== TEST 6: x509.csr:get_pubkey (AUTOGEN)
+=== TEST 8: x509.csr:get_pubkey (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -276,7 +276,7 @@ AQIDAQAB
 --- no_error_log
 [error]
 
-=== TEST 7: x509.csr:set_pubkey (AUTOGEN)
+=== TEST 9: x509.csr:set_pubkey (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -316,7 +316,7 @@ AQIDAQAB
 --- no_error_log
 [error]
 
-=== TEST 6: x509.csr:get_version (AUTOGEN)
+=== TEST 10: x509.csr:get_version (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -343,7 +343,7 @@ AQIDAQAB
 --- no_error_log
 [error]
 
-=== TEST 7: x509.csr:set_version (AUTOGEN)
+=== TEST 11: x509.csr:set_version (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {

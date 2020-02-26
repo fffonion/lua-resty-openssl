@@ -4,8 +4,8 @@ from jinja2 import Environment, FileSystemLoader
 
 import re
 
-ANCHOR_START = '((?:---|#) START AUTO GENERATED CODE)'
-ANCHOR_END = '((?:---|#) END AUTO GENERATED CODE)'
+ANCHOR_START = '((?:--|#) START AUTO GENERATED CODE)'
+ANCHOR_END = '((?:--|#) END AUTO GENERATED CODE)'
 
 LUA_TYPES = ('number', 'string', 'table')
 
@@ -42,8 +42,8 @@ for k in tmpl:
         repl = tmpl[k].render(
             module=mod,
             modname=modname,
-            test_idx = test_idx,
-            tests = tests,
+            test_idx=test_idx,
+            tests=tests,
             LUA_TYPES=LUA_TYPES,
         )
 

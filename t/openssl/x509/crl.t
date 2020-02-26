@@ -184,7 +184,7 @@ __DATA__
 --- no_error_log
 [error]
 
-=== TEST 4: x509.crl:get_last_update (AUTOGEN)
+=== TEST 6: x509.crl:get_last_update (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -211,7 +211,7 @@ __DATA__
 --- no_error_log
 [error]
 
-=== TEST 5: x509.crl:set_last_update (AUTOGEN)
+=== TEST 7: x509.crl:set_last_update (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -249,7 +249,7 @@ __DATA__
 --- no_error_log
 [error]
 
-=== TEST 4: x509.crl:get_next_update (AUTOGEN)
+=== TEST 8: x509.crl:get_next_update (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -276,7 +276,7 @@ __DATA__
 --- no_error_log
 [error]
 
-=== TEST 5: x509.crl:set_next_update (AUTOGEN)
+=== TEST 9: x509.crl:set_next_update (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -314,7 +314,7 @@ __DATA__
 --- no_error_log
 [error]
 
-=== TEST 4: x509.crl:get_version (AUTOGEN)
+=== TEST 10: x509.crl:get_version (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -341,7 +341,7 @@ __DATA__
 --- no_error_log
 [error]
 
-=== TEST 5: x509.crl:set_version (AUTOGEN)
+=== TEST 11: x509.crl:set_version (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {

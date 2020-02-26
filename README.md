@@ -901,6 +901,8 @@ Additionally, getters and setters for extensions are also available:
 For all extensions, `get_{extension}_critical` and `set_{extension}_critical` is also supported to
 access the `critical` flag of the extension.
 
+If the attribute is not found, getter will return `nil, nil`.
+
 ```lua
 local x509, err = require("resty.openssl.x509").new()
 err = x509:set_not_before(ngx.time())
@@ -1129,6 +1131,7 @@ Additionally, getters and setters for extensions are also available:
 | ------------   | ---- | ----------- |
 | subject_alt_name   | [x509.altname](#restyopensslx509altname) | [Subject Alternative Name](https://tools.ietf.org/html/rfc5280#section-4.2.1.6) of the certificate request, SANs are usually used to define "additional Common Names"  |
 
+If the attribute is not found, getter will return `nil, nil`.
 
 ```lua
 local csr, err = require("resty.openssl.csr").new()
@@ -1240,6 +1243,8 @@ Additionally, getters and setters for extensions are also available:
 
 For all extensions, `get_{extension}_critical` and `set_{extension}_critical` is also supported to
 access the `critical` flag of the extension.
+
+If the attribute is not found, getter will return `nil, nil`.
 
 ```lua
 local crl, err = require("resty.openssl.crl").new()

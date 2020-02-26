@@ -166,7 +166,7 @@ function _M:sign(pkey, digest)
 
   -- returns size of signature if success
   if C.X509_CRL_sign(self.ctx, pkey.ctx, digest and digest.ctx) == 0 then
-    return false, format_error("crl:sign")
+    return false, format_error("x509.crl:sign")
   end
 
   return true
@@ -184,7 +184,7 @@ function _M:verify(pkey)
   elseif code == 0 then
     return false
   else -- typically -1
-    return false, format_error("crl:verify", code)
+    return false, format_error("x509.crl:verify", code)
   end
 
   return true
@@ -203,7 +203,7 @@ local function get_extension(ctx, nid_txt, last_pos)
   end
   local ctx = C.X509_CRL_get_ext(ctx, pos)
   if ctx == nil then
-    return nil, nil, format_error("crl:get_extension")
+    return nil, nil, format_error("x509.crl:get_extension")
   end
   return ctx, pos
 end
@@ -217,7 +217,7 @@ function _M:add_extension(extension)
   -- X509_CRL_add_ext returnes the stack on success, and NULL on error
   -- the X509_EXTENSION ctx is dupped internally
   if C.X509_CRL_add_ext(self.ctx, extension.ctx, -1) == nil then
-    return false, format_error("crl:add_extension")
+    return false, format_error("x509.crl:add_extension")
   end
 
   return true
@@ -267,7 +267,7 @@ function _M:set_extension(extension, last_pos)
   C.X509_EXTENSION_free(removed)
 
   if C.X509_CRL_add_ext(self.ctx, extension.ctx, pos) == nil then
-    return false, format_error("crl:set_extension")
+    return false, format_error("x509.crl:set_extension")
   end
 
   return true
@@ -281,7 +281,7 @@ function _M:set_extension_critical(nid_txt, crit, last_pos)
   end
 
   if C.X509_EXTENSION_set_critical(ctx, crit and 1 or 0) ~= 1 then
-    return false, format_error("crl:set_extension_critical")
+    return false, format_error("x509.crl:set_extension_critical")
   end
 
   return true
@@ -301,7 +301,7 @@ end
 function _M:get_issuer_name()
   local got = accessors.get_issuer_name(self.ctx)
   if got == nil then
-    return nil, format_error("crl:get_issuer_name")
+    return nil
   end
   local lib = require("resty.openssl.x509.name")
   -- the internal ptr is returned, ie we need to copy it
@@ -316,7 +316,7 @@ function _M:set_issuer_name(toset)
   end
   toset = toset.ctx
   if accessors.set_issuer_name(self.ctx, toset) == 0 then
-    return false, format_error("crl:set_issuer_name")
+    return false, format_error("x509.crl:set_issuer_name")
   end
 
   return true
@@ -326,7 +326,7 @@ end
 function _M:get_last_update()
   local got = accessors.get_last_update(self.ctx)
   if got == nil then
-    return nil, format_error("crl:get_last_update")
+    return nil
   end
 
   got = asn1_lib.asn1_to_unix(got)
@@ -344,7 +344,7 @@ function _M:set_last_update(toset)
   ffi_gc(toset, C.ASN1_STRING_free)
 
   if accessors.set_last_update(self.ctx, toset) == 0 then
-    return false, format_error("crl:set_last_update")
+    return false, format_error("x509.crl:set_last_update")
   end
 
   return true
@@ -354,7 +354,7 @@ end
 function _M:get_next_update()
   local got = accessors.get_next_update(self.ctx)
   if got == nil then
-    return nil, format_error("crl:get_next_update")
+    return nil
   end
 
   got = asn1_lib.asn1_to_unix(got)
@@ -372,7 +372,7 @@ function _M:set_next_update(toset)
   ffi_gc(toset, C.ASN1_STRING_free)
 
   if accessors.set_next_update(self.ctx, toset) == 0 then
-    return false, format_error("crl:set_next_update")
+    return false, format_error("x509.crl:set_next_update")
   end
 
   return true
@@ -382,7 +382,7 @@ end
 function _M:get_version()
   local got = accessors.get_version(self.ctx)
   if got == nil then
-    return nil, format_error("crl:get_version")
+    return nil
   end
 
   got = tonumber(got) + 1
@@ -401,14 +401,14 @@ function _M:set_version(toset)
   toset = toset - 1
 
   if accessors.set_version(self.ctx, toset) == 0 then
-    return false, format_error("crl:set_version")
+    return false, format_error("x509.crl:set_version")
   end
 
   return true
 end
 
 
---- END AUTO GENERATED CODE
+-- END AUTO GENERATED CODE
 
 return _M
 

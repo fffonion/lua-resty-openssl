@@ -467,10 +467,36 @@ URI http://crl4.digicert.com/sha2-ev-server-g2.crl
 --- no_error_log
 [error]
 
+=== TEST 18: Get non existend extension, return nil, nil
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/GlobalSign.pem"):read("*a")
+            local c, err = require("resty.openssl.x509").new(f)
+            if err then
+              ngx.log(ngx.ERR, err)
+              ngx.exit(0)
+            end
+
+            local get, err = c:get_subject_alt_name()
+            ngx.say(get)
+            ngx.say(err)
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"nil
+nil
+"
+--- no_error_log
+[error]
+
 # START AUTO GENERATED CODE
 
 
-=== TEST 18: x509:get_serial_number (AUTOGEN)
+=== TEST 19: x509:get_serial_number (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -498,7 +524,7 @@ URI http://crl4.digicert.com/sha2-ev-server-g2.crl
 --- no_error_log
 [error]
 
-=== TEST 19: x509:set_serial_number (AUTOGEN)
+=== TEST 20: x509:set_serial_number (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -538,7 +564,7 @@ URI http://crl4.digicert.com/sha2-ev-server-g2.crl
 --- no_error_log
 [error]
 
-=== TEST 18: x509:get_not_before (AUTOGEN)
+=== TEST 21: x509:get_not_before (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -565,7 +591,7 @@ URI http://crl4.digicert.com/sha2-ev-server-g2.crl
 --- no_error_log
 [error]
 
-=== TEST 19: x509:set_not_before (AUTOGEN)
+=== TEST 22: x509:set_not_before (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -603,7 +629,7 @@ URI http://crl4.digicert.com/sha2-ev-server-g2.crl
 --- no_error_log
 [error]
 
-=== TEST 18: x509:get_not_after (AUTOGEN)
+=== TEST 23: x509:get_not_after (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -630,7 +656,7 @@ URI http://crl4.digicert.com/sha2-ev-server-g2.crl
 --- no_error_log
 [error]
 
-=== TEST 19: x509:set_not_after (AUTOGEN)
+=== TEST 24: x509:set_not_after (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -668,7 +694,7 @@ URI http://crl4.digicert.com/sha2-ev-server-g2.crl
 --- no_error_log
 [error]
 
-=== TEST 18: x509:get_pubkey (AUTOGEN)
+=== TEST 25: x509:get_pubkey (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -705,7 +731,7 @@ SwIDAQAB
 --- no_error_log
 [error]
 
-=== TEST 19: x509:set_pubkey (AUTOGEN)
+=== TEST 26: x509:set_pubkey (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -745,7 +771,7 @@ SwIDAQAB
 --- no_error_log
 [error]
 
-=== TEST 18: x509:get_subject_name (AUTOGEN)
+=== TEST 27: x509:get_subject_name (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -773,7 +799,7 @@ SwIDAQAB
 --- no_error_log
 [error]
 
-=== TEST 19: x509:set_subject_name (AUTOGEN)
+=== TEST 28: x509:set_subject_name (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -813,7 +839,7 @@ SwIDAQAB
 --- no_error_log
 [error]
 
-=== TEST 18: x509:get_issuer_name (AUTOGEN)
+=== TEST 29: x509:get_issuer_name (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -841,7 +867,7 @@ SwIDAQAB
 --- no_error_log
 [error]
 
-=== TEST 19: x509:set_issuer_name (AUTOGEN)
+=== TEST 30: x509:set_issuer_name (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -881,7 +907,7 @@ SwIDAQAB
 --- no_error_log
 [error]
 
-=== TEST 18: x509:get_version (AUTOGEN)
+=== TEST 31: x509:get_version (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -908,7 +934,7 @@ SwIDAQAB
 --- no_error_log
 [error]
 
-=== TEST 19: x509:set_version (AUTOGEN)
+=== TEST 32: x509:set_version (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -946,7 +972,7 @@ SwIDAQAB
 --- no_error_log
 [error]
 
-=== TEST 18: x509:get_subject_alt_name (AUTOGEN)
+=== TEST 33: x509:get_subject_alt_name (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -974,7 +1000,7 @@ SwIDAQAB
 --- no_error_log
 [error]
 
-=== TEST 19: x509:set_subject_alt_name (AUTOGEN)
+=== TEST 34: x509:set_subject_alt_name (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -1014,7 +1040,7 @@ SwIDAQAB
 --- no_error_log
 [error]
 
-=== TEST 21: x509:get/set_subject_alt_name_critical (AUTOGEN)
+=== TEST 36: x509:get/set_subject_alt_name_critical (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -1043,7 +1069,7 @@ true
 --- no_error_log
 [error]
 
-=== TEST 19: x509:get/set_basic_constraints_critical (AUTOGEN)
+=== TEST 37: x509:get/set_basic_constraints_critical (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -1072,7 +1098,7 @@ true
 --- no_error_log
 [error]
 
-=== TEST 19: x509:get/set_info_access_critical (AUTOGEN)
+=== TEST 38: x509:get/set_info_access_critical (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -1101,7 +1127,7 @@ true
 --- no_error_log
 [error]
 
-=== TEST 19: x509:get/set_crl_distribution_points_critical (AUTOGEN)
+=== TEST 39: x509:get/set_crl_distribution_points_critical (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {

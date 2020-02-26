@@ -1,8 +1,8 @@
-{%- set idx = test_idx %}
+{%- set ns = namespace(idx=test_idx) %}
 {%- for f in module.fields %}
   {%- if f.type in tests.types and not f.skip_tests%}
 
-=== TEST {{ idx }}: {{ modname }}:get_{{ f.field }} (AUTOGEN)
+=== TEST {{ ns.idx }}: {{ modname }}:get_{{ f.field }} (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -31,9 +31,9 @@
 "{{ f.sample_printable }}"
 --- no_error_log
 [error]
-    {%- set idx = idx + 1 %}
+    {%- set ns.idx = ns.idx + 1 %}
 
-=== TEST {{ idx }}: {{ modname }}:set_{{ f.field }} (AUTOGEN)
+=== TEST {{ ns.idx }}: {{ modname }}:set_{{ f.field }} (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -80,11 +80,11 @@
 "ok"
 --- no_error_log
 [error]
-    {%- set idx = idx + 1 %}
+    {%- set ns.idx = ns.idx + 1 %}
   {%- endif %}
   {%- if f.extension and not f.skip_tests %}
 
-=== TEST {{ idx + 1 }}: {{ modname }}:get/set_{{ f.field }}_critical (AUTOGEN)
+=== TEST {{ ns.idx + 1 }}: {{ modname }}:get/set_{{ f.field }}_critical (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -112,6 +112,6 @@
 true
 --- no_error_log
 [error]
-    {%- set idx = idx + 1 %}
+    {%- set ns.idx = ns.idx + 1 %}
   {%- endif %}
 {%- endfor %}

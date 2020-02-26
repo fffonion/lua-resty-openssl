@@ -156,12 +156,20 @@ function _M:get_{{ f.field }}({%- if f.extension and f.type == "table" -%}name{%
   {%- if not f.extension %}
   local got = accessors.get_{{ f.field }}(self.ctx)
   if got == nil then
-    return nil, format_error("{{ modname }}:get_{{ f.field }}")
+    return nil
   end
   {%- else %}
+  local crit = int_ptr()
   -- X509_get_ext_d2i returns internal pointer, always dup
-  local got = C.X509_get_ext_d2i(self.ctx, NID_{{ f.field }}, nil, nil)
-  if got == nil then
+  -- for now this function always returns the first found extension
+  local got = C.X509_get_ext_d2i(self.ctx, NID_{{ f.field }}, crit, nil)
+  crit = tonumber(crit[0])
+  if crit == -1 then -- not found
+    return nil
+  elseif crit == -2 then
+    return nil, "extension of {{ f.field }} occurs more than one times, " ..
+                "this is not yet implemented. Please use get_extension instead."
+  elseif got == nil then
     return nil, format_error("{{ modname }}:get_{{ f.field }}")
   end
   {%- endif %}
