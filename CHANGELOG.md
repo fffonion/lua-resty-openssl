@@ -2,6 +2,13 @@
 ## [Unreleased]
 
 
+<a name="0.5.4"></a>
+## [0.5.4] - 2020-02-27
+### fix
+- **store:** set X509_V_FLAG_CRL_CHECK flag if a crl is added [88574d5](https://github.com/fffonion/lua-resty-openssl/commit/88574d5ecef0f75a293cd7d23b764d629905e3df)
+- **x509.*:** returns soft error if extension is not found [a0a75aa](https://github.com/fffonion/lua-resty-openssl/commit/a0a75aa2644203e22461aa1dd09ef8672e2ba576)
+
+
 <a name="0.5.3"></a>
 ## [0.5.3] - 2020-02-22
 ### feat
@@ -128,7 +135,8 @@
 <a name="init"></a>
 ## init - 2019-09-25
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.3...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.4...HEAD
+[0.5.4]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.3...0.5.4
 [0.5.3]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.2...0.5.3
 [0.5.2]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.1...0.5.2
 [0.5.1]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.0...0.5.1
