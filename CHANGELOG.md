@@ -2,6 +2,68 @@
 ## [Unreleased]
 
 
+<a name="0.4.4"></a>
+## [0.4.4] - 2020-02-27
+### fix
+- **pkey:** clean up errors when trying loading key types [7b3d351](https://github.com/fffonion/lua-resty-openssl/commit/7b3d3513cfb7a8800f49dbdd3ca521b4dadefbad)
+
+
+<a name="0.5.4"></a>
+## [0.5.4] - 2020-02-27
+### fix
+- **store:** set X509_V_FLAG_CRL_CHECK flag if a crl is added [88574d5](https://github.com/fffonion/lua-resty-openssl/commit/88574d5ecef0f75a293cd7d23b764d629905e3df)
+- **x509.*:** returns soft error if extension is not found [a0a75aa](https://github.com/fffonion/lua-resty-openssl/commit/a0a75aa2644203e22461aa1dd09ef8672e2ba576)
+
+
+<a name="0.5.3"></a>
+## [0.5.3] - 2020-02-22
+### feat
+- **openssl:** lua-resty-hmac compat [fad844f](https://github.com/fffonion/lua-resty-openssl/commit/fad844f804abe8d73b7d4b7655d562fdb3d84ebf)
+
+
+<a name="0.5.2"></a>
+## [0.5.2] - 2020-02-09
+### feat
+- **x509.extension:** allow to create an extension by NID [6d66a2d](https://github.com/fffonion/lua-resty-openssl/commit/6d66a2d9fa7cc36cc2e6c85a78ad2236e525f3b0)
+
+### fix
+- **pkey:** decrease copy by 1 when generating key [bcc38e9](https://github.com/fffonion/lua-resty-openssl/commit/bcc38e9fc5e733a8f3f9d09e5eef1e2eb3c15d4d)
+
+
+<a name="0.5.1"></a>
+## [0.5.1] - 2020-02-04
+### feat
+- **pkey:** load encrypted PEM key [7fa7a29](https://github.com/fffonion/lua-resty-openssl/commit/7fa7a29882bbcef294f83cd1f66b9960344a0e07)
+- **x509.extension:** add tostring() as synonym to text() [87c162d](https://github.com/fffonion/lua-resty-openssl/commit/87c162de9fa7bb3e3930bd760ff7dfece30f1b49)
+
+### fix
+- **x509.crl:** fix creating empty crl instance [046ca36](https://github.com/fffonion/lua-resty-openssl/commit/046ca36228f639c191c81a7b84dfedfc523d0340)
+
+
+<a name="0.5.0"></a>
+## [0.5.0] - 2020-02-03
+### feat
+- ***:** add iterater and helpers for stack-like objects [46bb723](https://github.com/fffonion/lua-resty-openssl/commit/46bb7237028a16e67878d8310c25e908ceece009)
+- **autogen:** generate tests for x509, csr and crl [1392428](https://github.com/fffonion/lua-resty-openssl/commit/1392428352164d2a1a6e0c03075ff65b55aecdee)
+- **objects:** add helper function for ASN1_OBJECT [d037706](https://github.com/fffonion/lua-resty-openssl/commit/d037706c11d716afe3616bdaf4658afc1763081d)
+- **pkey:** asymmetric encryption and decryption [6d60451](https://github.com/fffonion/lua-resty-openssl/commit/6d60451157edbf9cefb634f888dfa3e6d9be302f)
+- **x509:** getter/setters for extensions [243f40d](https://github.com/fffonion/lua-resty-openssl/commit/243f40d35562a516f404188a5c7eb8f5134d9b30)
+- **x509:** add get_ocsp_url and get_crl_url [6141b6f](https://github.com/fffonion/lua-resty-openssl/commit/6141b6f5aed38706b477a71d8c4383bf55da7eee)
+- **x509.altname:** support iterate and decode over the stack [083a201](https://github.com/fffonion/lua-resty-openssl/commit/083a201746e02d51f6c5c640ad9bf8c6730ebe0b)
+- **x509.crl:** add crl module [242f8cb](https://github.com/fffonion/lua-resty-openssl/commit/242f8cb45d6c2df5918f26540c92a430d42feb5d)
+- **x509.csr:** autogen some csr functions as well [9800e36](https://github.com/fffonion/lua-resty-openssl/commit/9800e36c2ff8a299b88f24091cc722940a8652bb)
+- **x509.extension:** decode object, set/get critical flag and get text representation [8cb585f](https://github.com/fffonion/lua-resty-openssl/commit/8cb585fc51de04065cd7eeeea06e6240e7251614)
+- **x509.extension:** add x509.extension.dist_points and x509.extension.info_access [63d3992](https://github.com/fffonion/lua-resty-openssl/commit/63d3992163144ed75474a8046398d605570c30b7)
+
+### fix
+- ***:** add missing crl.dup function, organize store:add gc handler [6815e5d](https://github.com/fffonion/lua-resty-openssl/commit/6815e5df04fdb77c83b0345f166664759a573962)
+- **asn1:** support GENERALIZEDTIME string format [8c7e2d6](https://github.com/fffonion/lua-resty-openssl/commit/8c7e2d67857cb6875cf52fadf43cadf05d8c5c40)
+- **error:** return latest error string not earliest in some cases [0b5955d](https://github.com/fffonion/lua-resty-openssl/commit/0b5955d4cb73f3c7d3321ed7384ae862640a6a7f)
+- **stack:** protective over first argument [bf455ff](https://github.com/fffonion/lua-resty-openssl/commit/bf455ff310b94b26a3bed513ffc9f308f65691ed)
+- **x509:** guard around oscp stack index [1b59b85](https://github.com/fffonion/lua-resty-openssl/commit/1b59b8565b5dee4cb1dd14d22bc24ec04dfbf3d6)
+- **x509.store:** correctly save x509 instance references [d8d755f](https://github.com/fffonion/lua-resty-openssl/commit/d8d755f7a281ad09d896a1d78ad9e53f6c028bdc)
+
+
 <a name="0.4.3"></a>
 ## [0.4.3] - 2020-01-15
 ### fix
@@ -79,7 +141,13 @@
 <a name="init"></a>
 ## init - 2019-09-25
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.4.3...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.4.4...HEAD
+[0.4.4]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.4...0.4.4
+[0.5.4]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.3...0.5.4
+[0.5.3]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.2...0.5.3
+[0.5.2]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.1...0.5.2
+[0.5.1]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.0...0.5.1
+[0.5.0]: https://github.com/fffonion/lua-resty-openssl/compare/0.4.3...0.5.0
 [0.4.3]: https://github.com/fffonion/lua-resty-openssl/compare/0.4.2...0.4.3
 [0.4.2]: https://github.com/fffonion/lua-resty-openssl/compare/0.4.1...0.4.2
 [0.4.1]: https://github.com/fffonion/lua-resty-openssl/compare/0.4.0...0.4.1
