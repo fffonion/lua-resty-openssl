@@ -182,6 +182,9 @@ local function load_pkey(txt, fmt, typ)
   if ctx == nil then
     return nil, format_error("pkey.new:load_pkey")
   end
+
+  -- clear errors occur when trying
+  C.ERR_clear_error()
   return ctx, nil
 end
 
