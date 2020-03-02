@@ -75,8 +75,8 @@ Table of Contents
     + [x509:get_extension](#x509get_extension)
     + [x509:add_extension](#x509add_extension)
     + [x509:set_extension](#x509set_extension)
-    + [x509:get_critical](#x509get_critical)
-    + [x509:set_critical](#x509set_critical)
+    + [x509:get_extension_critical](#x509get_extension_critical)
+    + [x509:set_extension_critical](#x509set_extension_critical)
     + [x509:get_ocsp_url](#x509get_ocsp_url)
     + [x509:get_crl_url](#x509get_crl_url)
     + [x509:sign](#x509sign)
@@ -98,8 +98,8 @@ Table of Contents
     + [crl:get_extension](#crlget_extension)
     + [crl:add_extension](#crladd_extension)
     + [crl:set_extension](#crlset_extension)
-    + [crl:get_critical](#crlget_critical)
-    + [crl:set_critical](#crlset_critical)
+    + [crl:get_extension_critical](#crlget_extension_critical)
+    + [crl:set_extension_critical](#crlset_extension_critical)
     + [crl:sign](#crlsign)
     + [crl:verify](#crlverify)
     + [crl:tostring](#crltostring)
@@ -121,8 +121,8 @@ Table of Contents
     + [extension.dup](#extensiondup)
     + [extension.from_data](#extensionfrom_data)
     + [extension.istype](#extensionistype)
-    + [extension:get_critical](#extensionget_critical)
-    + [extension:set_critical](#extensionset_critical)
+    + [extension:get_extension_critical](#extensionget_extension_critical)
+    + [extension:set_extension_critical](#extensionset_extension_critical)
     + [extension:get_object](#extensionget_object)
     + [extension:text](#extensiontext)
   * [resty.openssl.x509.extension.dist_points](#restyopensslx509extensiondist_points)
@@ -1099,17 +1099,17 @@ Note this function is not thread-safe.
 
 [Back to TOC](#table-of-contents)
 
-### x509:get_critical
+### x509:get_extension_critical
 
-**syntax**: *ok, err = x509:get_critical(nid_or_txt)*
+**syntax**: *ok, err = x509:get_extension_critical(nid_or_txt)*
 
 Get critical flag of the X.509 `extension` matching the given [NID] from certificate.
 
 [Back to TOC](#table-of-contents)
 
-### x509:set_critical
+### x509:set_extension_critical
 
-**syntax**: *ok, err = x509:set_critical(nid_or_txt, crit?)*
+**syntax**: *ok, err = x509:set_extension_critical(nid_or_txt, crit?)*
 
 Set critical flag of the X.509 `extension` matching the given [NID] to certificate.
 
@@ -1396,17 +1396,17 @@ Note this function is not thread-safe.
 
 [Back to TOC](#table-of-contents)
 
-### crl:get_critical
+### crl:get_extension_critical
 
-**syntax**: *ok, err = crl:get_critical(nid_or_txt)*
+**syntax**: *ok, err = crl:get_extension_critical(nid_or_txt)*
 
 Get critical flag of the X.509 `extension` matching the given [NID] from CRL.
 
 [Back to TOC](#table-of-contents)
 
-### crl:set_critical
+### crl:set_extension_critical
 
-**syntax**: *ok, err = crl:set_critical(nid_or_txt, crit?)*
+**syntax**: *ok, err = crl:set_extension_critical(nid_or_txt, crit?)*
 
 Set critical flag of the X.509 `extension` matching the given [NID] to CRL.
 
@@ -1703,17 +1703,17 @@ Returns `true` if table is an instance of `extension`. Returns `false` otherwise
 
 [Back to TOC](#table-of-contents)
 
-### extension:get_critical
+### extension:get_extension_critical
 
-**syntax**: *crit, err = extension:get_critical()*
+**syntax**: *crit, err = extension:get_extension_critical()*
 
 Returns `true` if extension is critical. Returns `false` otherwise.
 
 [Back to TOC](#table-of-contents)
 
-### extension:set_critical
+### extension:set_extension_critical
 
-**syntax**: *ok, err = extension:set_critical(crit)*
+**syntax**: *ok, err = extension:set_extension_critical(crit)*
 
 Set the critical flag of the extension.
 
