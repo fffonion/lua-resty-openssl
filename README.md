@@ -44,6 +44,7 @@ Table of Contents
     + [cipher:init](#cipherinit)
     + [cipher:update](#cipherupdate)
     + [cipher:final](#cipherfinal)
+    + [cipher:derive](#cipherderive)
   * [resty.openssl.digest](#restyopenssldigest)
     + [digest.new](#digestnew)
     + [digest.istype](#digestistype)
@@ -54,6 +55,8 @@ Table of Contents
     + [hmac.istype](#hmacistype)
     + [hmac:update](#hmacupdate)
     + [hmac:final](#hmac-final)
+  * [resty.openssl.kdf](#restyopensslkdf)
+    + [kdf.derive](#kdfderive)
   * [resty.openssl.objects](#restyopensslobjects)
     + [objects.obj2table](#objectsobj2table)
     + [objects.nid2table](#objectsnid2table)
@@ -649,6 +652,29 @@ ngx.say(cipher)
 
 [Back to TOC](#table-of-contents)
 
+### cipher:derive
+
+**syntax**: *key, iv, err = cipher:derive(key, salt?, count?, md?)*
+
+Derive a key and IV (if appliable) from given material that can be used in current cipher. This function
+is useful mainly to work with keys that were already derived from same algorithm. Newer applications should
+use a more modern algorithm such as PBKDF2 provided by [kdf.derive](#kdfderive).
+
+`count` is the iteration count to perform. If it's omitted, it's set to `1`. Note the recent version of
+`openssl enc` cli tool automatically use PBKDF2 if `-iter` is set to larger than 1,
+while this function will not. To use PBKDF2 to derive a key, please refer to [kdf.derive](#kdfderive).
+
+`md` is the message digest name to use, it can take one of the values `md2`, `md5`, `sha` or `sha1`.
+If it's omitted, it's default to `sha1`.
+
+```lua
+local cipher = require("resty.openssl.cipher").new("aes-128-cfb")
+local key, iv, err = cipher:derive("x")
+-- equivalent to `openssl enc -aes-128-cfb -pass pass:x -nosalt -P -md sha1`
+```
+
+[Back to TOC](#table-of-contents)
+
 ## resty.openssl.digest
 
 Module to interact with message digest (EVP_MD_CTX).
@@ -753,6 +779,68 @@ local d, err = require("resty.openssl.hmac").new("goose", "sha256")
 local hmac, err = d:final("🦢")
 ngx.say(ngx.encode_base64(hmac))
 -- outputs "k2UcrRp25tj1Spff89mJF3fAVQ0lodq/tJT53EYXp0c="
+```
+
+[Back to TOC](#table-of-contents)
+
+## resty.openssl.kdf
+
+Module to interact with KDF (key derivation function).
+
+[Back to TOC](#table-of-contents)
+
+### kdf.derive
+
+**syntax**: *key, err = kdf.derive(options)*
+
+Derive a key from given material. Various KDFs are supported based on OpenSSL version:
+
+- On OpenSSL 1.0.2 and later, `PBKDF2`([RFC 2898], [NIST SP 800-132]) is available.
+- On OpenSSL 1.1.0 and later, `HKDF`([RFC 5869]), `TLS1-PRF`([RFC 2246], [RFC 5246] and [NIST SP 800-135 r1]) and `scrypt`([RFC 7914]) is available.
+
+
+`options` is a table that contains:
+
+| Key | Type | Description | Required or default |
+| ------------   | ---- | ----------- | ------ |
+| type   | string or number | The [NID] text or number of KDF function name | **required** |
+| outlen   | number | Desired key length to derive | **required** |
+| pass    | string | Initial key material to derive from | (empty string) |
+| salt    | string | Add some salt | (empty string) |
+| md    | string | Message digest method name to use, not effective for `scrypt` type | `"sha1"` |
+| pbkdf2_iter     | number | PBKDF2 iteration count. RFC 2898 suggests an iteration count of at least 1000. Any value less than 1 is treated as a single iteration.  | `1` |
+| hkdf_key     | string | HKDF key  | **required** |
+| hkdf_mode     | number | HKDF mode to use, one of `kdf.HKDEF_MODE_EXTRACT_AND_EXPAND`, `kdf.HKDEF_MODE_EXTRACT_ONLY` or `kdf.HKDEF_MODE_EXPAND_ONLY`. This is only effective with OpenSSL >= 1.1.1. To learn about mode, please refer to [EVP_PKEY_CTX_set1_hkdf_key](https://www.openssl.org/docs/man1.1.1/man3/EVP_PKEY_CTX_set1_hkdf_key.html).  | `kdf.HKDEF_MODE_EXTRACT_AND_EXPAND`|
+| hkdf_info     | string | HKDF info value  | (empty string) |
+| tls1_prf_secret     | string | TLS1-PRF secret  | **required** |
+| tls1_prf_seed     | string | TLS1-PRF seed  | **required** |
+| scrypt_maxmem     | number | Scrypt maximum memory usage in bytes  |`32 * 1024 * 1024` |
+| scrypt_N     | number | Scrypt CPU/memory cost parameter, must be a power of 2 | **required** |
+| scrypt_r     | number | Scrypt blocksize parameter (8 is commonly used) | **required** |
+| scrypt_p     | number | Scrypt parallelization parameter | **required** |
+
+```lua
+local kdf = require("resty.openssl.kdf")
+local key, err = kdf.derive({
+    type = "PBKDF2",
+    outlen = 16,
+    pass = "1234567",
+    md = "md5",
+    pbkdf2_iter = 1000,
+})
+ngx.say(ngx.encode_base64(key))
+-- Outputs "cDRFLQ7NWt+AP4i0TdBzog=="
+
+key, err = kdf.derive({
+    type = "scrypt",
+    outlen = 16,
+    pass = "1234567",
+    scrypt_N = 1024,
+    scrypt_r = 8,
+    scrypt_p = 16,
+})
+ngx.say(ngx.encode_base64(key))
+-- Outputs "9giFtxace5sESmRb8qxuOw=="
 ```
 
 [Back to TOC](#table-of-contents)
@@ -1141,6 +1229,8 @@ ngx.say(version)
 -- outputs 3
 ```
 
+Setters and getters for x509 attributes share the same syntax.
+
 [Back to TOC](#table-of-contents)
 
 ### csr:set_subject_alt
@@ -1505,7 +1595,7 @@ Adds a name to altname stack, first argument is case-insensitive and can be one 
 
     RFC822Name
     RFC822
-    RFC822
+    Email
     UniformResourceIdentifier
     URI
     DNSName
@@ -2038,3 +2128,10 @@ See Also
 [Back to TOC](#table-of-contents)
 
 [NID]: https://github.com/openssl/openssl/blob/master/include/openssl/obj_mac.h
+[RFC 2246]: https://tools.ietf.org/html/rfc2246
+[RFC 2898]: https://tools.ietf.org/html/rfc2898
+[RFC 5246]: https://tools.ietf.org/html/rfc5246
+[RFC 5869]: https://tools.ietf.org/html/rfc5869
+[RFC 7914]: https://tools.ietf.org/html/rfc7914
+[NIST SP 800-132]: https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-132.pdf
+[NIST SP 800-135 r1]: https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-135r1.pdf
