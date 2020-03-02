@@ -144,4 +144,46 @@ function _M:final(s)
   return (ret or "") .. ffi_str(outm, outl[0])
 end
 
+function _M:derive(key, salt, count, md)
+  if type(key) ~= "string" then
+    return nil, nil, "expect a string at #1"
+  elseif salt and type(salt) ~= "string" then
+    return nil, nil, "expect a string at #2"
+  elseif count then
+    count = tonumber(count)
+    if not count then
+      return nil, nil, "expect a number at #3"
+    end
+  elseif md and type(md) ~= "string" then
+    return nil, nil, "expect a string or nil at #4"
+  end
+
+  if salt then
+    if #salt > 8 then
+      ngx.log(ngx.WARN, "salt is too long, truncate salt to 8 bytes")
+      salt = salt:sub(0, 8)
+    elseif #salt < 8 then
+      ngx.log(ngx.WARN, "salt is too short, padding with zero bytes to length")
+      salt = salt .. string.rep('\000', 8 - #salt)
+    end
+  end
+
+  local mdt = C.EVP_get_digestbyname(md or 'sha1')
+  if mdt == nil then
+    return nil, nil, string.format("invalid digest type \"%s\"", md)
+  end
+  local cipt = C.EVP_CIPHER_CTX_cipher(self.ctx)
+  local keyb = ffi_new('unsigned char[?]', self.key_size)
+  local ivb = ffi_new('unsigned char[?]', self.iv_size)
+
+  local size = C.EVP_BytesToKey(cipt, mdt, salt,
+                                key, #key, count or 1,
+                                keyb, ivb)
+  if size == 0 then
+    return nil, nil, format_error("cipher:derive: EVP_BytesToKey")
+  end
+
+  return ffi_str(keyb, size), ffi_str(ivb, self.iv_size)
+end
+
 return _M

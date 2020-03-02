@@ -32,7 +32,7 @@ local function txt2nid(txt)
   end
   local nid = C.OBJ_txt2nid(txt)
   if nid == 0 then
-    return nil, "invalid NID text " .. nid
+    return nil, "invalid NID text " .. txt
   end
   return nid
 end
@@ -42,7 +42,7 @@ local function txtnid2nid(txt_nid)
   if type(txt_nid) == "string" then
     nid = C.OBJ_txt2nid(txt_nid)
     if nid == 0 then
-      return nil, "invalid NID text " .. nid
+      return nil, "invalid NID text " .. txt_nid
     end
   elseif type(txt_nid) == "number" then
     nid = txt_nid

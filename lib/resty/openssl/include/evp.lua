@@ -1,4 +1,5 @@
 local ffi = require "ffi"
+local bit = require("bit")
 
 require "resty.openssl.include.ossl_typ"
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
@@ -15,6 +16,7 @@ ffi.cdef [[
   int EVP_PKEY_size(const EVP_PKEY *pkey);
 
   EVP_PKEY_CTX *EVP_PKEY_CTX_new(EVP_PKEY *pkey, ENGINE *e);
+  EVP_PKEY_CTX *EVP_PKEY_CTX_new_id(int id, ENGINE *e);
   void EVP_PKEY_CTX_free(EVP_PKEY_CTX *ctx);
   int EVP_PKEY_CTX_ctrl(EVP_PKEY_CTX *ctx, int keytype, int optype,
                       int cmd, int p1, void *p2);
@@ -62,8 +64,26 @@ ffi.cdef [[
   int EVP_CIPHER_CTX_iv_length(const EVP_CIPHER_CTX *ctx);
   int EVP_CIPHER_CTX_set_padding(EVP_CIPHER_CTX *c, int pad);
 
+  const EVP_CIPHER *EVP_CIPHER_CTX_cipher(const EVP_CIPHER_CTX *ctx);
   const EVP_CIPHER *EVP_get_cipherbyname(const char *name);
 
+  int EVP_BytesToKey(const EVP_CIPHER *type, const EVP_MD *md,
+    const unsigned char *salt,
+    const unsigned char *data, int datal, int count,
+    unsigned char *key, unsigned char *iv);
+
+  /* KDF */
+  int PKCS5_PBKDF2_HMAC(const char *pass, int passlen,
+    const unsigned char *salt, int saltlen, int iter,
+    const EVP_MD *digest, int keylen, unsigned char *out);
+
+  int EVP_PBE_scrypt(const char *pass, size_t passlen,
+    const unsigned char *salt, size_t saltlen,
+    uint64_t N, uint64_t r, uint64_t p, uint64_t maxmem,
+    unsigned char *key, size_t keylen);
+
+  int EVP_PKEY_derive_init(EVP_PKEY_CTX *ctx);
+  int EVP_PKEY_derive(EVP_PKEY_CTX *ctx, unsigned char *key, size_t *keylen);
 ]]
 
 if OPENSSL_11 then
@@ -157,6 +177,8 @@ return {
   EVP_PKEY_RSA = 6,
   EVP_PKEY_DH = 28,
   EVP_PKEY_EC = 408,
+
+  EVP_PKEY_OP_DERIVE = bit.lshift(1, 10),
 
   EVP_PKEY_ALG_CTRL = 0x1000,
   EVP_PKEY_CTRL_RSA_PADDING = 0x1000 + 1,

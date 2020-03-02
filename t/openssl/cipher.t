@@ -317,3 +317,93 @@ fghiabcdefghi
 "
 --- no_error_log
 [error]
+
+
+=== TEST 10: Derive key and iv
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            function string.tohex(str)
+                return (str:gsub('.', function (c)
+                    return string.format('%02X', string.byte(c))
+                end))
+            end
+
+            local cipher, err = require("resty.openssl.cipher").new("aes256")
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+
+            -- openssl enc -aes256 -pass pass:xxx -S 797979 -P -md md5
+            local key, iv, err = cipher:derive("xxx", "yyy", 1, "md5")
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.say(key:tohex())
+            ngx.say(iv:tohex())
+
+            local cipher, err = require("resty.openssl.cipher").new("aes-256-ecb")
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+
+            -- openssl enc -aes-256-ecb -pass pass:xxx -S 797979 -P -md md5
+            local key, iv, err = cipher:derive("xxx", "yyy", 1, "md5")
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.say(key:tohex())
+            ngx.say(iv:tohex() == "" and "no iv")
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"1F94CD004791ECFD50955451ACDA89D2CF1B4BCC6A378E4FC5C5861BDED17F61
+FE91AF7782EDB48F32775BB2B72DD5ED
+1F94CD004791ECFD50955451ACDA89D2CF1B4BCC6A378E4FC5C5861BDED17F61
+no iv
+"
+--- no_error_log
+[error]
+
+=== TEST 11: Derive key and iv: salt, count and md is optional
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            function string.tohex(str)
+                return (str:gsub('.', function (c)
+                    return string.format('%02X', string.byte(c))
+                end))
+            end
+
+            local cipher, err = require("resty.openssl.cipher").new("aes256")
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+
+            -- openssl enc -aes256 -pass pass:xxx -nosalt -P -md sha1
+            local key, iv, err = cipher:derive("xxx")
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.say(key:tohex())
+            ngx.say(iv:tohex())
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"B60D121B438A380C343D5EC3C2037564B82FFEF3542808AB5694FA93C3179140
+20578C4FEF1AEE907B1DC95C776F8160
+"
+--- no_error_log
+[error]
