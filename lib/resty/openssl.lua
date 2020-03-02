@@ -11,6 +11,7 @@ local _M = {
   cipher = require("resty.openssl.cipher"),
   digest = require("resty.openssl.digest"),
   hmac = require("resty.openssl.hmac"),
+  kdf = require("resty.openssl.kdf"),
   pkey = require("resty.openssl.pkey"),
   objects = require("resty.openssl.objects"),
   rand = require("resty.openssl.rand"),
@@ -111,6 +112,34 @@ function _M.luaossl_compat()
     else
       return true, ok
     end
+  end
+
+  local kdf_derive = _M.kdf.derive
+  local kdf_keys_mappings = {
+    iter = "pbkdf2_iter",
+    key = "hkdf_key",
+    info = "hkdf_info",
+    secret = "tls1_prf_secret",
+    seed = "tls1_prf_seed",
+    maxmem_bytes = "scrypt_maxmem",
+    N = "scrypt_N",
+    r = "scrypt_r",
+    p = "scrypt_p",
+  }
+  _M.kdf.derive = function(o)
+    for k1, k2 in pairs(kdf_keys_mappings) do
+      o[k1] = o[k2]
+      o[k2] = nil
+    end
+    local hkdf_mode = o.hkdf_mode
+    if hkdf_mode == "extract_and_expand" then
+      o.hkdf_mode = _M.kdf.HKDEF_MODE_EXTRACT_AND_EXPAND
+    elseif hkdf_mode == "extract_only" then
+      o.hkdf_mode = _M.kdf.HKDEF_MODE_EXTRACT_ONLY
+    elseif hkdf_mode == "expand_only" then
+      o.hkdf_mode = _M.kdf.HKDEF_MODE_EXPAND_ONLY
+    end
+    return kdf_derive(o)
   end
 end
 
