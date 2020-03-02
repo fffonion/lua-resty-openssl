@@ -11,6 +11,7 @@ local GEN_IPADD = 7
 local types = {
   RFC822Name = GEN_EMAIL,
   RFC822 = GEN_EMAIL,
+  Email = GEN_EMAIL,
   UniformResourceIdentifier = GEN_URI,
   URI = GEN_URI,
   DNSName = GEN_DNS,
