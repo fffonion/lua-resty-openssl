@@ -7,16 +7,16 @@ local asn1_macro = require("resty.openssl.include.asn1")
 
 -- https://github.com/wahern/luaossl/blob/master/src/openssl.c
 local function isleap(year)
-	return (year % 4) == 0 and ((year % 100) > 0 or (year % 400) == 0)
+  return (year % 4) == 0 and ((year % 100) > 0 or (year % 400) == 0)
 end
 
 local past = { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334 }
 local function yday(year, mon, mday)
-	local d = past[mon] + mday - 1
+  local d = past[mon] + mday - 1
   if mon > 2 and isleap(year) then
     d = d + 1
   end
-	return d
+  return d
 end
 
 local function leaps(year)

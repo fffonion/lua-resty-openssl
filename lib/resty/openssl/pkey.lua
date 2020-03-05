@@ -77,9 +77,9 @@ local function generate_key(config)
     C.EC_KEY_set_group(key, group)
     code = C.EC_KEY_generate_key(key)
     if code == 0 then
-			C.EC_KEY_free(key)
-			return nil, "EC_KEY_generate_key() failed"
-		end
+      C.EC_KEY_free(key)
+      return nil, "EC_KEY_generate_key() failed"
+    end
   else
     return nil, "unsupported type " .. type
   end
