@@ -33,9 +33,18 @@ Table of Contents
     + [bn.new](#bnnew)
     + [bn.dup](#bndup)
     + [bn.istype](#bnistype)
-    + [bn.from_binary](#bnfrom_binary)
-    + [bn:to_binary](#bnto_binary)
-    + [bn:to_hex](#bnto_hex)
+    + [bn.from_binary, bn:to_binary](#bnfrom_binary-bnto_binary)
+    + [bn.from_hex, bn:to_hex](#bnfrom_hex-bnto_hex)
+    + [bn.from_dec, bn:to_dec](#bnfrom_dec-bnto_dec)
+    + [bn:to_number](#bnto_number)
+    + [bn:__metamethods](#bn__metamethods)
+    + [bn:add, bn:sub, bn:mul, bn:div, bn:exp, bn:mod, bn:gcd](#bnadd-bnsub-bnmul-bndiv-bnexp-bnmod-bngcd)
+    + [bn:sqr](#bnsqr)
+    + [bn:mod_add, bn:mod_sub, bn:mod_mul, bn:mod_exp](#bnmod_add-bnmod_sub-bnmod_mul-bnmod_exp)
+    + [bn:mod_sqr](#bnmod_sqr)
+    + [bn:lshift, bn:rshift](#bnlshift-bnrshift)
+    + [bn:is_zero, bn:is_one, bn:is_odd, bn:is_word](#bnis_zero-bnis_one-bnis_odd-bnis_word)
+    + [bn:is_prime](#bnis_prime)
   * [resty.openssl.cipher](#restyopensslcipher)
     + [cipher.new](#ciphernew)
     + [cipher.istype](#cipheristype)
@@ -371,8 +380,8 @@ parameter of RSA key is supported. Each value of the returned table is a
 local pk, err = require("resty.openssl").pkey.new()
 local parameters, err = pk:get_parameters()
 local e = parameters.e
-ngx.say(ngx.encode_base64(e:to_binary()))
--- outputs 'AQAB' (65537) by default
+ngx.say(e:to_number())
+-- outputs 65537
 ```
 
 [Back to TOC](#table-of-contents)
@@ -444,10 +453,10 @@ local pub_pem = privkey:to_PEM("public")
 local pubkey, err = pkey.new(pub_pem)
 local s, err = pubkey:encrypt("🦢", pkey.PADDINGS.RSA_PKCS1_PADDING)
 ngx.say(#s)
--- Outputs 256
+-- outputs 256
 local decrypted, err = privkey:decrypt(s)
 ngx.say(decrypted)
--- Outputs "🦢"
+-- outputs "🦢"
 ```
 
 [Back to TOC](#table-of-contents)
@@ -465,7 +474,8 @@ By default, it returns the public key.
 
 ## resty.openssl.bn
 
-Module to expose BIGNUM structure.
+Module to expose BIGNUM structure. Note bignum is a big integer, no float operations
+(like square root) are supported.
 
 [Back to TOC](#table-of-contents)
 
@@ -494,9 +504,15 @@ Returns `true` if table is an instance of `bn`. Returns `false` otherwise.
 
 [Back to TOC](#table-of-contents)
 
-### bn.from_binary
+### bn.from_binary, bn:to_binary
+
+**syntax**: *bn, err = bn.from_binary(bin)*
+
+**syntax**: *bin, err = bn:to_binary()*
 
 Creates a `bn` instance from binary string.
+
+Exports the BIGNUM value in binary string.
 
 ```lua
 local b, err = require("resty.openssl.bn").from_binary(ngx.decode_base64("WyU="))
@@ -507,30 +523,225 @@ ngx.say(ngx.encode_base64(bin))
 
 [Back to TOC](#table-of-contents)
 
-### bn:to_binary
+### bn.from_hex, bn:to_hex
 
-**syntax**: *bin, err = bn:to_binary()*
-
-Export the BIGNUM value in binary string.
-
-
-[Back to TOC](#table-of-contents)
-
-### bn:to_hex
+**syntax**: *bn, err = bn.from_hex(hex)*
 
 **syntax**: *hex, err = bn:to_hex()*
 
-Export the BIGNUM value in hex encoded string.
+Creates a `bn` instance from hex encoded string. Note that the leading `0x` should not be
+included. A leading `-` indicating the sign may be included.
+
+Exports the `bn` instance to hex encoded string.
 
 ```lua
-local b, err = require("resty.openssl.bn").new(23333)
-local bin, err = b:to_binary()
-ngx.say(ngx.encode_base64(bin))
--- outputs "WyU="
+local bn = require("resty.openssl.bn")
+local b = bn.from_hex("5B25")
 local hex, err = b:to_hex()
 ngx.say(hex)
 -- outputs "5B25"
 ```
+
+[Back to TOC](#table-of-contents)
+
+### bn.from_dec, bn:to_dec
+
+**syntax**: *bn, err = bn.from_dec(dec)*
+
+**syntax**: *dec, err = bn:to_dec()*
+
+Creates a `bn` instance from decimal string. A leading `-` indicating the sign may be included.
+
+Exports the `bn` instance to decimal string.
+
+```lua
+local bn = require("resty.openssl.bn")
+local b = bn.from_dec("23333")
+local dec, err = b:to_dec()
+ngx.say(dec)
+-- outputs "23333"
+```
+
+[Back to TOC](#table-of-contents)
+
+### bn:to_number
+
+**syntax**: *n, err = bn:to_number()*
+
+**syntax**: *n, err = bn:tonumber()*
+
+Export the lowest 32 bits or 64 bits part (based on the ABI) of `bn` instance
+to a number. This is useful when user wants to perform bitwise operations.
+
+```lua
+local bn = require("resty.openssl.bn")
+local b = bn.from_dec("23333")
+local n, err = b:to_number()
+ngx.say(n)
+-- outputs 23333
+ngx.say(type(n))
+-- outputs "number"
+```
+
+[Back to TOC](#table-of-contents)
+
+### bn:__metamethods
+
+Various mathematical operations can be performed as if it's a number.
+
+```lua
+local bn = require("resty.openssl.bn")
+local a = bn.new(123456)
+local b = bn.new(222)
+ -- the following returns a bn
+local r
+r = -a
+r = a + b
+r = a - b
+r = a * b
+r = a / b -- equal to bn:idiv, returns floor division
+r = a % b
+-- all operations can be performed between number and bignum
+r = a + 222
+r = 222 + a
+-- the following returns a bool
+local bool
+bool = a < b
+bool = a >= b
+-- compare between number will not work
+-- WRONG: bool = a < 222
+```
+
+[Back to TOC](#table-of-contents)
+
+### bn:add, bn:sub, bn:mul, bn:div, bn:exp, bn:mod, bn:gcd
+
+**syntax**: *r = a:op(b)*
+
+**syntax**: *r = bn.op(a, b)*
+
+Perform mathematical operations `op`.
+
+- `add`: add
+- `sub`: subtract
+- `mul`: multiply
+- `div`, `idiv`: floor division (division with rounding down to nearest integer)
+- `exp`, `pow`: the `b`-th power of `a`, this function is faster than repeated `a * a * ...`.
+- `mod`: modulo
+- `gcd`: the greatest common divider of `a` and `b`.
+
+Note that `add`, `sub`, `mul`, `div`, `mod` is also available with `+, -, *, /, %` operaters.
+See [above section](#bn__metamethods) for examples.
+
+```lua
+local bn = require("resty.openssl.bn")
+local a = bn.new(123456)
+local b = bn.new(9876)
+local r
+-- the followings are equal
+r = a:add(b)
+r = bn.add(a, b)
+r = a:add(9876)
+r = bn.add(a, 9876)
+r = bn.add(123456, b)
+r = bn.add(123456, 9876)
+```
+
+[Back to TOC](#table-of-contents)
+
+### bn:sqr
+
+**syntax**: *r = a:sqr()*
+
+**syntax**: *r = bn.sqr(a)*
+
+Computes the 2-th power of `a`. This function is faster than `r = a * a`.
+
+[Back to TOC](#table-of-contents)
+
+### bn:mod_add, bn:mod_sub, bn:mod_mul, bn:mod_exp
+
+**syntax**: *r = a:op(b, m)*
+
+**syntax**: *r = bn.op(a, b, m)*
+
+Perform modulo mathematical operations `op`.
+
+- `mod_add`: adds `a` to `b` modulo `m`
+- `mod_sub`: substracts `b` from `a` modulo `m`
+- `mod_mul`: multiplies `a` by `b` and finds the non-negative remainder respective to modulus `m`
+- `mod_exp`, `mod_pow`: computes `a` to the `b`-th power modulo `m` (r=a^b % m). This function uses less
+time and space than `exp`. Do not call this function when `m` is even and any of the parameters
+have the `BN_FLG_CONSTTIME` flag set.
+
+```lua
+local bn = require("resty.openssl.bn")
+local a = bn.new(123456)
+local b = bn.new(9876)
+local r
+-- the followings are equal
+r = a:mod_add(b, 3)
+r = bn.mod_add(a, b, 3)
+r = a:mod_add(9876, 3)
+r = bn.mod_add(a, 9876, 3)
+r = bn.mod_add(123456, b, 3)
+r = bn.mod_add(123456, 9876, 3)
+```
+
+[Back to TOC](#table-of-contents)
+
+### bn:mod_sqr
+
+**syntax**: *r = a:mod_sqr(m)*
+
+**syntax**: *r = bn.mod_sqr(a, m)*
+
+Takes the square of `a` modulo `m`.
+
+[Back to TOC](#table-of-contents)
+
+### bn:lshift, bn:rshift
+
+**syntax**: *r = bn:lshift(bit)*
+
+**syntax**: *r = bn.lshift(a, bit)*
+
+**syntax**: *r = bn:rshift(bit)*
+
+**syntax**: *r = bn.rshift(a, bit)*
+
+Bit shift `a` to `bit` bits.
+
+[Back to TOC](#table-of-contents)
+
+### bn:is_zero, bn:is_one, bn:is_odd, bn:is_word
+
+**syntax**: *ok = bn:is_zero()*
+
+**syntax**: *ok = bn:is_one()*
+
+**syntax**: *ok = bn:is_odd()*
+
+**syntax**: *ok, err = bn:is_word(n)*
+
+Checks if `bn` is `0`, `1`, and odd number or a number `n` respectively.
+
+[Back to TOC](#table-of-contents)
+
+### bn:is_prime
+
+**syntax**: *ok, err = bn:is_prime(nchecks?)*
+
+Checks if `bn` is a prime number. Returns `true` if it is prime with an
+error probability of less than 0.25^`nchecks` and error if any. If omitted,
+`nchecks` is set to 0 which means to select number of iterations basedon the
+size of the number
+
+> This function perform a Miller-Rabin probabilistic primality test with nchecks iterations. If nchecks == BN_prime_checks (0), a number of iterations is used that yields a false positive rate of at most 2^-64 for random input. The error rate depends on the size of the prime and goes down for bigger primes. The rate is 2^-80 starting at 308 bits, 2^-112 at 852 bits, 2^-128 at 1080 bits, 2^-192 at 3747 bits and 2^-256 at 6394 bits.
+
+> When the source of the prime is not random or not trusted, the number of checks needs to be much higher to reach the same level of assurance: It should equal half of the targeted security level in bits (rounded up to the next integer if necessary). For instance, to reach the 128 bit security level, nchecks should be set to 64.
+
+See also [BN_is_prime](https://www.openssl.org/docs/man1.1.1/man3/BN_is_prime.html).
 
 [Back to TOC](#table-of-contents)
 
@@ -831,7 +1042,7 @@ local key, err = kdf.derive({
     pbkdf2_iter = 1000,
 })
 ngx.say(ngx.encode_base64(key))
--- Outputs "cDRFLQ7NWt+AP4i0TdBzog=="
+-- outputs "cDRFLQ7NWt+AP4i0TdBzog=="
 
 key, err = kdf.derive({
     type = "scrypt",
@@ -842,7 +1053,7 @@ key, err = kdf.derive({
     scrypt_p = 16,
 })
 ngx.say(ngx.encode_base64(key))
--- Outputs "9giFtxace5sESmRb8qxuOw=="
+-- outputs "9giFtxace5sESmRb8qxuOw=="
 ```
 
 [Back to TOC](#table-of-contents)

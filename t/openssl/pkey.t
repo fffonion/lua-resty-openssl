@@ -172,11 +172,11 @@ pkey.new:load_pkey: .+
             ngx.say(params.d ~= nil)
             ngx.say(params.e ~= nil)
             ngx.say(params.n ~= nil)
-            local b, err = params.e:to_binary()
+            local b, err = params.e:to_number()
             if err then
                 ngx.log(ngx.ERR, err)
             end
-            ngx.say(ngx.encode_base64(b))
+            ngx.say(b)
         }
     }
 --- request
@@ -185,7 +185,7 @@ pkey.new:load_pkey: .+
 "true
 true
 true
-AQAB
+65537
 "
 --- no_error_log
 [error]
