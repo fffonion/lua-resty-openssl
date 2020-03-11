@@ -2,6 +2,16 @@
 ## [Unreleased]
 
 
+<a name="0.6.0"></a>
+## [0.6.0] - 2020-03-11
+### feat
+- **altname:** RFC822 alias to email [37467fc](https://github.com/fffonion/lua-resty-openssl/commit/37467fcf83093d0c99251f43a4cc916d5c934eda)
+- **bn:** mathematics, bit shift and comparasion operations [87bf557](https://github.com/fffonion/lua-resty-openssl/commit/87bf5575a3643e11814b9c7be68ec78ce05011fe)
+- **kdf:** use give id as type parameter [0e767d0](https://github.com/fffonion/lua-resty-openssl/commit/0e767d006f4561788d826eef82b753093f06ef9e)
+- **kdf:** kdf.derive in luaossl compat mode [45788b6](https://github.com/fffonion/lua-resty-openssl/commit/45788b6ea742755b31d6b361950f3ea5d5d24bdf)
+- **kdf:** add key derivation functions support [d78835e](https://github.com/fffonion/lua-resty-openssl/commit/d78835e861df4b7f79bb0fe5e17a2f19be1e0d3f)
+
+
 <a name="0.5.4"></a>
 ## [0.5.4] - 2020-02-27
 ### fix
@@ -135,7 +145,8 @@
 <a name="init"></a>
 ## init - 2019-09-25
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.4...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.0...HEAD
+[0.6.0]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.4...0.6.0
 [0.5.4]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.3...0.5.4
 [0.5.3]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.2...0.5.3
 [0.5.2]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.1...0.5.2
