@@ -5,18 +5,12 @@ local ffi_new = ffi.new
 local ffi_str = ffi.string
 local ffi_cast = ffi.cast
 
+require("resty.openssl.objects")
 local kdf_macro = require "resty.openssl.include.kdf"
-local txtnid2nid = require("resty.openssl.objects").txtnid2nid
 local format_error = require("resty.openssl.err").format_error
 local version_num = require("resty.openssl.version").version_num
 local version_text = require("resty.openssl.version").version_text
 local EVP_PKEY_OP_DERIVE = require("resty.openssl.include.evp").EVP_PKEY_OP_DERIVE
-
-local _M = {
-  HKDEF_MODE_EXTRACT_AND_EXPAND = kdf_macro.EVP_PKEY_HKDEF_MODE_EXTRACT_AND_EXPAND,
-  HKDEF_MODE_EXTRACT_ONLY       = kdf_macro.EVP_PKEY_HKDEF_MODE_EXTRACT_ONLY,
-  HKDEF_MODE_EXPAND_ONLY        = kdf_macro.EVP_PKEY_HKDEF_MODE_EXPAND_ONLY,
-}
 
 --[[
 https://wiki.openssl.org/index.php/EVP_Key_Derivation
@@ -28,10 +22,10 @@ OpenSSL 3.0 additionally provides Single Step KDF, SSH KDF, PBKDF2, Scrypt, HKDF
 From OpenSSL 3.0 the recommended way of performing key derivation is to use the EVP_KDF functions. If compatibility with OpenSSL 1.1.1 is required then a limited set of KDFs can be used via EVP_PKEY_derive.
 ]]
 
-local NID_id_pbkdf2 = 0
-local NID_id_scrypt = 0
-local NID_tls1_prf = 0
-local NID_hkdf = 0
+local NID_id_pbkdf2 = -1
+local NID_id_scrypt = -2
+local NID_tls1_prf = -3
+local NID_hkdf = -4
 if version_num >= 0x10002000 then
   NID_id_pbkdf2 = C.OBJ_txt2nid("PBKDF2")
   assert(NID_id_pbkdf2 > 0)
@@ -45,6 +39,24 @@ if version_num >= 0x10100000 then
   NID_id_scrypt = C.OBJ_txt2nid("id-scrypt")
   assert(NID_id_scrypt > 0)
 end
+
+local _M = {
+  HKDEF_MODE_EXTRACT_AND_EXPAND = kdf_macro.EVP_PKEY_HKDEF_MODE_EXTRACT_AND_EXPAND,
+  HKDEF_MODE_EXTRACT_ONLY       = kdf_macro.EVP_PKEY_HKDEF_MODE_EXTRACT_ONLY,
+  HKDEF_MODE_EXPAND_ONLY        = kdf_macro.EVP_PKEY_HKDEF_MODE_EXPAND_ONLY,
+
+  PBKDF2   = NID_id_pbkdf2,
+  SCRYPT   = NID_id_scrypt,
+  TLS1_PRF = NID_tls1_prf,
+  HKDF     = NID_hkdf,
+}
+
+local type_literals = {
+  [NID_id_pbkdf2] = "PBKDF2",
+  [NID_id_scrypt] = "scrypt",
+  [NID_tls1_prf]  = "TLS-1PRF",
+  [NID_hkdf]      = "HKDF",
+}
 
 local TYPE_NUMBER = 0x1
 local TYPE_STRING = 0x2
@@ -103,19 +115,17 @@ function _M.derive(options)
   local typ = options.type
   if not typ then
     return nil, "\"type\" must be set"
-  end
-  local nid, err = txtnid2nid(typ)
-  if err then
-    return nil, err
+  elseif type(typ) ~= "number" then
+    return nil, "expect a number as \"type\""
   end
 
-  -- double check NID, not needed but in case (our) objects API changed
-  if nid == 0 then
-    return nil, options.typ .. "is not supported in " .. version_text
+  if typ <= 0 then
+    return nil, "kdf type " ..  (type_literals[typ] or tostring(typ)) ..
+                " not supported in " .. version_text
   end
 
   for k, v in pairs(options_schema) do
-    local v, err = check_options(options, nid, k, unpack(v))
+    local v, err = check_options(options, typ, k, unpack(v))
     if err then
       return nil, err
     end
@@ -141,7 +151,7 @@ function _M.derive(options)
 
   -- begin legacay low level routines
   local code
-  if nid == NID_id_pbkdf2 then
+  if typ == NID_id_pbkdf2 then
     -- make openssl 1.0.2 happy
     if version_num < 0x10100000 and not options.pass then
       options.pass = ""
@@ -153,15 +163,15 @@ function _M.derive(options)
       options.salt, salt_len, options.pbkdf2_iter,
       md, options.outlen, buf
     )
-  elseif nid == NID_id_scrypt then
+  elseif typ == NID_id_scrypt then
     code = C.EVP_PBE_scrypt(
       options.pass, pass_len,
       options.salt, salt_len,
       options.scrypt_N, options.scrypt_r, options.scrypt_p, options.scrypt_maxmem,
       buf, options.outlen
     )
-  elseif nid ~= NID_tls1_prf and nid ~= NID_hkdf then
-    return nil, "unsupported NID " .. tostring(nid) .. " (type: " .. options.type .. ")"
+  elseif typ ~= NID_tls1_prf and typ ~= NID_hkdf then
+    return nil, ("unknown type %d"):format(typ)
   end
   if code then
     if code ~= 1 then
@@ -177,7 +187,7 @@ function _M.derive(options)
   local outlen = uint64_ptr()
   outlen[0] = options.outlen
 
-  local ctx = C.EVP_PKEY_CTX_new_id(nid, nil)
+  local ctx = C.EVP_PKEY_CTX_new_id(typ, nil)
   if ctx == nil then
     return nil, format_error("kdf.derive: EVP_PKEY_CTX_new_id")
   end
@@ -186,7 +196,7 @@ function _M.derive(options)
     return nil, format_error("kdf.derive: EVP_PKEY_derive_init")
   end
 
-  if nid == NID_tls1_prf then
+  if typ == NID_tls1_prf then
     if 1 ~= C.EVP_PKEY_CTX_ctrl(ctx, -1, EVP_PKEY_OP_DERIVE,
         kdf_macro.EVP_PKEY_CTRL_TLS_MD, 0, md) then
       return nil, format_error("kdf.derive: EVP_PKEY_CTRL_TLS_MD")
@@ -201,7 +211,7 @@ function _M.derive(options)
         #options.tls1_prf_seed, ffi_cast(void_ptr, options.tls1_prf_seed)) then
       return nil, format_error("kdf.derive: EVP_PKEY_CTRL_TLS_SEED")
     end
-  elseif nid == NID_hkdf then
+  elseif typ == NID_hkdf then
     if 1 ~= C.EVP_PKEY_CTX_ctrl(ctx, -1, EVP_PKEY_OP_DERIVE,
         kdf_macro.EVP_PKEY_CTRL_HKDF_MD, 0, md) then
       return nil, format_error("kdf.derive: EVP_PKEY_CTRL_HKDF_MD")
@@ -233,7 +243,7 @@ function _M.derive(options)
       end
     end
   else
-    return nil, "unsupported NID " .. tostring(nid) .. " (type: " .. options.type .. ")"
+    return nil, ("unknown type %d"):format(typ)
   end
   code = C.EVP_PKEY_derive(ctx, buf, outlen)
   if code == -2 then

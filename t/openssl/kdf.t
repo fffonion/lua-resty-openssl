@@ -35,13 +35,19 @@ __DATA__
             })
             ngx.say(err)
             local key, err = kdf.derive({
-                type = "PBKDF2",
+                type = kdf.PBKDF2,
             })
             ngx.say(err)
             local key, err = kdf.derive({
-                type = "PBKDF2",
+                type = kdf.PBKDF2,
                 outlen = 16,
                 pass = 123,
+            })
+            ngx.say(err)
+            local key, err = kdf.derive({
+                type = 19823718236128631,
+                outlen = 16,
+                pass = "123",
             })
             ngx.say(err)
         }
@@ -50,9 +56,10 @@ __DATA__
     GET /t
 --- response_body_like eval
 "\"type\" must be set
-invalid NID text no
+expect a number as \"type\"
 \"outlen\" must be set
 except a string as \"pass\"
+unknown type 19823718236128632
 "
 --- no_error_log
 [error]
@@ -65,7 +72,7 @@ except a string as \"pass\"
         content_by_lua_block {
             local kdf = require("resty.openssl.kdf")
             local key, err = kdf.derive({
-                type = "PBKDF2",
+                type = kdf.PBKDF2,
                 outlen = 16,
                 pass = "1234567",
                 pbkdf2_iter = 1000,
@@ -93,7 +100,7 @@ except a string as \"pass\"
         content_by_lua_block {
             local kdf = require("resty.openssl.kdf")
             local key, err = kdf.derive({
-                type = "PBKDF2",
+                type = kdf.PBKDF2,
                 outlen = 16,
             })
             if err then
@@ -123,7 +130,7 @@ except a string as \"pass\"
             end
             local kdf = require("resty.openssl.kdf")
             local key, err = kdf.derive({
-                type = "HKDF",
+                type = kdf.HKDF,
                 outlen = 16,
                 md = "md5",
                 hkdf_key = "secret",
@@ -158,7 +165,7 @@ except a string as \"pass\"
             end
             local kdf = require("resty.openssl.kdf")
             local key, err = kdf.derive({
-                type = "HKDF",
+                type = kdf.HKDF,
                 outlen = 16,
                 hkdf_key = "secret",
             })
@@ -173,7 +180,7 @@ except a string as \"pass\"
                 ngx.exit(0)
             end
             local key, err = kdf.derive({
-                type = "HKDF",
+                type = kdf.HKDF,
                 outlen = 16,
                 hkdf_key = "secret",
                 hkdf_mode = kdf.HKDEF_MODE_EXTRACT_ONLY,
@@ -207,7 +214,7 @@ SlKh6iSRnnZV92zOAbLduQ==
             end
             local kdf = require("resty.openssl.kdf")
             local key, err = kdf.derive({
-                type = "TLS1-PRF",
+                type = kdf.TLS1_PRF,
                 outlen = 16,
                 md = "md5",
                 tls1_prf_secret = "secret",
@@ -240,7 +247,7 @@ SlKh6iSRnnZV92zOAbLduQ==
             end
             local kdf = require("resty.openssl.kdf")
             local key, err = kdf.derive({
-                type = "TLS1-PRF",
+                type = kdf.TLS1_PRF,
                 outlen = 16,
                 tls1_prf_secret = "secret",
                 tls1_prf_seed = "seed",
@@ -272,7 +279,7 @@ SlKh6iSRnnZV92zOAbLduQ==
             end
             local kdf = require("resty.openssl.kdf")
             local key, err = kdf.derive({
-                type = "id-scrypt",
+                type = kdf.SCRYPT,
                 outlen = 16,
                 pass = "1234567",
                 scrypt_N = 1024,

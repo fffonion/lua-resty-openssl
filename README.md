@@ -1027,7 +1027,7 @@ Derive a key from given material. Various KDFs are supported based on OpenSSL ve
 
 | Key | Type | Description | Required or default |
 | ------------   | ---- | ----------- | ------ |
-| type   | string or number | The [NID] text or number of KDF function name | **required** |
+| type   | number | Type of KDF function to use, one of `kdf.PBKDF2`, `kdf.SCRYPT`, `kdf.TLS1_PRF` or `kdf.HKDF` | **required** |
 | outlen   | number | Desired key length to derive | **required** |
 | pass    | string | Initial key material to derive from | (empty string) |
 | salt    | string | Add some salt | (empty string) |
@@ -1046,7 +1046,7 @@ Derive a key from given material. Various KDFs are supported based on OpenSSL ve
 ```lua
 local kdf = require("resty.openssl.kdf")
 local key, err = kdf.derive({
-    type = "PBKDF2",
+    type = kdf.PBKDF2,
     outlen = 16,
     pass = "1234567",
     md = "md5",
@@ -1056,7 +1056,7 @@ ngx.say(ngx.encode_base64(key))
 -- outputs "cDRFLQ7NWt+AP4i0TdBzog=="
 
 key, err = kdf.derive({
-    type = "scrypt",
+    type = kdf.SCRYPT,
     outlen = 16,
     pass = "1234567",
     scrypt_N = 1024,
