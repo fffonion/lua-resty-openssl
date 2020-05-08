@@ -2,6 +2,12 @@
 ## [Unreleased]
 
 
+<a name="0.6.1"></a>
+## [0.6.1] - 2020-05-08
+### fix
+- **x509:** fail soft when CRL is not set [2f2eb5e](https://github.com/fffonion/lua-resty-openssl/commit/2f2eb5edc78e3aa892eb36bd1b091c42ddc64480)
+
+
 <a name="0.6.0"></a>
 ## [0.6.0] - 2020-03-11
 ### feat
@@ -145,7 +151,8 @@
 <a name="init"></a>
 ## init - 2019-09-25
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.0...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.1...HEAD
+[0.6.1]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.0...0.6.1
 [0.6.0]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.4...0.6.0
 [0.5.4]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.3...0.5.4
 [0.5.3]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.2...0.5.3
