@@ -430,6 +430,12 @@ URI http://crl4.digicert.com/sha2-ev-server-g2.crl
             local ocsp, err = c:get_ocsp_url(true)
             if err then ngx.log(ngx.ERR, err) end
             ngx.say(require("cjson").encode(ocsp))
+
+            local f = io.open("t/fixtures/GlobalSign.pem"):read("*a")
+            local c, err = require("resty.openssl.x509").new(f)
+            local ocsp, err = c:get_ocsp_url()
+            if err then ngx.log(ngx.ERR, err) end
+            ngx.say(ocsp)
         }
     }
 --- request
@@ -437,6 +443,7 @@ URI http://crl4.digicert.com/sha2-ev-server-g2.crl
 --- response_body eval
 'http://ocsp.digicert.com
 ["http:\/\/ocsp.digicert.com"]
+nil
 '
 --- no_error_log
 [error]
@@ -456,6 +463,12 @@ URI http://crl4.digicert.com/sha2-ev-server-g2.crl
             local crl, err = c:get_crl_url(true)
             if err then ngx.log(ngx.ERR, err) end
             ngx.say(require("cjson").encode(crl))
+
+            local f = io.open("t/fixtures/GlobalSign.pem"):read("*a")
+            local c, err = require("resty.openssl.x509").new(f)
+            local crl, err = c:get_crl_url()
+            if err then ngx.log(ngx.ERR, err) end
+            ngx.say(crl)
         }
     }
 --- request
@@ -463,6 +476,7 @@ URI http://crl4.digicert.com/sha2-ev-server-g2.crl
 --- response_body eval
 'http://crl3.digicert.com/sha2-ev-server-g2.crl
 ["http:\/\/crl3.digicert.com\/sha2-ev-server-g2.crl","http:\/\/crl4.digicert.com\/sha2-ev-server-g2.crl"]
+nil
 '
 --- no_error_log
 [error]

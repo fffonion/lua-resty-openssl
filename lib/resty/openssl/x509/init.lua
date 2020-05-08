@@ -249,7 +249,7 @@ function _M:get_crl_url(return_all)
     return nil, err
   end
 
-  if cdp:count() == 0 then
+  if not cdp or cdp:count() == 0 then
     return
   end
 
