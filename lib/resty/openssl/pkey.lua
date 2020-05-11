@@ -126,6 +126,11 @@ local load_pkey_try_funcs = {
     pu = {
       ['d2i_PUBKEY_bio'] = load_pkey_try_args_der,
     },
+  },
+  JWK = {
+    pr = {
+      ['load_jwk'] = {},
+    },
   }
 }
 -- populate * funcs
@@ -153,13 +158,17 @@ end
 
 local function load_pkey(txt, opts)
   local fmt = opts.format or '*'
-  if fmt ~= 'PEM' and fmt ~= 'DER' and fmt ~= '*' then
-    return nil, "expecting 'DER', 'PEM' or '*' at #2"
+  if fmt ~= 'PEM' and fmt ~= 'DER' and fmt ~= "JWK" and fmt ~= '*' then
+    return nil, "expecting 'DER', 'PEM', 'JWK' or '*' as \"format\""
   end
 
   local typ = opts.type or '*'
   if typ ~= 'pu' and typ ~= 'pr' and typ ~= '*' then
-    return nil, "expecting 'pr', 'pu' or '*' at #3"
+    return nil, "expecting 'pr', 'pu' or '*' as \"type\""
+  end
+
+  if fmt == "JWK" and (typ == "pu" or type == "pr") then
+    return nil, "explictly load private or public key from JWK format is not supported"
   end
 
   ngx.log(ngx.DEBUG, "load key using fmt: ", fmt, ", type: ", typ)
@@ -175,37 +184,50 @@ local function load_pkey(txt, opts)
   local fs = load_pkey_try_funcs[fmt][typ]
   local passphrase_cb
   for f, arg in pairs(fs) do
-    -- #define BIO_CTRL_RESET 1
-    local code = C.BIO_ctrl(bio, 1, 0, nil)
-    if code ~= 1 then
-      return nil, "BIO_ctrl() failed"
-    end
-
-    if fmt == "PEM" or fmt == "*" then
-      if opts.passphrase then
-        local passphrase = opts.passphrase
-        if type(passphrase) ~= "string" then
-          return nil, "passphrase must be a string"
+    -- don't need BIO when loading JWK key: we parse it in Lua land
+    if f == "load_jwk" then
+      local err
+      ctx, err = jwk_lib[f](txt)
+      if ctx == nil then
+        -- if fmt is explictly set to JWK, we should return an error now
+        if fmt == "JWK" then
+          return nil, err
         end
-        arg = { null, nil, passphrase }
-      elseif opts.passphrase_cb then
-        passphrase_cb = ffi_cast("pem_password_cb*", function(buf, size)
-          local p = opts.passphrase_cb()
-          local len = #p -- 1 byte for \0
-          if len > size then
-            ngx.log(ngx.WARN, "passphrase truncated from ", len, " to ", size)
-            len = size
-          end
-          ffi_copy(buf, p, len)
-          return len
-        end)
-        arg = { null, passphrase_cb, null }
+        ngx.log(ngx.INFO, "jwk decode failed: ", err)
       end
+    else
+      -- #define BIO_CTRL_RESET 1
+      local code = C.BIO_ctrl(bio, 1, 0, nil)
+      if code ~= 1 then
+        return nil, "BIO_ctrl() failed"
+      end
+
+      if fmt == "PEM" or fmt == "*" then
+        if opts.passphrase then
+          local passphrase = opts.passphrase
+          if type(passphrase) ~= "string" then
+            return nil, "passphrase must be a string"
+          end
+          arg = { null, nil, passphrase }
+        elseif opts.passphrase_cb then
+          passphrase_cb = ffi_cast("pem_password_cb*", function(buf, size)
+            local p = opts.passphrase_cb()
+            local len = #p -- 1 byte for \0
+            if len > size then
+              ngx.log(ngx.WARN, "passphrase truncated from ", len, " to ", size)
+              len = size
+            end
+            ffi_copy(buf, p, len)
+            return len
+          end)
+          arg = { null, passphrase_cb, null }
+        end
+      end
+      ctx = C[f](bio, unpack(arg))
     end
 
-    ctx = C[f](bio, unpack(arg))
     if ctx ~= nil then
-      ngx.log(ngx.DEBUG, "loaded pkey using ", f)
+      ngx.log(ngx.DEBUG, "loaded pkey using format ", f)
       break
     end
   end
