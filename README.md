@@ -177,6 +177,8 @@ Description
 `lua-resty-openssl` is a FFI-based OpenSSL binding library, currently
 supports OpenSSL `1.1.1`, `1.1.0` and `1.0.2` series.
 
+**Note: when using with OpenSSL 1.0.2, it's recommanded to not use this library with other FFI-based OpenSSL binding libraries to avoid potential mismatch of `cdef`.**
+
 
 [Back to TOC](#table-of-contents)
 
