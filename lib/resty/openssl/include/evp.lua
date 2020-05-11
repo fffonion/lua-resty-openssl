@@ -2,6 +2,7 @@ local ffi = require "ffi"
 local bit = require("bit")
 
 require "resty.openssl.include.ossl_typ"
+require "resty.openssl.include.objects"
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
 
@@ -173,10 +174,15 @@ elseif OPENSSL_10 then
   ]]
 end
 
+
 return {
-  EVP_PKEY_RSA = 6,
-  EVP_PKEY_DH = 28,
-  EVP_PKEY_EC = 408,
+  EVP_PKEY_RSA = ffi.C.OBJ_txt2nid("rsaEncryption"),
+  EVP_PKEY_DH = ffi.C.OBJ_txt2nid("dhKeyAgreement"),
+  EVP_PKEY_EC = ffi.C.OBJ_txt2nid("id-ecPublicKey"),
+  EVP_PKEY_X25519 = ffi.C.OBJ_txt2nid("X25519"),
+  EVP_PKEY_ED25519 = ffi.C.OBJ_txt2nid("ED25519"),
+  EVP_PKEY_X448 = ffi.C.OBJ_txt2nid("X448"),
+  EVP_PKEY_ED448 = ffi.C.OBJ_txt2nid("ED448"),
 
   EVP_PKEY_OP_DERIVE = bit.lshift(1, 10),
 

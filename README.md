@@ -24,6 +24,7 @@ Table of Contents
     + [pkey.new](#pkeynew)
     + [pkey.istype](#pkeyistype)
     + [pkey:get_parameters](#pkeyget_parameters)
+    + [pkey:set_parameters](#pkeyset_parameters)
     + [pkey:sign](#pkeysign)
     + [pkey:verify](#pkeyverify)
     + [pkey:encrypt](#pkeyencrypt)
@@ -352,13 +353,13 @@ pkey.new({
 })
 ```
 
-2. A `string` of private or public key in PEM or DER format; optionally accpet a table `opts`
-to explictly load `format` and key `type`. When loading a key in PEM format,
+2. A `string` of private or public key in PEM, DER or JWK format text; optionally accpet a table
+`opts` to explictly load `format` and key `type`. When loading a key in PEM format,
 `passphrase` or `passphrase_cb` may be provided to decrypt the key.
 
 ```lua
 pkey.new(pem_or_der_text, {
-  format = "*", -- choice of "PEM", "DER" or "*" for auto detect
+  format = "*", -- choice of "PEM", "DER", "JWK" or "*" for auto detect
   type = "*", -- choice of "p"r for privatekey, "pu" for public key and "*" for auto detect
   passphrase = "secret password", -- the PEM encryption passphrase
   passphrase_cb = function()
@@ -367,6 +368,8 @@ pkey.new(pem_or_der_text, {
 }
 
 ```
+When loading JWK, make sure the encoded JSON text is passed in. Currently it's not supported to contraint
+`type` on JWK key, the parameters in provided JSON will decide if a private or public key is loaded.
 3. `nil` to create a 2048 bits RSA key.
 4. A `EVP_PKEY*` pointer, to return a wrapped `pkey` instance. Normally user won't use this
 approach. User shouldn't free the pointer on their own, since the pointer is not copied.
@@ -385,9 +388,20 @@ Returns `true` if table is an instance of `pkey`. Returns `false` otherwise.
 
 **syntax**: *parameters, err = pk:get_parameters()*
 
-Returns a table containing the `parameters` of pkey instance. Currently only `n`, `e` and `d`
-parameter of RSA key is supported. Each value of the returned table is a
+Returns a table containing the `parameters` of pkey instance. Currently only
+RSA key is supported. Each value of the returned table is a
 [resty.openssl.bn](#restyopensslbn) instance.
+
+[Back to TOC](#table-of-contents)
+
+### pkey:set_parameters
+
+**syntax**: *ok, err = pk:set_parameters(params)*
+
+Set the paramets of the pkey from a table `params`. Currently only
+RSA key is supported. Each value of the provided table should be a
+[resty.openssl.bn](#restyopensslbn) instance. If the parameter is not
+provided in the `params` table, it's remain untouched in the pkey instance.
 
 ```lua
 local pk, err = require("resty.openssl.pkey").new()
@@ -395,7 +409,26 @@ local parameters, err = pk:get_parameters()
 local e = parameters.e
 ngx.say(e:to_number())
 -- outputs 65537
+
+local ok, err = pk:set_parameters({
+  e = require("resty.openssl.bn").from_hex("100001")
+})
+
+local ok, err = pk:set_parameters(parameters)
 ```
+
+Parameters for RSA key:
+
+ Parameter | Description 
+-----------|-------------
+n | modulus common to both public and private key
+e | public exponent
+d | private exponent
+p | first factor of **n**
+q | second factor of **n**
+dmp1 | `d mod (p - 1)`, exponent1
+dmq1 | `d mod (q - 1)`, exponent2
+iqmp | `(InverseQ)(q) = 1 mod p`, coefficient
 
 [Back to TOC](#table-of-contents)
 

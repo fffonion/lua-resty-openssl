@@ -14,26 +14,27 @@ require "resty.openssl.include.pem"
 require "resty.openssl.include.objects"
 require "resty.openssl.include.x509"
 local evp_macro = require "resty.openssl.include.evp"
-local bn_lib = require "resty.openssl.bn"
 local util = require "resty.openssl.util"
 local digest_lib = require "resty.openssl.digest"
+local rsa_lib = require "resty.openssl.rsa"
+local jwk_lib = require "resty.openssl.aux.jwk"
 local format_error = require("resty.openssl.err").format_error
 
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
 
 local function generate_key(config)
-  local ctx = C.EVP_PKEY_new()
-  if ctx == nil then
-    return nil, "EVP_PKEY_new() failed"
-  end
 
   local type = config.type or 'RSA'
 
   local code, key, key_type
 
+  local key_free
   if type == "RSA" then
     key_type = evp_macro.EVP_PKEY_RSA
+    if key_type == 0 then
+      return nil, "the linked OpenSSL library doesn't support RSA key"
+    end
     local bits = config.bits or 2048
     if bits > 4294967295 then
       return nil, "bits out of range"
@@ -54,8 +55,12 @@ local function generate_key(config)
       C.RSA_free(key)
       return nil, "RSA_generate_key_ex() failed"
     end
+    key_free = C.RSA_free
   elseif type == "EC" then
     key_type = evp_macro.EVP_PKEY_EC
+    if key_type == 0 then
+      return nil, "the linked OpenSSL library doesn't support EC key"
+    end
     local curve = config.curve or 'prime192v1'
     local nid = C.OBJ_ln2nid(curve)
     if nid == 0 then
@@ -80,13 +85,20 @@ local function generate_key(config)
       C.EC_KEY_free(key)
       return nil, "EC_KEY_generate_key() failed"
     end
+    key_free = C.EC_KEY_free
   else
     return nil, "unsupported type " .. type
   end
 
-  -- don't need to free `key`, it will be freed together with EVP_PKEY_free
+  local ctx = C.EVP_PKEY_new()
+  if ctx == nil then
+    key_free(key)
+    return nil, "EVP_PKEY_new() failed"
+  end
+
   code = C.EVP_PKEY_assign(ctx, key_type, key)
   if code ~= 1 then
+    key_free(key)
     C.EVP_PKEY_free(ctx)
     return nil, "EVP_PKEY_assign() failed"
   end
@@ -274,56 +286,37 @@ function _M.istype(l)
   return l and l.ctx and ffi.istype(evp_pkey_ptr_ct, l.ctx)
 end
 
-local bn_ptrptr_ct = ffi.typeof("const BIGNUM *[1]")
-local function get_rsa_params_11(pkey)
-  -- {"n", "e", "d", "p", "q", "dmp1", "dmq1", "iqmp"}
-  local rsa_st = C.EVP_PKEY_get0_RSA(pkey)
-  if rsa_st == nil then
-    return nil, "EVP_PKEY_get0_RSA() failed"
-  end
-
-  return setmetatable(empty_table, {
-    __index = function(tbl, k)
-      if k == 'n' then
-        local ptr = bn_ptrptr_ct()
-        C.RSA_get0_key(rsa_st, ptr, nil, nil)
-        return bn_lib.dup(ptr[0])
-      elseif k == 'e' then
-        local ptr = bn_ptrptr_ct()
-        C.RSA_get0_key(rsa_st, nil, ptr, nil)
-        return bn_lib.dup(ptr[0])
-      elseif k == 'd' then
-        local ptr = bn_ptrptr_ct()
-        C.RSA_get0_key(rsa_st, nil, nil, ptr)
-        return bn_lib.dup(ptr[0])
-      end
-    end
-  }), nil
-end
-
-local function get_rsa_params_10(pkey)
-  -- {"n", "e", "d", "p", "q", "dmp1", "dmq1", "iqmp"}
-
-  return setmetatable(empty_table, {
-    __index = function(_, k)
-      if k == 'n' then
-        return bn_lib.dup(pkey.pkey.rsa.n)
-      elseif k == 'e' then
-        return bn_lib.dup(pkey.pkey.rsa.e)
-      elseif k == 'd' then
-        return bn_lib.dup(pkey.pkey.rsa.d)
-      end
-    end
-  }), nil
-end
-
 function _M:get_parameters()
   if self.key_type == evp_macro.EVP_PKEY_RSA then
+    local rsa_st
     if OPENSSL_11 then
-      return get_rsa_params_11(self.ctx)
+      rsa_st = C.EVP_PKEY_get0_RSA(self.ctx)
+      if rsa_st == nil then
+        return nil, "EVP_PKEY_get0_RSA() failed"
+      end
     elseif OPENSSL_10 then
-      return get_rsa_params_10(self.ctx)
+      rsa_st = self.ctx.pkey and self.ctx.pkey.rsa
     end
+    return rsa_lib.get_parameters(rsa_st)
+  elseif self.key_type == evp_macro.EVP_PKEY_EC then
+    return nil, "parameters of EC not supported"
+  end
+
+  return nil, "key type not supported"
+end
+
+function _M:set_parameters(opts)
+  if self.key_type == evp_macro.EVP_PKEY_RSA then
+    local rsa_st
+    if OPENSSL_11 then
+      rsa_st = C.EVP_PKEY_get0_RSA(self.ctx)
+      if rsa_st == nil then
+        return nil, "EVP_PKEY_get0_RSA() failed"
+      end
+    elseif OPENSSL_10 then
+      rsa_st = self.ctx.pkey and self.ctx.pkey.rsa
+    end
+    return rsa_lib.set_parameters(rsa_st, opts)
   elseif self.key_type == evp_macro.EVP_PKEY_EC then
     return nil, "parameters of EC not supported"
   end

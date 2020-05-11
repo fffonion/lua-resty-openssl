@@ -8,13 +8,22 @@ ffi.cdef [[
   RSA *RSA_new(void);
   void RSA_free(RSA *r);
   int RSA_generate_key_ex(RSA *rsa, int bits, BIGNUM *e, BN_GENCB *cb);
-  void RSA_get0_key(const RSA *r,
-                  const BIGNUM **n, const BIGNUM **e, const BIGNUM **d);
-  void RSA_get0_factors(const RSA *r, const BIGNUM **p, const BIGNUM **q);
 ]]
 
 if OPENSSL_11 then
-  ffi.cdef('struct rsa_st;')
+  ffi.cdef [[
+    void RSA_get0_key(const RSA *r,
+              const BIGNUM **n, const BIGNUM **e, const BIGNUM **d);
+    void RSA_get0_factors(const RSA *r, const BIGNUM **p, const BIGNUM **q);
+    void RSA_get0_crt_params(const RSA *r,
+              const BIGNUM **dmp1, const BIGNUM **dmq1,
+              const BIGNUM **iqmp);
+
+    int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d);
+    int RSA_set0_factors(RSA *r, BIGNUM *p, BIGNUM *q);
+    int RSA_set0_crt_params(RSA *r,BIGNUM *dmp1, BIGNUM *dmq1, BIGNUM *iqmp);
+    struct rsa_st;
+  ]]
 elseif OPENSSL_10 then
   ffi.cdef [[
     // crypto/rsa/rsa_locl.h
