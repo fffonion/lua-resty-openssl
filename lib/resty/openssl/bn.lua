@@ -140,6 +140,8 @@ if OPENSSL_10 then
 end
 ffi_gc(bn_ctx_tmp, C.BN_CTX_free)
 
+_M.bn_ctx_tmp = bn_ctx_tmp
+
 -- mathematics
 
 local is_negative

@@ -349,7 +349,7 @@ to create EC private key:
 ```lua
 pkey.new({
   type = 'EC',
-  curve = 'primve196v1',
+  curve = 'prime196v1',
 })
 ```
 
@@ -370,6 +370,7 @@ pkey.new(pem_or_der_text, {
 ```
 When loading JWK, make sure the encoded JSON text is passed in. Currently it's not supported to contraint
 `type` on JWK key, the parameters in provided JSON will decide if a private or public key is loaded.
+Only JWK with key type of RSA and `P-256`, `P-384` and `P-512` EC are supported.
 3. `nil` to create a 2048 bits RSA key.
 4. A `EVP_PKEY*` pointer, to return a wrapped `pkey` instance. Normally user won't use this
 approach. User shouldn't free the pointer on their own, since the pointer is not copied.
@@ -388,9 +389,7 @@ Returns `true` if table is an instance of `pkey`. Returns `false` otherwise.
 
 **syntax**: *parameters, err = pk:get_parameters()*
 
-Returns a table containing the `parameters` of pkey instance. Currently only
-RSA key is supported. Each value of the returned table is a
-[resty.openssl.bn](#restyopensslbn) instance.
+Returns a table containing the `parameters` of pkey instance.
 
 [Back to TOC](#table-of-contents)
 
@@ -398,10 +397,9 @@ RSA key is supported. Each value of the returned table is a
 
 **syntax**: *ok, err = pk:set_parameters(params)*
 
-Set the paramets of the pkey from a table `params`. Currently only
-RSA key is supported. Each value of the provided table should be a
-[resty.openssl.bn](#restyopensslbn) instance. If the parameter is not
-provided in the `params` table, it's remain untouched in the pkey instance.
+Set the paramets of the pkey from a table `params`.
+If the parameter is not set in the `params` table,
+it remains untouched in the pkey instance.
 
 ```lua
 local pk, err = require("resty.openssl.pkey").new()
@@ -419,16 +417,29 @@ local ok, err = pk:set_parameters(parameters)
 
 Parameters for RSA key:
 
- Parameter | Description 
------------|-------------
-n | modulus common to both public and private key
-e | public exponent
-d | private exponent
-p | first factor of **n**
-q | second factor of **n**
-dmp1 | `d mod (p - 1)`, exponent1
-dmq1 | `d mod (q - 1)`, exponent2
-iqmp | `(InverseQ)(q) = 1 mod p`, coefficient
+ Parameter | Description | Type
+-----------|-------------|------
+n | modulus common to both public and private key | [bn](#restyopensslbn)
+e | public exponent | [bn](#restyopensslbn)
+d | private exponent | [bn](#restyopensslbn)
+p | first factor of **n** | [bn](#restyopensslbn)
+q | second factor of **n** | [bn](#restyopensslbn)
+dmp1 | `d mod (p - 1)`, exponent1 | [bn](#restyopensslbn)
+dmq1 | `d mod (q - 1)`, exponent2 | [bn](#restyopensslbn)
+iqmp | `(InverseQ)(q) = 1 mod p`, coefficient | [bn](#restyopensslbn)
+
+Parameters for EC key:
+
+ Parameter | Description | Type
+-----------|-------------|-----
+private | private key | [bn](#restyopensslbn)
+public | public key | [bn](#restyopensslbn)
+x | x coordinate of the public key| [bn](#restyopensslbn)
+y | y coordinates of the public key| [bn](#restyopensslbn)
+group | the named curve group | [NID] as a number, when passed in as `set_parameters()`, it's also possible to use the text representation
+
+It's not possible to set `x`, `y` with `public` at same time as `x` and `y` is basically another representation
+of `public. Also currently it's only possible to set `x` and `y` at same time.
 
 [Back to TOC](#table-of-contents)
 
@@ -440,10 +451,18 @@ Sign a [digest](#restyopenssldigest) using the private key defined in `pkey`
 instance. The `digest` parameter must be a [resty.openssl.digest](#restyopenssldigest) 
 instance. Returns the signed raw binary and error if any.
 
+The passed in `digest` parameter should not have been called [final()](#restydigestfinal),
+user should only use [update()](#restydigestupdate).
+
+Note that OpenSSL does not support EC digital signature (ECDSA) with the
+obsolete MD5 hash algorithm and will return error on this combination.
+
 ```lua
 local pk, err = require("resty.openssl.pkey").new()
 local digest, err = require("resty.openssl.digest").new("SHA256")
 digest:update("dog")
+-- WRONG: 
+-- digest:final("dog")
 local signature, err = pk:sign(digest)
 ngx.say(ngx.encode_base64(signature))
 ```

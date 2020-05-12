@@ -109,7 +109,7 @@ function _M.set_parameters(rsa_st, opts)
     if do_set_key then
       code = C.RSA_set0_key(rsa_st, opts_bn["n"], opts_bn["e"], opts_bn["d"])
       if code == 0 then
-        err = format_error("RSA_set0_key")
+        err = format_error("rsa.set_parameters: RSA_set0_key")
         goto cleanup_with_error
       end
     end
@@ -117,7 +117,7 @@ function _M.set_parameters(rsa_st, opts)
     if do_set_factors then
       code = C.RSA_set0_factors(rsa_st, opts_bn["p"], opts_bn["q"])
       if code == 0 then
-        err = format_error("RSA_set0_factors")
+        err = format_error("rsa.set_parameters: RSA_set0_factors")
         goto cleanup_with_error
       end
     end
@@ -125,7 +125,7 @@ function _M.set_parameters(rsa_st, opts)
     if do_set_crt_params then
       code = C.RSA_set0_crt_params(rsa_st, opts_bn["dmp1"], opts_bn["dmq1"], opts_bn["iqmp"])
       if code == 0 then
-        err = format_error("RSA_set0_crt_params")
+        err = format_error("rsa.set_parameters: RSA_set0_crt_params")
         goto cleanup_with_error
       end
     end

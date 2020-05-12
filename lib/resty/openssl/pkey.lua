@@ -17,12 +17,15 @@ local evp_macro = require "resty.openssl.include.evp"
 local util = require "resty.openssl.util"
 local digest_lib = require "resty.openssl.digest"
 local rsa_lib = require "resty.openssl.rsa"
+local ec_lib = require "resty.openssl.ec"
 local jwk_lib = require "resty.openssl.aux.jwk"
 local format_error = require("resty.openssl.err").format_error
 
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
 
+-- TODO: rewrite using EVP_PKEY_keygen_*
+-- https://www.openssl.org/docs/manmaster/man7/Ed25519.html
 local function generate_key(config)
 
   local type = config.type or 'RSA'
@@ -227,7 +230,7 @@ local function load_pkey(txt, opts)
     end
 
     if ctx ~= nil then
-      ngx.log(ngx.DEBUG, "loaded pkey using format ", f)
+      ngx.log(ngx.DEBUG, "loaded pkey using function ", f)
       break
     end
   end
@@ -308,7 +311,7 @@ function _M.istype(l)
   return l and l.ctx and ffi.istype(evp_pkey_ptr_ct, l.ctx)
 end
 
-function _M:get_parameters()
+local function get_pkey_key(self)
   if self.key_type == evp_macro.EVP_PKEY_RSA then
     local rsa_st
     if OPENSSL_11 then
@@ -319,31 +322,47 @@ function _M:get_parameters()
     elseif OPENSSL_10 then
       rsa_st = self.ctx.pkey and self.ctx.pkey.rsa
     end
-    return rsa_lib.get_parameters(rsa_st)
+    return rsa_st
   elseif self.key_type == evp_macro.EVP_PKEY_EC then
-    return nil, "parameters of EC not supported"
+    local ec_key_st
+    if OPENSSL_11 then
+      ec_key_st = C.EVP_PKEY_get0_EC_KEY(self.ctx)
+      if ec_key_st == nil then
+        return nil, "EVP_PKEY_get0_EC_KEY() failed"
+      end
+    elseif OPENSSL_10 then
+      ec_key_st = self.ctx.pkey and self.ctx.pkey.ec
+    end
+    return ec_key_st
   end
 
   return nil, "key type not supported"
 end
 
-function _M:set_parameters(opts)
-  if self.key_type == evp_macro.EVP_PKEY_RSA then
-    local rsa_st
-    if OPENSSL_11 then
-      rsa_st = C.EVP_PKEY_get0_RSA(self.ctx)
-      if rsa_st == nil then
-        return nil, "EVP_PKEY_get0_RSA() failed"
-      end
-    elseif OPENSSL_10 then
-      rsa_st = self.ctx.pkey and self.ctx.pkey.rsa
-    end
-    return rsa_lib.set_parameters(rsa_st, opts)
-  elseif self.key_type == evp_macro.EVP_PKEY_EC then
-    return nil, "parameters of EC not supported"
+function _M:get_parameters()
+  local key, err = get_pkey_key(self)
+  if err then
+    return nil, err
   end
 
-  return nil, "key type not supported"
+  if self.key_type == evp_macro.EVP_PKEY_RSA then
+    return rsa_lib.get_parameters(key)
+  elseif self.key_type == evp_macro.EVP_PKEY_EC then
+    return ec_lib.get_parameters(key)
+  end
+end
+
+function _M:set_parameters(opts)
+  local key, err = get_pkey_key(self)
+  if err then
+    return nil, err
+  end
+
+  if self.key_type == evp_macro.EVP_PKEY_RSA then
+    return rsa_lib.set_parameters(key, opts)
+  elseif self.key_type == evp_macro.EVP_PKEY_EC then
+    return ec_lib.set_parameters(key, opts)
+  end
 end
 
 local size_t_ptr = ffi.typeof("size_t[1]")
@@ -374,18 +393,20 @@ local function asymmetric_routine(self, s, is_encrypt, padding)
     self.pkey_ctx = pkey_ctx
   end
 
-  local f, fint
+  local f, fint, op_name
   if is_encrypt then
     fint = C.EVP_PKEY_encrypt_init
     f = C.EVP_PKEY_encrypt
+    op_name = "encrypt"
   else
     fint = C.EVP_PKEY_decrypt_init
     f = C.EVP_PKEY_decrypt
+    op_name = "decrypt"
   end
 
   local code = fint(pkey_ctx)
   if code < 1 then
-    return nil, format_error("pkey: EVP_PKEY_encrypt/decrypt_init", code)
+    return nil, format_error("pkey: EVP_PKEY_" .. op_name .. "_init", code)
   end
 
   -- EVP_PKEY_CTX_ctrl must be called after *_init
@@ -403,7 +424,7 @@ local function asymmetric_routine(self, s, is_encrypt, padding)
   length[0] = self.key_size
 
   if f(pkey_ctx, self.buf, length, s, #s) <= 0 then
-    return nil, format_error("pkey: EVP_PKEY_encrypt/decrypt")
+    return nil, format_error("pkey: EVP_PKEY_" .. op_name)
   end
 
   return ffi_str(self.buf, length[0]), nil

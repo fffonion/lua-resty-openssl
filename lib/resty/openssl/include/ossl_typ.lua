@@ -44,6 +44,8 @@ ffi.cdef(
   typedef int ASN1_BOOLEAN;
   typedef int ASN1_NULL;
   typedef struct ec_key_st EC_KEY;
+  typedef struct ec_method_st EC_METHOD;
+  typedef struct ec_point_st EC_POINT;
   typedef struct rsa_meth_st RSA_METHOD;
   // typedef struct evp_keymgmt_st EVP_KEYMGMT;
   // typedef struct crypto_ex_data_st CRYPTO_EX_DATA;
