@@ -15,6 +15,7 @@ ffi.cdef [[
   int i2d_X509_bio(BIO *bp, X509 *x509);
   X509 *d2i_X509_bio(BIO *bp, X509 **x509);
 
+
   // STACK_OF(X509)
   OPENSSL_STACK *X509_chain_up_ref(OPENSSL_STACK *chain);
 
@@ -39,6 +40,8 @@ ffi.cdef [[
   // needed by pkey
   EVP_PKEY *d2i_PrivateKey_bio(BIO *bp, EVP_PKEY **a);
   EVP_PKEY *d2i_PUBKEY_bio(BIO *bp, EVP_PKEY **a);
+  int i2d_PrivateKey_bio(BIO *bp, EVP_PKEY *pkey);
+  int i2d_PUBKEY_bio(BIO *bp, EVP_PKEY *pkey);
 
   EVP_PKEY *X509_get_pubkey(X509 *x);
   int X509_set_pubkey(X509 *x, EVP_PKEY *pkey);

@@ -590,3 +590,41 @@ true
 '
 --- no_error_log
 [error]
+
+=== TEST 17: Outputs DER and JWK
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local p = require("resty.openssl.pkey").new({
+                type = 'EC',
+                curve = 'prime256v1',
+            })
+            local t, err = p:tostring('private', "PEM")
+            if err then
+                ngx.log(ngx.ERR, err)
+            end
+            ngx.say(t)
+            local t, err = p:tostring('private', "DER")
+            if err then
+                ngx.log(ngx.ERR, err)
+            end
+            ngx.say(#t)
+            local t, err = p:tostring('private', "JWK")
+            if err then
+                ngx.log(ngx.ERR, err)
+            end
+            ngx.say(t)
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+"-----BEGIN PRIVATE KEY-----
+.+
+-----END PRIVATE KEY-----
+
+121
+.+kid.+"
+--- no_error_log
+[error]

@@ -11,9 +11,7 @@ require "resty.openssl.include.rsa"
 local rsa_lib = require "resty.openssl.rsa"
 local ec_lib = require "resty.openssl.ec"
 local bn_lib = require "resty.openssl.bn"
-
-local format_error = require("resty.openssl.err").format_error
-
+local digest_lib = require "resty.openssl.digest"
 
 local _M = {}
 
@@ -61,6 +59,11 @@ local curve_map = {
   ["P-384"] = C.OBJ_ln2nid("secp384r1"),
   ["P-512"] = C.OBJ_ln2nid("secp512r1"),
 }
+
+local curve_map_reverse = {}
+for k, v in pairs(curve_map) do
+  curve_map_reverse[v] = k
+end
 
 local ec_jwk_params = {"x", "y", "d"}
 
@@ -174,6 +177,54 @@ function _M.load_jwk(txt)
   end
 
   return ctx
+end
+
+function _M.dump_jwk(pkey, is_priv)
+  local jwk
+  if pkey.key_type == evp_macro.EVP_PKEY_RSA then
+    local param_keys = { "n" , "e" }
+    if is_priv then
+      param_keys = rsa_jwk_params
+    end
+    local params, err = pkey:get_parameters()
+    if err then
+      return nil, "jwk.dump_jwk: " .. err
+    end
+    jwk = {
+      kty = "RSA",
+    }
+    for i, p in ipairs(param_keys) do
+      local v = params[rsa_openssl_params[i]]:to_binary()
+      jwk[p] = b64.encode_base64url(v)
+    end
+  elseif pkey.key_type == evp_macro.EVP_PKEY_EC then
+    local params, err = pkey:get_parameters()
+    if err then
+      return nil, "jwk.dump_jwk: " .. err
+    end
+    jwk = {
+      kty = "EC",
+      crv = curve_map_reverse[params.group],
+      x = b64.encode_base64url(params.x:to_binary()),
+      y = b64.encode_base64url(params.x:to_binary()),
+    }
+    if is_priv then
+      jwk.d = b64.encode_base64url(params.private:to_binary())
+    end
+  elseif pkey.key_type == evp_macro.EVP_PKEY_ED25519 then
+  else
+    return nil, "jwk.dump_jwk: not implemented for this key type"
+  end
+
+  local pem = pkey:tostring(is_priv and "private" or "public", "DER")
+  local dgst = digest_lib.new("sha256")
+  local d, err = dgst:final(pem)
+  if err then
+    return nil, "jwk.dump_jwk: failed to calculate digest for key"
+  end
+  jwk.kid = b64.encode_base64url(d)
+
+  return cjson.encode(jwk)
 end
 
 return _M

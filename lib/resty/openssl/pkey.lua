@@ -246,15 +246,22 @@ local function load_key(txt, opts)
   return ctx, nil
 end
 
-local function tostring(self, fmt)
-  if fmt == 'private' or fmt == 'PrivateKey' then
+local function tostring(self, is_priv, fmt)
+  if fmt == "JWK" then
+    return jwk_lib.dump_jwk(self, is_priv)
+  end
+  if is_priv then
+    if fmt == "DER" then
+      return util.read_using_bio(C.i2d_PrivateKey_bio, self.ctx)
+    end
     return util.read_using_bio(C.PEM_write_bio_PrivateKey,
       self.ctx,
       nil, nil, 0, nil, nil)
-  elseif not fmt or fmt == 'public' or fmt == 'PublicKey' then
-    return util.read_using_bio(C.PEM_write_bio_PUBKEY, self.ctx)
   else
-    return nil, "pkey:tostring: can only export private or public key, not " .. fmt
+    if fmt == "DER" then
+      return util.read_using_bio(C.i2d_PUBKEY_bio, self.ctx)
+    end
+    return util.read_using_bio(C.PEM_write_bio_PUBKEY, self.ctx)
   end
 
 end
@@ -472,8 +479,26 @@ function _M:verify(signature, digest)
   return false, format_error("pkey:verify")
 end
 
+local function pub_or_priv_is_pri(pub_or_priv)
+  if pub_or_priv == 'private' or pub_or_priv == 'PrivateKey' then
+    return true
+  elseif not pub_or_priv or pub_or_priv == 'public' or pub_or_priv == 'PublicKey' then
+    return false
+  else
+    return nil, "can only export private or public key, not " .. tostring(pub_or_priv)
+  end
+end
+
+function _M:tostring(pub_or_priv, fmt)
+  local is_priv, err = pub_or_priv_is_pri(pub_or_priv)
+  if err then
+    return nil, "pkey:tostring: " .. err
+  end
+  return tostring(self, is_priv, fmt)
+end
+
 function _M:to_PEM(pub_or_priv)
-  return tostring(self, pub_or_priv)
+  return self:tostring(pub_or_priv, "PEM")
 end
 
 return _M

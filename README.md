@@ -29,6 +29,7 @@ Table of Contents
     + [pkey:verify](#pkeyverify)
     + [pkey:encrypt](#pkeyencrypt)
     + [pkey:decrypt](#pkeydecrypt)
+    + [pkey:tostring](#pkeytostring)
     + [pkey:to_PEM](#pkeyto_pem)
   * [resty.openssl.bn](#restyopensslbn)
     + [bn.new](#bnnew)
@@ -435,7 +436,7 @@ Parameters for EC key:
 private | private key | [bn](#restyopensslbn)
 public | public key | [bn](#restyopensslbn)
 x | x coordinate of the public key| [bn](#restyopensslbn)
-y | y coordinates of the public key| [bn](#restyopensslbn)
+y | y coordinate of the public key| [bn](#restyopensslbn)
 group | the named curve group | [NID] as a number, when passed in as `set_parameters()`, it's also possible to use the text representation. This is different from `luaossl` where a `EC_GROUP` instance is returned.
 
 It's not possible to set `x`, `y` with `public` at same time as `x` and `y` is basically another representation
@@ -532,14 +533,22 @@ ngx.say(decrypted)
 
 [Back to TOC](#table-of-contents)
 
+### pkey:tostring
+
+**syntax**: *txt, err = pk:tostring(private_or_public?, fmt?)*
+
+Outputs private key or public key of pkey instance in PEM-formatted text.
+The first argument must be a choice of `public`, `PublicKey`, `private`, `PrivateKey` or nil.
+The second argument `fmt` can be `PEM`, `DER`, `JWK` or nil.
+If both arguments are omitted, this functions returns the `PEM` representation of public key.
+
+[Back to TOC](#table-of-contents)
+
 ### pkey:to_PEM
 
 **syntax**: *pem, err = pk:to_PEM(private_or_public?)*
 
-Outputs private key or public key of pkey instance in PEM-formatted text.
-The first argument must be a choice of `public`, `PublicKey`, `private`, `PrivateKey` or nil.
-By default, it returns the public key.
-
+Equivalent to `pk:tostring(private_or_public, "PEM")`.
 
 [Back to TOC](#table-of-contents)
 
