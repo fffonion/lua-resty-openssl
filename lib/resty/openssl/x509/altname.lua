@@ -58,7 +58,7 @@ end
 function _M.new()
   local ctx = new()
   if ctx == nil then
-    return nil, "OPENSSL_sk_new_null() failed"
+    return nil, "x509.altname.new: OPENSSL_sk_new_null() failed"
   end
   local cast = ffi_cast("GENERAL_NAMES*", ctx)
 
@@ -77,7 +77,7 @@ end
 
 function _M.dup(ctx)
   if ctx == nil or not ffi.istype(general_names_ptr_ct, ctx) then
-    return nil, "expect a GENERAL_NAMES* ctx at #1"
+    return nil, "x509.altname.dup: expect a GENERAL_NAMES* ctx at #1"
   end
   local dup_ctx = dup(ctx)
 
@@ -94,17 +94,17 @@ end
 
 local function gn_set(gn, typ, value)
   if not typ then
-    return "expect a string at #1"
+    return "x509.altname:gn_set: expect a string at #1"
   end
   typ = typ:lower()
   if type(value) ~= 'string' then
-    return "except a string at #2"
+    return "x509.altname:gn_set: except a string at #2"
   end
 
   local txt = value
   local gn_type = types[typ]
   if not gn_type then
-    return "unknown type " .. typ
+    return "x509.altname:gn_set: unknown type " .. typ
   end
 
   gn.type = gn_type
@@ -112,7 +112,7 @@ local function gn_set(gn, typ, value)
   local asn1_string = C.ASN1_IA5STRING_new()
   if asn1_string == nil then
     C.GENERAL_NAME_free(gn)
-    return "ASN1_STRING_type_new() failed"
+    return "x509.altname:gn_set: ASN1_STRING_type_new() failed"
   end
 
   gn.d.ia5 = asn1_string
@@ -120,7 +120,7 @@ local function gn_set(gn, typ, value)
   local code = C.ASN1_STRING_set(gn.d.ia5, txt, #txt)
   if code ~= 1 then
     C.GENERAL_NAME_free(gn)
-    return "ASN1_STRING_set() failed: " .. code
+    return "x509.altname:gn_set: ASN1_STRING_set() failed: " .. code
   end
 end
 
@@ -135,7 +135,7 @@ function _M:add(typ, value)
   -- of the stack to release all memories
   local gn = C.GENERAL_NAME_new()
   if gn == nil then
-    return nil, "GENERAL_NAME_new() failed"
+    return nil, "x509.altname:add: GENERAL_NAME_new() failed"
   end
 
   local err = gn_set(gn, typ, value)

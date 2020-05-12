@@ -90,6 +90,6 @@ __DATA__
 --- request
     GET /t
 --- response_body eval
-"invalid digest type \"sha257\""
+"hmac.new: invalid digest type \"sha257\""
 --- no_error_log
 [error]

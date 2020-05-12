@@ -16,7 +16,7 @@ local cipher_ctx_ptr_ct = ffi.typeof('EVP_CIPHER_CTX*')
 
 function _M.new(typ)
   if not typ then
-    return nil, "expect type to be defined"
+    return nil, "cipher.new: expect type to be defined"
   end
 
   local ctx
@@ -29,12 +29,12 @@ function _M.new(typ)
     ffi_gc(ctx, C.EVP_CIPHER_CTX_cleanup)
   end
   if ctx == nil then
-    return nil, "failed to create EVP_CIPHER_CTX"
+    return nil, "cipher.new: failed to create EVP_CIPHER_CTX"
   end
 
   local dtyp = C.EVP_get_cipherbyname(typ)
   if dtyp == nil then
-    return nil, string.format("invalid cipher type \"%s\"", typ)
+    return nil, string.format("cipher.new: invalid cipher type \"%s\"", typ)
   end
 
   local code = C.EVP_CipherInit_ex(ctx, dtyp, nil, "", nil, -1)
@@ -58,10 +58,10 @@ end
 function _M:init(key, iv, opts)
   opts = opts or {}
   if not key or #key ~= self.key_size then
-    return false, string.format("incorrect key size, expect %d", self.key_size)
+    return false, string.format("cipher:init: incorrect key size, expect %d", self.key_size)
   end
   if not iv or #iv ~= self.iv_size then
-    return false, string.format("incorrect iv size, expect %d", self.iv_size)
+    return false, string.format("cipher:init: incorrect iv size, expect %d", self.iv_size)
   end
 
   if C.EVP_CipherInit_ex(self.ctx, nil, nil, key, iv, opts.is_encrypt and 1 or 0) == 0 then
@@ -103,7 +103,7 @@ end
 local int_ptr = ffi.typeof("int[1]")
 function _M:update(...)
   if not self.initialized then
-    return nil, "cipher not initalized, call cipher:init first"
+    return nil, "cipher:update: cipher not initalized, call cipher:init first"
   end
 
   local ret = {}
@@ -146,31 +146,31 @@ end
 
 function _M:derive(key, salt, count, md)
   if type(key) ~= "string" then
-    return nil, nil, "expect a string at #1"
+    return nil, nil, "cipher:derive: expect a string at #1"
   elseif salt and type(salt) ~= "string" then
-    return nil, nil, "expect a string at #2"
+    return nil, nil, "cipher:derive: expect a string at #2"
   elseif count then
     count = tonumber(count)
     if not count then
-      return nil, nil, "expect a number at #3"
+      return nil, nil, "cipher:derive: expect a number at #3"
     end
   elseif md and type(md) ~= "string" then
-    return nil, nil, "expect a string or nil at #4"
+    return nil, nil, "cipher:derive: expect a string or nil at #4"
   end
 
   if salt then
     if #salt > 8 then
-      ngx.log(ngx.WARN, "salt is too long, truncate salt to 8 bytes")
+      ngx.log(ngx.WARN, "cipher:derive: salt is too long, truncate salt to 8 bytes")
       salt = salt:sub(0, 8)
     elseif #salt < 8 then
-      ngx.log(ngx.WARN, "salt is too short, padding with zero bytes to length")
+      ngx.log(ngx.WARN, "cipher:derive: salt is too short, padding with zero bytes to length")
       salt = salt .. string.rep('\000', 8 - #salt)
     end
   end
 
   local mdt = C.EVP_get_digestbyname(md or 'sha1')
   if mdt == nil then
-    return nil, nil, string.format("invalid digest type \"%s\"", md)
+    return nil, nil, string.format("cipher:derive: invalid digest type \"%s\"", md)
   end
   local cipt = C.EVP_CIPHER_CTX_cipher(self.ctx)
   local keyb = ffi_new('unsigned char[?]', self.key_size)

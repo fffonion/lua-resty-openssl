@@ -74,7 +74,7 @@ __DATA__
     GET /t
 --- response_body eval
 "true
-invalid NID text whatever
+x509.name:add: invalid NID text whatever
 "
 --- no_error_log
 [error]

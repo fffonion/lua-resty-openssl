@@ -27,7 +27,7 @@ function _M.new(txtnid, value, data)
     return nil, err
   end
   if type(value) ~= 'string' then
-    return nil, "expect string at #2"
+    return nil, "x509.extension.new: expect string at #2"
   end
   -- get a ptr and also zerofill the struct
   local x509_ctx_ptr = ffi_new('X509V3_CTX[1]')
@@ -38,14 +38,14 @@ function _M.new(txtnid, value, data)
       if data[k] then
         local lib = require(t)
         if not lib.istype(data[k]) then
-          return nil, "expect data." .. k .. " to be a " .. t .. " instance"
+          return nil, "x509.extension.new: expect data." .. k .. " to be a " .. t .. " instance"
         end
         args[k] = data[k].ctx
       end
     end
     C.X509V3_set_ctx(x509_ctx_ptr[0], args.issuer, args.subject, args.request, nil, 0)
   elseif data then
-    return nil, "expect nil or a table at #3"
+    return nil, "x509.extension.new: expect nil or a table at #3"
   end
 
   local ctx = C.X509V3_EXT_nconf_nid(nil, x509_ctx_ptr[0], nid, value)
@@ -67,11 +67,11 @@ end
 
 function _M.dup(ctx)
   if not ffi.istype(x509_extension_ptr_ct, ctx) then
-    return nil, "expect a x509.extension ctx at #1"
+    return nil, "x509.extension.dup: expect a x509.extension ctx at #1"
   end
   local ctx = C.X509_EXTENSION_dup(ctx)
   if ctx == nil then
-    return nil, "X509_EXTENSION_dup() failed"
+    return nil, "x509.extension.dup: X509_EXTENSION_dup() failed"
   end
 
   ffi_gc(ctx, C.X509_EXTENSION_free)
@@ -85,14 +85,14 @@ end
 
 function _M.from_data(any, nid, crit)
   if type(any) ~= "table" or type(any.ctx) ~= "cdata" then
-    return nil, "expect a table with ctx at #1"
+    return nil, "x509.extension.from_data: expect a table with ctx at #1"
   elseif type(nid) ~= "number" then
-    return nil, "expect a table at #2"
+    return nil, "x509.extension.from_data: expect a table at #2"
   end
 
   local ctx = C.X509V3_EXT_i2d(nid, crit and 1 or 0, any.ctx)
   if ctx == nil then
-    return nil, format_error("extension:from_data: X509V3_EXT_i2d")
+    return nil, format_error("x509.extension.from_data: X509V3_EXT_i2d")
   end
   ffi_gc(ctx, C.X509_EXTENSION_free)
 

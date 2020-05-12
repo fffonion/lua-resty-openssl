@@ -70,9 +70,9 @@ false
 --- request
     GET /t
 --- response_body eval
-"expect a number at #1
-expect a number at #1
-expect a number at #1
+"rand.bytes: expect a number at #1
+rand.bytes: expect a number at #1
+rand.bytes: expect a number at #1
 "
 --- no_error_log
 [error]

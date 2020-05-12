@@ -40,7 +40,7 @@ local function format_error(ctx, code)
   end
 
   if #errors > 0 then
-    return string.format("%s: %s", ctx, table.concat(errors, " "))
+    return string.format("%s%s%s", (ctx or ""), (ctx and ": " or ""), table.concat(errors, " "))
   else
     return string.format("%s failed", ctx)
   end

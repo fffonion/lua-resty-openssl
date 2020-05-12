@@ -25,7 +25,7 @@ function _M.new(bn)
       return nil, format_error("bn.new")
     end
   elseif bn then
-    return nil, "expect nil or a number at #1"
+    return nil, "bn.new: expect nil or a number at #1"
   end
 
   return setmetatable( { ctx = ctx }, mt), nil
@@ -37,7 +37,7 @@ end
 
 function _M.dup(ctx)
   if not ffi.istype(bn_ptr_ct, ctx) then
-    return nil, "expect a bn ctx at #1"
+    return nil, "bn.dup: expect a bn ctx at #1"
   end
   local ctx = C.BN_dup(ctx)
   ffi_gc(ctx, C.BN_free)
@@ -64,7 +64,7 @@ end
 
 function _M.from_binary(s)
   if type(s) ~= "string" then
-    return nil, "expect a string at #1"
+    return nil, "bn.from_binary: expect a string at #1"
   end
 
   local ctx = C.BN_bin2bn(s, #s, nil)
@@ -87,7 +87,7 @@ end
 
 function _M.from_hex(s)
   if type(s) ~= "string" then
-    return nil, "expect a string at #1"
+    return nil, "bn.from_hex: expect a string at #1"
   end
 
   local p = ffi.new(bn_ptrptr_ct)
@@ -113,7 +113,7 @@ mt.__tostring = _M.to_dec
 
 function _M.from_dec(s)
   if type(s) ~= "string" then
-    return nil, "expect a string at #1"
+    return nil, "bn.from_dec: expect a string at #1"
   end
 
   local p = ffi.new(bn_ptrptr_ct)
@@ -353,10 +353,10 @@ if OPENSSL_10 then
     local ctx = C.BN_new()
     ffi_gc(ctx, C.BN_free)
     if ctx == nil then
-      return nil, "BN_new() failed"
+      return nil, "bn:is_word: BN_new() failed"
     end
     if C.BN_set_word(ctx, n) ~= 1 then
-      return nil, "BN_set_word() failed"
+      return nil, "bn:is_word: BN_set_word() failed"
     end
     return C.BN_cmp(self.ctx, ctx) == 0
   end
@@ -384,7 +384,7 @@ end
 
 function _M:is_prime(nchecks)
   if nchecks and type(nchecks) ~= "number" then
-    return nil, "expect a number at #1"
+    return nil, "bn:is_prime: expect a number at #1"
   end
   -- if nchecks is not defined, set to BN_prime_checks:
   -- select number of iterations based on the size of the number

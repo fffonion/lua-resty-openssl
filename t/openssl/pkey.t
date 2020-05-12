@@ -92,8 +92,8 @@ __DATA__
 --- request
     GET /t
 --- response_body_like eval
-"unexpected type.+
-pkey.new:load_pkey: .+
+"pkey.new: unexpected type.+
+pkey.new:load_key: .+
 "
 --- no_error_log
 [error]
@@ -176,6 +176,8 @@ pkey.new:load_pkey: .+
                 end
                 ngx.say(b)
             end
+            local got = params.dne
+            ngx.say(got)
         }
     }
 --- request
@@ -188,6 +190,8 @@ pkey.new:load_pkey: .+
 [A-F0-9]{256}
 [A-F0-9]{256}
 [A-F0-9]{256}
+[A-F0-9]{256}
+nil
 "
 --- no_error_log
 [error]
@@ -256,8 +260,8 @@ true
 --- request
     GET /t
 --- response_body eval
-"expect a digest instance at #1
-expect a digest instance at #2
+"pkey:sign: expect a digest instance at #1
+pkey:verify: expect a digest instance at #2
 "
 --- no_error_log
 [error]
@@ -422,6 +426,19 @@ ok
                 return
             end
 
+            -- errors
+            local _, err = require("resty.openssl.pkey").new('asdasd', {
+                format = "JWK",
+            })
+            ngx.say(err)
+            local _, err = require("resty.openssl.pkey").new(require("cjson").encode({
+                kty = "RSA",
+                n   = "pjdss8ZaDfEH6K6U7GeW2nxDqR4IP049fk1fK0lndimbMMVBdPv_hSpm8T8EtBDxrUdi1OHZfMhUixGaut-3nQ4GG9nM249oxhCtxqqNvEXrmQRGqczyLxuh-fKn9Fg--hS9UpazHpfVAFnB5aCfXoNhPuI8oByyFKMKaOVgHNqP5NBEqabiLftZD3W_lsFCPGuzr4Vp0YS7zS2hDYScC2oOMu4rGU1LcMZf39p3153Cq7bS2Xh6Y-vw5pwzFYZdjQxDn8x8BG3fJ6j8TGLXQsbKH1218_HcUJRvMwdpbUQG5nvA2GXVqLqdwp054Lzk9_B_f1lVrmOKuHjTNHq48w",
+            }), {
+                format = "JWK",
+            })
+            ngx.say(err)
+
             -- pubkey only
             jwk = require("cjson").encode({
                 kty = "RSA",
@@ -449,9 +466,11 @@ ok
     }
 --- request
     GET /t
---- response_body_like eval
-"23333
-"
+--- response_body eval
+'pkey.new:load_key: error decoding JSON from JWK: Expected value but found invalid token at character 1
+pkey.new:load_key: failed to construct RSA key from JWK: at least "n" and "e" parameter is required
+23333
+'
 --- no_error_log
 [error]
 
@@ -483,6 +502,8 @@ ok
                     ngx.say(b)
                 end
             end
+            local got = params.dne
+            ngx.say(got)
         }
     }
 --- request
@@ -493,6 +514,7 @@ ok
 [A-F0-9]{48}
 [A-F0-9]{48}
 [A-F0-9]{48}
+nil
 "
 --- no_error_log
 [error]
@@ -521,6 +543,16 @@ ok
                 ngx.log(ngx.ERR, err)
                 return
             end
+
+            -- errors
+            local _, err = require("resty.openssl.pkey").new(require("cjson").encode({
+                kty = "EC",
+                crv = "P-256",
+                x   = "SVqB4JcUD6lsfvqMr-OKUNUphdNn64Eay60978ZlL74",
+            }), {
+                format = "JWK",
+            })
+            ngx.say(err)
 
             -- pubkey only
             jwk = require("cjson").encode({
@@ -552,8 +584,9 @@ ok
     }
 --- request
     GET /t
---- response_body_like eval
-"true
-"
+--- response_body eval
+'pkey.new:load_key: failed to construct EC key from JWK: at least "x" and "y" parameter is required
+true
+'
 --- no_error_log
 [error]

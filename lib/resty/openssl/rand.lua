@@ -8,7 +8,7 @@ local format_error = require("resty.openssl.err").format_error
 
 local function bytes(length)
   if type(length) ~= "number" then
-    return nil, "expect a number at #1"
+    return nil, "rand.bytes: expect a number at #1"
   end
   -- generally we don't need manually reseed rng
   -- https://www.openssl.org/docs/man1.1.1/man3/RAND_seed.html

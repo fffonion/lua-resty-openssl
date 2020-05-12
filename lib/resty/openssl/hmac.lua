@@ -26,12 +26,12 @@ function _M.new(key, typ)
     ffi_gc(ctx, C.HMAC_CTX_cleanup)
   end
   if ctx == nil then
-    return nil, "failed to create HMAC_CTX"
+    return nil, "hmac.new: failed to create HMAC_CTX"
   end
 
   local dtyp = C.EVP_get_digestbyname(typ or 'sha1')
   if dtyp == nil then
-    return nil, string.format("invalid digest type \"%s\"", typ)
+    return nil, string.format("hmac.new: invalid digest type \"%s\"", typ)
   end
 
   local code = C.HMAC_Init_ex(ctx, key, #key, dtyp, nil)

@@ -114,20 +114,20 @@ local void_ptr = ffi.typeof("void *")
 function _M.derive(options)
   local typ = options.type
   if not typ then
-    return nil, "\"type\" must be set"
+    return nil, "kdf.derive: \"type\" must be set"
   elseif type(typ) ~= "number" then
-    return nil, "expect a number as \"type\""
+    return nil, "kdf.derive: expect a number as \"type\""
   end
 
   if typ <= 0 then
-    return nil, "kdf type " ..  (type_literals[typ] or tostring(typ)) ..
+    return nil, "kdf.derive: kdf type " ..  (type_literals[typ] or tostring(typ)) ..
                 " not supported in " .. version_text
   end
 
   for k, v in pairs(options_schema) do
     local v, err = check_options(options, typ, k, unpack(v))
     if err then
-      return nil, err
+      return nil, "kdf.derive: " .. err
     end
     options[k] = v
   end
@@ -144,7 +144,7 @@ function _M.derive(options)
   local md
   md = C.EVP_get_digestbyname(options.md or "sha1")
   if md == nil then
-    return nil, string.format("invalid digest type \"%s\"", md)
+    return nil, string.format("kdf.derive: invalid digest type \"%s\"", md)
   end
 
   local buf = ffi_new('unsigned char[?]', options.outlen)
@@ -171,7 +171,7 @@ function _M.derive(options)
       buf, options.outlen
     )
   elseif typ ~= NID_tls1_prf and typ ~= NID_hkdf then
-    return nil, ("unknown type %d"):format(typ)
+    return nil, string.format("kdf.derive: unknown type %d", typ)
   end
   if code then
     if code ~= 1 then
@@ -243,7 +243,7 @@ function _M.derive(options)
       end
     end
   else
-    return nil, ("unknown type %d"):format(typ)
+    return nil, string.format("kdf.derive: unknown type %d", typ)
   end
   code = C.EVP_PKEY_derive(ctx, buf, outlen)
   if code == -2 then

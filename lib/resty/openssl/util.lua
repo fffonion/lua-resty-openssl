@@ -9,12 +9,12 @@ local format_error = require("resty.openssl.err").format_error
 
 local function read_using_bio(f, ...)
   if type(f) ~= "cdata" then -- should be explictly a function
-    return nil, "expect a function at #1"
+    return nil, "util.read_using_bio: expect a function at #1"
   end
 
   local bio_method = C.BIO_s_mem()
   if bio_method == nil then
-      return nil, "BIO_s_mem() failed"
+      return nil, "util.read_using_bio: BIO_s_mem() failed"
   end
   local bio = C.BIO_new(bio_method)
   ffi_gc(bio, C.BIO_free)
@@ -22,7 +22,7 @@ local function read_using_bio(f, ...)
   -- BIO_reset; #define BIO_CTRL_RESET 1
   local code = C.BIO_ctrl(bio, 1, 0, nil)
   if code ~= 1 then
-      return nil, "BIO_ctrl() failed: " .. code
+      return nil, "util.read_using_bio: BIO_ctrl() failed: " .. code
   end
 
   local code = f(bio, ...)

@@ -34,12 +34,12 @@ end
 
 function _M.dup(ctx)
   if ctx == nil or not ffi.istype(stack_ptr_ct, ctx) then
-    return nil, "expect a stack ctx at #1"
+    return nil, "x509.chain.dup: expect a stack ctx at #1"
   end
   -- sk_X509_dup plus up ref for each X509 element
   local ctx = C.X509_chain_up_ref(ctx)
   if ctx == nil then
-    return nil, "X509_chain_up_ref() failed"
+    return nil, "x509.chain.dup: X509_chain_up_ref() failed"
   end
   ffi_gc(ctx, gc)
 
@@ -51,12 +51,12 @@ end
 
 function _M:add(x509)
   if not x509_lib.istype(x509) then
-    return nil, "expect a x509 instance at #1"
+    return nil, "x509.chain:add: expect a x509 instance at #1"
   end
 
   local dup = C.X509_dup(x509.ctx)
   if dup == nil then
-    return nil, format_error("chain:add: X509_dup")
+    return nil, format_error("x509.chain:add: X509_dup")
   end
 
   local _, err = add(self.ctx, dup)

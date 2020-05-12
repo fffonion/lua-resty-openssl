@@ -160,10 +160,10 @@ __DATA__
 --- request
     GET /t
 --- response_body eval
-"expect a x509.name instance at #1
-expect a x509.altname instance at #1
-expect a pkey instance at #1
-expect a pkey instance at #1
+"x509.csr:set_subject_name: expect a x509.name instance at #1
+x509.csr:set_subject_alt_name: expect a x509.altname instance at #1
+x509.csr:set_pubkey: expect a pkey instance at #1
+x509.csr:sign: expect a pkey instance at #1
 "
 --- no_error_log
 [error]

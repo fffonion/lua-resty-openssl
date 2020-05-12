@@ -24,12 +24,12 @@ function _M.new(typ)
     ffi_gc(ctx, C.EVP_MD_CTX_destroy)
   end
   if ctx == nil then
-    return nil, "failed to create EVP_MD_CTX"
+    return nil, "digest.new: failed to create EVP_MD_CTX"
   end
 
   local dtyp = C.EVP_get_digestbyname(typ or 'sha1')
   if dtyp == nil then
-    return nil, string.format("invalid digest type \"%s\"", typ)
+    return nil, string.format("digest.new: invalid digest type \"%s\"", typ)
   end
 
   local code = C.EVP_DigestInit_ex(ctx, dtyp, nil)

@@ -50,7 +50,7 @@ local mt = {
 function _M.new()
   local ctx = C.X509_NAME_new()
   if ctx == nil then
-    return nil, "X509_NAME_new() failed"
+    return nil, "x509.name.new: X509_NAME_new() failed"
   end
   ffi_gc(ctx, C.X509_NAME_free)
 
@@ -67,7 +67,7 @@ end
 
 function _M.dup(ctx)
   if not ffi.istype(x509_name_ptr_ct, ctx) then
-    return nil, "expect a x509.name ctx at #1"
+    return nil, "x509.name.dup: expect a x509.name ctx at #1"
   end
   local ctx = C.X509_NAME_dup(ctx)
   ffi_gc(ctx, C.X509_NAME_free)
@@ -82,14 +82,14 @@ end
 function _M:add(nid, txt)
   local asn1 = C.OBJ_txt2obj(nid, 0)
   if asn1 == nil then
-    return nil, "invalid NID text " .. (nid or "nil")
+    return nil, "x509.name:add: invalid NID text " .. (nid or "nil")
   end
 
   local code = C.X509_NAME_add_entry_by_OBJ(self.ctx, asn1, MBSTRING_ASC, txt, #txt, -1, 0)
   C.ASN1_OBJECT_free(asn1)
 
   if code ~= 1 then
-    return nil, "X509_NAME_add_entry_by_OBJ() failed"
+    return nil, "x509.name:add: X509_NAME_add_entry_by_OBJ() failed"
   end
 
   return self
@@ -98,7 +98,7 @@ end
 function _M:find(nid, last_pos)
   local asn1 = C.OBJ_txt2obj(nid, 0)
   if asn1 == nil then
-    return nil, nil, "invalid NID text " .. (nid or "nil")
+    return nil, nil, "x509.name:find: invalid NID text " .. (nid or "nil")
   end
   -- make 1-index array to 0-index
   last_pos = (last_pos or 0) - 1

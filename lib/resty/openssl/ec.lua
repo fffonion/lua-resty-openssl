@@ -23,7 +23,7 @@ function _M.get_parameters(ec_key_st)
       if k == 'group' then
         local nid = C.EC_GROUP_get_curve_name(group)
         if nid == 0 then
-          return nil, "EC_GROUP_get_curve_name() failed"
+          return nil, "ec.get_parameters: EC_GROUP_get_curve_name() failed"
         end
         return nid
       elseif k == 'public' or k == "pub_key" then
@@ -68,23 +68,12 @@ function _M.get_parameters(ec_key_st)
           return nil, format_error("ec.get_parameters: EC_POINT_get_affine_coordinates")
         end
       else
-        return nil, "unknown parameter \"" .. k .. "\" for EC key"
+        return nil, "ec.get_parameters: unknown parameter \"" .. k .. "\" for EC key"
       end
 
       return bn_lib.dup(bn)
     end
   }), nil
-end
-
-function _M.ec_group_from_nid(nid)
-  local group = C.EC_GROUP_new_by_curve_name(nid)
-  if group == nil then
-    return nil, "EC_GROUP_new_by_curve_name() failed"
-  end
-  -- # define OPENSSL_EC_NAMED_CURVE     0x001
-  C.EC_GROUP_set_asn1_flag(group, 1)
-  C.EC_GROUP_set_point_conversion_form(group, C.POINT_CONVERSION_UNCOMPRESSED)
-  return group
 end
 
 function _M.set_parameters(ec_key_st, opts)
@@ -101,12 +90,12 @@ function _M.set_parameters(ec_key_st, opts)
   if group_nid then
     local nid, err = objects_lib.txtnid2nid(group_nid)
     if err then
-      return nil, "cannot use parameter \"group\":" .. err
+      return nil, "ec.set_parameters: cannot use parameter \"group\":" .. err
     end
 
     group = C.EC_GROUP_new_by_curve_name(nid)
     if group == nil then
-      return nil, "EC_GROUP_new_by_curve_name() failed"
+      return nil, "ec.set_parameters: EC_GROUP_new_by_curve_name() failed"
     end
     ffi_gc(group, C.EC_GROUP_free)
     -- # define OPENSSL_EC_NAMED_CURVE     0x001
@@ -122,18 +111,18 @@ function _M.set_parameters(ec_key_st, opts)
   local y = opts["y"]
   local pub = opts["public"]
   if (x and not y) or (y and not x) then
-    return nil, "\"x\" and \"y\" parameter must be defined at same time or both undefined"
+    return nil, "ec.set_parameters: \"x\" and \"y\" parameter must be defined at same time or both undefined"
   end
 
   if x and y then
     if pub then
-      return nil, "cannot set \"x\" and \"y\" with \"public\" at same time to set public key"
+      return nil, "ec.set_parameters: cannot set \"x\" and \"y\" with \"public\" at same time to set public key"
     end
     -- double check if we have set group already
     if group == nil then
       group = C.EC_KEY_get0_group(ec_key_st)
       if group == nil then
-        return nil, "cannot set public key without setting \"group\""
+        return nil, "ec.set_parameters: cannot set public key without setting \"group\""
       end
     end
 
@@ -146,7 +135,7 @@ function _M.set_parameters(ec_key_st, opts)
     if group == nil then
       group = C.EC_KEY_get0_group(ec_key_st)
       if group == nil then
-        return nil, "cannot set public key without setting \"group\""
+        return nil, "ec.set_parameters: cannot set public key without setting \"group\""
       end
     end
 

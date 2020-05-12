@@ -61,7 +61,7 @@ __DATA__
 --- request
     GET /t
 --- response_body eval
-"invalid cipher type \"aes257\""
+"cipher.new: invalid cipher type \"aes257\""
 --- no_error_log
 [error]
 
@@ -84,8 +84,8 @@ __DATA__
 --- request
     GET /t
 --- response_body eval
-"cipher not initalized, call cipher:init first
-cipher not initalized, call cipher:init first
+"cipher:update: cipher not initalized, call cipher:init first
+cipher:update: cipher not initalized, call cipher:init first
 "
 --- no_error_log
 [error]

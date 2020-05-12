@@ -63,7 +63,7 @@ local function tostring(self, fmt)
   elseif fmt == 'DER' then
     return util.read_using_bio(C.i2d_X509_CRL_bio, self.ctx)
   else
-    return nil, "can only write PEM or DER format, not " .. fmt
+    return nil, "x509.crl:tostring: can only write PEM or DER format, not " .. fmt
   end
 end
 
@@ -77,7 +77,7 @@ function _M.new(crl, fmt)
   if not crl then
     ctx = C.X509_CRL_new()
     if ctx == nil then
-      return nil, "X509_CRL_new() failed"
+      return nil, "x509.crl.new: X509_CRL_new() failed"
     end
   elseif type(crl) == "string" then
     -- routine for load an existing csr
@@ -96,7 +96,7 @@ function _M.new(crl, fmt)
           -- BIO_reset; #define BIO_CTRL_RESET 1
           local code = C.BIO_ctrl(bio, 1, 0, nil)
           if code ~= 1 then
-              return nil, "BIO_ctrl() failed: " .. code
+              return nil, "x509.crl.new: BIO_ctrl() failed: " .. code
           end
           -- clear errors occur when trying
           C.ERR_clear_error()
@@ -112,7 +112,7 @@ function _M.new(crl, fmt)
       return nil, format_error("x509.crl.new")
     end
   else
-    return nil, "expect nil or a string at #1"
+    return nil, "x509.crl.new: expect nil or a string at #1"
   end
   ffi_gc(ctx, C.X509_CRL_free)
 
@@ -129,11 +129,11 @@ end
 
 function _M.dup(ctx)
   if not ffi.istype(x509_crl_ptr_ct, ctx) then
-    return nil, "expect a x509.crl ctx at #1"
+    return nil, "x509.crl.dup: expect a x509.crl ctx at #1"
   end
   local ctx = C.X509_CRL_dup(ctx)
   if ctx == nil then
-    return nil, "X509_CRL_dup() failed"
+    return nil, "x509.crl.dup: X509_CRL_dup() failed"
   end
 
   ffi_gc(ctx, C.X509_CRL_free)
@@ -158,10 +158,10 @@ end
 -- AUTO GENERATED
 function _M:sign(pkey, digest)
   if not pkey_lib.istype(pkey) then
-    return false, "expect a pkey instance at #1"
+    return false, "x509.crl:sign: expect a pkey instance at #1"
   end
   if digest and not digest_lib.istype(digest) then
-    return false, "expect a digest instance at #2"
+    return false, "x509.crl:sign: expect a digest instance at #2"
   end
 
   -- returns size of signature if success
@@ -175,7 +175,7 @@ end
 -- AUTO GENERATED
 function _M:verify(pkey)
   if not pkey_lib.istype(pkey) then
-    return false, "expect a pkey instance at #1"
+    return false, "x509.crl:verify: expect a pkey instance at #1"
   end
 
   local code = C.X509_CRL_verify(self.ctx, pkey.ctx)
@@ -203,7 +203,7 @@ local function get_extension(ctx, nid_txt, last_pos)
   end
   local ctx = C.X509_CRL_get_ext(ctx, pos)
   if ctx == nil then
-    return nil, nil, format_error("x509.crl:get_extension")
+    return nil, nil, format_error()
   end
   return ctx, pos
 end
@@ -211,7 +211,7 @@ end
 -- AUTO GENERATED
 function _M:add_extension(extension)
   if not extension_lib.istype(extension) then
-    return false, "expect a x509.extension instance at #1"
+    return false, "x509.crl:add_extension: expect a x509.extension instance at #1"
   end
 
   -- X509_CRL_add_ext returnes the stack on success, and NULL on error
@@ -227,11 +227,11 @@ end
 function _M:get_extension(nid_txt, last_pos)
   local ctx, pos, err = get_extension(self.ctx, nid_txt, last_pos)
   if err then
-    return nil, nil, err
+    return nil, nil, "x509.crl:get_extension: " .. err
   end
   local ext, err = extension_lib.dup(ctx)
   if err then
-    return nil, nil, err
+    return nil, nil, "x509.crl:get_extension: " .. err
   end
   return ext, pos+1
 end
@@ -252,7 +252,7 @@ end
 -- AUTO GENERATED
 function _M:set_extension(extension, last_pos)
   if not extension_lib.istype(extension) then
-    return false, "expect a x509.extension instance at #1"
+    return false, "x509.crl:set_extension: expect a x509.extension instance at #1"
   end
 
   last_pos = (last_pos or 0) - 1
@@ -277,7 +277,7 @@ end
 function _M:set_extension_critical(nid_txt, crit, last_pos)
   local ctx, _, err = get_extension(self.ctx, nid_txt, last_pos)
   if err then
-    return nil, err
+    return nil, "x509.crl:set_extension_critical: " .. err
   end
 
   if C.X509_EXTENSION_set_critical(ctx, crit and 1 or 0) ~= 1 then
@@ -291,7 +291,7 @@ end
 function _M:get_extension_critical(nid_txt, last_pos)
   local ctx, _, err = get_extension(self.ctx, nid_txt, last_pos)
   if err then
-    return nil, err
+    return nil, "x509.crl:get_extension_critical: " .. err
   end
 
   return C.X509_EXTENSION_get_critical(ctx) == 1
@@ -312,7 +312,7 @@ end
 function _M:set_issuer_name(toset)
   local lib = require("resty.openssl.x509.name")
   if lib.istype and not lib.istype(toset) then
-    return false, "expect a x509.name instance at #1"
+    return false, "x509.crl:set_issuer_name: expect a x509.name instance at #1"
   end
   toset = toset.ctx
   if accessors.set_issuer_name(self.ctx, toset) == 0 then
@@ -337,7 +337,7 @@ end
 -- AUTO GENERATED
 function _M:set_last_update(toset)
   if type(toset) ~= "number" then
-    return false, "expect a number at #1"
+    return false, "x509.crl:set_last_update: expect a number at #1"
   end
 
   toset = C.ASN1_TIME_set(nil, toset)
@@ -365,7 +365,7 @@ end
 -- AUTO GENERATED
 function _M:set_next_update(toset)
   if type(toset) ~= "number" then
-    return false, "expect a number at #1"
+    return false, "x509.crl:set_next_update: expect a number at #1"
   end
 
   toset = C.ASN1_TIME_set(nil, toset)
@@ -393,7 +393,7 @@ end
 -- AUTO GENERATED
 function _M:set_version(toset)
   if type(toset) ~= "number" then
-    return false, "expect a number at #1"
+    return false, "x509.crl:set_version: expect a number at #1"
   end
 
   -- Note: this is defined by standards (X.509 et al) to be one less than the certificate version.

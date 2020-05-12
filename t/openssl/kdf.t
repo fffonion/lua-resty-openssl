@@ -55,11 +55,11 @@ __DATA__
 --- request
     GET /t
 --- response_body_like eval
-"\"type\" must be set
-expect a number as \"type\"
-\"outlen\" must be set
-except a string as \"pass\"
-unknown type 19823718236128632
+"kdf.derive: \"type\" must be set
+kdf.derive: expect a number as \"type\"
+kdf.derive: \"outlen\" must be set
+kdf.derive: except a string as \"pass\"
+kdf.derive: unknown type 19823718236128632
 "
 --- no_error_log
 [error]

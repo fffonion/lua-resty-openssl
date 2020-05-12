@@ -48,7 +48,7 @@ local function tostring(self, fmt)
   elseif fmt == 'DER' then
     return util.read_using_bio(C.i2d_X509_REQ_bio, self.ctx)
   else
-    return nil, "can only write PEM or DER format, not " .. fmt
+    return nil, "x509.csr:tostring: can only write PEM or DER format, not " .. fmt
   end
 end
 
@@ -62,7 +62,7 @@ function _M.new(csr, fmt)
   if not csr then
     ctx = C.X509_REQ_new()
     if ctx == nil then
-      return nil, "X509_REQ_new() failed"
+      return nil, "x509.csr.new: X509_REQ_new() failed"
     end
   elseif type(csr) == "string" then
     -- routine for load an existing csr
@@ -81,7 +81,7 @@ function _M.new(csr, fmt)
           -- BIO_reset; #define BIO_CTRL_RESET 1
           local code = C.BIO_ctrl(bio, 1, 0, nil)
           if code ~= 1 then
-              return nil, "BIO_ctrl() failed: " .. code
+              return nil, "x509.csr.new: BIO_ctrl() failed: " .. code
           end
           -- clear errors occur when trying
           C.ERR_clear_error()
@@ -97,7 +97,7 @@ function _M.new(csr, fmt)
       return nil, format_error("x509.csr.new")
     end
   else
-    return nil, "expect nil or a string at #1"
+    return nil, "x509.csr.new: expect nil or a string at #1"
   end
   ffi_gc(ctx, C.X509_REQ_free)
 
@@ -120,7 +120,7 @@ local stack_ptr_type = ffi.typeof("struct stack_st *[1]")
 local function xr_modifyRequestedExtension(csr, target_nid, value, crit, flags)
   local has_attrs = C.X509_REQ_get_attr_count(csr)
   if has_attrs > 0 then
-    return false, "X509_REQ already has more than more attributes" ..
+    return false, "x509.csr:xr_modifyRequestedExtension: X509_REQ already has more than more attributes" ..
           "modifying is currently not supported"
   end
 
@@ -131,11 +131,11 @@ local function xr_modifyRequestedExtension(csr, target_nid, value, crit, flags)
   code = C.X509V3_add1_i2d(sk, target_nid, value, crit, flags)
   local err
   if code ~= 1 then
-    err = "X509V3_add1_i2d() failed: " .. code
+    err = "x509.csr:xr_modifyRequestedExtension: X509V3_add1_i2d() failed: " .. code
   end
   code = C.X509_REQ_add_extensions(csr, sk[0])
   if code ~= 1 then
-    err = "X509_REQ_add_extensions() failed: " .. code
+    err = "x509.csr:xr_modifyRequestedExtension: X509_REQ_add_extensions() failed: " .. code
   end
 
   X509_EXTENSION_stack_gc(sk[0])
@@ -144,7 +144,7 @@ end
 
 function _M:set_subject_alt_name(alt)
   if not altname_lib.istype(alt) then
-    return false, "expect a x509.altname instance at #1"
+    return false, "x509.csr:set_subject_alt_name: expect a x509.altname instance at #1"
   end
   -- #define NID_subject_alt_name            85
   -- #define X509V3_ADD_REPLACE              2L
@@ -167,10 +167,10 @@ end
 -- AUTO GENERATED
 function _M:sign(pkey, digest)
   if not pkey_lib.istype(pkey) then
-    return false, "expect a pkey instance at #1"
+    return false, "x509.csr:sign: expect a pkey instance at #1"
   end
   if digest and not digest_lib.istype(digest) then
-    return false, "expect a digest instance at #2"
+    return false, "x509.csr:sign: expect a digest instance at #2"
   end
 
   -- returns size of signature if success
@@ -184,7 +184,7 @@ end
 -- AUTO GENERATED
 function _M:verify(pkey)
   if not pkey_lib.istype(pkey) then
-    return false, "expect a pkey instance at #1"
+    return false, "x509.csr:verify: expect a pkey instance at #1"
   end
 
   local code = C.X509_REQ_verify(self.ctx, pkey.ctx)
@@ -213,7 +213,7 @@ end
 function _M:set_subject_name(toset)
   local lib = require("resty.openssl.x509.name")
   if lib.istype and not lib.istype(toset) then
-    return false, "expect a x509.name instance at #1"
+    return false, "x509.csr:set_subject_name: expect a x509.name instance at #1"
   end
   toset = toset.ctx
   if accessors.set_subject_name(self.ctx, toset) == 0 then
@@ -238,7 +238,7 @@ end
 function _M:set_pubkey(toset)
   local lib = require("resty.openssl.pkey")
   if lib.istype and not lib.istype(toset) then
-    return false, "expect a pkey instance at #1"
+    return false, "x509.csr:set_pubkey: expect a pkey instance at #1"
   end
   toset = toset.ctx
   if accessors.set_pubkey(self.ctx, toset) == 0 then
@@ -263,7 +263,7 @@ end
 -- AUTO GENERATED
 function _M:set_version(toset)
   if type(toset) ~= "number" then
-    return false, "expect a number at #1"
+    return false, "x509.csr:set_version: expect a number at #1"
   end
 
   -- Note: this is defined by standards (X.509 et al) to be one less than the certificate version.

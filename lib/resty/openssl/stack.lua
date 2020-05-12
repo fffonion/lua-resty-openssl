@@ -86,7 +86,7 @@ _M.new_of = function(typ)
   return function()
     local raw = stack_macro.OPENSSL_sk_new_null()
     if raw == nil then
-      return nil, "OPENSSL_sk_new_null() failed"
+      return nil, "stack.new_of: OPENSSL_sk_new_null() failed"
     end
     ffi_gc(raw, gc)
     return raw
@@ -98,11 +98,11 @@ _M.add_of = function(typ)
   return function(stack, ctx)
     if not stack then error("instance is nil") end
     if ctx == nil or not ffi.istype(ptr, ctx) then
-      return false, "expect a " .. typ .. "* at #1"
+      return false, "stack.add_of: expect a " .. typ .. "* at #1"
     end
     local code = stack_macro.OPENSSL_sk_push(stack, ctx)
     if code == 0 then
-      return false, "OPENSSL_sk_push() failed"
+      return false, "stack.add_of: OPENSSL_sk_push() failed"
     end
     return true
   end
@@ -112,11 +112,11 @@ local stack_ptr_ct = ffi.typeof("OPENSSL_STACK*")
 _M.dup_of = function(_)
   return function(ctx)
     if ctx == nil or not ffi.istype(stack_ptr_ct, ctx) then
-      return nil, "expect a stack ctx at #1"
+      return nil, "stack.dup_of: expect a stack ctx at #1"
     end
     local ctx = stack_macro.OPENSSL_sk_dup(ctx)
     if ctx == nil then
-      return nil, "OPENSSL_sk_dup() failed"
+      return nil, "stack.dup_of: OPENSSL_sk_dup() failed"
     end
     -- if the stack is duplicated: since we don't copy the elements
     -- then we only control gc of the stack itself here

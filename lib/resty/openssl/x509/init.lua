@@ -79,7 +79,7 @@ local function tostring(self, fmt)
   elseif fmt == 'DER' then
     return util.read_using_bio(C.i2d_X509_bio, self.ctx)
   else
-    return nil, "can only write PEM or DER format, not " .. fmt
+    return nil, "x509:tostring: can only write PEM or DER format, not " .. fmt
   end
 end
 
@@ -119,7 +119,7 @@ function _M.new(cert, fmt)
           -- BIO_reset; #define BIO_CTRL_RESET 1
           local code = C.BIO_ctrl(bio, 1, 0, nil)
           if code ~= 1 then
-              return nil, "BIO_ctrl() failed: " .. code
+              return nil, "x509.new: BIO_ctrl() failed: " .. code
           end
           -- clear errors occur when trying
           C.ERR_clear_error()
@@ -136,7 +136,7 @@ function _M.new(cert, fmt)
     end
     ffi_gc(ctx, C.X509_free)
   else
-    return nil, "expect nil or a string at #1"
+    return nil, "x509.new: expect nil or a string at #1"
   end
 
   local self = setmetatable({
@@ -152,11 +152,11 @@ end
 
 function _M.dup(ctx)
   if not ffi.istype(x509_ptr_ct, ctx) then
-    return nil, "expect a x509 ctx at #1"
+    return nil, "x509.dup: expect a x509 ctx at #1"
   end
   local ctx = C.X509_dup(ctx)
   if ctx == nil then
-    return nil, "X509_dup() failed"
+    return nil, "x509.dup: X509_dup() failed"
   end
 
   ffi_gc(ctx, C.X509_free)
@@ -302,12 +302,12 @@ local function digest(self, cfunc, typ)
     ffi_gc(ctx, C.EVP_MD_CTX_destroy)
   end
   if ctx == nil then
-    return nil, "failed to create EVP_MD_CTX"
+    return nil, "x509:digest: failed to create EVP_MD_CTX"
   end
 
   local dtyp = C.EVP_get_digestbyname(typ or 'sha1')
   if dtyp == nil then
-    return nil, string.format("invalid digest type \"%s\"", typ)
+    return nil, string.format("x509:digest: invalid digest type \"%s\"", typ)
   end
 
   local md_size = C.EVP_MD_size(dtyp)
@@ -336,10 +336,10 @@ local int_ptr = ffi.typeof("int[1]")
 -- AUTO GENERATED
 function _M:sign(pkey, digest)
   if not pkey_lib.istype(pkey) then
-    return false, "expect a pkey instance at #1"
+    return false, "x509:sign: expect a pkey instance at #1"
   end
   if digest and not digest_lib.istype(digest) then
-    return false, "expect a digest instance at #2"
+    return false, "x509:sign: expect a digest instance at #2"
   end
 
   -- returns size of signature if success
@@ -353,7 +353,7 @@ end
 -- AUTO GENERATED
 function _M:verify(pkey)
   if not pkey_lib.istype(pkey) then
-    return false, "expect a pkey instance at #1"
+    return false, "x509:verify: expect a pkey instance at #1"
   end
 
   local code = C.X509_verify(self.ctx, pkey.ctx)
@@ -381,7 +381,7 @@ local function get_extension(ctx, nid_txt, last_pos)
   end
   local ctx = C.X509_get_ext(ctx, pos)
   if ctx == nil then
-    return nil, nil, format_error("x509:get_extension")
+    return nil, nil, format_error()
   end
   return ctx, pos
 end
@@ -389,7 +389,7 @@ end
 -- AUTO GENERATED
 function _M:add_extension(extension)
   if not extension_lib.istype(extension) then
-    return false, "expect a x509.extension instance at #1"
+    return false, "x509:add_extension: expect a x509.extension instance at #1"
   end
 
   -- X509_add_ext returnes the stack on success, and NULL on error
@@ -405,11 +405,11 @@ end
 function _M:get_extension(nid_txt, last_pos)
   local ctx, pos, err = get_extension(self.ctx, nid_txt, last_pos)
   if err then
-    return nil, nil, err
+    return nil, nil, "x509:get_extension: " .. err
   end
   local ext, err = extension_lib.dup(ctx)
   if err then
-    return nil, nil, err
+    return nil, nil, "x509:get_extension: " .. err
   end
   return ext, pos+1
 end
@@ -430,7 +430,7 @@ end
 -- AUTO GENERATED
 function _M:set_extension(extension, last_pos)
   if not extension_lib.istype(extension) then
-    return false, "expect a x509.extension instance at #1"
+    return false, "x509:set_extension: expect a x509.extension instance at #1"
   end
 
   last_pos = (last_pos or 0) - 1
@@ -455,7 +455,7 @@ end
 function _M:set_extension_critical(nid_txt, crit, last_pos)
   local ctx, _, err = get_extension(self.ctx, nid_txt, last_pos)
   if err then
-    return nil, err
+    return nil, "x509:set_extension_critical: " .. err
   end
 
   if C.X509_EXTENSION_set_critical(ctx, crit and 1 or 0) ~= 1 then
@@ -469,7 +469,7 @@ end
 function _M:get_extension_critical(nid_txt, last_pos)
   local ctx, _, err = get_extension(self.ctx, nid_txt, last_pos)
   if err then
-    return nil, err
+    return nil, "x509:get_extension_critical: " .. err
   end
 
   return C.X509_EXTENSION_get_critical(ctx) == 1
@@ -499,7 +499,7 @@ end
 function _M:set_serial_number(toset)
   local lib = require("resty.openssl.bn")
   if lib.istype and not lib.istype(toset) then
-    return false, "expect a bn instance at #1"
+    return false, "x509:set_serial_number: expect a bn instance at #1"
   end
   toset = toset.ctx
 
@@ -533,7 +533,7 @@ end
 -- AUTO GENERATED
 function _M:set_not_before(toset)
   if type(toset) ~= "number" then
-    return false, "expect a number at #1"
+    return false, "x509:set_not_before: expect a number at #1"
   end
 
   toset = C.ASN1_TIME_set(nil, toset)
@@ -561,7 +561,7 @@ end
 -- AUTO GENERATED
 function _M:set_not_after(toset)
   if type(toset) ~= "number" then
-    return false, "expect a number at #1"
+    return false, "x509:set_not_after: expect a number at #1"
   end
 
   toset = C.ASN1_TIME_set(nil, toset)
@@ -589,7 +589,7 @@ end
 function _M:set_pubkey(toset)
   local lib = require("resty.openssl.pkey")
   if lib.istype and not lib.istype(toset) then
-    return false, "expect a pkey instance at #1"
+    return false, "x509:set_pubkey: expect a pkey instance at #1"
   end
   toset = toset.ctx
   if accessors.set_pubkey(self.ctx, toset) == 0 then
@@ -614,7 +614,7 @@ end
 function _M:set_subject_name(toset)
   local lib = require("resty.openssl.x509.name")
   if lib.istype and not lib.istype(toset) then
-    return false, "expect a x509.name instance at #1"
+    return false, "x509:set_subject_name: expect a x509.name instance at #1"
   end
   toset = toset.ctx
   if accessors.set_subject_name(self.ctx, toset) == 0 then
@@ -639,7 +639,7 @@ end
 function _M:set_issuer_name(toset)
   local lib = require("resty.openssl.x509.name")
   if lib.istype and not lib.istype(toset) then
-    return false, "expect a x509.name instance at #1"
+    return false, "x509:set_issuer_name: expect a x509.name instance at #1"
   end
   toset = toset.ctx
   if accessors.set_issuer_name(self.ctx, toset) == 0 then
@@ -664,7 +664,7 @@ end
 -- AUTO GENERATED
 function _M:set_version(toset)
   if type(toset) ~= "number" then
-    return false, "expect a number at #1"
+    return false, "x509:set_version: expect a number at #1"
   end
 
   -- Note: this is defined by standards (X.509 et al) to be one less than the certificate version.
@@ -691,7 +691,7 @@ function _M:get_subject_alt_name()
   if crit == -1 then -- not found
     return nil
   elseif crit == -2 then
-    return nil, "extension of subject_alt_name occurs more than one times, " ..
+    return nil, "x509:get_subject_alt_name: extension of subject_alt_name occurs more than one times, " ..
                 "this is not yet implemented. Please use get_extension instead."
   elseif got == nil then
     return nil, format_error("x509:get_subject_alt_name")
@@ -712,7 +712,7 @@ end
 function _M:set_subject_alt_name(toset)
   local lib = require("resty.openssl.x509.altname")
   if lib.istype and not lib.istype(toset) then
-    return false, "expect a x509.altname instance at #1"
+    return false, "x509:set_subject_alt_name: expect a x509.altname instance at #1"
   end
   toset = toset.ctx
   -- x509v3.h: # define X509V3_ADD_REPLACE              2L
@@ -746,7 +746,7 @@ function _M:get_issuer_alt_name()
   if crit == -1 then -- not found
     return nil
   elseif crit == -2 then
-    return nil, "extension of issuer_alt_name occurs more than one times, " ..
+    return nil, "x509:get_issuer_alt_name: extension of issuer_alt_name occurs more than one times, " ..
                 "this is not yet implemented. Please use get_extension instead."
   elseif got == nil then
     return nil, format_error("x509:get_issuer_alt_name")
@@ -767,7 +767,7 @@ end
 function _M:set_issuer_alt_name(toset)
   local lib = require("resty.openssl.x509.altname")
   if lib.istype and not lib.istype(toset) then
-    return false, "expect a x509.altname instance at #1"
+    return false, "x509:set_issuer_alt_name: expect a x509.altname instance at #1"
   end
   toset = toset.ctx
   -- x509v3.h: # define X509V3_ADD_REPLACE              2L
@@ -801,7 +801,7 @@ function _M:get_basic_constraints(name)
   if crit == -1 then -- not found
     return nil
   elseif crit == -2 then
-    return nil, "extension of basic_constraints occurs more than one times, " ..
+    return nil, "x509:get_basic_constraints: extension of basic_constraints occurs more than one times, " ..
                 "this is not yet implemented. Please use get_extension instead."
   elseif got == nil then
     return nil, format_error("x509:get_basic_constraints")
@@ -831,7 +831,7 @@ end
 -- AUTO GENERATED: EXTENSIONS
 function _M:set_basic_constraints(toset)
   if type(toset) ~= "table" then
-    return false, "expect a table at #1"
+    return false, "x509:set_basic_constraints: expect a table at #1"
   end
 
   local cfg_lower = {}
@@ -893,7 +893,7 @@ function _M:get_info_access()
   if crit == -1 then -- not found
     return nil
   elseif crit == -2 then
-    return nil, "extension of info_access occurs more than one times, " ..
+    return nil, "x509:get_info_access: extension of info_access occurs more than one times, " ..
                 "this is not yet implemented. Please use get_extension instead."
   elseif got == nil then
     return nil, format_error("x509:get_info_access")
@@ -914,7 +914,7 @@ end
 function _M:set_info_access(toset)
   local lib = require("resty.openssl.x509.extension.info_access")
   if lib.istype and not lib.istype(toset) then
-    return false, "expect a x509.extension.info_access instance at #1"
+    return false, "x509:set_info_access: expect a x509.extension.info_access instance at #1"
   end
   toset = toset.ctx
   -- x509v3.h: # define X509V3_ADD_REPLACE              2L
@@ -948,7 +948,7 @@ function _M:get_crl_distribution_points()
   if crit == -1 then -- not found
     return nil
   elseif crit == -2 then
-    return nil, "extension of crl_distribution_points occurs more than one times, " ..
+    return nil, "x509:get_crl_distribution_points: extension of crl_distribution_points occurs more than one times, " ..
                 "this is not yet implemented. Please use get_extension instead."
   elseif got == nil then
     return nil, format_error("x509:get_crl_distribution_points")
@@ -969,7 +969,7 @@ end
 function _M:set_crl_distribution_points(toset)
   local lib = require("resty.openssl.x509.extension.dist_points")
   if lib.istype and not lib.istype(toset) then
-    return false, "expect a x509.extension.dist_points instance at #1"
+    return false, "x509:set_crl_distribution_points: expect a x509.extension.dist_points instance at #1"
   end
   toset = toset.ctx
   -- x509v3.h: # define X509V3_ADD_REPLACE              2L

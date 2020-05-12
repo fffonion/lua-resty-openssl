@@ -28,11 +28,11 @@ end
 
 local function txt2nid(txt)
   if type(txt) ~= "string" then
-    return nil, "expect a string at #1"
+    return nil, "objects.txt2nid: expect a string at #1"
   end
   local nid = C.OBJ_txt2nid(txt)
   if nid == 0 then
-    return nil, "invalid NID text " .. txt
+    return nil, "objects.txt2nid: invalid NID text " .. txt
   end
   return nid
 end
@@ -42,12 +42,12 @@ local function txtnid2nid(txt_nid)
   if type(txt_nid) == "string" then
     nid = C.OBJ_txt2nid(txt_nid)
     if nid == 0 then
-      return nil, "invalid NID text " .. txt_nid
+      return nil, "objects.txtnid2nid: invalid NID text " .. txt_nid
     end
   elseif type(txt_nid) == "number" then
     nid = txt_nid
   else
-    return nil, "expect string or number at #1"
+    return nil, "objects.txtnid2nid: expect string or number at #1"
   end
   return nid
 end

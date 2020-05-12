@@ -109,25 +109,25 @@ local function generate_key(config)
   return ctx, nil
 end
 
-local load_pkey_try_args_pem = { null, null, null }
-local load_pkey_try_args_der = { null }
+local load_key_try_args_pem = { null, null, null }
+local load_key_try_args_der = { null }
 
-local load_pkey_try_funcs = {
+local load_key_try_funcs = {
   PEM = {
     -- Note: make sure we always try load priv key first
     pr = {
-      ['PEM_read_bio_PrivateKey'] = load_pkey_try_args_pem,
+      ['PEM_read_bio_PrivateKey'] = load_key_try_args_pem,
     },
     pu = {
-      ['PEM_read_bio_PUBKEY'] = load_pkey_try_args_pem,
+      ['PEM_read_bio_PUBKEY'] = load_key_try_args_pem,
     },
   },
   DER = {
     pr = {
-      ['d2i_PrivateKey_bio'] = load_pkey_try_args_der,
+      ['d2i_PrivateKey_bio'] = load_key_try_args_der,
     },
     pu = {
-      ['d2i_PUBKEY_bio'] = load_pkey_try_args_der,
+      ['d2i_PUBKEY_bio'] = load_key_try_args_der,
     },
   },
   JWK = {
@@ -139,7 +139,7 @@ local load_pkey_try_funcs = {
 -- populate * funcs
 local all_funcs = {}
 local typ_funcs = {}
-for fmt, ffs in pairs(load_pkey_try_funcs) do
+for fmt, ffs in pairs(load_key_try_funcs) do
   local funcs = {}
   for typ, fs in pairs(ffs) do
     for f, arg in pairs(fs) do
@@ -151,15 +151,15 @@ for fmt, ffs in pairs(load_pkey_try_funcs) do
       typ_funcs[typ] = arg
     end
   end
-  load_pkey_try_funcs[fmt]["*"] = funcs
+  load_key_try_funcs[fmt]["*"] = funcs
 end
-load_pkey_try_funcs["*"] = {}
-load_pkey_try_funcs["*"]["*"] = all_funcs
+load_key_try_funcs["*"] = {}
+load_key_try_funcs["*"]["*"] = all_funcs
 for typ, fs in pairs(typ_funcs) do
-  load_pkey_try_funcs[typ] = fs
+  load_key_try_funcs[typ] = fs
 end
 
-local function load_pkey(txt, opts)
+local function load_key(txt, opts)
   local fmt = opts.format or '*'
   if fmt ~= 'PEM' and fmt ~= 'DER' and fmt ~= "JWK" and fmt ~= '*' then
     return nil, "expecting 'DER', 'PEM', 'JWK' or '*' as \"format\""
@@ -184,7 +184,7 @@ local function load_pkey(txt, opts)
 
   local ctx
 
-  local fs = load_pkey_try_funcs[fmt][typ]
+  local fs = load_key_try_funcs[fmt][typ]
   local passphrase_cb
   for f, arg in pairs(fs) do
     -- don't need BIO when loading JWK key: we parse it in Lua land
@@ -217,7 +217,7 @@ local function load_pkey(txt, opts)
             local p = opts.passphrase_cb()
             local len = #p -- 1 byte for \0
             if len > size then
-              ngx.log(ngx.WARN, "passphrase truncated from ", len, " to ", size)
+              ngx.log(ngx.WARN, "pkey.new:load_key: passphrase truncated from ", len, " to ", size)
               len = size
             end
             ffi_copy(buf, p, len)
@@ -230,7 +230,7 @@ local function load_pkey(txt, opts)
     end
 
     if ctx ~= nil then
-      ngx.log(ngx.DEBUG, "loaded pkey using function ", f)
+      ngx.log(ngx.DEBUG, "pkey.new:load_key: loaded pkey using function ", f)
       break
     end
   end
@@ -239,7 +239,7 @@ local function load_pkey(txt, opts)
   end
 
   if ctx == nil then
-    return nil, format_error("pkey.new:load_pkey")
+    return nil, format_error()
   end
   -- clear errors occur when trying
   C.ERR_clear_error()
@@ -254,7 +254,7 @@ local function tostring(self, fmt)
   elseif not fmt or fmt == 'public' or fmt == 'PublicKey' then
     return util.read_using_bio(C.PEM_write_bio_PUBKEY, self.ctx)
   else
-    return nil, "can only export private or public key, not " .. fmt
+    return nil, "pkey:tostring: can only export private or public key, not " .. fmt
   end
 
 end
@@ -270,16 +270,22 @@ function _M.new(s, opts)
   s = s or {}
   if type(s) == 'table' then
     ctx, err = generate_key(s)
+    if err then
+      err = "pkey.new:generate_key: " .. err
+    end
   elseif type(s) == 'string' then
-    ctx, err = load_pkey(s, opts or empty_table)
+    ctx, err = load_key(s, opts or empty_table)
+    if err then
+      err = "pkey.new:load_key: " .. err
+    end
   elseif type(s) == 'cdata' then
     if ffi.istype(evp_pkey_ptr_ct, s) then
       ctx = s
     else
-      return nil, "expect a EVP_PKEY* cdata at #1"
+      return nil, "pkey.new: expect a EVP_PKEY* cdata at #1"
     end
   else
-    return nil, "unexpected type " .. type(s) .. " at #1"
+    return nil, "pkey.new: unexpected type " .. type(s) .. " at #1"
   end
 
   if err then
@@ -317,7 +323,7 @@ local function get_pkey_key(self)
     if OPENSSL_11 then
       rsa_st = C.EVP_PKEY_get0_RSA(self.ctx)
       if rsa_st == nil then
-        return nil, "EVP_PKEY_get0_RSA() failed"
+        return nil, "pkey:get_pkey_key EVP_PKEY_get0_RSA() failed"
       end
     elseif OPENSSL_10 then
       rsa_st = self.ctx.pkey and self.ctx.pkey.rsa
@@ -328,7 +334,7 @@ local function get_pkey_key(self)
     if OPENSSL_11 then
       ec_key_st = C.EVP_PKEY_get0_EC_KEY(self.ctx)
       if ec_key_st == nil then
-        return nil, "EVP_PKEY_get0_EC_KEY() failed"
+        return nil, "pkey:get_pkey_key: EVP_PKEY_get0_EC_KEY() failed"
       end
     elseif OPENSSL_10 then
       ec_key_st = self.ctx.pkey and self.ctx.pkey.ec
@@ -336,7 +342,7 @@ local function get_pkey_key(self)
     return ec_key_st
   end
 
-  return nil, "key type not supported"
+  return nil, "pkey:get_pkey_key: key type not supported"
 end
 
 function _M:get_parameters()
@@ -387,7 +393,7 @@ local function asymmetric_routine(self, s, is_encrypt, padding)
   else
     pkey_ctx = C.EVP_PKEY_CTX_new(self.ctx, nil)
     if pkey_ctx == nil then
-      return nil, format_error("pkey: EVP_PKEY_CTX_new()")
+      return nil, format_error("pkey:asymmetric_routine EVP_PKEY_CTX_new()")
     end
     ffi_gc(pkey_ctx, C.EVP_PKEY_CTX_free)
     self.pkey_ctx = pkey_ctx
@@ -406,7 +412,7 @@ local function asymmetric_routine(self, s, is_encrypt, padding)
 
   local code = fint(pkey_ctx)
   if code < 1 then
-    return nil, format_error("pkey: EVP_PKEY_" .. op_name .. "_init", code)
+    return nil, format_error("pkey:asymmetric_routine EVP_PKEY_" .. op_name .. "_init", code)
   end
 
   -- EVP_PKEY_CTX_ctrl must be called after *_init
@@ -415,7 +421,7 @@ local function asymmetric_routine(self, s, is_encrypt, padding)
                           evp_macro.EVP_PKEY_CTRL_RSA_PADDING,
                           padding, nil)
     if code ~= 1 then
-      return nil, format_error("pkey: EVP_PKEY_CTX_ctrl")
+      return nil, format_error("pkey:asymmetric_routine EVP_PKEY_CTX_ctrl")
     end
     self.rsa_padding = padding
   end
@@ -424,7 +430,7 @@ local function asymmetric_routine(self, s, is_encrypt, padding)
   length[0] = self.key_size
 
   if f(pkey_ctx, self.buf, length, s, #s) <= 0 then
-    return nil, format_error("pkey: EVP_PKEY_" .. op_name)
+    return nil, format_error("pkey:asymmetric_routine EVP_PKEY_" .. op_name)
   end
 
   return ffi_str(self.buf, length[0]), nil
@@ -444,7 +450,7 @@ local uint_ptr = ffi.typeof("unsigned int[1]")
 
 function _M:sign(digest)
   if not digest_lib.istype(digest) then
-    return nil, "expect a digest instance at #1"
+    return nil, "pkey:sign: expect a digest instance at #1"
   end
   local length = uint_ptr()
   if C.EVP_SignFinal(digest.ctx, self.buf, length, self.ctx) ~= 1 then
@@ -455,7 +461,7 @@ end
 
 function _M:verify(signature, digest)
   if not digest_lib.istype(digest) then
-    return nil, "expect a digest instance at #2"
+    return nil, "pkey:verify: expect a digest instance at #2"
   end
   local code = C.EVP_VerifyFinal(digest.ctx, signature, #signature, self.ctx)
   if code == 0 then

@@ -124,7 +124,9 @@ end
 function _M.load_jwk(txt)
   local tbl, err = cjson.decode(txt)
   if err then
-    return nil, "error decoding jwk json: " .. err
+    return nil, "error decoding JSON from JWK: " .. err
+  elseif type(tbl) ~= "table" then
+    return nil, "except input to be decoded as a table, got " .. type(tbl)
   end
 
   local key, key_free, key_type, err
@@ -155,7 +157,7 @@ function _M.load_jwk(txt)
   end
 
   if err then
-    return nil, "failed to construct key from JWK: " .. err
+    return nil, "failed to construct " .. tbl["kty"] .. " key from JWK: " .. err
   end
 
   local ctx = C.EVP_PKEY_new()

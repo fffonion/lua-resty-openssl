@@ -55,7 +55,7 @@ function _M.get_parameters(rsa_st)
           C.RSA_get0_crt_params(rsa_st, nil, nil, ptr)
         end
       else
-        return nil, "unknown parameter \"" .. k .. "\" for RSA key"
+        return nil, "rsa.get_parameters: unknown parameter \"" .. k .. "\" for RSA key"
       end
 
       if OPENSSL_11 then
@@ -91,7 +91,7 @@ function _M.set_parameters(rsa_st, opts)
   for k, v in pairs(opts) do
     opts_bn[k], err = dup_bn_value(v)
     if err then
-      err = "cannot process parameter \"" .. k .. "\":" .. err
+      err = "rsa.set_parameters: cannot process parameter \"" .. k .. "\":" .. err
       goto cleanup_with_error
     end
     if k == "n" or k == "e" or k == "d" then

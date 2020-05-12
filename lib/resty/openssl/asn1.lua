@@ -40,23 +40,23 @@ local function asn1_to_unix(asn1)
   end
   local month = tonumber(s:sub(yyoffset+1, yyoffset+2))
   if month > 12 or month < 1 then
-    return nil, "bad format " .. s
+    return nil, "asn1.asn1_to_unix: bad format " .. s
   end
   local day = tonumber(s:sub(yyoffset+3, yyoffset+4))
   if day > 31 or day < 1 then
-    return nil, "bad format " .. s
+    return nil, "asn1.asn1_to_unix: bad format " .. s
   end
   local hour = tonumber(s:sub(yyoffset+5, yyoffset+6))
   if hour > 23 or hour < 0 then
-    return nil, "bad format " .. s
+    return nil, "asn1.asn1_to_unix: bad format " .. s
   end
   local minute = tonumber(s:sub(yyoffset+7, yyoffset+8))
   if minute > 59 or hour < 0 then
-    return nil, "bad format " .. s
+    return nil, "asn1.asn1_to_unix: bad format " .. s
   end
   local second = tonumber(s:sub(yyoffset+9, yyoffset+10))
   if second > 59 or second < 0 then
-    return nil, "bad format " .. s
+    return nil, "asn1.asn1_to_unix: bad format " .. s
   end
 
   local tm
@@ -74,7 +74,7 @@ local function asn1_to_unix(asn1)
     local hh = tonumber(s:sub(yyoffset+12, yyoffset+13) or 'no')
     local mm = tonumber(s:sub(yyoffset+14, yyoffset+15) or 'no')
     if not hh or not mm then
-      return nil, "bad format " .. s
+      return nil, "asn1.asn1_to_unix: bad format " .. s
     end
     tm = tm + sgn * (hh * 3600 + mm * 60)
   end

@@ -128,9 +128,9 @@ __DATA__
     GET /t
 --- response_body_like eval
 "false
-store:load_file.+system lib.*
+x509.store:load_file.+system lib.*
 false
-store:load_file.+
+x509.store:load_file.+
 "
 --- no_error_log
 [error]
