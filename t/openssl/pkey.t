@@ -152,7 +152,7 @@ pkey.new:load_pkey: .+
 --- no_error_log
 [error]
 
-=== TEST 7: Extracts parameters
+=== TEST 7: Extracts RSA parameters
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -181,13 +181,13 @@ pkey.new:load_pkey: .+
 --- request
     GET /t
 --- response_body_like eval
-"[A-F0-9]+
-[A-F0-9]+
-[A-F0-9]+
-[A-F0-9]+
-[A-F0-9]+
-[A-F0-9]+
-[A-F0-9]+
+"[A-F0-9]{512}
+[A-F0-9]{6}
+[A-F0-9]{512}
+[A-F0-9]{256}
+[A-F0-9]{256}
+[A-F0-9]{256}
+[A-F0-9]{256}
 "
 --- no_error_log
 [error]
@@ -451,6 +451,109 @@ ok
     GET /t
 --- response_body_like eval
 "23333
+"
+--- no_error_log
+[error]
+
+=== TEST 15: Extracts EC parameters
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local p, err = require("resty.openssl.pkey").new({
+                type = "EC",
+            })
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            local params, err = p:get_parameters()
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            local group = params["group"]
+            ngx.say(group)
+            for _, k in ipairs(require("resty.openssl.ec").params) do
+                if k ~= "group" then
+                    local b, err = params[k]:to_hex()
+                    if err then
+                        ngx.log(ngx.ERR, err)
+                    end
+                    ngx.say(b)
+                end
+            end
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+"409
+[A-F0-9]{98}
+[A-F0-9]{48}
+[A-F0-9]{48}
+[A-F0-9]{48}
+"
+--- no_error_log
+[error]
+
+=== TEST 16: Loads JWK EC key
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local jwk = require("cjson").encode({
+                kty = "EC",
+                crv = "P-256",
+                x   = "SVqB4JcUD6lsfvqMr-OKUNUphdNn64Eay60978ZlL74",
+                y   = "lf0u0pMj4lGAzZix5u4Cm5CMQIgMNpkwy163wtKYVKI",
+                d   = "0g5vAEKzugrXaRbgKG0Tj2qJ5lMP4Bezds1_sTybkfk"
+            })
+            local privkey, err = require("resty.openssl.pkey").new(jwk)
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            local privkey, err = require("resty.openssl.pkey").new(jwk, {
+                format = "JWK",
+            })
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+
+            -- pubkey only
+            jwk = require("cjson").encode({
+                kty = "EC",
+                crv = "P-256",
+                x   = "SVqB4JcUD6lsfvqMr-OKUNUphdNn64Eay60978ZlL74",
+                y   = "lf0u0pMj4lGAzZix5u4Cm5CMQIgMNpkwy163wtKYVKI",
+            })
+            local pubkey, err = require("resty.openssl.pkey").new(jwk)
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+
+            local d = require("resty.openssl.digest").new("sha256")
+            d:update("23333")
+            local s, err = privkey:sign(d)
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            local ok, err = pubkey:verify(s, d)
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.say(ok)
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+"true
 "
 --- no_error_log
 [error]

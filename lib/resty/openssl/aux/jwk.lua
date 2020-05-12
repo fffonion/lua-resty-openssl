@@ -4,12 +4,15 @@ local C = ffi.C
 local ffi_gc = ffi.gc
 
 local cjson = require("cjson.safe")
+local b64 = require("ngx.base64")
+
 local evp_macro = require "resty.openssl.include.evp"
 require "resty.openssl.include.rsa"
 local rsa_lib = require "resty.openssl.rsa"
+local ec_lib = require "resty.openssl.ec"
 local bn_lib = require "resty.openssl.bn"
 
-local b64 = require("ngx.base64")
+local format_error = require("resty.openssl.err").format_error
 
 
 local _M = {}
@@ -18,12 +21,8 @@ local rsa_jwk_params = {"n", "e", "d", "p", "q", "dp", "dq", "qi"}
 local rsa_openssl_params = rsa_lib.params
 
 local function load_jwk_rsa(tbl)
-  if not tbl["n"] and not tbl["e"] then
+  if not tbl["n"] or not tbl["e"] then
     return nil, "at least \"n\" and \"e\" parameter is required"
-  end
-  local key = C.RSA_new()
-  if key == nil then
-    return nil, "RSA_new() failed"
   end
 
   local params = {}
@@ -38,10 +37,14 @@ local function load_jwk_rsa(tbl)
 
       params[rsa_openssl_params[i]], err = bn_lib.from_binary(v)
       if err then
-        C.RSA_free(key)
         return nil, "cannot use parameter \"" .. k .. "\": " .. err
       end
     end
+  end
+
+  local key = C.RSA_new()
+  if key == nil then
+    return nil, "RSA_new() failed"
   end
 
   local _, err = rsa_lib.set_parameters(key, params)
@@ -66,30 +69,50 @@ local function load_jwk_ec(tbl)
   if not curve then
     return nil, "\"crv\" not defined for EC key"
   end
-  if not tbl["x"] and not tbl["y"] then
+  if not tbl["x"] or not tbl["y"] then
     return nil, "at least \"x\" and \"y\" parameter is required"
   end
-  local nid = curve_map[curve]
-  if not nid then
+  local curve_nid = curve_map[curve]
+  if not curve_nid then
     return nil, "curve \"" .. curve .. "\" is not supported by this library"
-  elseif nid == 0 then
+  elseif curve_nid == 0 then
     return nil, "curve \"" .. curve .. "\" is not supported by linked OpenSSL"
   end
-  local group = C.EC_GROUP_new_by_curve_name(nid)
-  if group == nil then
-    return nil, "EC_GROUP_new_by_curve_name() failed"
+
+  local params = {}
+  local err
+  for _, k in ipairs(ec_jwk_params) do
+    local v = tbl[k]
+    if v then
+      v = b64.decode_base64url(v)
+      if not v then
+        return nil, "cannot decode parameter \"" .. k .. "\" from base64 " .. tbl[k]
+      end
+
+      params[k], err = bn_lib.from_binary(v)
+      if err then
+        return nil, "cannot use parameter \"" .. k .. "\": " .. err
+      end
+    end
   end
-  ffi_gc(group, C.EC_GROUP_free)
-  -- # define OPENSSL_EC_NAMED_CURVE     0x001
-  C.EC_GROUP_set_asn1_flag(group, 1)
-  C.EC_GROUP_set_point_conversion_form(group, C.POINT_CONVERSION_UNCOMPRESSED)
+
+  -- map to the name we expect
+  if params["d"] then
+    params["private"] = params["d"]
+    params["d"] = nil
+  end
+  params["group"] = curve_nid
 
   local key = C.EC_KEY_new()
   if key == nil then
     return nil, "EC_KEY_new() failed"
   end
-  C.EC_KEY_set_group(key, group)
 
+  local _, err = ec_lib.set_parameters(key, params)
+  if err ~= nil then
+    C.EC_KEY_free(key)
+    return nil, err
+  end
 
   return key
 end
@@ -116,7 +139,7 @@ function _M.load_jwk(txt)
   elseif tbl["kty"] == "EC" then
     key_type = evp_macro.EVP_PKEY_EC
     if key_type == 0 then
-      return nil, "the linked OpenSSL library doesn't support Ed25519 key"
+      return nil, "the linked OpenSSL library doesn't support EC key"
     end
     key, err = load_jwk_ec(tbl)
     key_free = C.EC_KEY_free
