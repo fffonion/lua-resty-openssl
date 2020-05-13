@@ -321,7 +321,9 @@ function _M.new(s, opts)
     return nil, err
   end
 
-  local key_size = C.EVP_PKEY_size(ctx)
+  -- although OpenSSL discourages to use this size for digest/verify
+  -- but this 
+  local sig_size = C.EVP_PKEY_size(ctx)
   local key_type = C.EVP_PKEY_base_id(ctx)
   local key_type_is_ecx = (key_type == evp_macro.EVP_PKEY_ED25519) or
                           (key_type == evp_macro.EVP_PKEY_X25519) or
@@ -336,9 +338,9 @@ function _M.new(s, opts)
     ctx = ctx,
     pkey_ctx = nil,
     rsa_padding = nil,
-    buf = ffi_new(ctypes.uchar_array, key_size),
+    buf = ffi_new(ctypes.uchar_array, sig_size),
     key_type = key_type,
-    key_size = key_size,
+    sig_size = sig_size,
     key_type_is_ecx = key_type_is_ecx,
   }, mt)
 
@@ -476,7 +478,7 @@ local function asymmetric_routine(self, s, is_encrypt, padding)
   end
 
   local length = ptr_of_size_t()
-  length[0] = self.key_size
+  length[0] = self.sig_size
 
   if f(pkey_ctx, self.buf, length, s, #s) <= 0 then
     return nil, format_error("pkey:asymmetric_routine EVP_PKEY_" .. op_name)
@@ -496,21 +498,60 @@ function _M:decrypt(s, padding)
 end
 
 function _M:sign(digest)
-  if not digest_lib.istype(digest) then
-    return nil, "pkey:sign: expect a digest instance at #1"
+  if not self.key_type_is_ecx then
+    if not digest_lib.istype(digest) then
+      return nil, "pkey:sign: expect a digest instance at #1"
+    end
+    local length = ptr_of_uint()
+    if C.EVP_SignFinal(digest.ctx, self.buf, length, self.ctx) ~= 1 then
+      return nil, format_error("pkey:sign: EVP_SignFinal")
+    end
+    return ffi_str(self.buf, length[0]), nil
+  else
+    if type(digest) ~= "string" then
+      return nil, "pkey:sign expect a string at #1"
+    end
+    -- use on shot signing for Ed keys
+    local md_ctx = C.EVP_MD_CTX_new()
+    if md_ctx == nil then
+      return nil, "pkey:sign: EVP_MD_CTX_new() failed"
+    end
+    ffi_gc(md_ctx, C.EVP_MD_CTX_free)
+    if C.EVP_DigestSignInit(md_ctx, nil, nil, nil, self.ctx) ~= 1 then
+      return nil, format_error("pkey:sign: EVP_DigestSignInit")
+    end
+    local length = ptr_of_size_t()
+    length[0] = self.sig_size
+    if C.EVP_DigestSign(md_ctx, self.buf, length, digest, #digest) ~= 1 then
+      return nil, format_error("pkey:sign: EVP_DigestSign")
+    end
+    return ffi_str(self.buf, length[0]), nil
   end
-  local length = ptr_of_uint()
-  if C.EVP_SignFinal(digest.ctx, self.buf, length, self.ctx) ~= 1 then
-    return nil, format_error("pkey:sign")
-  end
-  return ffi_str(self.buf, length[0]), nil
 end
 
 function _M:verify(signature, digest)
-  if not digest_lib.istype(digest) then
-    return nil, "pkey:verify: expect a digest instance at #2"
+  local code
+  if not self.key_type_is_ecx then
+    if not digest_lib.istype(digest) then
+      return nil, "pkey:verify: expect a digest instance at #2"
+    end
+    code = C.EVP_VerifyFinal(digest.ctx, signature, #signature, self.ctx)
+  else
+    if type(digest) ~= "string" then
+      return nil, "pkey:verify expect a string at #2"
+    end
+    -- use on shot verification for Ed keys
+    local md_ctx = C.EVP_MD_CTX_new()
+    if md_ctx == nil then
+      return nil, "pkey:verify: EVP_MD_CTX_new() failed"
+    end
+    ffi_gc(md_ctx, C.EVP_MD_CTX_free)
+    if C.EVP_DigestVerifyInit(md_ctx, nil, nil, nil, self.ctx) ~= 1 then
+      return nil, format_error("pkey:verify: EVP_DigestSignInit")
+    end
+    code = C.EVP_DigestVerify(md_ctx, signature, #signature, digest, #digest)
   end
-  local code = C.EVP_VerifyFinal(digest.ctx, signature, #signature, self.ctx)
+
   if code == 0 then
     return false, nil
   elseif code == 1 then

@@ -503,7 +503,45 @@ true
 --- no_error_log
 [error]
 
-=== TEST 16: Error on bad digest or verify parameters
+=== TEST 16: One shot sign and verify
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local version_num = require("resty.openssl.version").version_num
+            if version_num < 0x10101000 then
+                ngx.say('64')
+                ngx.say('true')
+                return
+            end
+            local p, err = require("resty.openssl.pkey").new({
+                type = "Ed25519"
+            })
+            local digest = "23333"
+            local s, err = p:sign(digest)
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.say(#s)
+            local v, err = p:verify(s, digest)
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.say(v)
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"64
+true
+"
+--- no_error_log
+[error]
+
+=== TEST 17: Error on bad digest or verify parameters
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -529,7 +567,7 @@ pkey:verify: expect a digest instance at #2
 --- no_error_log
 [error]
 
-=== TEST 17: Key derivation for EC, X448 and X25519
+=== TEST 18: Key derivation for EC, X448 and X25519
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -569,7 +607,7 @@ pkey:verify: expect a digest instance at #2
 --- no_error_log
 [error]
 
-=== TEST 18: get key type
+=== TEST 19: get key type
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
