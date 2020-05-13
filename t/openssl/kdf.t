@@ -9,12 +9,13 @@ my $pwd = cwd();
 my $use_luacov = $ENV{'TEST_NGINX_USE_LUACOV'} // '';
 
 our $HttpConfig = qq{
-    lua_package_path "$pwd/lib/?.lua;$pwd/lib/?/init.lua;;";
+    lua_package_path "$pwd/t/openssl/?.lua;$pwd/lib/?.lua;$pwd/lib/?/init.lua;;";
     init_by_lua_block {
         if "1" == "$use_luacov" then
             require 'luacov.tick'
             jit.off()
         end
+        _G.myassert = require("helper").myassert
     }
 };
 
@@ -71,17 +72,14 @@ kdf.derive: unknown type 19823718236128632
     location =/t {
         content_by_lua_block {
             local kdf = require("resty.openssl.kdf")
-            local key, err = kdf.derive({
+            local key = myassert(kdf.derive({
                 type = kdf.PBKDF2,
                 outlen = 16,
                 pass = "1234567",
                 pbkdf2_iter = 1000,
                 md = "md5",
-            })
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            }))
+
             ngx.print(ngx.encode_base64(key))
         }
     }
@@ -99,14 +97,11 @@ kdf.derive: unknown type 19823718236128632
     location =/t {
         content_by_lua_block {
             local kdf = require("resty.openssl.kdf")
-            local key, err = kdf.derive({
+            local key = myassert(kdf.derive({
                 type = kdf.PBKDF2,
                 outlen = 16,
-            })
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            }))
+
             ngx.print(ngx.encode_base64(key))
         }
     }
@@ -129,18 +124,15 @@ kdf.derive: unknown type 19823718236128632
                 ngx.exit(0)
             end
             local kdf = require("resty.openssl.kdf")
-            local key, err = kdf.derive({
+            local key = myassert(kdf.derive({
                 type = kdf.HKDF,
                 outlen = 16,
                 md = "md5",
                 hkdf_key = "secret",
                 hkdf_info = "some info",
                 hkdf_mode = kdf.HKDEF_MODE_EXTRACT_AND_EXPAND,
-            })
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            }))
+
             ngx.print(ngx.encode_base64(key))
         }
     }
@@ -164,31 +156,25 @@ kdf.derive: unknown type 19823718236128632
                 ngx.exit(0)
             end
             local kdf = require("resty.openssl.kdf")
-            local key, err = kdf.derive({
+            local key = myassert(kdf.derive({
                 type = kdf.HKDF,
                 outlen = 16,
                 hkdf_key = "secret",
-            })
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            }))
+
             ngx.say(ngx.encode_base64(key))
 
             if version_num < 0x10101000 then
                 ngx.say("SlKh6iSRnnZV92zOAbLduQ==")
                 ngx.exit(0)
             end
-            local key, err = kdf.derive({
+            local key = myassert(kdf.derive({
                 type = kdf.HKDF,
                 outlen = 16,
                 hkdf_key = "secret",
                 hkdf_mode = kdf.HKDEF_MODE_EXTRACT_ONLY,
-            })
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            }))
+
             ngx.say(ngx.encode_base64(key))
         }
     }
@@ -213,17 +199,14 @@ SlKh6iSRnnZV92zOAbLduQ==
                 ngx.exit(0)
             end
             local kdf = require("resty.openssl.kdf")
-            local key, err = kdf.derive({
+            local key = myassert(kdf.derive({
                 type = kdf.TLS1_PRF,
                 outlen = 16,
                 md = "md5",
                 tls1_prf_secret = "secret",
                 tls1_prf_seed = "seed",
-            })
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            }))
+
             ngx.print(ngx.encode_base64(key))
         }
     }
@@ -246,16 +229,13 @@ SlKh6iSRnnZV92zOAbLduQ==
                 ngx.exit(0)
             end
             local kdf = require("resty.openssl.kdf")
-            local key, err = kdf.derive({
+            local key = myassert(kdf.derive({
                 type = kdf.TLS1_PRF,
                 outlen = 16,
                 tls1_prf_secret = "secret",
                 tls1_prf_seed = "seed",
-            })
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            }))
+
             ngx.print(ngx.encode_base64(key))
         }
     }
@@ -278,18 +258,15 @@ SlKh6iSRnnZV92zOAbLduQ==
                 ngx.exit(0)
             end
             local kdf = require("resty.openssl.kdf")
-            local key, err = kdf.derive({
+            local key = myassert(kdf.derive({
                 type = kdf.SCRYPT,
                 outlen = 16,
                 pass = "1234567",
                 scrypt_N = 1024,
                 scrypt_r = 8,
                 scrypt_p = 16,
-            })
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            }))
+
             ngx.print(ngx.encode_base64(key))
         }
     }

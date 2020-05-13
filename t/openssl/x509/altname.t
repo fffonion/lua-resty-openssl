@@ -9,12 +9,13 @@ my $pwd = cwd();
 my $use_luacov = $ENV{'TEST_NGINX_USE_LUACOV'} // '';
 
 our $HttpConfig = qq{
-    lua_package_path "$pwd/lib/?.lua;$pwd/lib/?/init.lua;;";
+    lua_package_path "$pwd/t/openssl/?.lua;$pwd/lib/?.lua;$pwd/lib/?/init.lua;;";
     init_by_lua_block {
         if "1" == "$use_luacov" then
             require 'luacov.tick'
             jit.off()
         end
+        _G.myassert = require("helper").myassert
     }
 };
 
@@ -28,11 +29,7 @@ __DATA__
     location =/t {
         content_by_lua_block {
             local altname = require("resty.openssl.x509.altname")
-            local c, err = altname.new()
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local c = myassert(altname.new())
             ngx.say(#c)
         }
     }
@@ -50,17 +47,10 @@ __DATA__
     location =/t {
         content_by_lua_block {
             local altname = require("resty.openssl.x509.altname")
-            local c, err = altname.new()
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local c = myassert(altname.new())
+
             for i=0,2,1 do
-                local ok, err = c:add("DNS", string.format("%d.com", i))
-                if err then
-                    ngx.log(ngx.ERR, err)
-                    return
-                end
+                local ok = myassert(c:add("DNS", string.format("%d.com", i)))
             end
             ngx.say(#c)
             ngx.say(c:count())
@@ -81,17 +71,10 @@ __DATA__
     location =/t {
         content_by_lua_block {
             local altname = require("resty.openssl.x509.altname")
-            local c, err = altname.new()
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local c = myassert(altname.new())
+
             for i=0,2,1 do
-                local ok, err = c:add("DNS", string.format("%d.com", i))
-                if err then
-                    ngx.log(ngx.ERR, err)
-                    return
-                end
+                local ok = myassert(c:add("DNS", string.format("%d.com", i)))
             end
             for k, v in pairs(c) do
                 ngx.say(k, " ", v)
@@ -114,16 +97,10 @@ DNS 2.com
     location =/t {
         content_by_lua_block {
             local altname = require("resty.openssl.x509.altname")
-            local c, err = altname.new()
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
-            local ok, err = c:add("DNS", "example.com")
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local c = myassert(altname.new())
+
+            local ok = myassert(c:add("DNS", "example.com"))
+
             cert = nil
             collectgarbage("collect")
             local k, v = unpack(c[1])
@@ -144,16 +121,10 @@ DNS 2.com
     location =/t {
         content_by_lua_block {
             local altname = require("resty.openssl.x509.altname")
-            local c, err = altname.new()
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
-            local ok, err = c:add("DNS", "example.com")
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local c = myassert(altname.new())
+
+            local ok = myassert(c:add("DNS", "example.com"))
+
             local cc = c[1]
             c = nil
             collectgarbage("collect")

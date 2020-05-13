@@ -9,12 +9,13 @@ my $pwd = cwd();
 my $use_luacov = $ENV{'TEST_NGINX_USE_LUACOV'} // '';
 
 our $HttpConfig = qq{
-    lua_package_path "$pwd/t/openssl/x509/?.lua;$pwd/lib/?.lua;$pwd/lib/?/init.lua;;";
+    lua_package_path "$pwd/t/openssl/?.lua;$pwd/t/openssl/x509/?.lua;$pwd/lib/?.lua;$pwd/lib/?/init.lua;;";
     init_by_lua_block {
         if "1" == "$use_luacov" then
             require 'luacov.tick'
             jit.off()
         end
+        _G.myassert = require("helper").myassert
     }
 };
 
@@ -29,11 +30,7 @@ __DATA__
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
-            if err then
-                ngx.say(err)
-                return
-            end
+            local c = myassert(require("resty.openssl.x509").new(f))
             ngx.say("ok")
         }
     }
@@ -51,22 +48,12 @@ __DATA__
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
-            if err then
-                ngx.say(err)
-                return
-            end
-            local pem, err = c:tostring("PEM")
-            if err then
-                ngx.say(err)
-                return
-            end
+            local c = myassert(require("resty.openssl.x509").new(f))
+
+            local pem = myassert(c:tostring("PEM"))
+
             for _, typ in ipairs({"PEM", "*", false}) do
-              local c2, err = require("resty.openssl.x509").new(pem, typ)
-              if err then
-                  ngx.say(err)
-                  return
-              end
+              local c2 = myassert(require("resty.openssl.x509").new(pem, typ))
             end
             local c2, err = require("resty.openssl.x509").new(pem, "DER")
             ngx.say(err)
@@ -85,22 +72,12 @@ __DATA__
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
-            if err then
-                ngx.say(err)
-                return
-            end
-            local pem, err = c:tostring("DER")
-            if err then
-                ngx.say(err)
-                return
-            end
+            local c = myassert(require("resty.openssl.x509").new(f))
+
+            local pem = myassert(c:tostring("DER"))
+
             for _, typ in ipairs({"DER", "*", false}) do
-              local c2, err = require("resty.openssl.x509").new(pem, typ)
-              if err then
-                  ngx.say(err)
-                  return
-              end
+              local c2 = myassert(require("resty.openssl.x509").new(pem, typ))
             end
             local c2, err = require("resty.openssl.x509").new(pem, "PEM")
             ngx.say(err)
@@ -140,13 +117,10 @@ x509.new: .*not enough data
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/GlobalSign.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
-            local dd, err = c:digest()
-            if err then
-                ngx.say("2 " .. err)
-                ngx.exit(0)
-            end
-            local h, err = require("helper").to_hex(dd)
+            local c = myassert(require("resty.openssl.x509").new(f))
+            local dd = myassert(c:digest())
+
+            local h = myassert(require("helper").to_hex(dd))
             ngx.say(h)
         }
     }
@@ -164,12 +138,9 @@ x509.new: .*not enough data
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/GlobalSign.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
-            local dd, err = c:pubkey_digest()
-            if err then
-                ngx.say("2 " .. err)
-                ngx.exit(0)
-            end
+            local c = myassert(require("resty.openssl.x509").new(f))
+            local dd = myassert(c:pubkey_digest())
+
             local h, err = require("helper").to_hex(dd)
             ngx.say(h)
         }
@@ -189,11 +160,8 @@ x509.new: .*not enough data
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
             local c, err = require("resty.openssl.x509").new(f)
-            local ext, pos, err = c:get_extension("X509v3 Extended Key Usage")
-            if err then
-                ngx.say(err)
-                ngx.exit(0)
-            end
+            local ext, pos = c:get_extension("X509v3 Extended Key Usage")
+
             ngx.say(pos)
             ngx.say(tostring(ext))
         }
@@ -213,23 +181,14 @@ TLS Web Server Authentication, TLS Web Client Authentication
     location =/t {
         content_by_lua_block {
             local c, err = require("resty.openssl.x509").new()
-            local ext, err = require("resty.openssl.x509.extension").new(
+            local ext = myassert(require("resty.openssl.x509.extension").new(
                 "extendedKeyUsage", "TLS Web Server Authentication"
-            )
-            if err then
-                ngx.say(err)
-                ngx.exit(0)
-            end
-            local ok, err = c:add_extension(ext)
-            if err then
-                ngx.say(err)
-                ngx.exit(0)
-            end
-            local ext, _, err = c:get_extension("X509v3 Extended Key Usage")
-            if err then
-                ngx.say(err)
-                ngx.exit(0)
-            end
+            ))
+
+            local ok = myassert(c:add_extension(ext))
+
+            local ext, _ = c:get_extension("X509v3 Extended Key Usage")
+
             ngx.say(tostring(ext))
         }
     }
@@ -247,20 +206,14 @@ TLS Web Server Authentication, TLS Web Client Authentication
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/GlobalSign.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
-            local ext, err = require("resty.openssl.x509.extension").new(
+            local c = myassert(require("resty.openssl.x509").new(f))
+            local ext = myassert(require("resty.openssl.x509.extension").new(
                 "keyUsage", "Digital Signature, Key Encipherment"
-            )
-            local ok, err = c:set_extension(ext)
-            if err then
-                ngx.say(err)
-                ngx.exit(0)
-            end
-            local ext, _, err = c:get_extension("X509v3 Key Usage")
-            if err then
-                ngx.say(err)
-                ngx.exit(0)
-            end
+            ))
+            local ok = myassert(c:set_extension(ext))
+
+            local ext, _ = c:get_extension("X509v3 Key Usage")
+
             ngx.say(tostring(ext))
         }
     }
@@ -279,7 +232,7 @@ TLS Web Server Authentication, TLS Web Client Authentication
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/GlobalSign.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
+            local c = myassert(require("resty.openssl.x509").new(f))
             ngx.say(c:get_basic_constraints("ca"))
             ngx.say(c:get_basic_constraints("pathlen"))
             collectgarbage("collect")
@@ -301,11 +254,11 @@ TLS Web Server Authentication, TLS Web Client Authentication
         content_by_lua_block {
             local f = io.open("t/fixtures/GlobalSign.pem"):read("*a")
             local c, err = require("resty.openssl.x509").new(f)
-            local ok, err = c:set_basic_constraints({
+            local ok = myassert(c:set_basic_constraints({
                 CA = false,
                 pathLen = 233,
-            })
-            if err then ngx.log(ngx.ERR, err) end
+            }))
+
             ngx.say(c:get_basic_constraints("ca"))
             ngx.say(c:get_basic_constraints("pathlen"))
             collectgarbage("collect")
@@ -326,9 +279,9 @@ TLS Web Server Authentication, TLS Web Client Authentication
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
-            local aia, err = c:get_info_access()
-            if err then ngx.log(ngx.ERR, err) end
+            local c = myassert(require("resty.openssl.x509").new(f))
+            local aia = myassert(c:get_info_access())
+
             local ffi = require "ffi"
             for _, v in ipairs(aia) do
                 ngx.say(ffi.string(ffi.C.OBJ_nid2ln(v[1])), " - ", v[2], ":", v[3])
@@ -351,13 +304,13 @@ CA Issuers - URI:http://cacerts.digicert.com/DigiCertSHA2ExtendedValidationServe
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
-            local aia, err = c:get_info_access()
-            local _, err = aia:add("OCSP", "URI", "http://somedomain.com")
-            if err then ngx.log(ngx.ERR, err) end
-            ok, err = c:set_info_access(aia)
-            if err then ngx.log(ngx.ERR, err) end
-            local aia, err = c:get_info_access()
+            local c = myassert(require("resty.openssl.x509").new(f))
+            local aia = myassert(c:get_info_access())
+            myassert(aia:add("OCSP", "URI", "http://somedomain.com"))
+        
+            myassert(c:set_info_access(aia))
+
+            local aia = myassert(c:get_info_access())
             local ffi = require "ffi"
             for _, v in ipairs(aia) do
                 ngx.say(ffi.string(ffi.C.OBJ_nid2ln(v[1])), " - ", v[2], ":", v[3])
@@ -381,9 +334,9 @@ OCSP - URI:http://somedomain.com
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
-            local cdp, err = c:get_crl_distribution_points()
-            if err then ngx.log(ngx.ERR, err) end
+            local c = myassert(require("resty.openssl.x509").new(f))
+            local cdp = myassert(c:get_crl_distribution_points())
+
             local ffi = require "ffi"
             for _, altname in pairs(cdp) do
                 for k, v in pairs(altname) do
@@ -421,20 +374,17 @@ URI http://crl4.digicert.com/sha2-ev-server-g2.crl
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
+            local c = myassert(require("resty.openssl.x509").new(f))
 
-            local ocsp, err = c:get_ocsp_url()
-            if err then ngx.log(ngx.ERR, err) end
+            local ocsp = myassert(c:get_ocsp_url())
             ngx.say(ocsp)
 
-            local ocsp, err = c:get_ocsp_url(true)
-            if err then ngx.log(ngx.ERR, err) end
+            local ocsp = myassert(c:get_ocsp_url(true))
             ngx.say(require("cjson").encode(ocsp))
 
             local f = io.open("t/fixtures/GlobalSign.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
-            local ocsp, err = c:get_ocsp_url()
-            if err then ngx.log(ngx.ERR, err) end
+            local c = myassert(require("resty.openssl.x509").new(f))
+            local ocsp = myassert(c:get_ocsp_url())
             ngx.say(ocsp)
         }
     }
@@ -454,20 +404,17 @@ nil
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
+            local c = myassert(require("resty.openssl.x509").new(f))
 
-            local crl, err = c:get_crl_url()
-            if err then ngx.log(ngx.ERR, err) end
+            local crl = myassert(c:get_crl_url())
             ngx.say(crl)
 
-            local crl, err = c:get_crl_url(true)
-            if err then ngx.log(ngx.ERR, err) end
+            local crl = myassert(c:get_crl_url(true))
             ngx.say(require("cjson").encode(crl))
 
             local f = io.open("t/fixtures/GlobalSign.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
-            local crl, err = c:get_crl_url()
-            if err then ngx.log(ngx.ERR, err) end
+            local c = myassert(require("resty.openssl.x509").new(f))
+            local crl = myassert(c:get_crl_url())
             ngx.say(crl)
         }
     }
@@ -487,22 +434,16 @@ nil
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/GlobalSign.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local c = myassert(require("resty.openssl.x509").new(f))
 
-            local get, err = c:get_subject_alt_name()
+            local get = myassert(c:get_subject_alt_name())
             ngx.say(get)
-            ngx.say(err)
         }
     }
 --- request
     GET /t
 --- response_body eval
 "nil
-nil
 "
 --- no_error_log
 [error]
@@ -516,17 +457,9 @@ nil
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local c = myassert(require("resty.openssl.x509").new(f))
 
-            local get, err = c:get_serial_number()
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local get = myassert(c:get_serial_number())
             get = get:to_hex()
             ngx.print(get)
         }
@@ -544,23 +477,11 @@ nil
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local c = myassert(require("resty.openssl.x509").new(f))
             local toset = require("resty.openssl.bn").new(math.random(1, 2333333))
-            local ok, err = c:set_serial_number(toset)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local ok = myassert(c:set_serial_number(toset))
 
-            local get, err = c:get_serial_number()
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local get = myassert(c:get_serial_number())
             get = get:to_hex()
             toset = toset:to_hex()
             if get ~= toset then
@@ -584,17 +505,9 @@ nil
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local c = myassert(require("resty.openssl.x509").new(f))
 
-            local get, err = c:get_not_before()
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local get = myassert(c:get_not_before())
             ngx.print(get)
         }
     }
@@ -611,23 +524,11 @@ nil
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local c = myassert(require("resty.openssl.x509").new(f))
             local toset = ngx.time()
-            local ok, err = c:set_not_before(toset)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local ok = myassert(c:set_not_before(toset))
 
-            local get, err = c:get_not_before()
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local get = myassert(c:get_not_before())
             if get ~= toset then
               ngx.say(get)
               ngx.say(toset)
@@ -649,17 +550,9 @@ nil
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local c = myassert(require("resty.openssl.x509").new(f))
 
-            local get, err = c:get_not_after()
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local get = myassert(c:get_not_after())
             ngx.print(get)
         }
     }
@@ -676,23 +569,11 @@ nil
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local c = myassert(require("resty.openssl.x509").new(f))
             local toset = ngx.time()
-            local ok, err = c:set_not_after(toset)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local ok = myassert(c:set_not_after(toset))
 
-            local get, err = c:get_not_after()
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local get = myassert(c:get_not_after())
             if get ~= toset then
               ngx.say(get)
               ngx.say(toset)
@@ -714,17 +595,9 @@ nil
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local c = myassert(require("resty.openssl.x509").new(f))
 
-            local get, err = c:get_pubkey()
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local get = myassert(c:get_pubkey())
             get = get:to_PEM()
             ngx.print(get)
         }
@@ -751,23 +624,11 @@ SwIDAQAB
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local c = myassert(require("resty.openssl.x509").new(f))
             local toset = require("resty.openssl.pkey").new()
-            local ok, err = c:set_pubkey(toset)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local ok = myassert(c:set_pubkey(toset))
 
-            local get, err = c:get_pubkey()
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local get = myassert(c:get_pubkey())
             get = get:to_PEM()
             toset = toset:to_PEM()
             if get ~= toset then
@@ -791,17 +652,9 @@ SwIDAQAB
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local c = myassert(require("resty.openssl.x509").new(f))
 
-            local get, err = c:get_subject_name()
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local get = myassert(c:get_subject_name())
             get = get:_tostring()
             ngx.print(get)
         }
@@ -819,23 +672,11 @@ SwIDAQAB
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local c = myassert(require("resty.openssl.x509").new(f))
             local toset = require("resty.openssl.x509.name").new():add('CN', 'earth.galaxy')
-            local ok, err = c:set_subject_name(toset)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local ok = myassert(c:set_subject_name(toset))
 
-            local get, err = c:get_subject_name()
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local get = myassert(c:get_subject_name())
             get = get:_tostring()
             toset = toset:_tostring()
             if get ~= toset then
@@ -859,17 +700,9 @@ SwIDAQAB
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local c = myassert(require("resty.openssl.x509").new(f))
 
-            local get, err = c:get_issuer_name()
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local get = myassert(c:get_issuer_name())
             get = get:_tostring()
             ngx.print(get)
         }
@@ -887,23 +720,11 @@ SwIDAQAB
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local c = myassert(require("resty.openssl.x509").new(f))
             local toset = require("resty.openssl.x509.name").new():add('CN', 'earth.galaxy')
-            local ok, err = c:set_issuer_name(toset)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local ok = myassert(c:set_issuer_name(toset))
 
-            local get, err = c:get_issuer_name()
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local get = myassert(c:get_issuer_name())
             get = get:_tostring()
             toset = toset:_tostring()
             if get ~= toset then
@@ -927,17 +748,9 @@ SwIDAQAB
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local c = myassert(require("resty.openssl.x509").new(f))
 
-            local get, err = c:get_version()
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local get = myassert(c:get_version())
             ngx.print(get)
         }
     }
@@ -954,23 +767,11 @@ SwIDAQAB
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local c = myassert(require("resty.openssl.x509").new(f))
             local toset = ngx.time()
-            local ok, err = c:set_version(toset)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local ok = myassert(c:set_version(toset))
 
-            local get, err = c:get_version()
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local get = myassert(c:get_version())
             if get ~= toset then
               ngx.say(get)
               ngx.say(toset)
@@ -992,17 +793,9 @@ SwIDAQAB
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local c = myassert(require("resty.openssl.x509").new(f))
 
-            local get, err = c:get_subject_alt_name()
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local get = myassert(c:get_subject_alt_name())
             get = get:_tostring()
             ngx.print(get)
         }
@@ -1020,23 +813,11 @@ SwIDAQAB
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local c = myassert(require("resty.openssl.x509").new(f))
             local toset = require("resty.openssl.x509.altname").new():add('DNS', 'earth.galaxy')
-            local ok, err = c:set_subject_alt_name(toset)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local ok = myassert(c:set_subject_alt_name(toset))
 
-            local get, err = c:get_subject_alt_name()
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local get = myassert(c:get_subject_alt_name())
             get = get:_tostring()
             toset = toset:_tostring()
             if get ~= toset then
@@ -1060,19 +841,12 @@ SwIDAQAB
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
+            local c = myassert(require("resty.openssl.x509").new(f))
 
-            local crit, err = c:get_subject_alt_name_critical()
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local crit = myassert(c:get_subject_alt_name_critical())
 
-            local ok, err = c:set_subject_alt_name_critical(not crit)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local ok, err = myassert(c:set_subject_alt_name_critical(not crit))
+
             ngx.say(c:get_subject_alt_name_critical() == not crit)
         }
     }
@@ -1089,19 +863,12 @@ true
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
+            local c = myassert(require("resty.openssl.x509").new(f))
 
-            local crit, err = c:get_basic_constraints_critical()
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local crit = myassert(c:get_basic_constraints_critical())
 
-            local ok, err = c:set_basic_constraints_critical(not crit)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local ok, err = myassert(c:set_basic_constraints_critical(not crit))
+
             ngx.say(c:get_basic_constraints_critical() == not crit)
         }
     }
@@ -1118,19 +885,12 @@ true
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
+            local c = myassert(require("resty.openssl.x509").new(f))
 
-            local crit, err = c:get_info_access_critical()
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local crit = myassert(c:get_info_access_critical())
 
-            local ok, err = c:set_info_access_critical(not crit)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local ok, err = myassert(c:set_info_access_critical(not crit))
+
             ngx.say(c:get_info_access_critical() == not crit)
         }
     }
@@ -1147,19 +907,12 @@ true
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
+            local c = myassert(require("resty.openssl.x509").new(f))
 
-            local crit, err = c:get_crl_distribution_points_critical()
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local crit = myassert(c:get_crl_distribution_points_critical())
 
-            local ok, err = c:set_crl_distribution_points_critical(not crit)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local ok, err = myassert(c:set_crl_distribution_points_critical(not crit))
+
             ngx.say(c:get_crl_distribution_points_critical() == not crit)
         }
     }

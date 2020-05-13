@@ -9,12 +9,13 @@ my $pwd = cwd();
 my $use_luacov = $ENV{'TEST_NGINX_USE_LUACOV'} // '';
 
 our $HttpConfig = qq{
-    lua_package_path "$pwd/lib/?.lua;$pwd/lib/?/init.lua;;";
+    lua_package_path "$pwd/t/openssl/?.lua;$pwd/lib/?.lua;$pwd/lib/?/init.lua;;";
     init_by_lua_block {
         if "1" == "$use_luacov" then
             require 'luacov.tick'
             jit.off()
         end
+        _G.myassert = require("helper").myassert
     }
 };
 
@@ -28,8 +29,8 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            local p = require("resty.openssl.pkey").new()
-            ngx.say(p:to_PEM('private'))
+            local p = myassert(require("resty.openssl.pkey").new())
+            ngx.say(myassert(p:to_PEM('private')))
         }
     }
 --- request
@@ -45,11 +46,11 @@ __DATA__
     location =/t {
         content_by_lua_block {
             local pkey = require("resty.openssl.pkey")
-            local p = pkey.new({
+            local p = myassert(pkey.new({
                 type = 'RSA',
                 bits = 2048,
-            })
-            local pem = p:to_PEM('private')
+            }))
+            local pem = myassert(p:to_PEM('private'))
             ngx.say(pem)
             ngx.say(pem == pkey.new(pem):to_PEM('private'))
         }
@@ -69,11 +70,11 @@ true"
     location =/t {
         content_by_lua_block {
             local pkey = require("resty.openssl.pkey")
-            local p = pkey.new({
+            local p = myassert(pkey.new({
                 type = 'EC',
                 curve = 'prime192v1',
-            })
-            local pem = p:to_PEM('private')
+            }))
+            local pem = myassert(p:to_PEM('private'))
             ngx.say(pem)
             ngx.say(pem == pkey.new(pem):to_PEM('private'))
         }
@@ -100,10 +101,10 @@ true"
                 return
             end
             local pkey = require("resty.openssl.pkey")
-            local p = pkey.new({
+            local p = myassert(pkey.new({
                 type = 'Ed25519',
-            })
-            local pem = p:to_PEM('private')
+            }))
+            local pem = myassert(p:to_PEM('private'))
             ngx.say(pem)
             ngx.say(pem == pkey.new(pem):to_PEM('private'))
         }
@@ -150,15 +151,12 @@ pkey.new:load_key: .+
                 passphrase = "wrongpasswrod",
             })
             ngx.say(err)
-            local privkey, err = require("resty.openssl.pkey").new(f, {
+            local privkey = myassert(require("resty.openssl.pkey").new(f, {
                 format = "PEM",
                 type = "pr",
                 passphrase = "123456",
-            })
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            }))
+
             ngx.say("ok")
         }
     }
@@ -185,17 +183,14 @@ ok
                 end,
             })
             ngx.say(err)
-            local privkey, err = require("resty.openssl.pkey").new(f, {
+            local privkey = myassert(require("resty.openssl.pkey").new(f, {
                 format = "PEM",
                 type = "pr",
                 passphrase_cb = function()
                     return "123456"
                 end,
-            })
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            }))
+
             ngx.say("ok")
         }
     }
@@ -214,18 +209,12 @@ ok
     location =/t {
         content_by_lua_block {
             local pkey = require("resty.openssl.pkey")
-            local p1, err = pkey.new()
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local p1 = myassert(pkey.new())
+
             local pem = p1:to_PEM('private')
             local der, err = require("ngx.ssl").priv_key_pem_to_der(pem)
-            local p2, err = pkey.new(der)
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local p2 = myassert(pkey.new(der))
+    
             ngx.print(p2 and pem == p2:to_PEM('private'))
         }
     }
@@ -245,20 +234,13 @@ ok
                 type = 'EC',
                 curve = 'prime256v1',
             })
-            local t, err = p:tostring('private', "PEM")
-            if err then
-                ngx.log(ngx.ERR, err)
-            end
+            local t = myassert(p:tostring('private', "PEM"))
             ngx.say(t)
-            local t, err = p:tostring('private', "DER")
-            if err then
-                ngx.log(ngx.ERR, err)
-            end
+
+            local t = myassert(p:tostring('private', "DER"))
             ngx.say(#t)
-            local t, err = p:tostring('private', "JWK")
-            if err then
-                ngx.log(ngx.ERR, err)
-            end
+    
+            local t = myassert(p:tostring('private', "JWK"))
             ngx.say(t)
         }
     }
@@ -279,11 +261,7 @@ ok
 --- config
     location =/t {
         content_by_lua_block {
-            local p, err = require("resty.openssl.pkey").new()
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local p = myassert(require("resty.openssl.pkey").new())
             ngx.say(p:to_PEM())
         }
     }
@@ -299,23 +277,14 @@ ok
 --- config
     location =/t {
         content_by_lua_block {
-            local p, err = require("resty.openssl.pkey").new({
+            local p = myassert(require("resty.openssl.pkey").new({
                 exp = 65537,
-            })
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
-            local params, err = p:get_parameters()
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            }))
+
+            local params = myassert(p:get_parameters())
+
             for _, k in ipairs(require("resty.openssl.rsa").params) do
-                local b, err = params[k]:to_hex()
-                if err then
-                    ngx.log(ngx.ERR, err)
-                end
+                local b = myassert(params[k]:to_hex())
                 ngx.say(b)
             end
             local got = params.dne
@@ -343,26 +312,18 @@ nil
 --- config
     location =/t {
         content_by_lua_block {
-            local p, err = require("resty.openssl.pkey").new({
+            local p = myassert(require("resty.openssl.pkey").new({
                 type = "EC",
-            })
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
-            local params, err = p:get_parameters()
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            }))
+
+            local params = myassert(p:get_parameters())
+
             local group = params["group"]
             ngx.say(group)
             for _, k in ipairs(require("resty.openssl.ec").params) do
                 if k ~= "group" then
-                    local b, err = params[k]:to_hex()
-                    if err then
-                        ngx.log(ngx.ERR, err)
-                    end
+                    local b = myassert(params[k]:to_hex())
+
                     ngx.say(b)
                 end
             end
@@ -394,18 +355,12 @@ nil
                 ngx.say('32')
                 return
             end
-            local p, err = require("resty.openssl.pkey").new({
+            local p = myassert(require("resty.openssl.pkey").new({
                 type = "Ed25519",
-            })
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
-            local params, err = p:get_parameters()
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            }))
+
+            local params = myassert(p:get_parameters())
+
             ngx.say(#params.private)
             ngx.say(#params.public)
         }
@@ -424,28 +379,17 @@ nil
 --- config
     location =/t {
         content_by_lua_block {
-            local privkey, err = require("resty.openssl.pkey").new()
+            local privkey = myassert(require("resty.openssl.pkey").new())
             if err then
                 ngx.log(ngx.ERR, err)
                 return
             end
-            local pubkey, err = require("resty.openssl.pkey").new(assert(privkey:to_PEM("public")))
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local pubkey = myassert(require("resty.openssl.pkey").new(assert(privkey:to_PEM("public"))))
 
-            local s, err = pubkey:encrypt("23333")
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local s = myassert(pubkey:encrypt("23333"))
             ngx.say(#s)
-            local decrypted, err = privkey:decrypt(s)
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+
+            local decrypted = myassert(privkey:decrypt(s))
             ngx.say(decrypted)
         }
     }
@@ -464,33 +408,16 @@ nil
 --- config
     location =/t {
         content_by_lua_block {
-            local p, err = require("resty.openssl.pkey").new()
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local p = myassert(require("resty.openssl.pkey").new())
             
-            local digest, err = require("resty.openssl.digest").new("SHA256")
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
-            local _, err = digest:update("🕶️", "+1s")
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
-            local s, err = p:sign(digest)
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local digest = myassert(require("resty.openssl.digest").new("SHA256"))
+
+            myassert(digest:update("🕶️", "+1s"))
+
+            local s = myassert(p:sign(digest))
             ngx.say(#s)
-            local v, err = p:verify(s, digest)
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+
+            local v = myassert(p:verify(s, digest))
             ngx.say(v)
         }
     }
@@ -514,21 +441,14 @@ true
                 ngx.say('true')
                 return
             end
-            local p, err = require("resty.openssl.pkey").new({
+            local p = myassert(require("resty.openssl.pkey").new({
                 type = "Ed25519"
-            })
+            }))
             local digest = "23333"
-            local s, err = p:sign(digest)
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local s = myassert(p:sign(digest))
             ngx.say(#s)
-            local v, err = p:verify(s, digest)
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+
+            local v = myassert(p:verify(s, digest))
             ngx.say(v)
         }
     }
@@ -546,11 +466,7 @@ true
 --- config
     location =/t {
         content_by_lua_block {
-            local p, err = require("resty.openssl.pkey").new()
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local p = myassert(require("resty.openssl.pkey").new())
 
             local s, err = p:sign("not a cdata")
             ngx.say(err)
@@ -580,19 +496,13 @@ pkey:verify: expect a digest instance at #2
                     ngx.say(expected[i])
                     goto next
                 end
-                local p, err = require("resty.openssl.pkey").new({
+                local p = myassert(require("resty.openssl.pkey").new({
                     type = t,
-                })
-                if err then
-                    ngx.log(ngx.ERR, err)
-                    return
-                end
+                }))
+
                 -- usually the peer key is the pubkey from other key pair
                 -- we use the same key here just for simplicity
-                local k, err = p:derive(p)
-                if err then
-                    ngx.log(ngx.ERR, err)
-                end
+                local k = myassert(p:derive(p))
                 ngx.say(#k)
             ::next::
             end

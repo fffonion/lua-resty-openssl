@@ -8,17 +8,10 @@
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/{{ module.sample }}"):read("*a")
-            local c, err = require("resty.openssl.{{ modname }}").new(f)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local c = myassert(require("resty.openssl.{{ modname }}").new(f))
 
-            local get, err = c:get_{{ f.field }}()
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local get = myassert(c:get_{{ f.field }}())
+
             {%- if tests.types[f.type].print %}
             get = get:{{ tests.types[f.type].print }}()
             {%- endif %}
@@ -39,28 +32,16 @@
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/{{ module.sample }}"):read("*a")
-            local c, err = require("resty.openssl.{{ modname }}").new(f)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local c = myassert(require("resty.openssl.{{ modname }}").new(f))
 
             {%- if f.type not in LUA_TYPES %}
             local toset = require("resty.openssl.{{ f.type }}").{{ tests.types[f.type].new_from }}
             {%- else %}
             local toset = {{ tests.types[f.type].new_from }}
             {%- endif %}
-            local ok, err = c:set_{{ f.field }}(toset)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local ok = myassert(c:set_{{ f.field }}(toset))
 
-            local get, err = c:get_{{ f.field }}()
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local get = myassert(c:get_{{ f.field }}())
 
             {%- if tests.types[f.type].print %}
             get = get:{{ tests.types[f.type].print }}()
@@ -90,19 +71,12 @@
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/{{ module.sample }}"):read("*a")
-            local c, err = require("resty.openssl.{{ modname }}").new(f)
+            local c = myassert(require("resty.openssl.{{ modname }}").new(f))
 
-            local crit, err = c:get_{{ f.field }}_critical()
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local crit = myassert(c:get_{{ f.field }}_critical())
 
-            local ok, err = c:set_{{ f.field }}_critical(not crit)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local ok, err = myassert(c:set_{{ f.field }}_critical(not crit))
+
             ngx.say(c:get_{{ f.field }}_critical() == not crit)
         }
     }

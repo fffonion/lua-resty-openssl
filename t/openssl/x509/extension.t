@@ -9,12 +9,13 @@ my $pwd = cwd();
 my $use_luacov = $ENV{'TEST_NGINX_USE_LUACOV'} // '';
 
 our $HttpConfig = qq{
-    lua_package_path "$pwd/lib/?.lua;$pwd/lib/?/init.lua;;";
+    lua_package_path "$pwd/t/openssl/?.lua;$pwd/lib/?.lua;$pwd/lib/?/init.lua;;";
     init_by_lua_block {
         if "1" == "$use_luacov" then
             require 'luacov.tick'
             jit.off()
         end
+        _G.myassert = require("helper").myassert
     }
 };
 
@@ -28,12 +29,8 @@ __DATA__
     location =/t {
         content_by_lua_block {
             local extension = require("resty.openssl.x509.extension")
-            local c, err = extension.new("extendedKeyUsage",
-                                        "serverAuth,clientAuth")
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local c = myassert(extension.new("extendedKeyUsage",
+                                        "serverAuth,clientAuth"))
         }
     }
 --- request
@@ -47,13 +44,10 @@ __DATA__
     location =/t {
         content_by_lua_block {
             local extension = require("resty.openssl.x509.extension")
-            local c, err = extension.new("extendedKeyUsage",
-                                        "serverAuth,clientAuth")
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
-            ngx.say(require("cjson").encode(c:get_object()))
+            local c = myassert(extension.new("extendedKeyUsage",
+                                        "serverAuth,clientAuth"))
+
+            ngx.say(require("cjson").encode(myassert(c:get_object())))
         }
     }
 --- request
@@ -70,17 +64,15 @@ __DATA__
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local c = myassert(require("resty.openssl.x509").new(f))
+
             local extension, _, err = c:get_extension("X509v3 Key Usage")
             if err then
                 ngx.log(ngx.ERR, err)
                 return
             end
             ngx.say(extension:get_critical())
+    
             local extension, _, err = c:get_extension("X509v3 Extended Key Usage")
             if err then
                 ngx.log(ngx.ERR, err)
@@ -104,23 +96,12 @@ false
     location =/t {
         content_by_lua_block {
             local extension = require("resty.openssl.x509.extension")
-            local c, err = extension.new("extendedKeyUsage",
-                                        "serverAuth,clientAuth")
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
-            ok, err = c:set_critical()
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local c = myassert(extension.new("extendedKeyUsage",
+                                        "serverAuth,clientAuth"))
+            myassert(c:set_critical())
             ngx.say(c:get_critical())
-            ok, err = c:set_critical(true)
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+
+            myassert(c:set_critical(true))
             ngx.say(c:get_critical())
         }
     }
@@ -139,17 +120,15 @@ true
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local c = myassert(require("resty.openssl.x509").new(f))
+
             local extension, _, err = c:get_extension("subjectKeyIdentifier")
             if err then
                 ngx.log(ngx.ERR, err)
                 return
             end
             ngx.say(extension:text())
+
             local extension, _, err = c:get_extension("Authority Information Access")
             if err then
                 ngx.log(ngx.ERR, err)
@@ -174,20 +153,14 @@ CA Issuers - URI:http://cacerts.digicert.com/DigiCertSHA2ExtendedValidationServe
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
-            local x509, err = require("resty.openssl.x509").new(f)
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local x509 = myassert(require("resty.openssl.x509").new(f))
+
             local extension = require("resty.openssl.x509.extension")
-            local c, err = extension.new("subjectKeyIdentifier", "hash",
+            local c = myassert(extension.new("subjectKeyIdentifier", "hash",
                                         {
                                             subject = x509,
-                                        })
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+                                        }))
+
             ngx.say(tostring(c))
         }
     }
@@ -208,11 +181,8 @@ CA Issuers - URI:http://cacerts.digicert.com/DigiCertSHA2ExtendedValidationServe
             altname:add("DNS", "test.com")
             altname:add("DNS", "test2.com")
             local extension = require("resty.openssl.x509.extension")
-            local c, err = extension.from_data(altname, 85, false)
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local c = myassert(extension.from_data(altname, 85, false))
+
             ngx.say(require("cjson").encode(c:get_object()))
             ngx.say(tostring(c))
         }

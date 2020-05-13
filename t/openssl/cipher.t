@@ -15,6 +15,7 @@ our $HttpConfig = qq{
             require 'luacov.tick'
             jit.off()
         end
+        _G.myassert = require("helper").myassert
     }
 };
 
@@ -26,19 +27,13 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            local cipher, err = require("resty.openssl.cipher").new("aes256")
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
-            local ok, err = cipher:init(string.rep("0", 32), string.rep("0", 16), {
+            local cipher = myassert(require("resty.openssl.cipher").new("aes256"))
+
+            myassert(cipher:init(string.rep("0", 32), string.rep("0", 16), {
                 is_encrypt = true,
-            })
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
-            ngx.print(ngx.encode_base64(cipher:final('1')))
+            }))
+
+            ngx.print(ngx.encode_base64(myassert(cipher:final('1'))))
         }
     }
 --- request
@@ -70,11 +65,8 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            local cipher, err = require("resty.openssl.cipher").new("aes256")
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local cipher = myassert(require("resty.openssl.cipher").new("aes256"))
+
             local s, err = cipher:update("1")
             ngx.say(err)
             local _, err = cipher:final("1")
@@ -95,16 +87,10 @@ cipher:update: cipher not initalized, call cipher:init first
 --- config
     location =/t {
         content_by_lua_block {
-            local cipher, err = require("resty.openssl.cipher").new("aes256")
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
-            local s, err = cipher:encrypt(string.rep("0", 32), string.rep("0", 16), '1')
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local cipher = myassert(require("resty.openssl.cipher").new("aes256"))
+
+            local s = myassert(cipher:encrypt(string.rep("0", 32), string.rep("0", 16), '1'))
+
             ngx.print(ngx.encode_base64(s))
         }
     }
@@ -120,24 +106,17 @@ cipher:update: cipher not initalized, call cipher:init first
 --- config
     location =/t {
         content_by_lua_block {
-            local cipher, err = require("resty.openssl.cipher").new("aes256")
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local cipher = myassert(require("resty.openssl.cipher").new("aes256"))
+
             local s, err = cipher:encrypt(string.rep("0", 32), string.rep("0", 16), '1', {
                     no_padding = true,
                 })
             ngx.say(s)
             ngx.say(err)
-            local s, err = cipher:encrypt(string.rep("0", 32), string.rep("0", 16),
+            local s = myassert(cipher:encrypt(string.rep("0", 32), string.rep("0", 16),
                 '1' .. string.rep(string.char(15), 15), {
                     no_padding = true,
-                })
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+                }))
             ngx.print(ngx.encode_base64(s))
         }
     }
@@ -155,17 +134,11 @@ VhGyRCcMvlAgUjTYrqiWpg=="
 --- config
     location =/t {
         content_by_lua_block {
-            local cipher, err = require("resty.openssl.cipher").new("aes256")
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
-            local s, err = cipher:decrypt(string.rep("0", 32), string.rep("0", 16),
-                ngx.decode_base64("VhGyRCcMvlAgUjTYrqiWpg=="))
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local cipher = myassert(require("resty.openssl.cipher").new("aes256"))
+
+            local s = myassert(cipher:decrypt(string.rep("0", 32), string.rep("0", 16),
+                ngx.decode_base64("VhGyRCcMvlAgUjTYrqiWpg==")))
+
             ngx.print(s)
         }
     }
@@ -181,19 +154,13 @@ VhGyRCcMvlAgUjTYrqiWpg=="
 --- config
     location =/t {
         content_by_lua_block {
-            local cipher, err = require("resty.openssl.cipher").new("aes256")
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
-            local s, err = cipher:decrypt(string.rep("0", 32), string.rep("0", 16),
+            local cipher = myassert(require("resty.openssl.cipher").new("aes256"))
+
+            local s = myassert(cipher:decrypt(string.rep("0", 32), string.rep("0", 16),
                 ngx.decode_base64("VhGyRCcMvlAgUjTYrqiWpg=="), {
                     no_padding = true,
-                })
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+                }))
+
             ngx.print(s)
         }
     }
@@ -209,37 +176,25 @@ VhGyRCcMvlAgUjTYrqiWpg=="
 --- config
     location =/t {
         content_by_lua_block {
-            local cipher, err = require("resty.openssl.cipher").new("aes256")
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
-            local ok, err = cipher:init(string.rep("0", 32), string.rep("0", 16), {
+            local cipher = myassert(require("resty.openssl.cipher").new("aes256"))
+
+            local ok = myassert(cipher:init(string.rep("0", 32), string.rep("0", 16), {
                 is_encrypt = true,
-            })
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            }))
+
             local sample = 'abcdefghi'
             local count = 5
             for i=1,count,1 do
-                local s, err = cipher:update(sample)
-                if err then
-                    ngx.log(ngx.ERR, err)
-                    return
-                end
+                local s = myassert(cipher:update(sample))
+
                 if s ~= "" then
                     ngx.say(ngx.encode_base64(s))
                 else
                     ngx.say("nothing")
                 end
             end
-            local s, err = cipher:final()
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local s = myassert(cipher:final())
+
             ngx.say(ngx.encode_base64(s))
         }
     }
@@ -261,29 +216,20 @@ yP4vKOecDyao4AzxaTAzkA==
 --- config
     location =/t {
         content_by_lua_block {
-            local cipher, err = require("resty.openssl.cipher").new("aes256")
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
-            local ok, err = cipher:init(string.rep("0", 32), string.rep("0", 16), {
+            local cipher = myassert(require("resty.openssl.cipher").new("aes256"))
+
+            local ok = myassert(cipher:init(string.rep("0", 32), string.rep("0", 16), {
                 is_encrypt = false,
-            })
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            }))
+
             local input = ngx.decode_base64('SEk81GpcHC9KoZfN14RrNg==') ..
                             ngx.decode_base64('L2dVbLMhEigy917CJBXz7g==') ..
                             ngx.decode_base64('yP4vKOecDyao4AzxaTAzkA==')
             local count = 5
             local len = (#input - #input % count) / count
             for i=0,#input-len,len do
-                local s, err = cipher:update(string.sub(input, i+1, i+len))
-                if err then
-                    ngx.log(ngx.ERR, err)
-                    return
-                end
+                local s = myassert(cipher:update(string.sub(input, i+1, i+len)))
+
                 if s ~= "" then
                     ngx.say(s)
                 else
@@ -295,11 +241,8 @@ yP4vKOecDyao4AzxaTAzkA==
             ngx.say(err)
             ngx.say(s)
             -- feed the last chunk of input
-            local s, err = cipher:final(string.sub(input, #input -#input % count + 1, #input))
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local s = myassert(cipher:final(string.sub(input, #input -#input % count + 1, #input)))
+
             ngx.say(s)
         }
     }
@@ -330,33 +273,18 @@ fghiabcdefghi
                 end))
             end
 
-            local cipher, err = require("resty.openssl.cipher").new("aes256")
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local cipher = myassert(require("resty.openssl.cipher").new("aes256"))
 
             -- openssl enc -aes256 -pass pass:xxx -S 797979 -P -md md5
-            local key, iv, err = cipher:derive("xxx", "yyy", 1, "md5")
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local key, iv = cipher:derive("xxx", "yyy", 1, "md5")
+
             ngx.say(key:tohex())
             ngx.say(iv:tohex())
 
-            local cipher, err = require("resty.openssl.cipher").new("aes-256-ecb")
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local cipher = myassert(require("resty.openssl.cipher").new("aes-256-ecb"))
 
             -- openssl enc -aes-256-ecb -pass pass:xxx -S 797979 -P -md md5
-            local key, iv, err = cipher:derive("xxx", "yyy", 1, "md5")
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local key, iv = cipher:derive("xxx", "yyy", 1, "md5")
             ngx.say(key:tohex())
             ngx.say(iv:tohex() == "" and "no iv")
         }
@@ -383,18 +311,11 @@ no iv
                 end))
             end
 
-            local cipher, err = require("resty.openssl.cipher").new("aes256")
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local cipher = myassert(require("resty.openssl.cipher").new("aes256"))
 
             -- openssl enc -aes256 -pass pass:xxx -nosalt -P -md sha1
-            local key, iv, err = cipher:derive("xxx")
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local key, iv = cipher:derive("xxx")
+
             ngx.say(key:tohex())
             ngx.say(iv:tohex())
         }

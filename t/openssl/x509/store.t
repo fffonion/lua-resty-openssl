@@ -9,12 +9,13 @@ my $pwd = cwd();
 my $use_luacov = $ENV{'TEST_NGINX_USE_LUACOV'} // '';
 
 our $HttpConfig = qq{
-    lua_package_path "$pwd/t/openssl/x509/?.lua;$pwd/lib/?.lua;$pwd/lib/?/init.lua;;";
+    lua_package_path "$pwd/t/openssl/?.lua;$pwd/t/openssl/x509/?.lua;$pwd/lib/?.lua;$pwd/lib/?/init.lua;;";
     init_by_lua_block {
         if "1" == "$use_luacov" then
             require 'luacov.tick'
             jit.off()
         end
+        _G.myassert = require("helper").myassert
     }
 };
 
@@ -28,11 +29,7 @@ __DATA__
     location =/t {
         content_by_lua_block {
             local store = require("resty.openssl.x509.store")
-            local c, err = store.new()
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local c = myassert(store.new())
         }
     }
 --- request
@@ -50,16 +47,9 @@ __DATA__
         content_by_lua_block {
             local cert, key = require("helper").create_self_signed()
             local store = require("resty.openssl.x509.store")
-            local s, err = store.new()
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
-            local ok, err = s:add(cert)
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local s = myassert(store.new())
+
+            local ok = myassert(s:add(cert))
         }
     }
 --- request
@@ -75,16 +65,8 @@ __DATA__
     location =/t {
         content_by_lua_block {
             local store = require("resty.openssl.x509.store")
-            local s, err = store.new()
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
-            local ok, err = s:use_default()
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local s = myassert(store.new())
+            myassert(s:use_default())
         }
     }
 --- request
@@ -100,11 +82,8 @@ __DATA__
     location =/t {
         content_by_lua_block {
             local store = require("resty.openssl.x509.store")
-            local s, err = store.new()
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local s = myassert(store.new())
+
             local ok, err = s:load_file("certnonexistent.pem")
             ngx.say(ok)
             ngx.say(err)
@@ -115,13 +94,9 @@ __DATA__
             ngx.say(err)
             os.remove("cert4-empty.pem")
             os.execute("openssl req -newkey rsa:2048 -nodes -keyout key4.pem -x509 -days 365 -out cert4.pem -subj '/'")
-            local ok, err = s:load_file("cert4.pem")
+            local ok = myassert(s:load_file("cert4.pem"))
             os.remove("cert4.pem")
             os.remove("key4.pem")
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
         }
     }
 --- request
@@ -145,26 +120,14 @@ x509.store:load_file.+
             local cert2, key2 = require("helper").create_self_signed()
             local cert3, key3 = require("helper").create_self_signed()
             local store = require("resty.openssl.x509.store")
-            local s, err = store.new()
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
-            local ok, err = s:add(cert1)
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
-            local ok, err = s:add(cert2)
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
-            local chain, err = s:verify(cert1, nil, true)
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local s = myassert(store.new())
+
+            local ok = myassert(s:add(cert1))
+
+            local ok = myassert(s:add(cert2))
+
+            local chain = myassert(s:verify(cert1, nil, true))
+
             ngx.say(#chain)
             local chain, err = s:verify(cert3, nil, true)
             ngx.say(err)
@@ -189,24 +152,15 @@ true
     location =/t {
         content_by_lua_block {
             local store = require("resty.openssl.x509.store")
-            local s, err = store.new()
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
-            local ok, err = s:use_default()
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
-            local f = io.open("t/fixtures/GlobalSign.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
+            local s = myassert(store.new())
 
-            local chain, err = s:verify(c, nil, true)
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local ok = myassert(s:use_default())
+
+            local f = io.open("t/fixtures/GlobalSign.pem"):read("*a")
+            local c = myassert(require("resty.openssl.x509").new(f))
+
+            local chain = myassert(s:verify(c, nil, true))
+
             ngx.say(#chain)
         }
     }
@@ -224,24 +178,14 @@ true
     location =/t {
         content_by_lua_block {
             local store = require("resty.openssl.x509.store")
-            local s, err = store.new()
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
-            local ok, err = s:load_directory("/etc/ssl/certs")
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
-            local f = io.open("t/fixtures/GlobalSign.pem"):read("*a")
-            local c, err = require("resty.openssl.x509").new(f)
+            local s = myassert(store.new())
 
-            local chain, err = s:verify(c, nil, true)
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local ok = myassert(s:load_directory("/etc/ssl/certs"))
+
+            local f = io.open("t/fixtures/GlobalSign.pem"):read("*a")
+            local c = myassert(require("resty.openssl.x509").new(f))
+
+            local chain = myassert(s:verify(c, nil, true))
             ngx.say(#chain)
         }
     }
@@ -261,30 +205,20 @@ true
             local helper = require("helper")
             local x509 = require("resty.openssl.x509")
             local store = require("resty.openssl.x509.store")
-            local s, err = store.new()
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local s = myassert(store.new())
+
             local f = io.open("t/fixtures/GlobalSign.pem"):read("*a")
-            local c, err = x509.new(f)
+            local c = myassert(x509.new(f))
             ngx.say(helper.to_hex(c:digest()))
 
-            local chain, err = s:add(c)
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local chain = myassert(s:add(c))
 
             local f = io.open("t/fixtures/GlobalSign_sub.pem"):read("*a")
-            local c, err = x509.new(f)
+            local c = myassert(x509.new(f))
             ngx.say(helper.to_hex(c:digest()))
 
-            local chain, err = s:verify(c, nil, true)
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local chain = myassert(s:verify(c, nil, true))
+
             for _, c in ipairs(chain) do
                 ngx.say(helper.to_hex(c:digest()))
             end

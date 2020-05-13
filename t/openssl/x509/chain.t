@@ -9,12 +9,13 @@ my $pwd = cwd();
 my $use_luacov = $ENV{'TEST_NGINX_USE_LUACOV'} // '';
 
 our $HttpConfig = qq{
-    lua_package_path "$pwd/t/openssl/x509/?.lua;$pwd/lib/?.lua;$pwd/lib/?/init.lua;;";
+    lua_package_path "$pwd/t/openssl/?.lua;$pwd/t/openssl/x509/?.lua;$pwd/lib/?.lua;$pwd/lib/?/init.lua;;";
     init_by_lua_block {
         if "1" == "$use_luacov" then
             require 'luacov.tick'
             jit.off()
         end
+        _G.myassert = require("helper").myassert
     }
 };
 
@@ -28,11 +29,8 @@ __DATA__
     location =/t {
         content_by_lua_block {
             local chain = require("resty.openssl.x509.chain")
-            local c, err = chain.new()
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local c = myassert(chain.new())
+
             ngx.say(#c)
         }
     }
@@ -51,17 +49,10 @@ __DATA__
         content_by_lua_block {
             local cert, key = require("helper").create_self_signed()
             local chain = require("resty.openssl.x509.chain")
-            local c, err = chain.new()
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local c = myassert(chain.new())
+
             for i=0,2,1 do
-                local ok, err = c:add(cert)
-                if err then
-                    ngx.log(ngx.ERR, err)
-                    return
-                end
+                local ok = myassert(c:add(cert))
             end
             ngx.say(#c)
             ngx.say(#c:all())
@@ -83,17 +74,11 @@ __DATA__
         content_by_lua_block {
             local cert, key = require("helper").create_self_signed()
             local chain = require("resty.openssl.x509.chain")
-            local c, err = chain.new()
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local c = myassert(chain.new())
+
             for i=0,2,1 do
-                local ok, err = c:add(cert)
-                if err then
-                    ngx.log(ngx.ERR, err)
-                    return
-                end
+                local ok = myassert(c:add(cert))
+
             end
             for _, cc in ipairs(c) do
                 ngx.say(#cc:digest())
@@ -117,16 +102,10 @@ __DATA__
         content_by_lua_block {
             local cert, key = require("helper").create_self_signed()
             local chain = require("resty.openssl.x509.chain")
-            local c, err = chain.new()
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
-            local ok, err = c:add(cert)
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local c = myassert(chain.new())
+
+            local ok = myassert(c:add(cert))
+
             cert = nil
             collectgarbage("collect")
             ngx.say(#c[1]:digest())
@@ -147,16 +126,10 @@ __DATA__
         content_by_lua_block {
             local cert, key = require("helper").create_self_signed()
             local chain = require("resty.openssl.x509.chain")
-            local c, err = chain.new()
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
-            local ok, err = c:add(cert)
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local c = myassert(chain.new())
+
+            local ok = myassert(c:add(cert))
+
             local cc = c[1]
             c = nil
             collectgarbage("collect") 

@@ -9,12 +9,13 @@ my $pwd = cwd();
 my $use_luacov = $ENV{'TEST_NGINX_USE_LUACOV'} // '';
 
 our $HttpConfig = qq{
-    lua_package_path "$pwd/lib/?.lua;$pwd/lib/?/init.lua;;";
+    lua_package_path "$pwd/t/openssl/?.lua;$pwd/lib/?.lua;$pwd/lib/?/init.lua;;";
     init_by_lua_block {
         if "1" == "$use_luacov" then
             require 'luacov.tick'
             jit.off()
         end
+        _G.myassert = require("helper").myassert
     }
 };
 
@@ -26,10 +27,10 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            local hmac, err = require("resty.openssl.hmac").new("goose", "sha256")
-            assert(err == nil)
-            hmac:update("🦢🦢🦢🦢🦢🦢")
-            ngx.print(ngx.encode_base64(hmac:final()))
+            local hmac = myassert(require("resty.openssl.hmac").new("goose", "sha256"))
+
+            myassert(hmac:update("🦢🦢🦢🦢🦢🦢"))
+            ngx.print(ngx.encode_base64(myassert(hmac:final())))
         }
     }
 --- request
@@ -44,8 +45,8 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            local hmac, err = require("resty.openssl.hmac").new("goose", "sha256")
-            assert(err == nil)
+            local hmac = myassert(require("resty.openssl.hmac").new("goose", "sha256"))
+
             hmac:update("🦢", "🦢🦢", "🦢🦢", "🦢")
             ngx.print(ngx.encode_base64(hmac:final()))
         }
@@ -62,13 +63,10 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            local hmac, err = require("resty.openssl.hmac").new("goose", "sha256")
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
-            hmac:update("🦢", "🦢🦢", "🦢🦢")
-            ngx.print(ngx.encode_base64(hmac:final("🦢")))
+            local hmac = myassert(require("resty.openssl.hmac").new("goose", "sha256"))
+
+            myassert(hmac:update("🦢", "🦢🦢", "🦢🦢"))
+            ngx.print(ngx.encode_base64(myassert(hmac:final("🦢"))))
         }
     }
 --- request

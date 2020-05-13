@@ -9,12 +9,13 @@ my $pwd = cwd();
 my $use_luacov = $ENV{'TEST_NGINX_USE_LUACOV'} // '';
 
 our $HttpConfig = qq{
-    lua_package_path "$pwd/t/openssl/x509/?.lua;$pwd/lib/?.lua;$pwd/lib/?/init.lua;;";
+    lua_package_path "$pwd/t/openssl/?.lua;$pwd/t/openssl/x509/?.lua;$pwd/lib/?.lua;$pwd/lib/?/init.lua;;";
     init_by_lua_block {
         if "1" == "$use_luacov" then
             require 'luacov.tick'
             jit.off()
         end
+        _G.myassert = require("helper").myassert
     }
 };
 
@@ -29,11 +30,8 @@ __DATA__
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/test.csr"):read("*a")
-            local c, err = require("resty.openssl.x509.csr").new(f)
-            if err then
-                ngx.say(err)
-                return
-            end
+            local c = myassert(require("resty.openssl.x509.csr").new(f))
+
             ngx.say("ok")
         }
     }
@@ -51,22 +49,12 @@ __DATA__
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/test.csr"):read("*a")
-            local c, err = require("resty.openssl.x509.csr").new(f)
-            if err then
-                ngx.say(err)
-                return
-            end
-            local pem, err = c:tostring("PEM")
-            if err then
-                ngx.say(err)
-                return
-            end
+            local c = myassert(require("resty.openssl.x509.csr").new(f))
+
+            local pem = myassert(c:tostring("PEM"))
+
             for _, typ in ipairs({"PEM", "*", false}) do
-              local c2, err = require("resty.openssl.x509.csr").new(pem, typ)
-              if err then
-                  ngx.say(err)
-                  return
-              end
+              local c2 = myassert(require("resty.openssl.x509.csr").new(pem, typ))
             end
             local c2, err = require("resty.openssl.x509.csr").new(pem, "DER")
             ngx.say(err)
@@ -85,22 +73,12 @@ __DATA__
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/test.csr"):read("*a")
-            local c, err = require("resty.openssl.x509.csr").new(f)
-            if err then
-                ngx.say(err)
-                return
-            end
-            local pem, err = c:tostring("DER")
-            if err then
-                ngx.say(err)
-                return
-            end
+            local c = myassert(require("resty.openssl.x509.csr").new(f))
+
+            local pem = myassert(c:tostring("DER"))
+
             for _, typ in ipairs({"DER", "*", false}) do
-              local c2, err = require("resty.openssl.x509.csr").new(pem, typ)
-              if err then
-                  ngx.say(err)
-                  return
-              end
+              local c2 = myassert(require("resty.openssl.x509.csr").new(pem, typ))
             end
             local c2, err = require("resty.openssl.x509.csr").new(pem, "PEM")
             ngx.say(err)
@@ -120,11 +98,8 @@ __DATA__
         content_by_lua_block {
             local util = require("csr")
             local pkey = require("resty.openssl.pkey").new()
-            local der, err = util.create_csr(pkey, "dns1.com", "dns2.com", "dns3.com")
-            if err then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            local der = myassert(util.create_csr(pkey, "dns1.com", "dns2.com", "dns3.com"))
+
             ngx.update_time()
             local fname = "ci_" .. math.floor(ngx.now() * 1000)
             local f = io.open(fname, "wb")
@@ -177,17 +152,9 @@ x509.csr:sign: expect a pkey instance at #1
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/test.csr"):read("*a")
-            local c, err = require("resty.openssl.x509.csr").new(f)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local c = myassert(require("resty.openssl.x509.csr").new(f))
 
-            local get, err = c:get_subject_name()
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local get = myassert(c:get_subject_name())
             get = get:_tostring()
             ngx.print(get)
         }
@@ -205,23 +172,11 @@ x509.csr:sign: expect a pkey instance at #1
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/test.csr"):read("*a")
-            local c, err = require("resty.openssl.x509.csr").new(f)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local c = myassert(require("resty.openssl.x509.csr").new(f))
             local toset = require("resty.openssl.x509.name").new():add('CN', 'earth.galaxy')
-            local ok, err = c:set_subject_name(toset)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local ok = myassert(c:set_subject_name(toset))
 
-            local get, err = c:get_subject_name()
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local get = myassert(c:get_subject_name())
             get = get:_tostring()
             toset = toset:_tostring()
             if get ~= toset then
@@ -245,17 +200,9 @@ x509.csr:sign: expect a pkey instance at #1
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/test.csr"):read("*a")
-            local c, err = require("resty.openssl.x509.csr").new(f)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local c = myassert(require("resty.openssl.x509.csr").new(f))
 
-            local get, err = c:get_pubkey()
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local get = myassert(c:get_pubkey())
             get = get:to_PEM()
             ngx.print(get)
         }
@@ -282,23 +229,11 @@ AQIDAQAB
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/test.csr"):read("*a")
-            local c, err = require("resty.openssl.x509.csr").new(f)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local c = myassert(require("resty.openssl.x509.csr").new(f))
             local toset = require("resty.openssl.pkey").new()
-            local ok, err = c:set_pubkey(toset)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local ok = myassert(c:set_pubkey(toset))
 
-            local get, err = c:get_pubkey()
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local get = myassert(c:get_pubkey())
             get = get:to_PEM()
             toset = toset:to_PEM()
             if get ~= toset then
@@ -322,17 +257,9 @@ AQIDAQAB
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/test.csr"):read("*a")
-            local c, err = require("resty.openssl.x509.csr").new(f)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local c = myassert(require("resty.openssl.x509.csr").new(f))
 
-            local get, err = c:get_version()
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local get = myassert(c:get_version())
             ngx.print(get)
         }
     }
@@ -349,23 +276,11 @@ AQIDAQAB
     location =/t {
         content_by_lua_block {
             local f = io.open("t/fixtures/test.csr"):read("*a")
-            local c, err = require("resty.openssl.x509.csr").new(f)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local c = myassert(require("resty.openssl.x509.csr").new(f))
             local toset = ngx.time()
-            local ok, err = c:set_version(toset)
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local ok = myassert(c:set_version(toset))
 
-            local get, err = c:get_version()
-            if err then
-              ngx.log(ngx.ERR, err)
-              ngx.exit(0)
-            end
+            local get = myassert(c:get_version())
             if get ~= toset then
               ngx.say(get)
               ngx.say(toset)
