@@ -385,7 +385,7 @@ can be set during key generation for those keys.
 ```lua
 pkey.new(pem_or_der_text, {
   format = "*", -- choice of "PEM", "DER", "JWK" or "*" for auto detect
-  type = "*", -- choice of "p"r for privatekey, "pu" for public key and "*" for auto detect
+  type = "*", -- choice of "pr" for privatekey, "pu" for public key and "*" for auto detect
   passphrase = "secret password", -- the PEM encryption passphrase
   passphrase_cb = function()
     return "secret password"
@@ -394,11 +394,14 @@ pkey.new(pem_or_der_text, {
 
 ```
 
-When loading JWK, make sure the encoded JSON text is passed in. Currently it's not supported to contraint
-`type` on JWK key, the parameters in provided JSON will decide if a private or public key is loaded.
-Only JWK with key type of `RSA`, `P-256`, `P-384` and `P-512` `EC`,
-`Ed25519`, `X25519`, `Ed448` and `X448` `OKP` keys are supported. Public key part for `OKP` keys
-(the `x` parameter) is always not honored and derived from private key part (the `d` parameter).
+  -  When loading JWK, make sure the encoded JSON text is passed in.
+  - Currently it's not supported to contraint
+  `type` on JWK key, the parameters in provided JSON will decide if a private or public key is loaded.
+  - Only JWK with key type of `RSA`, `P-256`, `P-384` and `P-512` `EC`,
+  `Ed25519`, `X25519`, `Ed448` and `X448` `OKP` keys are supported.
+  - Public key part for `OKP` keys
+  (the `x` parameter) is always not honored and derived from private key part (the `d` parameter) if it's specified.
+
 3. `nil` to create a 2048 bits RSA key.
 4. A `EVP_PKEY*` pointer, to return a wrapped `pkey` instance. Normally user won't use this
 approach. User shouldn't free the pointer on their own, since the pointer is not copied.
