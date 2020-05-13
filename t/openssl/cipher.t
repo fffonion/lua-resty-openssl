@@ -9,7 +9,7 @@ my $pwd = cwd();
 my $use_luacov = $ENV{'TEST_NGINX_USE_LUACOV'} // '';
 
 our $HttpConfig = qq{
-    lua_package_path "$pwd/lib/?.lua;$pwd/lib/?/init.lua;;";
+    lua_package_path "$pwd/t/openssl/?.lua;$pwd/lib/?.lua;$pwd/lib/?/init.lua;;";
     init_by_lua_block {
         if "1" == "$use_luacov" then
             require 'luacov.tick'
@@ -404,6 +404,45 @@ no iv
 --- response_body eval
 "B60D121B438A380C343D5EC3C2037564B82FFEF3542808AB5694FA93C3179140
 20578C4FEF1AEE907B1DC95C776F8160
+"
+--- no_error_log
+[error]
+
+=== TEST 12: AEAD modes
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local myassert = require("helper").myassert
+            local key = string.rep("0", 32)
+            local iv = string.rep("0", 12)
+            local aad = "an aad"
+            local cipher = require("resty.openssl.cipher")
+
+            local enc = myassert(cipher.new("aes-256-gcm"))
+            local d = myassert(enc:encrypt(key, iv, "secret", false, aad))
+            local tag = myassert(enc:get_aead_tag())
+
+            local dec = myassert(cipher.new("aes-256-gcm"))
+            local s = myassert(dec:decrypt(key, iv, d, false, aad, tag))
+            ngx.say(s)
+
+            local dec = myassert(cipher.new("aes-256-gcm"))
+            local r, err = dec:decrypt(key, iv, d, false, nil, tag)
+            ngx.say(r)
+
+            local dec = myassert(cipher.new("aes-256-gcm"))
+            local r, err = dec:decrypt(key, iv, d, false, aad, nil)
+            ngx.say(r)
+
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"secret
+nil
+nil
 "
 --- no_error_log
 [error]

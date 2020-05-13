@@ -3,11 +3,17 @@ local C = ffi.C
 local ffi_gc = ffi.gc
 local ffi_new = ffi.new
 local ffi_str = ffi.string
+local ffi_cast = ffi.cast
 
-require "resty.openssl.include.evp"
+local evp_macro = require "resty.openssl.include.evp"
+local ctypes = require "resty.openssl.aux.ctypes"
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
+
+local uchar_array = ctypes.uchar_array
+local void_ptr = ctypes.void_ptr
+local ptr_of_int = ctypes.ptr_of_int
 
 local _M = {}
 local mt = {__index = _M}
@@ -78,7 +84,7 @@ function _M:init(key, iv, opts)
   return true
 end
 
-function _M:encrypt(key, iv, s, no_padding)
+function _M:encrypt(key, iv, s, no_padding, aead_aad)
   local _, err = self:init(key, iv, {
     is_encrypt = true,
     no_padding = no_padding,
@@ -86,10 +92,16 @@ function _M:encrypt(key, iv, s, no_padding)
   if err then
     return nil, err
   end
+  if aead_aad then
+    local _, err = self:update_aead_aad(aead_aad)
+    if err then
+      return nil, err
+    end
+  end
   return self:final(s)
 end
 
-function _M:decrypt(key, iv, s, no_padding)
+function _M:decrypt(key, iv, s, no_padding, aead_aad, aead_tag)
   local _, err = self:init(key, iv, {
     is_encrypt = false,
     no_padding = no_padding,
@@ -97,10 +109,67 @@ function _M:decrypt(key, iv, s, no_padding)
   if err then
     return nil, err
   end
+  if aead_aad then
+    local _, err = self:update_aead_aad(aead_aad)
+    if err then
+      return nil, err
+    end
+  end
+  if aead_tag then
+    local _, err = self:set_aead_tag(aead_tag)
+    if err then
+      return nil, err
+    end
+  end
   return self:final(s)
 end
 
-local int_ptr = ffi.typeof("int[1]")
+-- https://wiki.openssl.org/index.php/EVP_Authenticated_Encryption_and_Decryption
+function _M:update_aead_aad(aad)
+  if not self.initialized then
+    return nil, "cipher:update_aead_aad: cipher not initalized, call cipher:init first"
+  end
+
+  local outl = ptr_of_int()
+  if C.EVP_CipherUpdate(self.ctx, nil, outl, aad, #aad) ~= 1 then
+    return false, format_error("cipher:update_aead_aad")
+  end
+  return true
+end
+
+function _M:get_aead_tag(size)
+  if not self.initialized then
+    return nil, "cipher:get_aead_tag: cipher not initalized, call cipher:init first"
+  end
+
+  size = size or self.key_size / 2
+  if size > self.key_size then
+    return nil, string.format("tag size %d is too large", size)
+  end
+  local buf = ffi_new(uchar_array, size)
+  if C.EVP_CIPHER_CTX_ctrl(self.ctx, evp_macro.EVP_CTRL_AEAD_GET_TAG, size, buf) ~= 1 then
+    return nil, format_error("cipher:get_aead_tag")
+  end
+
+  return ffi_str(buf, size)
+end
+
+function _M:set_aead_tag(tag)
+  if not self.initialized then
+    return nil, "cipher:set_aead_tag: cipher not initalized, call cipher:init first"
+  end
+
+  if type(tag) ~= "string" then
+    return false, "cipher:set_aead_tag expect a string at #1"
+  end
+  local tag_void_ptr = ffi_cast(void_ptr, tag)
+  if C.EVP_CIPHER_CTX_ctrl(self.ctx, evp_macro.EVP_CTRL_AEAD_SET_TAG, #tag, tag_void_ptr) ~= 1 then
+    return false, format_error("cipher:set_aead_tag")
+  end
+
+  return true
+end
+
 function _M:update(...)
   if not self.initialized then
     return nil, "cipher:update: cipher not initalized, call cipher:init first"
@@ -117,8 +186,8 @@ function _M:update(...)
   if max_length == 0 then
     return nil
   end
-  local out = ffi_new('unsigned char[?]', max_length + self.block_size)
-  local outl = int_ptr()
+  local out = ffi_new(uchar_array, max_length + self.block_size)
+  local outl = ptr_of_int()
   for _, s in ipairs({...}) do
     if C.EVP_CipherUpdate(self.ctx, out, outl, s, #s) ~= 1 then
       return nil, format_error("cipher:update")
@@ -136,8 +205,8 @@ function _M:final(s)
       return nil, err
     end
   end
-  local outm = ffi_new('unsigned char[?]', self.block_size)
-  local outl = int_ptr()
+  local outm = ffi_new(uchar_array, self.block_size)
+  local outl = ptr_of_int()
   if C.EVP_CipherFinal(self.ctx, outm, outl) ~= 1 then
     return nil, format_error("cipher:final: EVP_CipherFinal")
   end
@@ -173,8 +242,8 @@ function _M:derive(key, salt, count, md)
     return nil, nil, string.format("cipher:derive: invalid digest type \"%s\"", md)
   end
   local cipt = C.EVP_CIPHER_CTX_cipher(self.ctx)
-  local keyb = ffi_new('unsigned char[?]', self.key_size)
-  local ivb = ffi_new('unsigned char[?]', self.iv_size)
+  local keyb = ffi_new(uchar_array, self.key_size)
+  local ivb = ffi_new(uchar_array, self.iv_size)
 
   local size = C.EVP_BytesToKey(cipt, mdt, salt,
                                 key, #key, count or 1,

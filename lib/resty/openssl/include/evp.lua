@@ -89,6 +89,11 @@ ffi.cdef [[
 
   const EVP_CIPHER *EVP_CIPHER_CTX_cipher(const EVP_CIPHER_CTX *ctx);
   const EVP_CIPHER *EVP_get_cipherbyname(const char *name);
+  int EVP_CIPHER_CTX_ctrl(EVP_CIPHER_CTX *ctx, int type, int arg, void *ptr);
+  int EVP_EncryptUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out,
+          int *outl, const unsigned char *in, int inl);
+  int EVP_DecryptUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out,
+          int *outl, const unsigned char *in, int inl);
 
   int EVP_BytesToKey(const EVP_CIPHER *type, const EVP_MD *md,
     const unsigned char *salt,
@@ -214,6 +219,10 @@ local _M = {
 
   EVP_PKEY_ALG_CTRL = 0x1000,
   EVP_PKEY_CTRL_RSA_PADDING = 0x1000 + 1,
+
+  EVP_CTRL_AEAD_SET_IVLEN = 0x9,
+  EVP_CTRL_AEAD_GET_TAG = 0x10,
+  EVP_CTRL_AEAD_SET_TAG = 0x11,
 }
 
 _M.ecx_curves = {

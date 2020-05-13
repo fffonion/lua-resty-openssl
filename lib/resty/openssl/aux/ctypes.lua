@@ -18,6 +18,7 @@ return {
     ptr_of_uint64 = ffi.typeof("uint64_t[1]"),
     ptr_of_uint = ffi.typeof("unsigned int[1]"),
     ptr_of_size_t = ffi.typeof("size_t[1]"),
+    ptr_of_int = ffi.typeof("int[1]"),
 
     uchar_array = ffi.typeof("unsigned char[?]"),
 }

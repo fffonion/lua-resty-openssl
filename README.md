@@ -920,7 +920,7 @@ Returns `true` if table is an instance of `cipher`. Returns `false` otherwise.
 
 ### cipher:encrypt
 
-**syntax**: *s, err = cipher:encrypt(key, iv?, s, no_padding?)*
+**syntax**: *s, err = cipher:encrypt(key, iv?, s, no_padding?, aead_aad?)*
 
 Encrypt the text `s` with key `key` and IV `iv`. Returns the encrypted text in raw binary string
 and error if any.
@@ -928,13 +928,16 @@ Optionally accepts a boolean `no_padding` which tells the cipher to enable or di
 to `false` (enable padding). If `no_padding` is `true`, the length of `s` must then be a multiple of the
 block size or an error will occur.
 
-This function is a shorthand of `cipher:init` plus `cipher:final`.
+When using GCM or CCM mode, it's also possible to pass the Additional Authenticated Data (AAD) as the fifth
+argument.
+
+This function is a shorthand of `cipher:init`, `cipher:set_aead_aad` (if appliable) then `cipher:final`.
 
 [Back to TOC](#table-of-contents)
 
 ### cipher:decrypt
 
-**syntax**: *s, err = cipher:decrypt(key, iv?, s, no_padding?)*
+**syntax**: *s, err = cipher:decrypt(key, iv?, s, no_padding?, aead_aad?, aead_tag?)*
 
 Decrypt the text `s` with key `key` and IV `iv`. Returns the decrypted text in raw binary string
 and error if any.
@@ -942,7 +945,11 @@ Optionally accepts a boolean `no_padding` which tells the cipher to enable or di
 to `false` (enable padding). If `no_padding` is `true`, the length of `s` must then be a multiple of the
 block size or an error will occur; also, padding in the decrypted text will not be removed.
 
-This function is a shorthand of `cipher:init` plus `cipher:final`.
+When using GCM or CCM mode, it's also possible to pass the Additional Authenticated Data (AAD) as the fifth
+argument and authentication tag as the sixth argument.
+
+This function is a shorthand of `cipher:init`, `cipher:set_aead_aad` (if appliable),
+`cipher:set_aead_tag` (if appliable) then `cipher:final`.
 
 [Back to TOC](#table-of-contents)
 
@@ -971,6 +978,35 @@ Calling function is needed before `cipher:update` and `cipher:final` but not
 Updates the cipher with one or more strings. If the cipher has larger than block size of data to flush,
 the function will return a non-empty string as first argument. This function can be used in a streaming
 fashion to encrypt or decrypt continous data stream.
+
+[Back to TOC](#table-of-contents)
+
+### cipher:update_aead_aad
+
+**syntax**: *s, err = cipher:update_aead_aad(aad)*
+
+Provides AAD data to the cipher, this function can be called more than one times.
+
+[Back to TOC](#table-of-contents)
+
+### cipher:get_aead_tag
+
+**syntax**: *tag, err = cipher:get_aead_tag(size?)*
+
+Gets the authentication tag from cipher with length specified as `size`. If omitted, a tag with length
+of half of the block size will be returned. The size cannot exceed block size.
+
+This function can only be called after encryption is finished.
+
+[Back to TOC](#table-of-contents)
+
+### cipher:set_aead_tag
+
+**syntax**: *ok, err = cipher:get_aead_tag(tag)*
+
+Set the authentication tag of cipher with `tag`.
+
+This function can only be called before decryption starts.
 
 [Back to TOC](#table-of-contents)
 
@@ -1012,6 +1048,9 @@ local cipher, err = c:decrypt(string.rep("0", 32), string.rep("0", 16), encrypte
 ngx.say(cipher)
 -- outputs "🦢"
 ```
+
+See [examples/aes-gcm-aead.lua](https://github.com/fffonion/lua-resty-openssl/blob/master/examples/aes-gcm-aead.lua)
+for an example to use AEAD modes with authentication.
 
 [Back to TOC](#table-of-contents)
 
