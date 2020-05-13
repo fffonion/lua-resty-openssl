@@ -3,7 +3,7 @@ local ffi = require "ffi"
 require "resty.openssl.include.ossl_typ"
 require "resty.openssl.include.evp"
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
-local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
+local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
 
 ffi.cdef [[
   /*__owur*/ int HMAC_Init_ex(HMAC_CTX *ctx, const void *key, int len,
@@ -14,7 +14,7 @@ ffi.cdef [[
                             unsigned int *len);
 ]]
 
-if OPENSSL_11 then
+if OPENSSL_11_OR_LATER then
   ffi.cdef [[
     HMAC_CTX *HMAC_CTX_new(void);
     void HMAC_CTX_free(HMAC_CTX *ctx);

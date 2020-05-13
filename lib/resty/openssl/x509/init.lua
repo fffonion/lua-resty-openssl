@@ -19,7 +19,7 @@ local util = require "resty.openssl.util"
 local txtnid2nid = require("resty.openssl.objects").txtnid2nid
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
-local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
+local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
 
 -- accessors provides an openssl version neutral interface to lua layer
 -- it doesn't handle any error, expect that to be implemented in
@@ -35,7 +35,7 @@ accessors.set_subject_name = C.X509_set_subject_name
 accessors.get_issuer_name = C.X509_get_issuer_name -- returns internal ptr, we dup it
 accessors.set_issuer_name = C.X509_set_issuer_name
 
-if OPENSSL_11 then
+if OPENSSL_11_OR_LATER then
   -- generally, use get1 if we return a lua table wrapped ctx which doesn't support dup.
   -- in that case, a new struct is returned from C api, and we will handle gc.
   -- openssl will increment the reference count for returned ptr, and won't free it when
@@ -294,7 +294,7 @@ local uint_ptr = ffi.typeof("unsigned int[1]")
 local function digest(self, cfunc, typ)
   -- TODO: dedup the following with resty.openssl.digest
   local ctx
-  if OPENSSL_11 then
+  if OPENSSL_11_OR_LATER then
     ctx = C.EVP_MD_CTX_new()
     ffi_gc(ctx, C.EVP_MD_CTX_free)
   elseif OPENSSL_10 then
@@ -415,7 +415,7 @@ function _M:get_extension(nid_txt, last_pos)
 end
 
 local X509_delete_ext
-if OPENSSL_11 then
+if OPENSSL_11_OR_LATER then
   X509_delete_ext = C.X509_delete_ext
 elseif OPENSSL_10 then
   X509_delete_ext = function(ctx, pos)

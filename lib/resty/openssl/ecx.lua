@@ -5,6 +5,7 @@ local ffi_str = ffi.string
 
 require "resty.openssl.include.ec"
 require "resty.openssl.include.evp"
+local ctypes = require "resty.openssl.aux.ctypes"
 local format_error = require("resty.openssl.err").format_error
 
 local _M = {}
@@ -17,23 +18,22 @@ local MAX_ECX_KEY_SIZE = 114 -- ed448 uses 114 bytes
 function _M.get_parameters(evp_pkey_st)
   return setmetatable(empty_table, {
     __index = function(_, k)
-      local buf = ffi_new('unsigned char[?]', MAX_ECX_KEY_SIZE)
-      local size_t_ptr = ffi_new("size_t[1]")
-      size_t_ptr[0] = MAX_ECX_KEY_SIZE
+      local buf = ffi_new(ctypes.uchar_array, MAX_ECX_KEY_SIZE)
+      local length = ffi_new(ctypes.ptr_of_size_t)
+      length[0] = MAX_ECX_KEY_SIZE
 
       if k == 'public' or k == "pub_key" then
-        if C.EVP_PKEY_get_raw_public_key(evp_pkey_st, buf, size_t_ptr) ~= 1 then
-          return nil, format_error("ecx.get_parameters: EVP_PKEY_get_raw_private_key")
+        if C.EVP_PKEY_get_raw_public_key(evp_pkey_st, buf, length) ~= 1 then
+          error(format_error("ecx.get_parameters: EVP_PKEY_get_raw_private_key"))
         end
       elseif k == 'private' or k == "priv ~=_key" then
-        if C.EVP_PKEY_get_raw_private_key(evp_pkey_st, buf, size_t_ptr) ~= 1 then
+        if C.EVP_PKEY_get_raw_private_key(evp_pkey_st, buf, length) ~= 1 then
           return nil, format_error("ecx.get_parameters: EVP_PKEY_get_raw_private_key")
         end
       else
         return nil, "ecx.get_parameters: unknown parameter \"" .. k .. "\" for EC key"
       end
-
-      return ffi_str(buf, size_t_ptr[0])
+      return ffi_str(buf, length[0])
     end
   }), nil
 end

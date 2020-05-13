@@ -4,7 +4,7 @@ local C = ffi.C
 local bn_lib = require "resty.openssl.bn"
 
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
-local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
+local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
 local format_error = require("resty.openssl.err").format_error
 
 local _M = {}
@@ -18,47 +18,47 @@ function _M.get_parameters(rsa_st)
   return setmetatable(empty_table, {
     __index = function(_, k)
       local ptr, ret
-      if OPENSSL_11 then
+      if OPENSSL_11_OR_LATER then
         ptr = bn_ptrptr_ct()
       end
 
       if k == 'n' then
-        if OPENSSL_11 then
+        if OPENSSL_11_OR_LATER then
           C.RSA_get0_key(rsa_st, ptr, nil, nil)
         end
       elseif k == 'e' then
-        if OPENSSL_11 then
+        if OPENSSL_11_OR_LATER then
           C.RSA_get0_key(rsa_st, nil, ptr, nil)
         end
       elseif k == 'd' then
-        if OPENSSL_11 then
+        if OPENSSL_11_OR_LATER then
           C.RSA_get0_key(rsa_st, nil, nil, ptr)
         end
       elseif k == 'p' then
-        if OPENSSL_11 then
+        if OPENSSL_11_OR_LATER then
           C.RSA_get0_factors(rsa_st, ptr, nil)
         end
       elseif k == 'q' then
-        if OPENSSL_11 then
+        if OPENSSL_11_OR_LATER then
           C.RSA_get0_factors(rsa_st, nil, ptr)
         end
       elseif k == 'dmp1' then
-        if OPENSSL_11 then
+        if OPENSSL_11_OR_LATER then
           C.RSA_get0_crt_params(rsa_st, ptr, nil, nil)
         end
       elseif k == 'dmq1' then
-        if OPENSSL_11 then
+        if OPENSSL_11_OR_LATER then
           C.RSA_get0_crt_params(rsa_st, nil, ptr, nil)
         end
       elseif k == 'iqmp' then
-        if OPENSSL_11 then
+        if OPENSSL_11_OR_LATER then
           C.RSA_get0_crt_params(rsa_st, nil, nil, ptr)
         end
       else
         return nil, "rsa.get_parameters: unknown parameter \"" .. k .. "\" for RSA key"
       end
 
-      if OPENSSL_11 then
+      if OPENSSL_11_OR_LATER then
         ret = ptr[0]
       elseif OPENSSL_10 then
         ret = rsa_st[k]
@@ -102,7 +102,7 @@ function _M.set_parameters(rsa_st, opts)
       do_set_crt_params = true
     end
   end
-  if OPENSSL_11 then
+  if OPENSSL_11_OR_LATER then
     -- "The values n and e must be non-NULL the first time this function is called on a given RSA object."
     -- thus we force to set them together
     local code

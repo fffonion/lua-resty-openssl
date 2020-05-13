@@ -158,9 +158,13 @@ function _M.derive(options)
       pass_len = 0
     end
     -- https://www.openssl.org/docs/man1.1.0/man3/PKCS5_PBKDF2_HMAC.html
+    local iter = options.pbkdf2_iter
+    if iter < 1 then
+      iter = 1
+    end
     code = C.PKCS5_PBKDF2_HMAC(
       options.pass, pass_len,
-      options.salt, salt_len, options.pbkdf2_iter,
+      options.salt, salt_len, iter,
       md, options.outlen, buf
     )
   elseif typ == NID_id_scrypt then

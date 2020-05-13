@@ -4,7 +4,7 @@ local C = ffi.C
 require "resty.openssl.include.ossl_typ"
 require "resty.openssl.include.stack"
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
-local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
+local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
 
 ffi.cdef [[
   X509_STORE *X509_STORE_new(void);
@@ -40,7 +40,7 @@ if OPENSSL_10 then
     OPENSSL_STACK *X509_STORE_CTX_get_chain(X509_STORE_CTX *ctx);
   ]];
   _M.X509_STORE_CTX_get0_chain = C.X509_STORE_CTX_get_chain
-elseif OPENSSL_11 then
+elseif OPENSSL_11_OR_LATER then
   ffi.cdef [[
     // STACK_OF(X509)
     OPENSSL_STACK *X509_STORE_CTX_get0_chain(X509_STORE_CTX *ctx);

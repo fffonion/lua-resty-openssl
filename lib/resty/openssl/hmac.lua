@@ -5,19 +5,21 @@ local ffi_new = ffi.new
 local ffi_str = ffi.string
 
 require "resty.openssl.include.hmac"
-local evp_macro = require "resty.openssl.include.evp"
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
-local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
+local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
 
 local _M = {}
 local mt = {__index = _M}
 
 local hmac_ctx_ptr_ct = ffi.typeof('HMAC_CTX*')
 
+-- Note: https://www.openssl.org/docs/manmaster/man3/HMAC_Init.html
+-- Replace with EVP_MAC_* functions for OpenSSL 3.0
+
 function _M.new(key, typ)
   local ctx
-  if OPENSSL_11 then
+  if OPENSSL_11_OR_LATER then
     ctx = C.HMAC_CTX_new()
     ffi_gc(ctx, C.HMAC_CTX_free)
   elseif OPENSSL_10 then

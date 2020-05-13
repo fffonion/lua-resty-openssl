@@ -7,7 +7,7 @@ ffi.cdef[[
   // 1.0
   unsigned long SSLeay(void);
   const char *SSLeay_version(int t);
-  // 1.1
+  // >= 1.1
   unsigned long OpenSSL_version_num();
   const char *OpenSSL_version(int t);
 ]]
@@ -58,7 +58,9 @@ return setmetatable({
     version = function(t)
       return ffi_str(version_func(t))
     end,
+    OPENSSL_30 = version_num >= 0x30000000 and version_num < 0x30100000,
     OPENSSL_11 = version_num >= 0x10100000 and version_num < 0x10200000,
+    OPENSSL_11_OR_LATER = version_num >= 0x10100000 and version_num < 0x30100000,
     OPENSSL_10 = version_num < 0x10100000 and version_num > 0x10000000,
   }, {
     __index = types_table,

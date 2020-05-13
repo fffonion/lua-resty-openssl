@@ -10,7 +10,7 @@ local C = ffi.C
 
 require "resty.openssl.include.ossl_typ"
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
-local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
+local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
 
 local _M = {}
 
@@ -18,7 +18,7 @@ ffi.cdef [[
   typedef char *OPENSSL_STRING;
 ]]
 
-if OPENSSL_11 then
+if OPENSSL_11_OR_LATER then
   ffi.cdef [[
     typedef struct stack_st OPENSSL_STACK;
 

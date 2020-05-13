@@ -14,7 +14,7 @@ local digest_lib = require("resty.openssl.digest")
 local util = require "resty.openssl.util"
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
-local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
+local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
 
 local accessors = {}
 
@@ -24,7 +24,7 @@ accessors.get_pubkey = C.X509_REQ_get_pubkey
 accessors.set_pubkey = C.X509_REQ_set_pubkey
 accessors.set_version = C.X509_REQ_set_version
 
-if OPENSSL_11 then
+if OPENSSL_11_OR_LATER then
   accessors.get_subject_name = C.X509_REQ_get_subject_name -- returns internal ptr
   accessors.get_version = C.X509_REQ_get_version
 elseif OPENSSL_10 then

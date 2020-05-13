@@ -1,5 +1,5 @@
 sudo: required
-dist: trusty
+dist: bionic
 
 os: linux
 
@@ -33,6 +33,8 @@ env:
     - NGINX_VERSION=1.15.8 OPENSSL_VER=1.0.2u
     - NGINX_VERSION=1.15.8 OPENSSL_VER=1.1.0l
     - NGINX_VERSION=1.15.8 OPENSSL_VER=1.1.1g
+    # add -Wno-error to fix deprecation warnings from openssl
+    - NGINX_VERSION=1.15.8 OPENSSL_HASH=90ad284f4e76254f8d67686ae3a5d6c576037091 NGINX_CC_OPTS=-Wno-error
 
 install:
   - export NGX_BUILD_CC=$CC
@@ -53,8 +55,8 @@ install:
   - git clone https://github.com/openresty/lua-resty-string ../lua-resty-string
   # openssl
   # openssl 1.0.2 config doesn't work correctly on a cached directory
-  - wget https://www.openssl.org/source/openssl-$OPENSSL_VER.tar.gz -O - | tar zxf -
-  - pushd openssl-$OPENSSL_VER/
+  - if [ "X$OPENSSL_HASH" != "X" ]; then wget https://github.com/openssl/openssl/archive/$OPENSSL_HASH.tar.gz -O - | tar zxf - ; pushd openssl-$OPENSSL_HASH/; fi
+  - if [ "X$OPENSSL_HASH" = "X" ] ; then wget https://www.openssl.org/source/openssl-$OPENSSL_VER.tar.gz -O - | tar zxf -; pushd openssl-$OPENSSL_VER/; fi
   - if [ ! -e $OPENSSL_PREFIX/include ]; then ./config shared --prefix=$OPENSSL_PREFIX -DPURIFY > build.log 2>&1 || (cat build.log && exit 1); fi
   - if [ ! -e $OPENSSL_PREFIX/include ]; then make -j$JOBS > build.log 2>&1 || (cat build.log && exit 1); fi
   - if [ ! -e $OPENSSL_PREFIX/include ]; then sudo make PATH=$PATH install_sw > build.log 2>&1 || (cat build.log && exit 1); fi
@@ -71,7 +73,7 @@ install:
   - if [ ! -e lua-cjson ]; then git clone https://github.com/openresty/lua-cjson.git ./lua-cjson; fi
   - pushd ./lua-cjson && make && sudo PATH=$PATH make install && popd
   # nginx
-  - if [ ! -e work ]; then ngx-build $NGINX_VERSION --add-module=../ndk-nginx-module --add-module=../lua-nginx-module --with-http_ssl_module --with-cc-opt="-I$OPENSSL_INC" --with-ld-opt="-L$OPENSSL_LIB -Wl,-rpath,$OPENSSL_LIB" --with-debug > build.log 2>&1 || (cat build.log && exit 1); fi
+  - if [ ! -e work ]; then ngx-build $NGINX_VERSION --add-module=../ndk-nginx-module --add-module=../lua-nginx-module --with-http_ssl_module --with-cc-opt="-I$OPENSSL_INC $NGINX_CC_OPTS" --with-ld-opt="-L$OPENSSL_LIB -Wl,-rpath,$OPENSSL_LIB" --with-debug > build.log 2>&1 || (cat build.log && exit 1); fi
   - nginx -V
   - ldd `which nginx`|grep -E 'luajit|ssl|pcre'
   - popd

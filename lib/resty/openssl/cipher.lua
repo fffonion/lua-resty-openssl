@@ -9,7 +9,7 @@ local evp_macro = require "resty.openssl.include.evp"
 local ctypes = require "resty.openssl.aux.ctypes"
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
-local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
+local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
 
 local uchar_array = ctypes.uchar_array
 local void_ptr = ctypes.void_ptr
@@ -26,7 +26,7 @@ function _M.new(typ)
   end
 
   local ctx
-  if OPENSSL_11 then
+  if OPENSSL_11_OR_LATER then
     ctx = C.EVP_CIPHER_CTX_new()
     ffi_gc(ctx, C.EVP_CIPHER_CTX_free)
   elseif OPENSSL_10 then
@@ -50,6 +50,7 @@ function _M.new(typ)
 
   return setmetatable({
     ctx = ctx,
+    cipher_type = dtyp,
     initialized = false,
     block_size = tonumber(C.EVP_CIPHER_CTX_block_size(ctx)),
     key_size = tonumber(C.EVP_CIPHER_CTX_key_length(ctx)),
@@ -70,8 +71,11 @@ function _M:init(key, iv, opts)
     return false, string.format("cipher:init: incorrect iv size, expect %d", self.iv_size)
   end
 
-  if C.EVP_CipherInit_ex(self.ctx, nil, nil, key, iv, opts.is_encrypt and 1 or 0) == 0 then
-    return false, format_error("cipher:init")
+  -- always passed in the `EVP_CIPHER` parameter to reinitialized the cipher
+  -- it will have a same effect as EVP_CIPHER_CTX_cleanup/EVP_CIPHER_CTX_reset then Init_ex with
+  -- empty cipher_type
+  if C.EVP_CipherInit_ex(self.ctx, self.cipher_type, nil, key, iv, opts.is_encrypt and 1 or 0) == 0 then
+    return false, format_error("cipher:init EVP_CipherInit_ex")
   end
 
   if opts.no_padding then

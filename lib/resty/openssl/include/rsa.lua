@@ -2,7 +2,7 @@ local ffi = require "ffi"
 
 require "resty.openssl.include.ossl_typ"
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
-local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
+local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
 
 ffi.cdef [[
   RSA *RSA_new(void);
@@ -10,7 +10,7 @@ ffi.cdef [[
   int RSA_generate_key_ex(RSA *rsa, int bits, BIGNUM *e, BN_GENCB *cb);
 ]]
 
-if OPENSSL_11 then
+if OPENSSL_11_OR_LATER then
   ffi.cdef [[
     void RSA_get0_key(const RSA *r,
               const BIGNUM **n, const BIGNUM **e, const BIGNUM **d);

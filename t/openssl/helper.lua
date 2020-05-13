@@ -43,7 +43,7 @@ local function myassert(...)
   local err = ret[#ret]
   if #ret > 1 and err then
     ngx.log(ngx.ERR, tostring(err))
-    ngx.exit(500)
+    ngx.exit(0)
   end
   return ...
 end

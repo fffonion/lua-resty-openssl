@@ -83,7 +83,7 @@ function _M:get_extension(nid_txt, last_pos)
 end
 
 local {{ module.type }}_delete_ext
-if OPENSSL_11 then
+if OPENSSL_11_OR_LATER then
   {{ module.type }}_delete_ext = C.{{ module.type }}_delete_ext
 elseif OPENSSL_10 then
   {{ module.type }}_delete_ext = function(ctx, pos)

@@ -33,7 +33,7 @@ __DATA__
 --- request
     GET /t
 --- response_body_like
-10\d{4}[0-9a-f]f
+\d{6}[0-9a-f][0f]
 --- no_error_log
 [error]
 

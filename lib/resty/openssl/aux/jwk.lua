@@ -11,6 +11,7 @@ local ec_lib = require "resty.openssl.ec"
 local ecx_lib = require "resty.openssl.ecx"
 local bn_lib = require "resty.openssl.bn"
 local digest_lib = require "resty.openssl.digest"
+local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 
 local _M = {}
 
@@ -174,7 +175,11 @@ function _M.load_jwk(txt)
     end
     key, err = load_jwk_okp(key_type, tbl)
     if key ~= nil then
-      return key
+      if OPENSSL_30 then
+        return { key, key_type }
+      else
+        return key
+      end
     end
   else
     return nil, "not yet supported jwk type \"" .. (tbl["kty"] or "nil") .. "\""

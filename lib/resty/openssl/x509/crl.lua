@@ -14,14 +14,14 @@ local txtnid2nid = require("resty.openssl.objects").txtnid2nid
 local format_error = require("resty.openssl.err").format_error
 
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
-local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
+local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
 
 local accessors = {}
 
 accessors.set_issuer_name = C.X509_CRL_set_issuer_name
 accessors.set_version = C.X509_CRL_set_version
 
-if OPENSSL_11 then
+if OPENSSL_11_OR_LATER then
   accessors.get_last_update = C.X509_CRL_get0_lastUpdate
   accessors.set_last_update = C.X509_CRL_set1_lastUpdate
   accessors.get_next_update = C.X509_CRL_get0_nextUpdate
@@ -237,7 +237,7 @@ function _M:get_extension(nid_txt, last_pos)
 end
 
 local X509_CRL_delete_ext
-if OPENSSL_11 then
+if OPENSSL_11_OR_LATER then
   X509_CRL_delete_ext = C.X509_CRL_delete_ext
 elseif OPENSSL_10 then
   X509_CRL_delete_ext = function(ctx, pos)

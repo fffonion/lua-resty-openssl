@@ -43,10 +43,10 @@ declare_asn1_functions("ASN1_OBJECT")
 declare_asn1_functions("ASN1_STRING")
 
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
-local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
+local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
 
 local ASN1_STRING_get0_data
-if OPENSSL_11 then
+if OPENSSL_11_OR_LATER then
   ffi.cdef[[
     const unsigned char *ASN1_STRING_get0_data(const ASN1_STRING *x);
   ]]

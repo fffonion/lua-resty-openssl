@@ -9,7 +9,7 @@ require "resty.openssl.include.stack"
 local asn1_macro = require "resty.openssl.include.asn1"
 
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
-local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
+local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
 
 asn1_macro.declare_asn1_functions("X509_CRL")
 
@@ -30,7 +30,7 @@ ffi.cdef [[
   X509_CRL *d2i_X509_CRL_bio(BIO *bp, X509_CRL **crl);
 ]]
 
-if OPENSSL_11 then
+if OPENSSL_11_OR_LATER then
   ffi.cdef [[
     int X509_CRL_set1_lastUpdate(X509_CRL *x, const ASN1_TIME *tm);
     int X509_CRL_set1_nextUpdate(X509_CRL *x, const ASN1_TIME *tm);

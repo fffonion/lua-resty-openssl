@@ -4,7 +4,8 @@ local bit = require("bit")
 require "resty.openssl.include.ossl_typ"
 require "resty.openssl.include.objects"
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
-local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
+local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
+local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 
 ffi.cdef [[
   EVP_PKEY *EVP_PKEY_new(void);
@@ -82,6 +83,11 @@ ffi.cdef [[
   /*__owur*/ int EVP_CipherFinal(EVP_CIPHER_CTX *ctx, unsigned char *outm,
                            int *outl);
 
+  // openssl 1.0.2
+  int EVP_CIPHER_CTX_cleanup(EVP_CIPHER_CTX *a);
+  // openssl >= 1.1.0
+  int EVP_CIPHER_CTX_reset(EVP_CIPHER_CTX *ctx);
+
   int EVP_CIPHER_CTX_block_size(const EVP_CIPHER_CTX *ctx);
   int EVP_CIPHER_CTX_key_length(const EVP_CIPHER_CTX *ctx);
   int EVP_CIPHER_CTX_iv_length(const EVP_CIPHER_CTX *ctx);
@@ -118,7 +124,13 @@ ffi.cdef [[
   int EVP_PKEY_keygen(EVP_PKEY_CTX *ctx, EVP_PKEY **ppkey);
 ]]
 
-if OPENSSL_11 then
+if OPENSSL_30 then
+  ffi.cdef [[
+    int EVP_PKEY_CTX_set_rsa_padding(EVP_PKEY_CTX *ctx, int pad_mode);
+  ]]
+end
+
+if OPENSSL_11_OR_LATER then
   ffi.cdef [[
     EVP_MD_CTX *EVP_MD_CTX_new(void);
     void EVP_MD_CTX_free(EVP_MD_CTX *ctx);
@@ -215,7 +227,7 @@ local _M = {
   EVP_PKEY_X448 = ffi.C.OBJ_txt2nid("X448"),
   EVP_PKEY_ED448 = ffi.C.OBJ_txt2nid("ED448"),
 
-  EVP_PKEY_OP_DERIVE = bit.lshift(1, 10),
+  EVP_PKEY_OP_DERIVE = OPENSSL_30 and bit.lshift(1, 12) or bit.lshift(1, 10),
 
   EVP_PKEY_ALG_CTRL = 0x1000,
   EVP_PKEY_CTRL_RSA_PADDING = 0x1000 + 1,

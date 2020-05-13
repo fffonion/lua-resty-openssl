@@ -9,7 +9,7 @@ require "resty.openssl.include.stack"
 local asn1_macro = require "resty.openssl.include.asn1"
 
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
-local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
+local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
 
 asn1_macro.declare_asn1_functions("X509_REQ")
 
@@ -39,7 +39,7 @@ ffi.cdef [[
   int X509_REQ_add_extensions(X509_REQ *req, OPENSSL_STACK *exts);
 ]]
 
-if OPENSSL_11 then
+if OPENSSL_11_OR_LATER then
   ffi.cdef [[
     X509_NAME *X509_REQ_get_subject_name(const X509_REQ *req);
     long X509_REQ_get_version(const X509_REQ *req);

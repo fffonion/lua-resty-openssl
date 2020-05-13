@@ -112,6 +112,8 @@ cipher:update: cipher not initalized, call cipher:init first
                     no_padding = true,
                 })
             ngx.say(s)
+            -- 1.x: data not multiple of block length
+            -- 3.0: wrong final block length
             ngx.say(err)
             local s = myassert(cipher:encrypt(string.rep("0", 32), string.rep("0", 16),
                 '1' .. string.rep(string.char(15), 15), {
@@ -124,7 +126,7 @@ cipher:update: cipher not initalized, call cipher:init first
     GET /t
 --- response_body_like eval
 "nil
-.+data not multiple of block length
+.+(?:data not multiple of block length|wrong final block length)
 VhGyRCcMvlAgUjTYrqiWpg=="
 --- no_error_log
 [error]
