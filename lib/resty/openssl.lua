@@ -6,7 +6,7 @@ end
 
 
 local _M = {
-  _VERSION = '0.6.1',
+  _VERSION = '0.6.2',
   bn = require("resty.openssl.bn"),
   cipher = require("resty.openssl.cipher"),
   digest = require("resty.openssl.digest"),

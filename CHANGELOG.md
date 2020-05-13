@@ -2,6 +2,22 @@
 ## [Unreleased]
 
 
+<a name="0.6.2"></a>
+## [0.6.2] - 2020-05-13
+### feat
+- **cipher:** AEAD modes with authentication [fd7471e](https://github.com/fffonion/lua-resty-openssl/commit/fd7471e3a011519df0250681ee1bf82d61b1f154)
+- **pkey:** support one shot sign/verify for Ed25519 and Ed448 keys [2565e85](https://github.com/fffonion/lua-resty-openssl/commit/2565e85337325f9cee7d601220120b185a22c430)
+- **pkey:** support key derivation for EC, X25519 and X448 keys [0c0d941](https://github.com/fffonion/lua-resty-openssl/commit/0c0d9417711f4c9b513ae02382ea6f9f68f750fd)
+- **pkey:** output pkey to DER and JWK format [8da24a5](https://github.com/fffonion/lua-resty-openssl/commit/8da24a5cd9241c09f51c610164dee5daffdd9129)
+- **pkey:** load EC key from JWK format [df0c06f](https://github.com/fffonion/lua-resty-openssl/commit/df0c06f1e07be3c6e46d9d2a86005361ad386f83)
+- **pkey:** set/get_parameters for EC key [67d54c8](https://github.com/fffonion/lua-resty-openssl/commit/67d54c8dc8555870bbf3fb216b3c636f3d9b220d)
+- **pkey:** load RSA key from JWK format [dc118b3](https://github.com/fffonion/lua-resty-openssl/commit/dc118b3aec2a9ff26fc3f615a1569525cbc13dd4)
+- **pkey:** add function to set rsa parameter [867fa10](https://github.com/fffonion/lua-resty-openssl/commit/867fa109863a2fd770f26a44b15cbea9d422b5cb)
+
+### fix
+- ***:** add prefix to all error messages [8f52c25](https://github.com/fffonion/lua-resty-openssl/commit/8f52c2583b87ae0e66e9546f5db03d8fe667cbd4)
+
+
 <a name="0.6.1"></a>
 ## [0.6.1] - 2020-05-08
 ### fix
@@ -151,7 +167,8 @@
 <a name="init"></a>
 ## init - 2019-09-25
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.1...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.2...HEAD
+[0.6.2]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.1...0.6.2
 [0.6.1]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.0...0.6.1
 [0.6.0]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.4...0.6.0
 [0.5.4]: https://github.com/fffonion/lua-resty-openssl/compare/0.5.3...0.5.4
