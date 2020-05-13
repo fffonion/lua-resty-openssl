@@ -583,20 +583,11 @@ ngx.say(decrypted)
 
 **syntax**: *txt, err = pk:derive(peer_key)*
 
-Derive public key algorithm shared secret.
+Derive public key algorithm shared secret `peer_key`, which must be a [pkey](#restyopensslpkey)
+instance.
 
-```lua
-local pkey = require("resty.openssl.pkey")
-local privkey, err = pkey.new()
-local pub_pem = privkey:to_PEM("public")
-local pubkey, err = pkey.new(pub_pem)
-local s, err = pubkey:encrypt("🦢", pkey.PADDINGS.RSA_PKCS1_PADDING)
-ngx.say(#s)
--- outputs 256
-local decrypted, err = privkey:decrypt(s)
-ngx.say(decrypted)
--- outputs "🦢"
-```
+See [examples/x25519-dh.lua](https://github.com/fffonion/lua-resty-openssl/blob/master/examples/x25519-dh.lua)
+for an example on how key exchange works for X25519 keys with DH alogorithm.
 
 [Back to TOC](#table-of-contents)
 
