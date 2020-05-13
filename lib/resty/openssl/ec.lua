@@ -2,6 +2,7 @@ local ffi = require "ffi"
 local C = ffi.C
 local ffi_gc = ffi.gc
 
+require "resty.openssl.include.ec"
 local bn_lib = require "resty.openssl.bn"
 local objects_lib = require "resty.openssl.objects"
 

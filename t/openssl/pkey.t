@@ -591,7 +591,67 @@ true
 --- no_error_log
 [error]
 
-=== TEST 17: Outputs DER and JWK
+=== TEST 17: Loads JWK Ed25519 key
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local version_num = require("resty.openssl.version").version_num
+            if version_num < 0x10101000 then
+                ngx.say('pkey.new:load_key: failed to construct OKP key from JWK: at least "x" or "d" parameter is required')
+                return
+            end
+            local jwk = require("cjson").encode({
+                kty = "OKP",
+                crv = "Ed25519",
+                x   = "11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo",
+                d   = "nWGxne_9WmC6hEr0kuwsxERJxWl7MmkZcDusAxyuf2A",
+            })
+            local privkey, err = require("resty.openssl.pkey").new(jwk)
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            local privkey, err = require("resty.openssl.pkey").new(jwk, {
+                format = "JWK",
+            })
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+
+            -- errors
+            local _, err = require("resty.openssl.pkey").new(require("cjson").encode({
+                kty = "OKP",
+                crv = "Ed25519",
+            }), {
+                format = "JWK",
+            })
+            ngx.say(err)
+
+            -- pubkey only
+            jwk = require("cjson").encode({
+                kty = "OKP",
+                crv = "Ed25519",
+                x   = "11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo",
+            })
+            local pubkey, err = require("resty.openssl.pkey").new(jwk)
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+'pkey.new:load_key: failed to construct OKP key from JWK: at least "x" or "d" parameter is required
+'
+--- no_error_log
+[error]
+
+=== TEST 18: Outputs DER and JWK
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -626,5 +686,63 @@ true
 
 121
 .+kid.+"
+--- no_error_log
+[error]
+
+=== TEST 19: Key derivation for EC, X448 and X25519
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local version_num = require("resty.openssl.version").version_num
+            local expected = { 24, 32, 56 }
+            for i, t in ipairs({"EC", "X25519", "X448"}) do
+                if (version_num < 0x10101000 and i == 3) or
+                   (version_num < 0x10100000 and i == 2)then
+                    ngx.say(expected[i])
+                    goto next
+                end
+                local p, err = require("resty.openssl.pkey").new({
+                    type = t,
+                })
+                if err then
+                    ngx.log(ngx.ERR, err)
+                    return
+                end
+                -- usually we peer key is from other key pair, doing this for simplicity
+                local k, err = p:derive(p)
+                if err then
+                    ngx.log(ngx.ERR, err)
+                end
+                ngx.say(#k)
+            ::next::
+            end
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+"24
+32
+56"
+--- no_error_log
+[error]
+
+
+=== TEST 19: get key type
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local p, err = require("resty.openssl.pkey").new({
+                type = 'RSA',
+            })
+            ngx.say(require("cjson").encode(p:get_key_type()))
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+'{"ln":"rsaEncryption","nid":6,"sn":"rsaEncryption","id":"1.2.840.113549.1.1.1"}'
 --- no_error_log
 [error]

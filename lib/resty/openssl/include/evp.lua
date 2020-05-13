@@ -30,6 +30,16 @@ ffi.cdef [[
                         unsigned char *out, size_t *outlen,
                         const unsigned char *in, size_t inlen);
 
+  EVP_PKEY *EVP_PKEY_new_raw_private_key(int type, ENGINE *e,
+                        const unsigned char *key, size_t keylen);
+  EVP_PKEY *EVP_PKEY_new_raw_public_key(int type, ENGINE *e,
+                       const unsigned char *key, size_t keylen);
+
+  int EVP_PKEY_get_raw_private_key(const EVP_PKEY *pkey, unsigned char *priv,
+                       size_t *len);
+  int EVP_PKEY_get_raw_public_key(const EVP_PKEY *pkey, unsigned char *pub,
+                      size_t *len);
+
   /*__owur*/ int EVP_DigestInit_ex(EVP_MD_CTX *ctx, const EVP_MD *type,
                                  ENGINE *impl);
   /*__owur*/ int EVP_DigestUpdate(EVP_MD_CTX *ctx, const void *d,
@@ -46,6 +56,7 @@ ffi.cdef [[
   /*__owur*/ int EVP_VerifyFinal(EVP_MD_CTX *ctx, const unsigned char *sigbuf,
                            unsigned int siglen, EVP_PKEY *pkey);
   int EVP_MD_size(const EVP_MD *md);
+  const EVP_MD *EVP_md_null(void);
 
   int EVP_PKEY_get_default_digest_nid(EVP_PKEY *pkey, int *pnid);
   const EVP_MD *EVP_get_digestbyname(const char *name);
@@ -84,7 +95,11 @@ ffi.cdef [[
     unsigned char *key, size_t keylen);
 
   int EVP_PKEY_derive_init(EVP_PKEY_CTX *ctx);
+  int EVP_PKEY_derive_set_peer(EVP_PKEY_CTX *ctx, EVP_PKEY *peer);
   int EVP_PKEY_derive(EVP_PKEY_CTX *ctx, unsigned char *key, size_t *keylen);
+
+  int EVP_PKEY_keygen_init(EVP_PKEY_CTX *ctx);
+  int EVP_PKEY_keygen(EVP_PKEY_CTX *ctx, EVP_PKEY **ppkey);
 ]]
 
 if OPENSSL_11 then
@@ -175,7 +190,7 @@ elseif OPENSSL_10 then
 end
 
 
-return {
+local _M = {
   EVP_PKEY_RSA = ffi.C.OBJ_txt2nid("rsaEncryption"),
   EVP_PKEY_DH = ffi.C.OBJ_txt2nid("dhKeyAgreement"),
   EVP_PKEY_EC = ffi.C.OBJ_txt2nid("id-ecPublicKey"),
@@ -189,3 +204,12 @@ return {
   EVP_PKEY_ALG_CTRL = 0x1000,
   EVP_PKEY_CTRL_RSA_PADDING = 0x1000 + 1,
 }
+
+_M.ecx_curves = {
+  Ed25519 = _M.EVP_PKEY_ED25519,
+  X25519 = _M.EVP_PKEY_X25519,
+  Ed448 = _M.EVP_PKEY_ED448,
+  X448 = _M.EVP_PKEY_X448,
+}
+
+return _M

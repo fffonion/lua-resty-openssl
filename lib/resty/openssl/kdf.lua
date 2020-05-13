@@ -10,6 +10,7 @@ local kdf_macro = require "resty.openssl.include.kdf"
 local format_error = require("resty.openssl.err").format_error
 local version_num = require("resty.openssl.version").version_num
 local version_text = require("resty.openssl.version").version_text
+local ctypes = require "resty.openssl.aux.ctypes"
 local EVP_PKEY_OP_DERIVE = require("resty.openssl.include.evp").EVP_PKEY_OP_DERIVE
 
 --[[
@@ -108,8 +109,7 @@ local options_schema = {
   scrypt_p      = { TYPE_NUMBER, nil, NID_id_scrypt },
 }
 
-local uint64_ptr = ffi.typeof("uint64_t[1]")
-local void_ptr = ffi.typeof("void *")
+local void_ptr = ctypes.void_ptr
 
 function _M.derive(options)
   local typ = options.type
@@ -184,7 +184,7 @@ function _M.derive(options)
 
   -- begin EVP_PKEY_derive routines
   md = ffi_cast(void_ptr, md)
-  local outlen = uint64_ptr()
+  local outlen = ctypes.ptr_of_uint64()
   outlen[0] = options.outlen
 
   local ctx = C.EVP_PKEY_CTX_new_id(typ, nil)

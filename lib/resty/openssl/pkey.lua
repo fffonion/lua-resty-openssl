@@ -8,21 +8,25 @@ local ffi_copy = ffi.copy
 local null = ngx.null
 
 local rsa_macro = require "resty.openssl.include.rsa"
-require "resty.openssl.include.ec"
 require "resty.openssl.include.bio"
 require "resty.openssl.include.pem"
-require "resty.openssl.include.objects"
 require "resty.openssl.include.x509"
 local evp_macro = require "resty.openssl.include.evp"
 local util = require "resty.openssl.util"
 local digest_lib = require "resty.openssl.digest"
 local rsa_lib = require "resty.openssl.rsa"
 local ec_lib = require "resty.openssl.ec"
+local ecx_lib = require "resty.openssl.ecx"
+local objects_lib = require "resty.openssl.objects"
 local jwk_lib = require "resty.openssl.aux.jwk"
+local ctypes = require "resty.openssl.aux.ctypes"
 local format_error = require("resty.openssl.err").format_error
 
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
+
+local ptr_of_uint = ctypes.ptr_of_uint
+local ptr_of_size_t = ctypes.ptr_of_size_t
 
 -- TODO: rewrite using EVP_PKEY_keygen_*
 -- https://www.openssl.org/docs/manmaster/man7/Ed25519.html
@@ -89,6 +93,24 @@ local function generate_key(config)
       return nil, "EC_KEY_generate_key() failed"
     end
     key_free = C.EC_KEY_free
+  elseif evp_macro.ecx_curves[type] then
+    key_type = evp_macro.ecx_curves[type]
+    if key_type == 0 then
+      return nil, string.format("the linked OpenSSL library doesn't support %s key", type)
+    end
+    local pctx = C.EVP_PKEY_CTX_new_id(key_type, nil)
+    if pctx == nil then
+      return nil, format_error("EVP_PKEY_CTX_new_id")
+    end
+    ffi_gc(pctx, C.EVP_PKEY_CTX_free)
+    if C.EVP_PKEY_keygen_init(pctx) ~= 1 then
+      return nil, format_error("EVP_PKEY_keygen_init")
+    end
+    local ctx_ptr = ffi_new("EVP_PKEY*[1]")
+    if C.EVP_PKEY_keygen(pctx, ctx_ptr) ~= 1 then
+      return nil, format_error("EVP_PKEY_keygen")
+    end
+    return ctx_ptr[0]
   else
     return nil, "unsupported type " .. type
   end
@@ -301,6 +323,10 @@ function _M.new(s, opts)
 
   local key_size = C.EVP_PKEY_size(ctx)
   local key_type = C.EVP_PKEY_base_id(ctx)
+  local key_type_is_ecx = (key_type == evp_macro.EVP_PKEY_ED25519) or
+                          (key_type == evp_macro.EVP_PKEY_X25519) or
+                          (key_type == evp_macro.EVP_PKEY_ED448) or
+                          (key_type == evp_macro.EVP_PKEY_X448)
 
   if err then
     return nil, err
@@ -310,9 +336,10 @@ function _M.new(s, opts)
     ctx = ctx,
     pkey_ctx = nil,
     rsa_padding = nil,
-    buf = ffi_new('unsigned char[?]', key_size),
+    buf = ffi_new(ctypes.uchar_array, key_size),
     key_type = key_type,
     key_size = key_size,
+    key_type_is_ecx = key_type_is_ecx,
   }, mt)
 
   ffi_gc(ctx, C.EVP_PKEY_free)
@@ -322,6 +349,10 @@ end
 
 function _M.istype(l)
   return l and l.ctx and ffi.istype(evp_pkey_ptr_ct, l.ctx)
+end
+
+function _M:get_key_type()
+  return objects_lib.nid2table(self.key_type)
 end
 
 local function get_pkey_key(self)
@@ -353,32 +384,43 @@ local function get_pkey_key(self)
 end
 
 function _M:get_parameters()
-  local key, err = get_pkey_key(self)
-  if err then
-    return nil, err
-  end
+  if not self.key_type_is_ecx then
+    local key, err = get_pkey_key(self)
+    if err then
+      return nil, err
+    end
 
-  if self.key_type == evp_macro.EVP_PKEY_RSA then
-    return rsa_lib.get_parameters(key)
-  elseif self.key_type == evp_macro.EVP_PKEY_EC then
-    return ec_lib.get_parameters(key)
+    if self.key_type == evp_macro.EVP_PKEY_RSA then
+      return rsa_lib.get_parameters(key)
+    elseif self.key_type == evp_macro.EVP_PKEY_EC then
+      return ec_lib.get_parameters(key)
+    end
+  else
+    return ecx_lib.get_parameters(self.ctx)
   end
 end
 
 function _M:set_parameters(opts)
-  local key, err = get_pkey_key(self)
-  if err then
-    return nil, err
-  end
+  if not self.key_type_is_ecx then
+    local key, err = get_pkey_key(self)
+    if err then
+      return false, err
+    end
 
-  if self.key_type == evp_macro.EVP_PKEY_RSA then
-    return rsa_lib.set_parameters(key, opts)
-  elseif self.key_type == evp_macro.EVP_PKEY_EC then
-    return ec_lib.set_parameters(key, opts)
+    if self.key_type == evp_macro.EVP_PKEY_RSA then
+      return rsa_lib.set_parameters(key, opts)
+    elseif self.key_type == evp_macro.EVP_PKEY_EC then
+      return ec_lib.set_parameters(key, opts)
+    end
+  else
+    -- for ecx keys we always create a new EVP_PKEY and release the old one
+    local ctx, err = ecx_lib.set_parameters(self.key_type, self.ctx, opts)
+    if err then
+      return false, err
+    end
+    self.ctx = ctx
   end
 end
-
-local size_t_ptr = ffi.typeof("size_t[1]")
 
 local function asymmetric_routine(self, s, is_encrypt, padding)
   local pkey_ctx
@@ -433,7 +475,7 @@ local function asymmetric_routine(self, s, is_encrypt, padding)
     self.rsa_padding = padding
   end
 
-  local length = size_t_ptr()
+  local length = ptr_of_size_t()
   length[0] = self.key_size
 
   if f(pkey_ctx, self.buf, length, s, #s) <= 0 then
@@ -453,13 +495,11 @@ function _M:decrypt(s, padding)
   return asymmetric_routine(self, s, false, padding)
 end
 
-local uint_ptr = ffi.typeof("unsigned int[1]")
-
 function _M:sign(digest)
   if not digest_lib.istype(digest) then
     return nil, "pkey:sign: expect a digest instance at #1"
   end
-  local length = uint_ptr()
+  local length = ptr_of_uint()
   if C.EVP_SignFinal(digest.ctx, self.buf, length, self.ctx) ~= 1 then
     return nil, format_error("pkey:sign")
   end
@@ -479,13 +519,47 @@ function _M:verify(signature, digest)
   return false, format_error("pkey:verify")
 end
 
+function _M:derive(peerkey)
+  if not self.istype(peerkey) then
+    return nil, "pkey:derive: expect a pkey instance at #1"
+  end
+  local pctx = C.EVP_PKEY_CTX_new(self.ctx, nil)
+  if pctx == nil then
+    return nil, "pkey:derive: EVP_PKEY_CTX_new() failed"
+  end
+  ffi_gc(pctx, C.EVP_PKEY_CTX_free)
+  local code = C.EVP_PKEY_derive_init(pctx)
+  if code <= 0 then
+    return nil, format_error("pkey:derive: EVP_PKEY_derive_init", code)
+  end
+
+  code = C.EVP_PKEY_derive_set_peer(pctx, peerkey.ctx)
+  if code <= 0 then
+    return nil, format_error("pkey:derive: EVP_PKEY_derive_set_peer", code)
+  end
+
+  local buflen = ptr_of_size_t()
+  code = C.EVP_PKEY_derive(pctx, nil, buflen)
+  if code <= 0 then
+    return nil, format_error("pkey:derive: EVP_PKEY_derive check buffer size", code)
+  end
+
+  local buf = ffi_new(ctypes.uchar_array, buflen[0])
+  code = C.EVP_PKEY_derive(pctx, buf, buflen)
+  if code <= 0 then
+    return nil, format_error("pkey:derive: EVP_PKEY_derive", code)
+  end
+
+  return ffi_str(buf, buflen[0])
+end
+
 local function pub_or_priv_is_pri(pub_or_priv)
   if pub_or_priv == 'private' or pub_or_priv == 'PrivateKey' then
     return true
   elseif not pub_or_priv or pub_or_priv == 'public' or pub_or_priv == 'PublicKey' then
     return false
   else
-    return nil, "can only export private or public key, not " .. tostring(pub_or_priv)
+    return nil, string.format("can only export private or public key, not %s", pub_or_priv)
   end
 end
 

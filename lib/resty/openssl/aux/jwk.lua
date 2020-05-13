@@ -1,15 +1,14 @@
 
 local ffi = require "ffi"
 local C = ffi.C
-local ffi_gc = ffi.gc
 
 local cjson = require("cjson.safe")
 local b64 = require("ngx.base64")
 
 local evp_macro = require "resty.openssl.include.evp"
-require "resty.openssl.include.rsa"
 local rsa_lib = require "resty.openssl.rsa"
 local ec_lib = require "resty.openssl.ec"
+local ecx_lib = require "resty.openssl.ecx"
 local bn_lib = require "resty.openssl.bn"
 local digest_lib = require "resty.openssl.digest"
 
@@ -54,15 +53,15 @@ local function load_jwk_rsa(tbl)
   return key
 end
 
-local curve_map = {
+local ec_curves = {
   ["P-256"] = C.OBJ_ln2nid("prime256v1"),
   ["P-384"] = C.OBJ_ln2nid("secp384r1"),
   ["P-512"] = C.OBJ_ln2nid("secp512r1"),
 }
 
-local curve_map_reverse = {}
-for k, v in pairs(curve_map) do
-  curve_map_reverse[v] = k
+local ec_curves_reverse = {}
+for k, v in pairs(ec_curves) do
+  ec_curves_reverse[v] = k
 end
 
 local ec_jwk_params = {"x", "y", "d"}
@@ -75,7 +74,7 @@ local function load_jwk_ec(tbl)
   if not tbl["x"] or not tbl["y"] then
     return nil, "at least \"x\" and \"y\" parameter is required"
   end
-  local curve_nid = curve_map[curve]
+  local curve_nid = ec_curves[curve]
   if not curve_nid then
     return nil, "curve \"" .. curve .. "\" is not supported by this library"
   elseif curve_nid == 0 then
@@ -120,8 +119,25 @@ local function load_jwk_ec(tbl)
   return key
 end
 
-local function load_jwk_ed25519(tbl)
-  return nil, "NYI"
+local function load_jwk_okp(key_type, tbl)
+  local params = {}
+  if tbl["d"] then
+    params.private = b64.decode_base64url(tbl["d"])
+  elseif tbl["x"] then
+    params.public = b64.decode_base64url(tbl["x"])
+  else
+    return nil, "at least \"x\" or \"d\" parameter is required"
+  end
+  local key, err = ecx_lib.set_parameters(key_type, nil, params)
+  if err ~= nil then
+    return nil, err
+  end
+  return key
+end
+
+local ecx_curves_reverse = {}
+for k, v in pairs(evp_macro.ecx_curves) do
+  ecx_curves_reverse[v] = k
 end
 
 function _M.load_jwk(txt)
@@ -148,13 +164,18 @@ function _M.load_jwk(txt)
     end
     key, err = load_jwk_ec(tbl)
     key_free = C.EC_KEY_free
-  elseif tbl["kty"] == "OKP" and tbl["crv"] == "Ed25519" then
-    key_type = evp_macro.EVP_PKEY_ED25519
-    if key_type == 0 then
-      return nil, "the linked OpenSSL library doesn't support Ed25519 key"
+  elseif tbl["kty"] == "OKP" then
+    local curve = tbl["crv"]
+    key_type = evp_macro.ecx_curves[curve]
+    if not key_type then
+      return nil, "unknown curve \"" .. tostring(curve)
+    elseif key_type == 0 then
+      return nil, "the linked OpenSSL library doesn't support \"" .. curve .. "\" key"
     end
-    key, err = load_jwk_ed25519(tbl)
-    key_free = C.EC_KEY_free
+    key, err = load_jwk_okp(key_type, tbl)
+    if key ~= nil then
+      return key
+    end
   else
     return nil, "not yet supported jwk type \"" .. (tbl["kty"] or "nil") .. "\""
   end
@@ -204,21 +225,31 @@ function _M.dump_jwk(pkey, is_priv)
     end
     jwk = {
       kty = "EC",
-      crv = curve_map_reverse[params.group],
+      crv = ec_curves_reverse[params.group],
       x = b64.encode_base64url(params.x:to_binary()),
       y = b64.encode_base64url(params.x:to_binary()),
     }
     if is_priv then
       jwk.d = b64.encode_base64url(params.private:to_binary())
     end
-  elseif pkey.key_type == evp_macro.EVP_PKEY_ED25519 then
+  elseif ecx_curves_reverse[pkey.key_type] then
+    local params, err = pkey:get_parameters()
+    if err then
+      return nil, "jwk.dump_jwk: " .. err
+    end
+    jwk = {
+      kty = "OKP",
+      crv = ecx_curves_reverse[pkey.key_type],
+      d = b64.encode_base64url(params.private),
+      x = b64.encode_base64url(params.public),
+    }
   else
     return nil, "jwk.dump_jwk: not implemented for this key type"
   end
 
-  local pem = pkey:tostring(is_priv and "private" or "public", "DER")
+  local der = pkey:tostring(is_priv and "private" or "public", "DER")
   local dgst = digest_lib.new("sha256")
-  local d, err = dgst:final(pem)
+  local d, err = dgst:final(der)
   if err then
     return nil, "jwk.dump_jwk: failed to calculate digest for key"
   end

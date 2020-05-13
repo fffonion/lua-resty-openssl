@@ -4,7 +4,7 @@ local ffi_gc = ffi.gc
 local ffi_new = ffi.new
 local ffi_str = ffi.string
 
-local evp_macro = require "resty.openssl.include.evp"
+require "resty.openssl.include.evp"
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11 = require("resty.openssl.version").OPENSSL_11
@@ -27,9 +27,14 @@ function _M.new(typ)
     return nil, "digest.new: failed to create EVP_MD_CTX"
   end
 
-  local dtyp = C.EVP_get_digestbyname(typ or 'sha1')
-  if dtyp == nil then
-    return nil, string.format("digest.new: invalid digest type \"%s\"", typ)
+  local dtyp
+  if typ == "null" then
+    dtyp = C.EVP_md_null()
+  else
+    dtyp = C.EVP_get_digestbyname(typ or 'sha1')
+    if dtyp == nil then
+      return nil, string.format("digest.new: invalid digest type \"%s\"", typ)
+    end
   end
 
   local code = C.EVP_DigestInit_ex(ctx, dtyp, nil)
