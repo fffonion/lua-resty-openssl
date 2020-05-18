@@ -18,6 +18,8 @@ Table of Contents
     + [version_num](#version_num)
     + [version_text](#version_text)
     + [version.version](#versionversion)
+    + [version.info](#versioninfo)
+    + [OPENSSL_30](#openssl_30)
     + [OPENSSL_11](#openssl_11)
     + [OPENSSL_10](#openssl_10)
   * [resty.openssl.pkey](#restyopensslpkey)
@@ -66,11 +68,13 @@ Table of Contents
     + [digest.istype](#digestistype)
     + [digest:update](#digestupdate)
     + [digest:final](#digestfinal)
+    + [digest:reset](#digestreset)
   * [resty.openssl.hmac](#restyopensslhmac)
     + [hmac.new](#hmacnew)
     + [hmac.istype](#hmacistype)
     + [hmac:update](#hmacupdate)
-    + [hmac:final](#hmac-final)
+    + [hmac:final](#hmacfinal)
+    + [hmac:reset](#hmacreset)
   * [resty.openssl.kdf](#restyopensslkdf)
     + [kdf.derive](#kdfderive)
   * [resty.openssl.objects](#restyopensslobjects)
@@ -208,7 +212,6 @@ using `error()` but instead return as last parameter.
 Each Lua table returned by `new()` contains a cdata object `ctx`. User are not supposed to manully setting
 `ffi.gc` or calling corresponding destructor of the `ctx` struct (like `*_free` functions).
 
-
 [Back to TOC](#table-of-contents)
 
 ## resty.openssl
@@ -218,7 +221,7 @@ and returns all exported modules to a table.
 
 ```lua
 return {
-  _VERSION = '0.1.0',
+  _VERSION = 'x.y.z',
   bn = require("resty.openssl.bn"),
   cipher = require("resty.openssl.cipher"),
   digest = require("resty.openssl.digest"),
@@ -238,6 +241,8 @@ return {
   store = require("resty.openssl.x509.store"),
 }
 ```
+
+Starting OpenSSL 3.0, [`provider`](#restyopensslprovider) is also available.
 
 [Back to TOC](#table-of-contents)
 
@@ -284,7 +289,7 @@ The OpenSSL version text.
 
 **syntax**: *text = version.version(types)*
 
-Returns various OpenSSL information. Available values for `types` are:
+Returns various OpenSSL version information. Available values for `types` are:
 
     VERSION
     CFLAGS
@@ -298,7 +303,9 @@ Returns various OpenSSL information. Available values for `types` are:
     CPU_INFO
 
 For OpenSSL prior to 1.1.x, only `VERSION`, `CFLAGS`, `BUILT_ON`, `PLATFORM`
-and `DIR` are supported.
+and `DIR` are supported. Please refer to
+[OPENSSL_VERSION_NUMBER(3)](https://www.openssl.org/docs/manmaster/man3/OPENSSL_VERSION_NUMBER.html)
+for explanation of each type.
 
 ```lua
 local version = require("resty.openssl.version")
@@ -309,6 +316,40 @@ ngx.say(version.version_text)
 ngx.say(version.version(version.PLATFORM))
 -- outputs "darwin64-x86_64-cc"
 ```
+
+[Back to TOC](#table-of-contents)
+
+### version.info
+
+**syntax**: *text = version.info(types)*
+
+Returns various OpenSSL information. Available values for `types` are:
+
+    INFO_ENGINES_DIR
+    INFO_DSO_EXTENSION
+    INFO_CPU_SETTINGS
+    INFO_LIST_SEPARATOR
+    INFO_DIR_FILENAME_SEPARATOR
+    INFO_CONFIG_DIR
+    INFO_SEED_SOURCE
+    INFO_MODULES_DIR
+
+This function is only available on OpenSSL 3.0.
+Please refer to
+[OPENSSL_VERSION_NUMBER(3)](https://www.openssl.org/docs/manmaster/man3/OPENSSL_VERSION_NUMBER.html)
+for explanation of each type.
+
+```lua
+local version = require("resty.openssl.version")
+ngx.say(version.version(version.INFO_DSO_EXTENSION))
+-- outputs ".so"
+```
+
+[Back to TOC](#table-of-contents)
+
+### OPENSSL_30
+
+A boolean indicates whether the linked OpenSSL is 3.0 series.
 
 [Back to TOC](#table-of-contents)
 
@@ -340,7 +381,6 @@ Ed448 | Y | Y | | Y (PureEdDSA) | |
 X448 | Y | Y | | | Y (ECDH) |
 
 `Ed25519`, `X25519`, `Ed448` and `X448` keys are only supported since OpenSSL 1.1.0.
-
 
 [Back to TOC](#table-of-contents)
 
@@ -510,7 +550,7 @@ user should only use [update()](#restydigestupdate).
 
 Note that OpenSSL does not support EC digital signature (ECDSA) with the
 obsolete MD5 hash algorithm and will return error on this combination. See
-[EVP_DigestSign(3)](https://www.openssl.org/docs/man1.1.1/man3/EVP_DigestSign.html)
+[EVP_DigestSign(3)](https://www.openssl.org/docs/manmaster/man3/EVP_DigestSign.html)
 for a list of algorithms and associated public key algorithms.
 
 For Ed25519 or Ed448 keys, this function does a PureEdDSA verification and requires
@@ -897,7 +937,7 @@ size of the number
 
 > When the source of the prime is not random or not trusted, the number of checks needs to be much higher to reach the same level of assurance: It should equal half of the targeted security level in bits (rounded up to the next integer if necessary). For instance, to reach the 128 bit security level, nchecks should be set to 64.
 
-See also [BN_is_prime](https://www.openssl.org/docs/man1.1.1/man3/BN_is_prime.html).
+See also [BN_is_prime(3)](https://www.openssl.org/docs/manmaster/man3/BN_is_prime.html).
 
 [Back to TOC](#table-of-contents)
 
@@ -972,8 +1012,14 @@ Initialize the cipher with key `key` and IV `iv`. The optional third argument is
 }
 ```
 
-Calling function is needed before `cipher:update` and `cipher:final` but not
-`cipher:encrypt` or `cipher:decrypt`.
+Calling function is needed before [cipher:update](#restycipherupdate) and
+[cipher:final](#restycipherfinal) if the cipher is not being initialized already. But not
+[cipher:encrypt](#restycipherencrypt) and [cipher:decrypt](#restycipherdecrypt).
+
+If you wish to reuse `cipher` instance multiple times, calling this function is necessary
+to clear the internal state of the cipher. The shorthand functions
+[cipher:encrypt](#restycipherencrypt) and [cipher:decrypt](#restycipherdecrypt)
+already take care of initialization and reset.
 
 [Back to TOC](#table-of-contents)
 
@@ -989,7 +1035,7 @@ fashion to encrypt or decrypt continous data stream.
 
 ### cipher:update_aead_aad
 
-**syntax**: *s, err = cipher:update_aead_aad(aad)*
+**syntax**: *ok, err = cipher:update_aead_aad(aad)*
 
 Provides AAD data to the cipher, this function can be called more than one times.
 
@@ -1008,7 +1054,7 @@ This function can only be called after encryption is finished.
 
 ### cipher:set_aead_tag
 
-**syntax**: *ok, err = cipher:get_aead_tag(tag)*
+**syntax**: *ok, err = cipher:set_aead_tag(tag)*
 
 Set the authentication tag of cipher with `tag`.
 
@@ -1138,6 +1184,16 @@ ngx.say(ngx.encode_base64(digest))
 
 [Back to TOC](#table-of-contents)
 
+### digest:reset
+
+**syntax**: *ok, err = digest:reset()*
+
+Reset the internal state of `digest` instance as it's just created by [digest:new](#digestnew).
+It calls [EVP_DigestInit_ex](https://www.openssl.org/docs/manmaster/man3/EVP_DigestInit_ex.html) under
+the hood.
+
+[Back to TOC](#table-of-contents)
+
 ## resty.openssl.hmac
 
 Module to interact with hash-based message authentication code (HMAC_CTX).
@@ -1192,6 +1248,16 @@ ngx.say(ngx.encode_base64(hmac))
 
 [Back to TOC](#table-of-contents)
 
+### hmac:reset
+
+**syntax**: *ok, err = hmac:reset()*
+
+Reset the internal state of `hmac` instance as it's just created by [hmac:new](#hmacnew).
+It calls [HMAC_Init_ex](https://www.openssl.org/docs/manmaster/man3/HMAC_Init_ex.html) under
+the hood.
+
+[Back to TOC](#table-of-contents)
+
 ## resty.openssl.kdf
 
 Module to interact with KDF (key derivation function).
@@ -1219,7 +1285,7 @@ Derive a key from given material. Various KDFs are supported based on OpenSSL ve
 | md    | string | Message digest method name to use, not effective for `scrypt` type | `"sha1"` |
 | pbkdf2_iter     | number | PBKDF2 iteration count. RFC 2898 suggests an iteration count of at least 1000. Any value less than 1 is treated as a single iteration.  | `1` |
 | hkdf_key     | string | HKDF key  | **required** |
-| hkdf_mode     | number | HKDF mode to use, one of `kdf.HKDEF_MODE_EXTRACT_AND_EXPAND`, `kdf.HKDEF_MODE_EXTRACT_ONLY` or `kdf.HKDEF_MODE_EXPAND_ONLY`. This is only effective with OpenSSL >= 1.1.1. To learn about mode, please refer to [EVP_PKEY_CTX_set1_hkdf_key](https://www.openssl.org/docs/man1.1.1/man3/EVP_PKEY_CTX_set1_hkdf_key.html).  | `kdf.HKDEF_MODE_EXTRACT_AND_EXPAND`|
+| hkdf_mode     | number | HKDF mode to use, one of `kdf.HKDEF_MODE_EXTRACT_AND_EXPAND`, `kdf.HKDEF_MODE_EXTRACT_ONLY` or `kdf.HKDEF_MODE_EXPAND_ONLY`. This is only effective with OpenSSL >= 1.1.1. To learn about mode, please refer to [EVP_PKEY_CTX_set1_hkdf_key(3)](https://www.openssl.org/docs/manmaster/man3/EVP_PKEY_CTX_set1_hkdf_key.html).  | `kdf.HKDEF_MODE_EXTRACT_AND_EXPAND`|
 | hkdf_info     | string | HKDF info value  | (empty string) |
 | tls1_prf_secret     | string | TLS1-PRF secret  | **required** |
 | tls1_prf_seed     | string | TLS1-PRF seed  | **required** |
@@ -2053,7 +2119,7 @@ Module to interact with X.509 extensions.
 **syntax**: *ext, err = extension.new(name, value, data?)*
 
 Creates a new `extension` instance. `name` and `value` are strings in OpenSSL
-[arbitrary extension format](https://www.openssl.org/docs/man1.0.2/man5/x509v3_config.html).
+[arbitrary extension format](https://www.openssl.org/docs/manmaster/man5/x509v3_config.html).
 
 `data` can be a table or nil. Where data is a table, the following key will be looked up:
 
@@ -2379,7 +2445,7 @@ Loads a X.509 certificate on file system into store.
 
 Loads a directory of X.509 certificates on file system into store. The certificates in the directory
 must be in hashed form, as documented in
-[X509_LOOKUP_hash_dir(3)](https://www.openssl.org/docs/man1.1.1/man3/X509_LOOKUP_hash_dir.html).
+[X509_LOOKUP_hash_dir(3)](https://www.openssl.org/docs/manmaster/man3/X509_LOOKUP_hash_dir.html).
 
 [Back to TOC](#table-of-contents)
 
