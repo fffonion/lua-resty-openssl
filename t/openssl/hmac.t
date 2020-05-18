@@ -91,3 +91,29 @@ __DATA__
 "hmac.new: invalid digest type \"sha257\""
 --- no_error_log
 [error]
+
+
+=== TEST 5: Can be reused
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local hmac = myassert(require("resty.openssl.hmac").new("goose", "sha256"))
+            myassert(hmac:update("🦢🦢🦢🦢🦢🦢"))
+            ngx.say(ngx.encode_base64(myassert(hmac:final())))
+
+            myassert(hmac:reset())
+
+            local hmac = myassert(require("resty.openssl.hmac").new("goose", "sha256"))
+            myassert(hmac:update("🦢🦢🦢🦢🦢🦢"))
+            ngx.say(ngx.encode_base64(myassert(hmac:final())))
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"kwUMjYrP0BSJb8cIJvWYoiM1Kc4mQxZOTwSiTTLRhDM=
+kwUMjYrP0BSJb8cIJvWYoiM1Kc4mQxZOTwSiTTLRhDM=
+"
+--- no_error_log
+[error]

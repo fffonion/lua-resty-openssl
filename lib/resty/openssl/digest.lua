@@ -44,6 +44,7 @@ function _M.new(typ)
 
   return setmetatable({
     ctx = ctx,
+    dtyp = dtyp,
     md_size = C.EVP_MD_size(dtyp),
   }, mt), nil
 end
@@ -79,6 +80,15 @@ function _M:final(s)
     return nil, format_error("digest:final: EVP_DigestFinal_ex")
   end
   return ffi_str(buf, length[0])
+end
+
+function _M:reset()
+  local code = C.EVP_DigestInit_ex(self.ctx, self.dtyp, nil)
+  if code ~= 1 then
+    return false, format_error("digest:reset")
+  end
+
+  return true
 end
 
 return _M

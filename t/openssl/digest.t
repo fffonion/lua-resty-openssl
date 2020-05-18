@@ -91,3 +91,27 @@ __DATA__
 "digest.new: invalid digest type \"sha257\""
 --- no_error_log
 [error]
+
+=== TEST 5: Can be reused
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local digest = myassert(require("resty.openssl.digest").new("sha256"))
+
+            myassert(digest:update("🦢🦢🦢🦢🦢🦢"))
+            ngx.say(ngx.encode_base64(myassert(digest:final())))
+
+            myassert(digest:reset())
+            myassert(digest:update("🦢🦢🦢🦢🦢🦢"))
+            ngx.say(ngx.encode_base64(myassert(digest:final())))
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"2iuYqSWdAyVAtQxL/p+AOl2kqp83fN4k+da6ngAt8+s=
+2iuYqSWdAyVAtQxL/p+AOl2kqp83fN4k+da6ngAt8+s=
+"
+--- no_error_log
+[error]

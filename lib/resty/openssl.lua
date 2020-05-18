@@ -1,8 +1,4 @@
-
-local version_num = require("resty.openssl.version").version_num
-if not version_num or version_num < 0x10000000 then
-  error(string.format("OpenSSL version %x is not supported", version_num or 0))
-end
+local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 
 
 local _M = {
@@ -25,6 +21,10 @@ local _M = {
   name = require("resty.openssl.x509.name"),
   store = require("resty.openssl.x509.store"),
 }
+
+if OPENSSL_30 then
+  _M.provider = require("resty.openssl.provider")
+end
 
 _M.bignum = _M.bn
 

@@ -10,9 +10,11 @@ ffi.cdef[[
   // >= 1.1
   unsigned long OpenSSL_version_num();
   const char *OpenSSL_version(int t);
+  // >= 3.0
+  const char *OPENSSL_info(int t);
 ]]
 
-local version_func
+local version_func, info_func
 local types_table
 
 -- >= 1.1
@@ -52,11 +54,41 @@ if not ok then
   end)
 end
 
+if not version_num or version_num < 0x10000000 then
+  error(string.format("OpenSSL version %x is not supported", version_num or 0))
+end
+
+if version_num >= 0x30000000 then
+  local info_table = {
+    INFO_CONFIG_DIR = 1001,
+    INFO_ENGINES_DIR = 1002,
+    INFO_MODULES_DIR = 1003,
+    INFO_DSO_EXTENSION = 1004,
+    INFO_DIR_FILENAME_SEPARATOR = 1005,
+    INFO_LIST_SEPARATOR = 1006,
+    INFO_SEED_SOURCE = 1007,
+    INFO_CPU_SETTINGS = 1008,
+  }
+
+  for k, v in pairs(info_table) do
+    types_table[k] = v
+  end
+
+  info_func = C.OPENSSL_info
+else
+  info_func = function()
+    error(string.format("OPENSSL_info is not supported on %s", ffi_str(version_func(0))))
+  end
+end
+
 return setmetatable({
     version_num = tonumber(version_num),
     version_text = ffi_str(version_func(0)),
     version = function(t)
       return ffi_str(version_func(t))
+    end,
+    info = function(t)
+      return ffi_str(info_func(t))
     end,
     OPENSSL_30 = version_num >= 0x30000000 and version_num < 0x30100000,
     OPENSSL_11 = version_num >= 0x10100000 and version_num < 0x10200000,

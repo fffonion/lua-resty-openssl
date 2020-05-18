@@ -44,6 +44,7 @@ function _M.new(key, typ)
   return setmetatable({
     ctx = ctx,
     md_size = C.EVP_MD_size(dtyp),
+    dtyp = dtyp,
   }, mt), nil
 end
 
@@ -76,6 +77,15 @@ function _M:final(s)
     return nil, format_error("hmac:final: HMAC_Final")
   end
   return ffi_str(buf, length[0])
+end
+
+function _M:reset()
+  local code = C.HMAC_Init_ex(self.ctx, nil, 0, nil, nil)
+  if code ~= 1 then
+    return false, format_error("hmac:reset")
+  end
+
+  return true
 end
 
 return _M
