@@ -974,8 +974,8 @@ Optionally accepts a boolean `no_padding` which tells the cipher to enable or di
 to `false` (enable padding). If `no_padding` is `true`, the length of `s` must then be a multiple of the
 block size or an error will occur.
 
-When using GCM or CCM mode, it's also possible to pass the Additional Authenticated Data (AAD) as the fifth
-argument.
+When using GCM or CCM mode or `chacha20-poly1305` cipher, it's also possible to pass
+the Additional Authenticated Data (AAD) as the fifth argument.
 
 This function is a shorthand of `cipher:init`, `cipher:set_aead_aad` (if appliable) then `cipher:final`.
 
@@ -991,8 +991,9 @@ Optionally accepts a boolean `no_padding` which tells the cipher to enable or di
 to `false` (enable padding). If `no_padding` is `true`, the length of `s` must then be a multiple of the
 block size or an error will occur; also, padding in the decrypted text will not be removed.
 
-When using GCM or CCM mode, it's also possible to pass the Additional Authenticated Data (AAD) as the fifth
-argument and authentication tag as the sixth argument.
+When using GCM or CCM mode or `chacha20-poly1305` cipher, it's also possible to pas
+the Additional Authenticated Data (AAD) as the fifth argument and authentication tag
+as the sixth argument.
 
 This function is a shorthand of `cipher:init`, `cipher:set_aead_aad` (if appliable),
 `cipher:set_aead_tag` (if appliable) then `cipher:final`.
