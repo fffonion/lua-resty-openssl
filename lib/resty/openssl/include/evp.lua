@@ -80,7 +80,7 @@ ffi.cdef [[
                            const unsigned char *iv, int enc);
   /*__owur*/ int EVP_CipherUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out,
                            int *outl, const unsigned char *in, int inl);
-  /*__owur*/ int EVP_CipherFinal(EVP_CIPHER_CTX *ctx, unsigned char *outm,
+  /*__owur*/ int EVP_CipherFinal_ex(EVP_CIPHER_CTX *ctx, unsigned char *outm,
                            int *outl);
 
   // openssl 1.0.2

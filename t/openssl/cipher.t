@@ -108,17 +108,13 @@ cipher:update: cipher not initalized, call cipher:init first
         content_by_lua_block {
             local cipher = myassert(require("resty.openssl.cipher").new("aes256"))
 
-            local s, err = cipher:encrypt(string.rep("0", 32), string.rep("0", 16), '1', {
-                    no_padding = true,
-                })
+            local s, err = cipher:encrypt(string.rep("0", 32), string.rep("0", 16), '1', true)
             ngx.say(s)
             -- 1.x: data not multiple of block length
             -- 3.0: wrong final block length
             ngx.say(err)
             local s = myassert(cipher:encrypt(string.rep("0", 32), string.rep("0", 16),
-                '1' .. string.rep(string.char(15), 15), {
-                    no_padding = true,
-                }))
+                '1' .. string.rep(string.char(15), 15), true))
             ngx.print(ngx.encode_base64(s))
         }
     }
@@ -159,9 +155,7 @@ VhGyRCcMvlAgUjTYrqiWpg=="
             local cipher = myassert(require("resty.openssl.cipher").new("aes256"))
 
             local s = myassert(cipher:decrypt(string.rep("0", 32), string.rep("0", 16),
-                ngx.decode_base64("VhGyRCcMvlAgUjTYrqiWpg=="), {
-                    no_padding = true,
-                }))
+                ngx.decode_base64("VhGyRCcMvlAgUjTYrqiWpg=="), true))
 
             ngx.print(s)
         }
@@ -195,8 +189,9 @@ VhGyRCcMvlAgUjTYrqiWpg=="
                     ngx.say("nothing")
                 end
             end
-            local s = myassert(cipher:final())
+            local s = myassert(cipher:final(sample))
 
+            ngx.say("final")
             ngx.say(ngx.encode_base64(s))
         }
     }
@@ -208,7 +203,8 @@ SEk81GpcHC9KoZfN14RrNg==
 nothing
 L2dVbLMhEigy917CJBXz7g==
 nothing
-yP4vKOecDyao4AzxaTAzkA==
+final
+dtpklHxY9IbgmSw84+2XMr0Vy/S1392+rvu0A3GW1Wo=
 "
 --- no_error_log
 [error]
@@ -226,8 +222,8 @@ yP4vKOecDyao4AzxaTAzkA==
 
             local input = ngx.decode_base64('SEk81GpcHC9KoZfN14RrNg==') ..
                             ngx.decode_base64('L2dVbLMhEigy917CJBXz7g==') ..
-                            ngx.decode_base64('yP4vKOecDyao4AzxaTAzkA==')
-            local count = 5
+                            ngx.decode_base64('dtpklHxY9IbgmSw84+2XMr0Vy/S1392+rvu0A3GW1Wo=')
+            local count = 5 + 1
             local len = (#input - #input % count) / count
             for i=0,#input-len,len do
                 local s = myassert(cipher:update(string.sub(input, i+1, i+len)))
@@ -244,7 +240,7 @@ yP4vKOecDyao4AzxaTAzkA==
             ngx.say(s)
             -- feed the last chunk of input
             local s = myassert(cipher:final(string.sub(input, #input -#input % count + 1, #input)))
-
+            ngx.say("final")
             ngx.say(s)
         }
     }
@@ -255,10 +251,12 @@ yP4vKOecDyao4AzxaTAzkA==
 abcdefghiabcdefg
 nothing
 hiabcdefghiabcde
+fghiabcdefghiabc
 nothing
 .+wrong final block length
 nil
-fghiabcdefghi
+final
+defghi
 "
 --- no_error_log
 [error]

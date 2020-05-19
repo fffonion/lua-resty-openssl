@@ -211,8 +211,8 @@ function _M:final(s)
   end
   local outm = ffi_new(uchar_array, self.block_size)
   local outl = ptr_of_int()
-  if C.EVP_CipherFinal(self.ctx, outm, outl) ~= 1 then
-    return nil, format_error("cipher:final: EVP_CipherFinal")
+  if C.EVP_CipherFinal_ex(self.ctx, outm, outl) ~= 1 then
+    return nil, format_error("cipher:final: EVP_CipherFinal_ex")
   end
   return (ret or "") .. ffi_str(outm, outl[0])
 end
