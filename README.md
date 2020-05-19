@@ -645,7 +645,7 @@ Derive public key algorithm shared secret `peer_key`, which must be a [pkey](#re
 instance.
 
 See [examples/x25519-dh.lua](https://github.com/fffonion/lua-resty-openssl/blob/master/examples/x25519-dh.lua)
-for an example on how key exchange works for X25519 keys with DH alogorithm.
+for an example on how key exchange works for X25519 keys with DH algorithm.
 
 [Back to TOC](#table-of-contents)
 

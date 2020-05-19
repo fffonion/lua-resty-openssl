@@ -36,7 +36,7 @@ if version_num >= 0x10100000 then
   assert(NID_hkdf > 0)
   NID_tls1_prf = C.OBJ_txt2nid("TLS1-PRF")
   assert(NID_tls1_prf > 0)
-  -- we use EVP_PBE_scrypt to do script, so this is supported >= 1.1.0
+  -- we use EVP_PBE_scrypt to do scrypt, so this is supported >= 1.1.0
   NID_id_scrypt = C.OBJ_txt2nid("id-scrypt")
   assert(NID_id_scrypt > 0)
 end
