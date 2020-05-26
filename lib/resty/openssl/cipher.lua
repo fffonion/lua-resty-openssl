@@ -150,7 +150,7 @@ function _M:get_aead_tag(size)
   if size > self.key_size then
     return nil, string.format("tag size %d is too large", size)
   end
-  local buf = ffi_new(uchar_array, size)
+  local buf = uchar_array(size)
   if C.EVP_CIPHER_CTX_ctrl(self.ctx, evp_macro.EVP_CTRL_AEAD_GET_TAG, size, buf) ~= 1 then
     return nil, format_error("cipher:get_aead_tag")
   end
@@ -190,7 +190,7 @@ function _M:update(...)
   if max_length == 0 then
     return nil
   end
-  local out = ffi_new(uchar_array, max_length + self.block_size)
+  local out = uchar_array(max_length + self.block_size)
   local outl = ptr_of_int()
   for _, s in ipairs({...}) do
     if C.EVP_CipherUpdate(self.ctx, out, outl, s, #s) ~= 1 then
@@ -209,7 +209,7 @@ function _M:final(s)
       return nil, err
     end
   end
-  local outm = ffi_new(uchar_array, self.block_size)
+  local outm = uchar_array(self.block_size)
   local outl = ptr_of_int()
   if C.EVP_CipherFinal_ex(self.ctx, outm, outl) ~= 1 then
     return nil, format_error("cipher:final: EVP_CipherFinal_ex")
@@ -246,8 +246,8 @@ function _M:derive(key, salt, count, md)
     return nil, nil, string.format("cipher:derive: invalid digest type \"%s\"", md)
   end
   local cipt = C.EVP_CIPHER_CTX_cipher(self.ctx)
-  local keyb = ffi_new(uchar_array, self.key_size)
-  local ivb = ffi_new(uchar_array, self.iv_size)
+  local keyb = uchar_array(self.key_size)
+  local ivb = uchar_array(self.iv_size)
 
   local size = C.EVP_BytesToKey(cipt, mdt, salt,
                                 key, #key, count or 1,

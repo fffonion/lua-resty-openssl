@@ -5,12 +5,11 @@ local ffi_sizeof = ffi.sizeof
 
 require "resty.openssl.include.objects"
 
-local char_ptr = ffi.typeof('char[?]')
+local buf = ffi.new('char[?]', 100)
 
 local function obj2table(obj)
   local nid = C.OBJ_obj2nid(obj)
 
-  local buf = char_ptr(100)
   local len = C.OBJ_obj2txt(buf, ffi_sizeof(buf), obj, 1)
   local oid = ffi_str(buf, len)
 

@@ -1,7 +1,6 @@
 local ffi = require "ffi"
 local C = ffi.C
 local ffi_gc = ffi.gc
-local ffi_new = ffi.new
 local ffi_str = ffi.string
 local ffi_cast = ffi.cast
 
@@ -147,7 +146,7 @@ function _M.derive(options)
     return nil, string.format("kdf.derive: invalid digest type \"%s\"", md)
   end
 
-  local buf = ffi_new('unsigned char[?]', options.outlen)
+  local buf = ctypes.uchar_array(options.outlen)
 
   -- begin legacay low level routines
   local code
@@ -188,8 +187,7 @@ function _M.derive(options)
 
   -- begin EVP_PKEY_derive routines
   md = ffi_cast(void_ptr, md)
-  local outlen = ctypes.ptr_of_uint64()
-  outlen[0] = options.outlen
+  local outlen = ctypes.ptr_of_uint64(options.outlen)
 
   local ctx = C.EVP_PKEY_CTX_new_id(typ, nil)
   if ctx == nil then

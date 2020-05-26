@@ -5,6 +5,7 @@ local ffi_new = ffi.new
 local ffi_str = ffi.string
 
 require "resty.openssl.include.hmac"
+local ctypes = require "resty.openssl.aux.ctypes"
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
@@ -43,8 +44,8 @@ function _M.new(key, typ)
 
   return setmetatable({
     ctx = ctx,
-    md_size = C.EVP_MD_size(dtyp),
     dtyp = dtyp,
+    buf = ctypes.uchar_array(C.EVP_MD_size(dtyp)),
   }, mt), nil
 end
 
@@ -61,8 +62,6 @@ function _M:update(...)
   return true, nil
 end
 
-local uint_ptr = ffi.typeof("unsigned int[1]")
-
 function _M:final(s)
   if s then
     local _, err = self:update(s)
@@ -71,12 +70,11 @@ function _M:final(s)
     end
   end
 
-  local buf = ffi_new('unsigned char[?]', self.md_size)
-  local length = uint_ptr()
-  if C.HMAC_Final(self.ctx, buf, length) ~= 1 then
+  local length = ctypes.ptr_of_uint()
+  if C.HMAC_Final(self.ctx, self.buf, length) ~= 1 then
     return nil, format_error("hmac:final: HMAC_Final")
   end
-  return ffi_str(buf, length[0])
+  return ffi_str(self.buf, length[0])
 end
 
 function _M:reset()

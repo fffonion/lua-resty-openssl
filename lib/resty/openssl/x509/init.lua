@@ -1,7 +1,6 @@
 local ffi = require "ffi"
 local C = ffi.C
 local ffi_gc = ffi.gc
-local ffi_new = ffi.new
 local ffi_str = ffi.string
 local ffi_cast = ffi.cast
 
@@ -17,6 +16,7 @@ local extension_lib = require("resty.openssl.x509.extension")
 local pkey_lib = require("resty.openssl.pkey")
 local util = require "resty.openssl.util"
 local txtnid2nid = require("resty.openssl.objects").txtnid2nid
+local ctypes = require "resty.openssl.aux.ctypes"
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
@@ -289,8 +289,6 @@ function _M:get_crl_url(return_all)
   end
 end
 
-local uint_ptr = ffi.typeof("unsigned int[1]")
-
 local function digest(self, cfunc, typ)
   -- TODO: dedup the following with resty.openssl.digest
   local ctx
@@ -311,8 +309,8 @@ local function digest(self, cfunc, typ)
   end
 
   local md_size = C.EVP_MD_size(dtyp)
-  local buf = ffi_new('unsigned char[?]', md_size)
-  local length = uint_ptr()
+  local buf = ctypes.uchar_array(md_size)
+  local length = ctypes.ptr_of_uint()
 
   if cfunc(self.ctx, dtyp, buf, length) ~= 1 then
     return nil, format_error("x509:digest")
@@ -328,8 +326,6 @@ end
 function _M:pubkey_digest(typ)
   return digest(self, C.X509_pubkey_digest, typ)
 end
-
-local int_ptr = ffi.typeof("int[1]")
 
 -- START AUTO GENERATED CODE
 
@@ -683,7 +679,7 @@ assert(NID_subject_alt_name ~= 0)
 
 -- AUTO GENERATED: EXTENSIONS
 function _M:get_subject_alt_name()
-  local crit = int_ptr()
+  local crit = ctypes.ptr_of_int()
   -- X509_get_ext_d2i returns internal pointer, always dup
   -- for now this function always returns the first found extension
   local got = C.X509_get_ext_d2i(self.ctx, NID_subject_alt_name, crit, nil)
@@ -738,7 +734,7 @@ assert(NID_issuer_alt_name ~= 0)
 
 -- AUTO GENERATED: EXTENSIONS
 function _M:get_issuer_alt_name()
-  local crit = int_ptr()
+  local crit = ctypes.ptr_of_int()
   -- X509_get_ext_d2i returns internal pointer, always dup
   -- for now this function always returns the first found extension
   local got = C.X509_get_ext_d2i(self.ctx, NID_issuer_alt_name, crit, nil)
@@ -793,7 +789,7 @@ assert(NID_basic_constraints ~= 0)
 
 -- AUTO GENERATED: EXTENSIONS
 function _M:get_basic_constraints(name)
-  local crit = int_ptr()
+  local crit = ctypes.ptr_of_int()
   -- X509_get_ext_d2i returns internal pointer, always dup
   -- for now this function always returns the first found extension
   local got = C.X509_get_ext_d2i(self.ctx, NID_basic_constraints, crit, nil)
@@ -885,7 +881,7 @@ assert(NID_info_access ~= 0)
 
 -- AUTO GENERATED: EXTENSIONS
 function _M:get_info_access()
-  local crit = int_ptr()
+  local crit = ctypes.ptr_of_int()
   -- X509_get_ext_d2i returns internal pointer, always dup
   -- for now this function always returns the first found extension
   local got = C.X509_get_ext_d2i(self.ctx, NID_info_access, crit, nil)
@@ -940,7 +936,7 @@ assert(NID_crl_distribution_points ~= 0)
 
 -- AUTO GENERATED: EXTENSIONS
 function _M:get_crl_distribution_points()
-  local crit = int_ptr()
+  local crit = ctypes.ptr_of_int()
   -- X509_get_ext_d2i returns internal pointer, always dup
   -- for now this function always returns the first found extension
   local got = C.X509_get_ext_d2i(self.ctx, NID_crl_distribution_points, crit, nil)

@@ -7,8 +7,9 @@ local floor = math.floor
 
 require "resty.openssl.include.bn"
 local crypto_macro = require("resty.openssl.include.crypto")
-local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
+local ctypes = require "resty.openssl.aux.ctypes"
 local format_error = require("resty.openssl.err").format_error
+local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 
 local _M = {}
 local mt = {__index = _M}
@@ -53,7 +54,7 @@ function _M:to_binary()
   local length = (C.BN_num_bits(self.ctx)+7)/8
   -- align to bytes
   length = floor(length)
-  local buf = ffi_new('unsigned char[?]', length)
+  local buf = ctypes.uchar_array(length)
   local sz = C.BN_bn2bin(self.ctx, buf)
   if sz == 0 then
     return nil, format_error("bn:to_binary")
@@ -90,7 +91,7 @@ function _M.from_hex(s)
     return nil, "bn.from_hex: expect a string at #1"
   end
 
-  local p = ffi.new(bn_ptrptr_ct)
+  local p = ffi_new(bn_ptrptr_ct)
 
   if C.BN_hex2bn(p, s) == 0 then
     return nil, format_error("bn.from_hex")
@@ -116,7 +117,7 @@ function _M.from_dec(s)
     return nil, "bn.from_dec: expect a string at #1"
   end
 
-  local p = ffi.new(bn_ptrptr_ct)
+  local p = ffi_new(bn_ptrptr_ct)
 
   if C.BN_dec2bn(p, s) == 0 then
     return nil, format_error("bn.from_dec")

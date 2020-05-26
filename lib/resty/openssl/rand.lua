@@ -1,9 +1,9 @@
 local ffi = require "ffi"
 local C = ffi.C
-local ffi_new = ffi.new
 local ffi_str = ffi.string
 
 require "resty.openssl.include.rand"
+local ctypes = require "resty.openssl.aux.ctypes"
 local format_error = require("resty.openssl.err").format_error
 
 local function bytes(length)
@@ -12,7 +12,7 @@ local function bytes(length)
   end
   -- generally we don't need manually reseed rng
   -- https://www.openssl.org/docs/man1.1.1/man3/RAND_seed.html
-  local buf = ffi_new('unsigned char[?]', length)
+  local buf = ctypes.uchar_array(length)
   local code = C.RAND_bytes(buf, length)
   if code ~= 1 then
     return nil, format_error("rand.bytes", code)

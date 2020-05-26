@@ -3,6 +3,8 @@ local C = ffi.C
 local ffi_str = ffi.string
 local ffi_sizeof = ffi.sizeof
 
+local ctypes = require "resty.openssl.aux.ctypes"
+
 ffi.cdef [[
   unsigned long ERR_peek_error(void);
   unsigned long ERR_peek_last_error_line(const char **file, int *line);
@@ -10,8 +12,9 @@ ffi.cdef [[
   void ERR_error_string_n(unsigned long e, char *buf, size_t len);
 ]]
 
-local int_ptr = ffi.typeof("int[1]")
 local constchar_ptrptr = ffi.typeof("const char*[1]")
+
+local buf = ffi.new('char[256]')
 
 local function format_error(ctx, code)
   local errors = {}
@@ -20,7 +23,7 @@ local function format_error(ctx, code)
   end
   -- get the OpenSSL errors
   if C.ERR_peek_error() ~= 0 then
-    local line = int_ptr()
+    local line = ctypes.ptr_of_int()
     local path = constchar_ptrptr()
     local code = C.ERR_peek_last_error_line(path, line)
 
@@ -31,11 +34,10 @@ local function format_error(ctx, code)
       abs_path = abs_path:sub(start+1)
     end
 
-    local txt = ffi.new('char[256]')
     C.ERR_clear_error()
-    C.ERR_error_string_n(code, txt, ffi_sizeof(txt))
+    C.ERR_error_string_n(code, buf, ffi_sizeof(buf))
     table.insert(errors, string.format("%s:%d:%s",
-      abs_path, line[0], ffi_str(txt))
+      abs_path, line[0], ffi_str(buf))
     )
   end
 

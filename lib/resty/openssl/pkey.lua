@@ -337,7 +337,7 @@ function _M.new(s, opts)
 
   -- although OpenSSL discourages to use this size for digest/verify
   -- but this is good enough for now
-  local sig_size = C.EVP_PKEY_size(ctx)
+  local buf_size = C.EVP_PKEY_size(ctx)
 
   local self = setmetatable({
     ctx = ctx,
@@ -345,8 +345,8 @@ function _M.new(s, opts)
     rsa_padding = nil,
     key_type = key_type,
     key_type_is_ecx = key_type_is_ecx,
-    buf = ffi_new(ctypes.uchar_array, sig_size),
-    sig_size = sig_size,
+    buf = ctypes.uchar_array(buf_size),
+    buf_size = buf_size,
   }, mt)
 
   return self, nil
@@ -485,8 +485,7 @@ local function asymmetric_routine(self, s, is_encrypt, padding)
     self.rsa_padding = padding
   end
 
-  local length = ptr_of_size_t()
-  length[0] = self.sig_size
+  local length = ptr_of_size_t(self.buf_size)
 
   if f(pkey_ctx, self.buf, length, s, #s) <= 0 then
     return nil, format_error("pkey:asymmetric_routine EVP_PKEY_" .. op_name)
@@ -528,8 +527,7 @@ function _M:sign(digest)
     if C.EVP_DigestSignInit(md_ctx, nil, nil, nil, self.ctx) ~= 1 then
       return nil, format_error("pkey:sign: EVP_DigestSignInit")
     end
-    local length = ptr_of_size_t()
-    length[0] = self.sig_size
+    local length = ptr_of_size_t(self.buf_size)
     if C.EVP_DigestSign(md_ctx, self.buf, length, digest, #digest) ~= 1 then
       return nil, format_error("pkey:sign: EVP_DigestSign")
     end
@@ -593,7 +591,7 @@ function _M:derive(peerkey)
     return nil, format_error("pkey:derive: EVP_PKEY_derive check buffer size", code)
   end
 
-  local buf = ffi_new(ctypes.uchar_array, buflen[0])
+  local buf = ctypes.uchar_array(buflen[0])
   code = C.EVP_PKEY_derive(pctx, buf, buflen)
   if code <= 0 then
     return nil, format_error("pkey:derive: EVP_PKEY_derive", code)

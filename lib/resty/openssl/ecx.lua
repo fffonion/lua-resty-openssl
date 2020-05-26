@@ -1,6 +1,5 @@
 local ffi = require "ffi"
 local C = ffi.C
-local ffi_new = ffi.new
 local ffi_str = ffi.string
 
 require "resty.openssl.include.ec"
@@ -15,12 +14,12 @@ _M.params = {"public", "private"}
 local empty_table = {}
 
 local MAX_ECX_KEY_SIZE = 114 -- ed448 uses 114 bytes
+
 function _M.get_parameters(evp_pkey_st)
   return setmetatable(empty_table, {
     __index = function(_, k)
-      local buf = ffi_new(ctypes.uchar_array, MAX_ECX_KEY_SIZE)
-      local length = ffi_new(ctypes.ptr_of_size_t)
-      length[0] = MAX_ECX_KEY_SIZE
+      local buf = ctypes.uchar_array(MAX_ECX_KEY_SIZE)
+      local length = ctypes.ptr_of_size_t(MAX_ECX_KEY_SIZE)
 
       if k == 'public' or k == "pub_key" then
         if C.EVP_PKEY_get_raw_public_key(evp_pkey_st, buf, length) ~= 1 then
