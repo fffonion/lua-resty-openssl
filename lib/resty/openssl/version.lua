@@ -55,13 +55,9 @@ end
 
 -- since pcall can return string in the case of error it must be handled appropriately
 if not ok then
-    if type(version_num) == 'string' then
-        error(string.format("OpenSSL has encountered an error: %s", tostring(version_num)))
-    else
-        if type(version_num) == 'number' and version_num < 0x10000000 then
-            error(string.format("OpenSSL version %s is not supported", tostring(version_num or 0)))
-        end
-    end
+    error(string.format("OpenSSL has encountered an error: %s", tostring(version_num)))
+elseif type(version_num) == 'number' and version_num < 0x10000000 then
+    error(string.format("OpenSSL version %s is not supported", tostring(version_num or 0)))
 end
 
 if version_num >= 0x30000000 then
