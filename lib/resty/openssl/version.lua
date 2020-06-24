@@ -39,8 +39,7 @@ end)
 
 if not ok then
   -- 1.0.x
-  local _
-  _, version_num = pcall(function()
+  ok, version_num = pcall(function()
     local num = C.SSLeay()
     version_func = C.SSLeay_version
     types_table = {
