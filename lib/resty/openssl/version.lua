@@ -3,7 +3,7 @@ local ffi = require "ffi"
 local C = ffi.C
 local ffi_str = ffi.string
 
-ffi.cdef [[
+ffi.cdef[[
   // 1.0
   unsigned long SSLeay(void);
   const char *SSLeay_version(int t);
@@ -19,38 +19,39 @@ local types_table
 
 -- >= 1.1
 local ok, version_num = pcall(function()
-    local num = C.OpenSSL_version_num()
-    version_func = C.OpenSSL_version
-    types_table = {
-        VERSION = 0,
-        CFLAGS = 1,
-        BUILT_ON = 2,
-        PLATFORM = 3,
-        DIR = 4,
-        ENGINES_DIR = 5,
-        VERSION_STRING = 6,
-        FULL_VERSION_STRING = 7,
-        MODULES_DIR = 8,
-        CPU_INFO = 9,
-    }
-    return num
+  local num = C.OpenSSL_version_num()
+  version_func = C.OpenSSL_version
+  types_table = {
+    VERSION = 0,
+    CFLAGS = 1,
+    BUILT_ON = 2,
+    PLATFORM = 3,
+    DIR = 4,
+    ENGINES_DIR = 5,
+    VERSION_STRING = 6,
+    FULL_VERSION_STRING = 7,
+    MODULES_DIR = 8,
+    CPU_INFO = 9,
+  }
+  return num
 end)
 
+
 if not ok then
-    -- 1.0.x
-    local _
-    ok, version_num = pcall(function()
-        local num = C.SSLeay()
-        version_func = C.SSLeay_version
-        types_table = {
-            VERSION = 0,
-            CFLAGS = 2,
-            BUILT_ON = 3,
-            PLATFORM = 4,
-            DIR = 5,
-        }
-        return num
-    end)
+  -- 1.0.x
+  local _
+  _, version_num = pcall(function()
+    local num = C.SSLeay()
+    version_func = C.SSLeay_version
+    types_table = {
+      VERSION = 0,
+      CFLAGS = 2,
+      BUILT_ON = 3,
+      PLATFORM = 4,
+      DIR = 5,
+    }
+    return num
+  end)
 end
 
 -- since pcall can return string in the case of error it must be handled appropriately
@@ -61,41 +62,41 @@ elseif type(version_num) == 'number' and version_num < 0x10000000 then
 end
 
 if version_num >= 0x30000000 then
-    local info_table = {
-        INFO_CONFIG_DIR = 1001,
-        INFO_ENGINES_DIR = 1002,
-        INFO_MODULES_DIR = 1003,
-        INFO_DSO_EXTENSION = 1004,
-        INFO_DIR_FILENAME_SEPARATOR = 1005,
-        INFO_LIST_SEPARATOR = 1006,
-        INFO_SEED_SOURCE = 1007,
-        INFO_CPU_SETTINGS = 1008,
-    }
+  local info_table = {
+    INFO_CONFIG_DIR = 1001,
+    INFO_ENGINES_DIR = 1002,
+    INFO_MODULES_DIR = 1003,
+    INFO_DSO_EXTENSION = 1004,
+    INFO_DIR_FILENAME_SEPARATOR = 1005,
+    INFO_LIST_SEPARATOR = 1006,
+    INFO_SEED_SOURCE = 1007,
+    INFO_CPU_SETTINGS = 1008,
+  }
 
-    for k, v in pairs(info_table) do
-        types_table[k] = v
-    end
+  for k, v in pairs(info_table) do
+    types_table[k] = v
+  end
 
-    info_func = C.OPENSSL_info
+  info_func = C.OPENSSL_info
 else
-    info_func = function()
-        error(string.format("OPENSSL_info is not supported on %s", ffi_str(version_func(0))))
-    end
+  info_func = function()
+    error(string.format("OPENSSL_info is not supported on %s", ffi_str(version_func(0))))
+  end
 end
 
 return setmetatable({
     version_num = tonumber(version_num),
     version_text = ffi_str(version_func(0)),
     version = function(t)
-        return ffi_str(version_func(t))
+      return ffi_str(version_func(t))
     end,
     info = function(t)
-        return ffi_str(info_func(t))
+      return ffi_str(info_func(t))
     end,
     OPENSSL_30 = version_num >= 0x30000000 and version_num < 0x30100000,
     OPENSSL_11 = version_num >= 0x10100000 and version_num < 0x10200000,
     OPENSSL_11_OR_LATER = version_num >= 0x10100000 and version_num < 0x30100000,
     OPENSSL_10 = version_num < 0x10100000 and version_num > 0x10000000,
-}, {
+  }, {
     __index = types_table,
 })
