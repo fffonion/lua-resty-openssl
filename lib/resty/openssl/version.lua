@@ -39,8 +39,7 @@ end)
 
 if not ok then
   -- 1.0.x
-  local _
-  _, version_num = pcall(function()
+  ok, version_num = pcall(function()
     local num = C.SSLeay()
     version_func = C.SSLeay_version
     types_table = {
@@ -54,8 +53,13 @@ if not ok then
   end)
 end
 
-if not version_num or version_num < 0x10000000 then
-  error(string.format("OpenSSL version %x is not supported", version_num or 0))
+
+if not ok then
+  error(string.format("OpenSSL has encountered an error: %s", tostring(version_num)))
+elseif type(version_num) == 'number' and version_num < 0x10000000 then
+  error(string.format("OpenSSL version %s is not supported", tostring(version_num or 0)))
+elseif not version_num then
+  error("Can not get OpenSSL version")
 end
 
 if version_num >= 0x30000000 then
