@@ -468,7 +468,7 @@ Returns a table containing the `parameters` of pkey instance.
 
 **syntax**: *ok, err = pk:set_parameters(params)*
 
-Set the paramets of the pkey from a table `params`.
+Set the parameters of the pkey from a table `params`.
 If the parameter is not set in the `params` table,
 it remains untouched in the pkey instance.
 

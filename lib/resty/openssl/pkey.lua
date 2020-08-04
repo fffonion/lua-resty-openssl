@@ -5,12 +5,12 @@ local ffi_new = ffi.new
 local ffi_str = ffi.string
 local ffi_cast = ffi.cast
 local ffi_copy = ffi.copy
-local null = ngx.null
+local null = _G.ngx and ngx.null or ffi.NULL
 
 local rsa_macro = require "resty.openssl.include.rsa"
 require "resty.openssl.include.bio"
 require "resty.openssl.include.pem"
-require "resty.openssl.include.x509"
+require "resty.openssl.include.x509.init"
 local evp_macro = require "resty.openssl.include.evp"
 local util = require "resty.openssl.util"
 local digest_lib = require "resty.openssl.digest"

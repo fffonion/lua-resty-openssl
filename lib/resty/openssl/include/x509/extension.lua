@@ -2,7 +2,7 @@ local ffi = require "ffi"
 
 require "resty.openssl.include.ossl_typ"
 require "resty.openssl.include.x509v3"
-require "resty.openssl.include.x509"
+require "resty.openssl.include.x509.init"
 local asn1_macro = require "resty.openssl.include.asn1"
 
 asn1_macro.declare_asn1_functions("X509_EXTENSION")
