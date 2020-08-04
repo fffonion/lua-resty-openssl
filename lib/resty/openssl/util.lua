@@ -1,11 +1,11 @@
 local ffi = require "ffi"
+require "resty.openssl.include.bio"
+local format_error = require("resty.openssl.err").format_error
 local C = ffi.C
 local ffi_gc = ffi.gc
 local ffi_new = ffi.new
 local ffi_str = ffi.string
 
-require "resty.openssl.include.bio"
-local format_error = require("resty.openssl.err").format_error
 
 local function read_using_bio(f, ...)
   if type(f) ~= "cdata" then -- should be explictly a function
