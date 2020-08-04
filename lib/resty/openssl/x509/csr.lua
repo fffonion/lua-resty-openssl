@@ -318,8 +318,34 @@ function _M:set_version(toset)
 
   return true
 end
+local function get_extension(ctx, nid_txt, last_pos)
+  last_pos = (last_pos or 0) - 1
+  local nid, err = txtnid2nid(nid_txt)
+  if err then
+    return nil, nil, err
+  end
+  local pos = C.X509_CRL_get_ext_by_NID(ctx, nid, last_pos)
+  if pos == -1 then
+    return nil
+  end
+  local ctx = C.X509_CRL_get_ext(ctx, pos)
+  if ctx == nil then
+    return nil, nil, format_error()
+  end
+  return ctx, pos
+end
 
-
+function _M:get_extension(nid_txt, last_pos)
+  local ctx, pos, err = get_extension(self.ctx, nid_txt, last_pos)
+  if err then
+    return nil, nil, "x509.crl:get_extension: " .. err
+  end
+  local ext, err = extension_lib.dup(ctx)
+  if err then
+    return nil, nil, "x509.crl:get_extension: " .. err
+  end
+  return ext, pos+1
+end
 -- END AUTO GENERATED CODE
 
 return _M
