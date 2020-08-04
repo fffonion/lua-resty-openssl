@@ -3,6 +3,7 @@ local ctypes = require "resty.openssl.aux.ctypes"
 local C = ffi.C
 local ffi_str = ffi.string
 local ffi_sizeof = ffi.sizeof
+local ptr_of_int =  ctypes.ptr_of_int
 local push, join = table.insert, table.concat
 
 ffi.cdef [[
@@ -23,7 +24,7 @@ local function format_error(ctx, code)
     end
     -- get the OpenSSL errors
     if C.ERR_peek_error() ~= 0 then
-        local line = ctypes.ptr_of_int()
+        local line = ptr_of_int()
         local path = constchar_ptrptr()
         local code = C.ERR_peek_last_error_line(path, line)
 
