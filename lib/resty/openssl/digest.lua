@@ -1,15 +1,16 @@
 local ffi = require "ffi"
-
 require "resty.openssl.include.evp"
 local ctypes = require "resty.openssl.aux.ctypes"
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
+
 local C = ffi.C
 local ffi_gc = ffi.gc
 local ffi_str = ffi.string
 local md_ctx_ptr_ct = ffi.typeof('EVP_MD_CTX*')
 local ptr_of_uint = ctypes.ptr_of_uint
+local setmetatable = setmetatable
 
 local _M = {}
 
@@ -32,7 +33,7 @@ function _M.new(typ)
     else
         dtyp = C.EVP_get_digestbyname(typ or 'sha1')
         if dtyp == nil then
-            return nil, string.format("digest.new: invalid digest type \"%s\"", typ)
+            return nil, ("digest.new: invalid digest type \"%s\""):format(typ)
         end
     end
 
@@ -54,7 +55,7 @@ end
 
 ---
 function _M.update(self, str)
-    if C.EVP_DigestUpdate(self.ctx, str, #str) ~= 1 then
+    if str and C.EVP_DigestUpdate(self.ctx, str, #str) ~= 1 then
         return false, format_error("digest:update")
     end
     return true, nil
