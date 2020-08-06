@@ -1,6 +1,7 @@
 local ffi = require "ffi"
 local bn_lib = require("resty.openssl.bn")
 require("resty.openssl.include.x509.crl")
+require("resty.openssl.include.x509.revoked")
 local NID_crl_reason = 141
 local C = ffi.C
 local ffi_gc = ffi.gc
@@ -8,7 +9,7 @@ local _M = {}
 local revoked_ptr_ct = ffi.typeof('X509_REVOKED *')
 
 --- Creates new instance of X509_REVOKED data
--- @tparam number sn Serial number
+-- @tparam bn|number sn Serial number as number or bn instance
 -- @tparam number time Revocation time
 -- @tparam number reason Revocation reason
 -- @treturn table instance of the module or nil
@@ -16,10 +17,13 @@ local revoked_ptr_ct = ffi.typeof('X509_REVOKED *')
 function _M.new(sn, time, reason)
     sn = bn_lib.new(sn)
     local revoked = C.X509_REVOKED_new()
+    ffi_gc(revoked, C.X509_REVOKED_free)
+
     time = C.ASN1_TIME_set(nil, time)
     if time == nil then
         return nil, "x509.revoked.new: ASN1_TIME_set() failed"
     end
+    ffi_gc(time, C.ASN1_ENUMERATED_free)
 
     local it = C.BN_to_ASN1_INTEGER(sn.ctx, nil)
     if it == nil then
@@ -38,11 +42,13 @@ function _M.new(sn, time, reason)
     if e == nil then
         return nil, "x509.revoked.new: ASN1_ENUMERATED_new() failed"
     end
+    ffi_gc(e, C.ASN1_ENUMERATED_free)
 
     local ext = C.X509_EXTENSION_new()
     if ext == nil then
         return nil, "x509.revoked.new: X509_EXTENSION_new() failed"
     end
+    ffi_gc(ext, C.X509_EXTENSION_free)
 
     if C.ASN1_ENUMERATED_set(e, reason) == 0 then
         return nil, "x509.revoked.new: ASN1_ENUMERATED_set() failed"
@@ -59,10 +65,10 @@ function _M.new(sn, time, reason)
         return nil, "x509.revoked.new: X509_EXTENSION_set_object() failed"
     end
 
-    ffi_gc(time, C.ASN1_ENUMERATED_free)
-    ffi_gc(e, C.ASN1_ENUMERATED_free)
-    ffi_gc(ext, C.X509_EXTENSION_free)
-    ffi_gc(revoked, C.X509_REVOKED_free)
+
+
+
+
     return { ctx = revoked, { __index = _M } }
 end
 

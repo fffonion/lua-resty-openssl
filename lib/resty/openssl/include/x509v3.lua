@@ -70,6 +70,8 @@ ffi.cdef [[
   int X509V3_EXT_print(BIO *out, X509_EXTENSION *ext, unsigned long flag,
     int indent);
 
+  void *X509V3_get_d2i(const OPENSSL_STACK *x, int nid, int *crit, int *idx);
+
   // STACK_OF(ACCESS_DESCRIPTION)
   typedef struct stack_st AUTHORITY_INFO_ACCESS;
 

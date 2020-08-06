@@ -163,10 +163,15 @@ function _M.add_revoked(self, revoked)
     if not revoked_lib.istype(revoked) then
         return false, "x509.crl:add_revoked: expect a revoked instance at #1"
     end
-    if C.X509_CRL_add0_revoked(self.ctx, revoked.ctx) == 0 then
-        return false, format_error("x509.crl:add_revoked")
-    end
-    return true
+  local ctx = C.X509_REVOKED_dup(revoked.ctx)
+  if ctx == nil then
+    return nil, "x509.crl:: X509_REVOKED_dup() failed"
+  end
+
+  if C.X509_CRL_add0_revoked(self.ctx, ctx) == 0 then
+     return false, format_error("x509.crl:add_revoked")
+  end
+  return true
 end
 
 

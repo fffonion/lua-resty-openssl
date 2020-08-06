@@ -37,8 +37,6 @@ ffi.cdef [[
   OPENSSL_STACK *X509_REQ_get_extensions(X509_REQ *req);
   // STACK_OF(X509_EXTENSION)
   int X509_REQ_add_extensions(X509_REQ *req, OPENSSL_STACK *exts);
-  void *X509V3_get_d2i(const OPENSSL_STACK *x, int nid, int *crit, int *idx);
-  int X509_CRL_add0_revoked(X509_CRL *crl, X509_REVOKED *rev);
 ]]
 
 if OPENSSL_11_OR_LATER then

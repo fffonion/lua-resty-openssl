@@ -7,7 +7,6 @@ ffi.cdef [[
   typedef struct ASN1_VALUE_st ASN1_VALUE;
 
   typedef struct asn1_type_st ASN1_TYPE;
-  typedef struct X509_revoked_st X509_REVOKED;
 
   ASN1_IA5STRING *ASN1_IA5STRING_new();
 
@@ -23,6 +22,7 @@ ffi.cdef [[
 
   int ASN1_INTEGER_set(ASN1_INTEGER *a, long v);
   long ASN1_INTEGER_get(const ASN1_INTEGER *a);
+  int ASN1_ENUMERATED_set(ASN1_ENUMERATED *a, long v);
 ]]
 
 local function declare_asn1_functions(typ)

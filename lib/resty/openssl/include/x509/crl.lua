@@ -12,7 +12,7 @@ local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
 
 asn1_macro.declare_asn1_functions("X509_CRL")
-asn1_macro.declare_asn1_functions("X509_REVOKED")
+
 
 ffi.cdef [[
   X509_NAME *X509_CRL_get_issuer(const X509_CRL *crl);
@@ -30,10 +30,6 @@ ffi.cdef [[
   int i2d_X509_CRL_bio(BIO *bp, X509_CRL *crl);
   X509_CRL *d2i_X509_CRL_bio(BIO *bp, X509_CRL **crl);
   int X509_CRL_add0_revoked(X509_CRL *crl, X509_REVOKED *rev);
-  int X509_REVOKED_set_serialNumber(X509_REVOKED *x, ASN1_INTEGER *serial);
-  int X509_REVOKED_set_revocationDate(X509_REVOKED *r, ASN1_TIME *tm);
-  int X509_REVOKED_add_ext(X509_REVOKED *x, X509_EXTENSION *ex, int loc);
-  int ASN1_ENUMERATED_set(ASN1_ENUMERATED *a, long v);
 ]]
 
 if OPENSSL_11_OR_LATER then

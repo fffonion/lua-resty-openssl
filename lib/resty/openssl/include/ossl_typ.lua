@@ -54,5 +54,6 @@ ffi.cdef(
   // crypto.h
   // typedef void CRYPTO_RWLOCK;
   typedef struct hmac_ctx_st HMAC_CTX;
+  typedef struct x509_revoked_st X509_REVOKED;
 ]])
 
