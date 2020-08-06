@@ -99,7 +99,6 @@ pkey.new:load_key: failed to construct RSA key from JWK: at least "n" and "e" pa
 '
 --- no_error_log
 [error]
---- ONLY
 
 === TEST 2: Loads JWK EC key
 --- http_config eval: $::HttpConfig
