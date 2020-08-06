@@ -5,6 +5,7 @@ local floor = math.floor
 
 local asn1_macro = require("resty.openssl.include.asn1")
 
+
 -- https://github.com/wahern/luaossl/blob/master/src/openssl.c
 local function isleap(year)
   return (year % 4) == 0 and ((year % 100) > 0 or (year % 400) == 0)
