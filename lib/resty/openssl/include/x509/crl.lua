@@ -3,7 +3,7 @@ local ffi = require "ffi"
 require "resty.openssl.include.ossl_typ"
 require "resty.openssl.include.evp"
 require "resty.openssl.include.objects"
-require "resty.openssl.include.x509.init"
+require "resty.openssl.include.x509"
 require "resty.openssl.include.stack"
 
 local asn1_macro = require "resty.openssl.include.asn1"

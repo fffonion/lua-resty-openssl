@@ -1,4 +1,9 @@
 local ffi = require "ffi"
+local C = ffi.C
+local ffi_gc = ffi.gc
+local ffi_str = ffi.string
+local ffi_cast = ffi.cast
+
 require("resty.openssl.objects")
 local kdf_macro = require "resty.openssl.include.kdf"
 local format_error = require("resty.openssl.err").format_error
@@ -6,10 +11,7 @@ local version_num = require("resty.openssl.version").version_num
 local version_text = require("resty.openssl.version").version_text
 local ctypes = require "resty.openssl.aux.ctypes"
 local EVP_PKEY_OP_DERIVE = require("resty.openssl.include.evp").EVP_PKEY_OP_DERIVE
-local C = ffi.C
-local ffi_gc = ffi.gc
-local ffi_str = ffi.string
-local ffi_cast = ffi.cast
+
 --[[
 https://wiki.openssl.org/index.php/EVP_Key_Derivation
 
