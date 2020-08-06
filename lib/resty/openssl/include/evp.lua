@@ -122,8 +122,6 @@ ffi.cdef [[
 
   int EVP_PKEY_keygen_init(EVP_PKEY_CTX *ctx);
   int EVP_PKEY_keygen(EVP_PKEY_CTX *ctx, EVP_PKEY **ppkey);
-  int EVP_EncodeBlock(unsigned char *t, const unsigned char *f, int n);
-  int EVP_DecodeBlock(unsigned char *t, const unsigned char *f, int n);
 ]]
 
 if OPENSSL_30 then
