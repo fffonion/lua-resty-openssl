@@ -1,5 +1,5 @@
 package = "lua-resty-openssl"
-version = "0.6.2-1"
+version = "0.6.3-1"
 source = {
    url = "git+https://github.com/fffonion/lua-resty-openssl.git",
    tag = "0.6.2"
@@ -51,6 +51,7 @@ build = {
       ["resty.openssl.pkey"] = "lib/resty/openssl/pkey.lua",
       ["resty.openssl.provider"] = "lib/resty/openssl/provider.lua",
       ["resty.openssl.rand"] = "lib/resty/openssl/rand.lua",
+      ["resty.openssl.revoked"] = "lib/resty/openssl/revoked.lua",
       ["resty.openssl.rsa"] = "lib/resty/openssl/rsa.lua",
       ["resty.openssl.stack"] = "lib/resty/openssl/stack.lua",
       ["resty.openssl.util"] = "lib/resty/openssl/util.lua",

@@ -4,7 +4,7 @@ local ffi_gc = ffi.gc
 local ffi_str = ffi.string
 local ffi_cast = ffi.cast
 
-require "resty.openssl.include.x509.init"
+require "resty.openssl.include.x509"
 require "resty.openssl.include.x509v3"
 require "resty.openssl.include.evp"
 require "resty.openssl.include.objects"
