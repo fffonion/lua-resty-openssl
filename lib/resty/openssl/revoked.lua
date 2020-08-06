@@ -15,7 +15,10 @@ local revoked_ptr_ct = ffi.typeof('X509_REVOKED *')
 -- @treturn table instance of the module or nil
 -- @treturn[opt] string Returns optional error message in case of error
 function _M.new(sn, time, reason)
-    sn = bn_lib.new(sn)
+    --- only convert to bn if it is number
+    if type(sn) == "number"then
+        sn = bn_lib.new(sn)
+    end
     local revoked = C.X509_REVOKED_new()
     ffi_gc(revoked, C.X509_REVOKED_free)
 
