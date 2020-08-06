@@ -30,12 +30,13 @@ local function declare_asn1_functions(typ)
   for i=1, 7 do
     t[i] = typ
   end
-  local s = ([[
+
+  ffi.cdef(string.format([[
     %s *%s_new(void);
     void %s_free(%s *a);
     %s *%s_dup(%s *a);
-  ]]):format(unpack(t))
-  ffi.cdef(s )
+  ]], unpack(t))
+  )
 end
 
 declare_asn1_functions("ASN1_INTEGER")

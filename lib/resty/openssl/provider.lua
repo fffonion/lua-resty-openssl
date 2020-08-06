@@ -1,5 +1,6 @@
 local ffi = require "ffi"
 local C = ffi.C
+
 require "resty.openssl.include.provider"
 local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 local format_error = require("resty.openssl.err").format_error

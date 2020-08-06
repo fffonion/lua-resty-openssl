@@ -12,7 +12,7 @@ local ffi_gc = ffi.gc
 
 local stack_macro = require "resty.openssl.include.stack"
 local format_error = require("resty.openssl.err").format_error
-local stack_ptr_ct = ffi.typeof("OPENSSL_STACK*")
+
 local _M = {}
 
 local function gc_of(typ)
@@ -108,7 +108,7 @@ _M.add_of = function(typ)
   end
 end
 
-
+local stack_ptr_ct = ffi.typeof("OPENSSL_STACK*")
 _M.dup_of = function(_)
   return function(ctx)
     if ctx == nil or not ffi.istype(stack_ptr_ct, ctx) then

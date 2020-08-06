@@ -40,25 +40,43 @@ __DATA__
 --- no_error_log
 [error]
 
-=== TEST 2: Final accepts optional arg
+=== TEST 2: Update accepts vardiac args
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
         content_by_lua_block {
             local hmac = myassert(require("resty.openssl.hmac").new("goose", "sha256"))
 
-            myassert(hmac:update("🦢"))
+            hmac:update("🦢", "🦢🦢", "🦢🦢", "🦢")
+            ngx.print(ngx.encode_base64(hmac:final()))
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"kwUMjYrP0BSJb8cIJvWYoiM1Kc4mQxZOTwSiTTLRhDM="
+--- no_error_log
+[error]
+
+=== TEST 3: Final accepts optional arg
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local hmac = myassert(require("resty.openssl.hmac").new("goose", "sha256"))
+
+            myassert(hmac:update("🦢", "🦢🦢", "🦢🦢"))
             ngx.print(ngx.encode_base64(myassert(hmac:final("🦢"))))
         }
     }
 --- request
     GET /t
 --- response_body eval
-"wleOYirAGRGbPOIvPgSSR2Yo6TOplzXAeo7tjJJK6x4="
+"kwUMjYrP0BSJb8cIJvWYoiM1Kc4mQxZOTwSiTTLRhDM="
 --- no_error_log
 [error]
 
-=== TEST 3: Rejects unknown hash
+=== TEST 4: Rejects unknown hash
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -75,7 +93,7 @@ __DATA__
 [error]
 
 
-=== TEST 4: Can be reused
+=== TEST 5: Can be reused
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
