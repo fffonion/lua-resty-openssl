@@ -16,6 +16,6 @@ install: all
 	$(INSTALL) lib/resty/openssl/*.lua $(DESTDIR)$(LUA_LIB_DIR)/resty/openssl/
 	
 test: all
-	PATH=$(OPENRESTY_PREFIX)/nginx/sbin:$$PATH prove -I../test-nginx/lib -r t/openssl/aux/jwk.t
+	PATH=$(OPENRESTY_PREFIX)/nginx/sbin:$$PATH prove -I../test-nginx/lib -r t
 
 

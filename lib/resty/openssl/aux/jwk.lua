@@ -51,8 +51,8 @@ local function decode_b64(s)
     end
     return ffi_str(buf, size)
 end
-local encode_base64url = encode_b64 -- ngx and base64.encode_base64url or  encode_b64
-local decode_base64url = decode_b64 -- ngx and base64.decode_base64url or decode_b64
+local encode_base64url = ngx and base64.encode_base64url or  encode_b64
+local decode_base64url = ngx and base64.decode_base64url or decode_b64
 local _M = {}
 
 local rsa_jwk_params = { "n", "e", "d", "p", "q", "dp", "dq", "qi" }
