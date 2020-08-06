@@ -1,4 +1,7 @@
 local ffi = require "ffi"
+local C = ffi.C
+local ffi_gc = ffi.gc
+local ffi_cast = ffi.cast
 
 require "resty.openssl.include.pem"
 require "resty.openssl.include.x509.csr"
@@ -17,9 +20,7 @@ local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
 local ext_typ_ptr = "X509_EXTENSION" .. "*"
 local accessors = {}
-local C = ffi.C
-local ffi_gc = ffi.gc
-local ffi_cast = ffi.cast
+
 local push = table.insert
 accessors.set_subject_name = C.X509_REQ_set_subject_name
 accessors.get_pubkey = C.X509_REQ_get_pubkey

@@ -19,6 +19,10 @@ function _M.new(sn, time, reason)
     if type(sn) == "number"then
         sn = bn_lib.new(sn)
     end
+    if not bn_lib.istype(sn) then
+        return nil, "x509.revoked.new: sn should be number or a bn instance"
+    end
+
     local revoked = C.X509_REVOKED_new()
     ffi_gc(revoked, C.X509_REVOKED_free)
 
@@ -26,7 +30,6 @@ function _M.new(sn, time, reason)
     if time == nil then
         return nil, "x509.revoked.new: ASN1_TIME_set() failed"
     end
-    ffi_gc(time, C.ASN1_ENUMERATED_free)
 
     local it = C.BN_to_ASN1_INTEGER(sn.ctx, nil)
     if it == nil then

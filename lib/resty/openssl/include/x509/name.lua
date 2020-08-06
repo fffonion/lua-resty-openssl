@@ -16,5 +16,6 @@ ffi.cdef [[
   X509_NAME_ENTRY *X509_NAME_get_entry(X509_NAME *name, int loc);
   ASN1_OBJECT *X509_NAME_ENTRY_get_object(const X509_NAME_ENTRY *ne);
   ASN1_STRING * X509_NAME_ENTRY_get_data(const X509_NAME_ENTRY *ne);
-  int X509_NAME_get_index_by_OBJ(X509_NAME *name, const ASN1_OBJECT *obj, int lastpos);
+  int X509_NAME_get_index_by_OBJ(X509_NAME *name, const ASN1_OBJECT *obj,
+                               int lastpos);
 ]]
