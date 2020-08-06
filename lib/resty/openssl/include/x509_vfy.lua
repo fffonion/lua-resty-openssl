@@ -30,8 +30,6 @@ ffi.cdef [[
   int X509_STORE_CTX_get_error(X509_STORE_CTX *ctx);
 
   int X509_STORE_set_flags(X509_STORE *ctx, unsigned long flags);
-  int X509_STORE_set_purpose(X509_STORE *ctx, int purpose);
-  int X509_STORE_set_trust(X509_STORE *ctx, int trust);
 ]]
 
 local _M = {}

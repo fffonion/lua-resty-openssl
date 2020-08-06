@@ -74,7 +74,7 @@ __DATA__
             local c = myassert(altname.new())
 
             for i=0,2,1 do
-                local ok = myassert(c:add("DNS", ("%d.com"):format(i)))
+                local ok = myassert(c:add("DNS", string.format("%d.com", i)))
             end
             for k, v in pairs(c) do
                 ngx.say(k, " ", v)

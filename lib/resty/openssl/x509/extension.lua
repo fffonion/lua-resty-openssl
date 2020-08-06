@@ -3,7 +3,7 @@ local C = ffi.C
 local ffi_gc = ffi.gc
 local ffi_new = ffi.new
 
-require "resty.openssl.include.x509.init"
+require "resty.openssl.include.x509"
 require "resty.openssl.include.x509.extension"
 local objects_lib = require "resty.openssl.objects"
 local util = require "resty.openssl.util"
