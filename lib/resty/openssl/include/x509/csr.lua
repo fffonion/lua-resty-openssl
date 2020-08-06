@@ -3,7 +3,7 @@ local ffi = require "ffi"
 require "resty.openssl.include.ossl_typ"
 require "resty.openssl.include.evp"
 require "resty.openssl.include.objects"
-require "resty.openssl.include.x509"
+require "resty.openssl.include.x509.init"
 require "resty.openssl.include.stack"
 
 local asn1_macro = require "resty.openssl.include.asn1"
@@ -42,12 +42,12 @@ ffi.cdef [[
 ]]
 
 if OPENSSL_11_OR_LATER then
-  ffi.cdef [[
+    ffi.cdef [[
     X509_NAME *X509_REQ_get_subject_name(const X509_REQ *req);
     long X509_REQ_get_version(const X509_REQ *req);
   ]]
 elseif OPENSSL_10 then
-  ffi.cdef [[
+    ffi.cdef [[
     typedef struct X509_req_info_st {
       ASN1_ENCODING enc;
       ASN1_INTEGER *version;

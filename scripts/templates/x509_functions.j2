@@ -1,6 +1,6 @@
 {%- if module.has_sign_verify %}
 -- AUTO GENERATED
-function _M:sign(pkey, digest)
+function _M.sign(self, pkey, digest)
   if not pkey_lib.istype(pkey) then
     return false, "{{modname}}:sign: expect a pkey instance at #1"
   end
@@ -17,7 +17,7 @@ function _M:sign(pkey, digest)
 end
 
 -- AUTO GENERATED
-function _M:verify(pkey)
+function _M.verify(self,pkey)
   if not pkey_lib.istype(pkey) then
     return false, "{{ modname }}:verify: expect a pkey instance at #1"
   end
@@ -55,7 +55,7 @@ local function get_extension(ctx, nid_txt, last_pos)
 end
 
 -- AUTO GENERATED
-function _M:add_extension(extension)
+function _M.add_extension(self,extension)
   if not extension_lib.istype(extension) then
     return false, "{{ modname }}:add_extension: expect a x509.extension instance at #1"
   end
@@ -96,7 +96,7 @@ else
 end
 
 -- AUTO GENERATED
-function _M:set_extension(extension, last_pos)
+function _M.set_extension(self, extension, last_pos)
   if not extension_lib.istype(extension) then
     return false, "{{ modname }}:set_extension: expect a x509.extension instance at #1"
   end
@@ -120,7 +120,7 @@ function _M:set_extension(extension, last_pos)
 end
 
 -- AUTO GENERATED
-function _M:set_extension_critical(nid_txt, crit, last_pos)
+function _M.set_extension_critical(self, nid_txt, crit, last_pos)
   local ctx, _, err = get_extension(self.ctx, nid_txt, last_pos)
   if err then
     return nil, "{{ modname }}:set_extension_critical: " .. err
@@ -134,7 +134,7 @@ function _M:set_extension_critical(nid_txt, crit, last_pos)
 end
 
 -- AUTO GENERATED
-function _M:get_extension_critical(nid_txt, last_pos)
+function _M.get_extension_critical(self, nid_txt, last_pos)
   local ctx, _, err = get_extension(self.ctx, nid_txt, last_pos)
   if err then
     return nil, "{{ modname }}:get_extension_critical: " .. err
@@ -152,7 +152,7 @@ assert(NID_{{ f.field }} ~= 0)
 
 {% endif -%}
 -- AUTO GENERATED{%- if f.extension -%}: EXTENSIONS {%- endif %}
-function _M:get_{{ f.field }}({%- if f.extension and f.type == "table" -%}name{%- endif -%})
+function _M.get_{{ f.field }}(self {%- if f.extension and f.type == "table" -%}, name{%- endif -%})
   {%- if not f.extension %}
   local got = accessors.get_{{ f.field }}(self.ctx)
   if got == nil then
@@ -194,7 +194,7 @@ function _M:get_{{ f.field }}({%- if f.extension and f.type == "table" -%}name{%
 end
 
 -- AUTO GENERATED{%- if f.extension -%}: EXTENSIONS {%- endif %}
-function _M:set_{{ f.field }}(toset)
+function _M.set_{{ f.field }}(self, toset)
   {%- if f.type in LUA_TYPES %}
   if type(toset) ~= "{{ f.type }}" then
     return false, "{{modname}}:set_{{ f.field }}: expect a {{ f.type }} at #1"
@@ -227,12 +227,12 @@ end
   {%- if f.extension %}
 
 -- AUTO GENERATED: EXTENSIONS
-function _M:set_{{ f.field }}_critical(crit)
+function _M.set_{{ f.field }}_critical(self, crit)
   return _M.set_extension_critical(self, NID_{{ f.field }}, crit)
 end
 
 -- AUTO GENERATED: EXTENSIONS
-function _M:get_{{ f.field }}_critical()
+function _M.get_{{ f.field }}_critical(self)
   return _M.get_extension_critical(self, NID_{{ f.field }})
 end
   {%- endif %}
