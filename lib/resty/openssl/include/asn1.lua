@@ -7,6 +7,7 @@ ffi.cdef [[
   typedef struct ASN1_VALUE_st ASN1_VALUE;
 
   typedef struct asn1_type_st ASN1_TYPE;
+  typedef struct X509_revoked_st X509_REVOKED;
 
   ASN1_IA5STRING *ASN1_IA5STRING_new();
 
@@ -29,18 +30,18 @@ local function declare_asn1_functions(typ)
   for i=1, 7 do
     t[i] = typ
   end
-
-  ffi.cdef(string.format([[
+  local s = ([[
     %s *%s_new(void);
     void %s_free(%s *a);
     %s *%s_dup(%s *a);
-  ]], unpack(t))
-  )
+  ]]):format(unpack(t))
+  ffi.cdef(s )
 end
 
 declare_asn1_functions("ASN1_INTEGER")
 declare_asn1_functions("ASN1_OBJECT")
 declare_asn1_functions("ASN1_STRING")
+declare_asn1_functions("ASN1_ENUMERATED")
 
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
