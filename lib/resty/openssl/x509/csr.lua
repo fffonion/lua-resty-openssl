@@ -174,7 +174,7 @@ function _M.get_extensions(self)
     local n = stack_macro.OPENSSL_sk_num(extensions)
     local ret = {}
     for i = 0, n - 1 do
-        local ext = C.OPENSSL_sk_value(extensions, i)
+        local ext = stack_macro.OPENSSL_sk_value(extensions, i)
         local dup, err = extension_lib.dup(ffi_cast(ext_typ_ptr, ext))
         if not err then
             local obj = dup:get_object()
