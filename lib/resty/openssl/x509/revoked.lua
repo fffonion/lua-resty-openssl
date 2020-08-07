@@ -30,11 +30,13 @@ function _M.new(sn, time, reason)
     if time == nil then
         return nil, "revoked.new: ASN1_TIME_set() failed"
     end
+    ffi_gc(time, C.ASN1_STRING_free)
 
     local it = C.BN_to_ASN1_INTEGER(sn.ctx, nil)
     if it == nil then
         return nil, "revoked.new: BN_to_ASN1_INTEGER() failed"
     end
+    C.ASN1_INTEGER_free(it)
 
     if C.X509_REVOKED_set_revocationDate(revoked, time) == 0 then
         return nil, "revoked.new: X509_REVOKED_set_revocationDate() failed"
