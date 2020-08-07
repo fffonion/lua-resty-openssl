@@ -23,6 +23,7 @@ local function create_csr(domain_pkey, ...)
     end
   end
 
+
   local csr = require("resty.openssl.x509.csr").new()
   local ok
   ok, err = csr:set_subject_name(subject)
