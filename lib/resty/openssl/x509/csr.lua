@@ -4,9 +4,9 @@ local ffi_gc = ffi.gc
 local ffi_cast = ffi.cast
 
 require "resty.openssl.include.pem"
+require "resty.openssl.include.x509v3"
 require "resty.openssl.include.x509.csr"
 require "resty.openssl.include.x509.extension"
-require "resty.openssl.include.x509v3"
 require "resty.openssl.include.asn1"
 local stack_macro = require "resty.openssl.include.stack"
 local stack_lib = require "resty.openssl.stack"
@@ -171,10 +171,12 @@ end
 -- @treturn List of parsed extension objects
 function _M.get_extensions(self)
     local extensions = C.X509_REQ_get_extensions(self.ctx)
+    ffi_gc(extensions, stack_macro.OPENSSL_sk_free)
     local n = stack_macro.OPENSSL_sk_num(extensions)
     local ret = {}
     for i = 0, n - 1 do
         local ext = stack_macro.OPENSSL_sk_value(extensions, i)
+        ffi_gc(ext, C.X509_EXTENSION_free)
         local dup, err = extension_lib.dup(ffi_cast(ext_typ_ptr, ext))
         if not err then
             local obj = dup:get_object()
@@ -194,26 +196,24 @@ function _M.get_extension(self, nid)
     if err then
         return nil, err
     end
-    local items = self:get_extensions()
-
-    for j = 1, #items do
-        local ext = items[j]
-        if ext.nid == i then
-            return ext
-        end
+    local extensions = C.X509_REQ_get_extensions(self.ctx)
+    if extensions == nil then
+        return nil, format_error("csr.get_extension: X509_REQ_get_extensions")
     end
-    return nil, ("extension for %d not found"):format(nid)
+    ffi_gc(extensions, stack_macro.OPENSSL_sk_free)
 
-    -- @todo fix malloc issue and use code below
-    --[[    local ctx = C.X509V3_EXT_i2d(i, 0, self.ctx)
-        if ctx == nil then
-            return nil, format_error("csr.get_extension: X509V3_EXT_i2d")
-        end
-        ffi_gc(ctx, C.X509_EXTENSION_free)
-        local dup = extension_lib.dup(ctx)
-        local obj = dup:get_object()
-        obj.blob = dup:tostring()
-        return obj]]
+    local ext_idx = C.X509v3_get_ext_by_NID(extensions, i, -1)
+    if ext_idx == -1 then
+        return nil, format_error(("x509.csr.get_extension: X509v3_get_ext_by_NID extension for %d not found"):format(nid))
+    end
+
+    local ctx = C.X509v3_get_ext(extensions, ext_idx)
+    if ctx == nil then
+        return nil, format_error("csr.get_extension: X509v3_get_ext")
+    end
+    ffi_gc(ctx, C.X509_EXTENSION_free)
+
+    return extension_lib.dup(ctx)
 end
 
 
@@ -231,7 +231,7 @@ function _M:sign(pkey, digest)
     return false, "x509.csr:sign: expect a digest instance should have dtyp member"
   end
 
-  -- returns size of signature if success
+-- returns size of signature if success
   if C.X509_REQ_sign(self.ctx, pkey.ctx, digest.dtyp) == 0 then
     return false, format_error("x509.csr:sign")
   end
@@ -335,6 +335,8 @@ function _M:set_version(toset)
   return true
 end
 
+
 -- END AUTO GENERATED CODE
+
 return _M
 

@@ -189,7 +189,6 @@ x509.csr:sign: expect a pkey instance at #1
 --- no_error_log
 [error]
 
-
 === TEST 8: x509.csr:get_extension by nid name
 --- http_config eval: $::HttpConfig
 --- config

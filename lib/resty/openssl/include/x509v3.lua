@@ -72,6 +72,11 @@ ffi.cdef [[
 
   void *X509V3_get_d2i(const OPENSSL_STACK *x, int nid, int *crit, int *idx);
 
+  int X509v3_get_ext_by_NID(const OPENSSL_STACK *x,
+                           int nid, int lastpos);
+
+   X509_EXTENSION *X509v3_get_ext(const OPENSSL_STACK *x, int loc);
+
   // STACK_OF(ACCESS_DESCRIPTION)
   typedef struct stack_st AUTHORITY_INFO_ACCESS;
 
