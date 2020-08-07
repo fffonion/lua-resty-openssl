@@ -36,7 +36,7 @@ function _M.new(sn, time, reason)
     if it == nil then
         return nil, "revoked.new: BN_to_ASN1_INTEGER() failed"
     end
-    C.ASN1_INTEGER_free(it)
+    ffi_gc(it, C.ASN1_INTEGER_free)
 
     if C.X509_REVOKED_set_revocationDate(revoked, time) == 0 then
         return nil, "revoked.new: X509_REVOKED_set_revocationDate() failed"
