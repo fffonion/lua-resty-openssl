@@ -20,7 +20,7 @@ function _M.new(sn, time, reason)
         sn = bn_lib.new(sn)
     end
     if not bn_lib.istype(sn) then
-        return nil, "x509.revoked.new: sn should be number or a bn instance"
+        return nil, "revoked.new: sn should be number or a bn instance"
     end
 
     local revoked = C.X509_REVOKED_new()
@@ -28,52 +28,48 @@ function _M.new(sn, time, reason)
 
     time = C.ASN1_TIME_set(nil, time)
     if time == nil then
-        return nil, "x509.revoked.new: ASN1_TIME_set() failed"
+        return nil, "revoked.new: ASN1_TIME_set() failed"
     end
 
     local it = C.BN_to_ASN1_INTEGER(sn.ctx, nil)
     if it == nil then
-        return nil, "x509.revoked.new: BN_to_ASN1_INTEGER() failed"
+        return nil, "revoked.new: BN_to_ASN1_INTEGER() failed"
     end
 
     if C.X509_REVOKED_set_revocationDate(revoked, time) == 0 then
-        return nil, "x509.revoked.new: X509_REVOKED_set_revocationDate() failed"
+        return nil, "revoked.new: X509_REVOKED_set_revocationDate() failed"
     end
 
     if C.X509_REVOKED_set_serialNumber(revoked, it) == 0 then
-        return nil, "x509.revoked.new: X509_REVOKED_set_serialNumber() failed"
+        return nil, "revoked.new: X509_REVOKED_set_serialNumber() failed"
     end
 
     local e = C.ASN1_ENUMERATED_new()
     if e == nil then
-        return nil, "x509.revoked.new: ASN1_ENUMERATED_new() failed"
+        return nil, "revoked.new: ASN1_ENUMERATED_new() failed"
     end
     ffi_gc(e, C.ASN1_ENUMERATED_free)
 
     local ext = C.X509_EXTENSION_new()
     if ext == nil then
-        return nil, "x509.revoked.new: X509_EXTENSION_new() failed"
+        return nil, "revoked.new: X509_EXTENSION_new() failed"
     end
     ffi_gc(ext, C.X509_EXTENSION_free)
 
     if C.ASN1_ENUMERATED_set(e, reason) == 0 then
-        return nil, "x509.revoked.new: ASN1_ENUMERATED_set() failed"
+        return nil, "revoked.new: ASN1_ENUMERATED_set() failed"
     end
 
     if C.X509_EXTENSION_set_data(ext, e) == 0 then
-        return nil, "x509.revoked.new: X509_EXTENSION_set_data() failed"
+        return nil, "revoked.new: X509_EXTENSION_set_data() failed"
     end
     if C.X509_EXTENSION_set_object(ext, C.OBJ_nid2obj(NID_crl_reason)) == 0 then
-        return nil, "x509.revoked.new: X509_EXTENSION_set_object() failed"
+        return nil, "revoked.new: X509_EXTENSION_set_object() failed"
     end
 
     if C.X509_REVOKED_add_ext(revoked, ext, 0) == 0 then
-        return nil, "x509.revoked.new: X509_EXTENSION_set_object() failed"
+        return nil, "revoked.new: X509_EXTENSION_set_object() failed"
     end
-
-
-
-
 
     return { ctx = revoked, { __index = _M } }
 end

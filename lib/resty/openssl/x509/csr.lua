@@ -8,6 +8,7 @@ require "resty.openssl.include.x509.csr"
 require "resty.openssl.include.x509.extension"
 require "resty.openssl.include.x509v3"
 require "resty.openssl.include.asn1"
+local stack_macro = require "resty.openssl.include.stack"
 local stack_lib = require "resty.openssl.stack"
 local pkey_lib = require "resty.openssl.pkey"
 local altname_lib = require "resty.openssl.x509.altname"
@@ -170,7 +171,7 @@ end
 -- @treturn List of parsed extension objects
 function _M.get_extensions(self)
     local extensions = C.X509_REQ_get_extensions(self.ctx)
-    local n = stack_lib.OPENSSL_sk_num(extensions)
+    local n = stack_macro.OPENSSL_sk_num(extensions)
     local ret = {}
     for i = 0, n - 1 do
         local ext = C.OPENSSL_sk_value(extensions, i)

@@ -6,7 +6,7 @@ require "resty.openssl.include.x509.crl"
 require "resty.openssl.include.pem"
 require "resty.openssl.include.x509v3"
 local asn1_lib = require("resty.openssl.asn1")
-local revoked_lib = require("resty.openssl.revoked")
+local revoked_lib = require("resty.openssl.x509.revoked")
 local digest_lib = require("resty.openssl.digest")
 local extension_lib = require("resty.openssl.x509.extension")
 local pkey_lib = require("resty.openssl.pkey")
@@ -27,7 +27,7 @@ if OPENSSL_11_OR_LATER then
   accessors.set_last_update = C.X509_CRL_set1_lastUpdate
   accessors.get_next_update = C.X509_CRL_get0_nextUpdate
   accessors.set_next_update = C.X509_CRL_set1_nextUpdate
-  accessors.get_version = C.X509_CRL_get_version
+  accessors.get_version     = C.X509_CRL_get_version
   accessors.get_issuer_name = C.X509_CRL_get_issuer -- returns internal ptr
 elseif OPENSSL_10 then
   accessors.get_last_update = function(crl)
@@ -160,9 +160,9 @@ end
 -- @treturn boolean true if revoked item was successfully added or false otherwise
 -- @treturn[opt] string Returns optional error message in case of error
 function _M.add_revoked(self, revoked)
-    if not revoked_lib.istype(revoked) then
-        return false, "x509.crl:add_revoked: expect a revoked instance at #1"
-    end
+  if not revoked_lib.istype(revoked) then
+    return false, "x509.crl:add_revoked: expect a revoked instance at #1"
+  end
   local ctx = C.X509_REVOKED_dup(revoked.ctx)
   if ctx == nil then
     return nil, "x509.crl:: X509_REVOKED_dup() failed"
@@ -182,12 +182,16 @@ function _M:sign(pkey, digest)
   if not pkey_lib.istype(pkey) then
     return false, "x509.crl:sign: expect a pkey instance at #1"
   end
-  if digest and not digest_lib.istype(digest) then
+  if not digest or not digest_lib.istype(digest) then
     return false, "x509.crl:sign: expect a digest instance at #2"
   end
 
+  if not digest.dtyp then
+    return false, "x509.crl:sign: expect a digest instance should have dtyp member"
+  end
+
   -- returns size of signature if success
-  if C.X509_CRL_sign(self.ctx, pkey.ctx, digest and digest.ctx) == 0 then
+  if C.X509_CRL_sign(self.ctx, pkey.ctx, digest and digest.dtyp) == 0 then
     return false, format_error("x509.crl:sign")
   end
 
@@ -251,7 +255,8 @@ function _M:get_extension(nid_txt, last_pos)
   if err then
     return nil, nil, "x509.crl:get_extension: " .. err
   end
-  local ext, err = extension_lib.dup(ctx)
+  local ext
+  ext, err = extension_lib.dup(ctx)
   if err then
     return nil, nil, "x509.crl:get_extension: " .. err
   end

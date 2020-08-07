@@ -52,7 +52,6 @@ build = {
       ["resty.openssl.pkey"] = "lib/resty/openssl/pkey.lua",
       ["resty.openssl.provider"] = "lib/resty/openssl/provider.lua",
       ["resty.openssl.rand"] = "lib/resty/openssl/rand.lua",
-      ["resty.openssl.revoked"] = "lib/resty/openssl/revoked.lua",
       ["resty.openssl.rsa"] = "lib/resty/openssl/rsa.lua",
       ["resty.openssl.stack"] = "lib/resty/openssl/stack.lua",
       ["resty.openssl.util"] = "lib/resty/openssl/util.lua",
@@ -67,6 +66,7 @@ build = {
       ["resty.openssl.x509.extensions"] = "lib/resty/openssl/x509/extensions.lua",
       ["resty.openssl.x509.init"] = "lib/resty/openssl/x509/init.lua",
       ["resty.openssl.x509.name"] = "lib/resty/openssl/x509/name.lua",
+      ["resty.openssl.x509.revoked"] = "lib/resty/openssl/x509/revoked.lua",
       ["resty.openssl.x509.store"] = "lib/resty/openssl/x509/store.lua"
    }
 }

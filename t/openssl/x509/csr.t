@@ -275,7 +275,7 @@ AQIDAQAB
 --- config
     location =/t {
         content_by_lua_block {
-            local f = io.open("t/fixtures/test.csr"):read("*a")
+            local f = io.open("t/fixtures/ext.csr"):read("*a")
             local c = myassert(require("resty.openssl.x509.csr").new(f))
             local toset = ngx.time()
             local ok = myassert(c:set_version(toset))
@@ -296,3 +296,25 @@ AQIDAQAB
 --- no_error_log
 [error]
 # END AUTO GENERATED CODE
+
+=== TEST 12: x509.csr:set_version (AUTOGEN)
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/test.csr"):read("*a")
+            local c = myassert(require("resty.openssl.x509.csr").new(f))
+            local exts = myassert(c:get_extensions())
+            if #exts ~= 0 then
+              ngx.say(#exts)
+            else
+              ngx.print("ok")
+            end
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"ok"
+--- no_error_log
+[error]
