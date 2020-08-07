@@ -19,7 +19,7 @@ local txtnid2nid = require("resty.openssl.objects").txtnid2nid
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
-local ext_typ_ptr = "X509_EXTENSION" .. "*"
+local ext_typ_ptr = "X509_EXTENSION*"
 local accessors = {}
 
 local push = table.insert
