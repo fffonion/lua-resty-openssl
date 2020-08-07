@@ -13,7 +13,6 @@ local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
 
 asn1_macro.declare_asn1_functions("X509_CRL")
 
-
 ffi.cdef [[
   X509_NAME *X509_CRL_get_issuer(const X509_CRL *crl);
   int X509_CRL_set_issuer_name(X509_CRL *x, X509_NAME *name);

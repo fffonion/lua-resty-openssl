@@ -194,15 +194,26 @@ function _M.get_extension(self, nid)
     if err then
         return nil, err
     end
-    local ctx = C.X509V3_EXT_i2d(i, 0, self.ctx)
-    if ctx == nil then
-        return nil, format_error("csr.get_extension: X509V3_EXT_i2d")
+    local items = self:get_extensions()
+
+    for j = 1, #items do
+        local ext = items[j]
+        if ext.nid == i then
+            return ext
+        end
     end
-    ffi_gc(ctx, C.X509_EXTENSION_free)
-    local dup = extension_lib.dup(ctx)
-    local obj = dup:get_object()
-    obj.blob = dup:tostring()
-    return obj
+    return nil, ("extension for %d not found"):format(nid)
+
+    -- @todo fix malloc issue and use code below
+    --[[    local ctx = C.X509V3_EXT_i2d(i, 0, self.ctx)
+        if ctx == nil then
+            return nil, format_error("csr.get_extension: X509V3_EXT_i2d")
+        end
+        ffi_gc(ctx, C.X509_EXTENSION_free)
+        local dup = extension_lib.dup(ctx)
+        local obj = dup:get_object()
+        obj.blob = dup:tostring()
+        return obj]]
 end
 
 

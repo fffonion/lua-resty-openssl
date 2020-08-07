@@ -297,18 +297,86 @@ AQIDAQAB
 [error]
 # END AUTO GENERATED CODE
 
-=== TEST 12: x509.csr:set_version (AUTOGEN)
+=== TEST 12: x509.csr:get_extensions of csr
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
         content_by_lua_block {
-            local f = io.open("t/fixtures/test.csr"):read("*a")
+            local f = io.open("t/fixtures/ext.csr"):read("*a")
             local c = myassert(require("resty.openssl.x509.csr").new(f))
-            local exts = myassert(c:get_extensions())
-            if #exts ~= 0 then
-              ngx.say(#exts)
+            local exts = c:get_extensions()
+            if #exts == 0 then
+              ngx.print("0")
+            else
+              ngx.print("4")
+            end
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"4"
+--- no_error_log
+[error]
+
+
+=== TEST 13: x509.csr:get_extension by nid
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/ext.csr"):read("*a")
+            local c = myassert(require("resty.openssl.x509.csr").new(f))
+            local ext = c:get_extension(83)
+            if not ext then
+              ngx.print("nil")
             else
               ngx.print("ok")
+            end
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"ok"
+--- no_error_log
+[error]
+
+
+=== TEST 14: x509.csr:get_extension by nid name
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/ext.csr"):read("*a")
+            local c = myassert(require("resty.openssl.x509.csr").new(f))
+            local ext = c:get_extension('basicConstraints')
+            if not ext then
+              ngx.print("nil")
+            else
+              ngx.print("ok")
+            end
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"ok"
+--- no_error_log
+[error]
+
+=== TEST 14: x509.csr:get_extension shud return nil if wrong nid name is given
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/ext.csr"):read("*a")
+            local c = myassert(require("resty.openssl.x509.csr").new(f))
+            local ext, err = c:get_extension('test')
+            if not ext then
+              ngx.print("ok")
+            else
+              ngx.print(err)
             end
         }
     }
