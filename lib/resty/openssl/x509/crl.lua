@@ -191,7 +191,7 @@ function _M:sign(pkey, digest)
   end
 
   -- returns size of signature if success
-  if C.X509_CRL_sign(self.ctx, pkey.ctx, digest and digest.dtyp) == 0 then
+  if C.X509_CRL_sign(self.ctx, pkey.ctx, digest.dtyp) == 0 then
     return false, format_error("x509.crl:sign")
   end
 
