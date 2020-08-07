@@ -224,12 +224,15 @@ function _M:sign(pkey, digest)
   if not pkey_lib.istype(pkey) then
     return false, "x509.csr:sign: expect a pkey instance at #1"
   end
-  if digest and not digest_lib.istype(digest) then
+  if not digest or not digest_lib.istype(digest) then
     return false, "x509.csr:sign: expect a digest instance at #2"
+  end
+  if not digest.dtyp then
+    return false, "x509.csr:sign: expect a digest instance should have dtyp member"
   end
 
   -- returns size of signature if success
-  if C.X509_REQ_sign(self.ctx, pkey.ctx, digest and digest.ctx) == 0 then
+  if C.X509_REQ_sign(self.ctx, pkey.ctx, digest and digest.dtyp) == 0 then
     return false, format_error("x509.csr:sign")
   end
 

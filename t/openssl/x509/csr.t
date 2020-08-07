@@ -386,3 +386,28 @@ AQIDAQAB
 "ok"
 --- no_error_log
 [error]
+
+
+=== TEST 15: x509.csr:sign should succeed
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/ext.csr"):read("*a")
+            local c = myassert(require("resty.openssl.x509.csr").new(f))
+            local d = myassert(require("resty.openssl.digest").new("SHA256"))
+            local p = myassert(require("resty.openssl.pkey").new())
+            local ok = myassert(c:sign(p, d))
+            if ok == false then
+                ngx.say("false")
+            else
+              ngx.print("ok")
+            end
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"ok"
+--- no_error_log
+[error]
