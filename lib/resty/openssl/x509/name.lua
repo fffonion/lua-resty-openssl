@@ -2,12 +2,11 @@ local ffi = require "ffi"
 local C = ffi.C
 local ffi_gc = ffi.gc
 local ffi_str = ffi.string
-local ffi_sizeof = ffi.sizeof
 
 require "resty.openssl.include.x509.name"
 local objects_lib = require "resty.openssl.objects"
 local asn1_macro = require "resty.openssl.include.asn1"
-
+local push, join, sort, pairs =  table.insert, table.concat, table.sort, pairs
 -- local MBSTRING_FLAG = 0x1000
 local MBSTRING_ASC  = 0x1001 -- (MBSTRING_FLAG|1)
 
@@ -135,10 +134,10 @@ function _M:_tostring()
   local all = self:all()
   local values = {}
   for k, v in pairs(all) do
-    table.insert(values, k .. "=" .. v.blob)
+   push(values, k .. "=" .. v.blob)
   end
-  table.sort(values)
-  return table.concat(values, "/")
+  sort(values)
+  return join(values, "/")
 end
 
 return _M
