@@ -33,7 +33,7 @@ __DATA__
             local time = ngx.time()
             local r, err = myassert(revoked.new(1234, time, 1))
             if not revoked.istype(r) then
-                ngx.say("not a revoked instance")
+                ngx.say("it should be instance of revoked")
             else
                 ngx.say("ok")
             end
