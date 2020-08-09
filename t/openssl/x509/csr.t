@@ -143,10 +143,134 @@ x509.csr:sign: expect a pkey instance at #1
 --- no_error_log
 [error]
 
+
+=== TEST 6: x509.csr:get_extensions of csr
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/ext.csr"):read("*a")
+            local c = myassert(require("resty.openssl.x509.csr").new(f))
+            local exts = c:get_extensions()
+            if #exts == 0 then
+              ngx.print("0")
+            else
+              ngx.print("4")
+            end
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"4"
+--- no_error_log
+[error]
+
+
+=== TEST 7: x509.csr:get_extension by nid
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/ext.csr"):read("*a")
+            local c = myassert(require("resty.openssl.x509.csr").new(f))
+            local ext, pos = c:get_extension(83)
+            if not ext then
+              ngx.say("nil")
+            else
+              ngx.say(pos)
+            end
+
+            local ext = c:get_extension(83, pos)
+            if not ext then
+              ngx.say("nil")
+            else
+              ngx.say(pos)
+            end
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"2
+nil
+"
+--- no_error_log
+[error]
+
+=== TEST 8: x509.csr:get_extension by nid name
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/ext.csr"):read("*a")
+            local c = myassert(require("resty.openssl.x509.csr").new(f))
+            local ext = c:get_extension('basicConstraints')
+            if not ext then
+              ngx.print("nil")
+            else
+              ngx.print("ok")
+            end
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"ok"
+--- no_error_log
+[error]
+
+=== TEST 9: x509.csr:get_extension shud return nil if wrong nid name is given
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/ext.csr"):read("*a")
+            local c = myassert(require("resty.openssl.x509.csr").new(f))
+            local ext, err = c:get_extension('test')
+            if not ext then
+              ngx.print("ok")
+            else
+              ngx.print(err)
+            end
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"ok"
+--- no_error_log
+[error]
+
+
+=== TEST 10: x509.csr:sign should succeed
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/ext.csr"):read("*a")
+            local c = myassert(require("resty.openssl.x509.csr").new(f))
+            local d = myassert(require("resty.openssl.digest").new("SHA256"))
+            local p = myassert(require("resty.openssl.pkey").new())
+            local ok = myassert(c:sign(p, d))
+            if ok == false then
+                ngx.say("false")
+            else
+              ngx.print("ok")
+            end
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"ok"
+--- no_error_log
+[error]
+
 # START AUTO GENERATED CODE
 
 
-=== TEST 6: x509.csr:get_subject_name (AUTOGEN)
+=== TEST 11: x509.csr:get_subject_name (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -166,7 +290,7 @@ x509.csr:sign: expect a pkey instance at #1
 --- no_error_log
 [error]
 
-=== TEST 7: x509.csr:set_subject_name (AUTOGEN)
+=== TEST 12: x509.csr:set_subject_name (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -194,7 +318,7 @@ x509.csr:sign: expect a pkey instance at #1
 --- no_error_log
 [error]
 
-=== TEST 8: x509.csr:get_pubkey (AUTOGEN)
+=== TEST 13: x509.csr:get_pubkey (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -223,7 +347,7 @@ AQIDAQAB
 --- no_error_log
 [error]
 
-=== TEST 9: x509.csr:set_pubkey (AUTOGEN)
+=== TEST 14: x509.csr:set_pubkey (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -251,7 +375,7 @@ AQIDAQAB
 --- no_error_log
 [error]
 
-=== TEST 10: x509.csr:get_version (AUTOGEN)
+=== TEST 15: x509.csr:get_version (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -270,7 +394,7 @@ AQIDAQAB
 --- no_error_log
 [error]
 
-=== TEST 11: x509.csr:set_version (AUTOGEN)
+=== TEST 16: x509.csr:set_version (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
