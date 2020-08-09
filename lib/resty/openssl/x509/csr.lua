@@ -172,19 +172,7 @@ end
 function _M.get_extensions(self)
     local extensions = C.X509_REQ_get_extensions(self.ctx)
     ffi_gc(extensions, stack_macro.OPENSSL_sk_free)
-    local n = stack_macro.OPENSSL_sk_num(extensions)
-    local ret = {}
-    for i = 0, n - 1 do
-        local ext = stack_macro.OPENSSL_sk_value(extensions, i)
-        ffi_gc(ext, C.X509_EXTENSION_free)
-        local dup, err = extension_lib.dup(ffi_cast(ext_typ_ptr, ext))
-        if not err then
-            local obj = dup:get_object()
-            obj.blob = dup:tostring()
-            push(ret, obj)
-        end
-    end
-    return ret
+    return extensions
 end
 
 --- Get a csr extension
