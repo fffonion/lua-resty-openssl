@@ -151,8 +151,10 @@ x509.csr:sign: expect a pkey instance at #1
         content_by_lua_block {
             local f = io.open("t/fixtures/ext.csr"):read("*a")
             local c = myassert(require("resty.openssl.x509.csr").new(f))
+            local stack_macro = require "resty.openssl.include.stack"
             local exts = c:get_extensions()
-            if #exts == 0 then
+            local n = stack_macro.OPENSSL_sk_num(exts)
+            if n == 0 then
               ngx.print("0")
             else
               ngx.print("4")
