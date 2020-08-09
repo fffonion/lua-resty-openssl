@@ -91,10 +91,99 @@ __DATA__
 --- no_error_log
 [error]
 
+=== TEST 4: x509.crl:add_revoked should add revoked to crl
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/TrustAsiaEVTLSProCAG2.crl"):read("*a")
+            local revoked =  myassert(require("resty.openssl.x509.revoked"))
+            local c = myassert(require("resty.openssl.x509.crl").new(f))
+            local toset = ngx.time()
+            local r, err = revoked.new(1234, toset, 1)
+            if err then
+              ngx.say(err)
+              return
+            end
+            if not revoked.istype(r) then
+             ngx.say("it should be instance of revoked")
+             return
+            end
+
+            local ok = myassert(c:add_revoked(r))
+            if ok ~= true then
+              ngx.say("Could not add revoked")
+            else
+              ngx.print("ok")
+            end
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"ok"
+--- no_error_log
+[error]
+
+=== TEST 5: x509.crl:add_revoked should fail if revoked is not instance of revoked
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/TrustAsiaEVTLSProCAG2.crl"):read("*a")
+            local revoked =  myassert(require("resty.openssl.x509.revoked"))
+            local c = myassert(require("resty.openssl.x509.crl").new(f))
+
+            local ok, err = c:add_revoked({ctx ={}})
+            if ok ~= false then
+                ngx.say("false")
+            elseif err ~= "x509.crl:add_revoked: expect a revoked instance at #1" then
+                ngx.say("false")
+            else
+              ngx.print("ok")
+            end
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"ok"
+--- no_error_log
+[error]
+
+
+=== TEST 6: x509.crl:sign should succeed
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/TrustAsiaEVTLSProCAG2.crl"):read("*a")
+            local revoked =  myassert(require("resty.openssl.x509.revoked"))
+            local c = myassert(require("resty.openssl.x509.crl").new(f))
+            local toset = ngx.time()
+            local r, err = revoked.new(1234, toset, 1)
+            c:add_revoked(r)
+
+            local d = myassert(require("resty.openssl.digest").new("SHA256"))
+            local p = myassert(require("resty.openssl.pkey").new())
+            local ok = myassert(c:sign(p, d))
+            if ok == false then
+                ngx.say("false")
+            else
+              ngx.print("ok")
+            end
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"ok"
+--- no_error_log
+[error]
 # START AUTO GENERATED CODE
 
 
-=== TEST 4: x509.crl:get_issuer_name (AUTOGEN)
+=== TEST 7: x509.crl:get_issuer_name (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -114,7 +203,7 @@ __DATA__
 --- no_error_log
 [error]
 
-=== TEST 5: x509.crl:set_issuer_name (AUTOGEN)
+=== TEST 8: x509.crl:set_issuer_name (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -142,7 +231,7 @@ __DATA__
 --- no_error_log
 [error]
 
-=== TEST 6: x509.crl:get_last_update (AUTOGEN)
+=== TEST 9: x509.crl:get_last_update (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -161,7 +250,7 @@ __DATA__
 --- no_error_log
 [error]
 
-=== TEST 7: x509.crl:set_last_update (AUTOGEN)
+=== TEST 10: x509.crl:set_last_update (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -187,7 +276,7 @@ __DATA__
 --- no_error_log
 [error]
 
-=== TEST 8: x509.crl:get_next_update (AUTOGEN)
+=== TEST 11: x509.crl:get_next_update (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -206,7 +295,7 @@ __DATA__
 --- no_error_log
 [error]
 
-=== TEST 9: x509.crl:set_next_update (AUTOGEN)
+=== TEST 12: x509.crl:set_next_update (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -232,7 +321,7 @@ __DATA__
 --- no_error_log
 [error]
 
-=== TEST 10: x509.crl:get_version (AUTOGEN)
+=== TEST 13: x509.crl:get_version (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -251,7 +340,7 @@ __DATA__
 --- no_error_log
 [error]
 
-=== TEST 11: x509.crl:set_version (AUTOGEN)
+=== TEST 14: x509.crl:set_version (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {

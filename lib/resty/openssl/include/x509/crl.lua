@@ -28,6 +28,7 @@ ffi.cdef [[
 
   int i2d_X509_CRL_bio(BIO *bp, X509_CRL *crl);
   X509_CRL *d2i_X509_CRL_bio(BIO *bp, X509_CRL **crl);
+  int X509_CRL_add0_revoked(X509_CRL *crl, X509_REVOKED *rev);
 ]]
 
 if OPENSSL_11_OR_LATER then

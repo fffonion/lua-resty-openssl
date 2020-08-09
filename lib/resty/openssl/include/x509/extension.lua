@@ -17,4 +17,6 @@ ffi.cdef [[
       /*X509V3_CONF_METHOD*/ void *db_meth;
       void *db;
   };
+  int X509_EXTENSION_set_data(X509_EXTENSION *ex, ASN1_OCTET_STRING *data);
+  int X509_EXTENSION_set_object(X509_EXTENSION *ex, const ASN1_OBJECT *obj);
 ]]
