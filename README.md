@@ -2577,7 +2577,7 @@ returns `true` only. If verification failed, returns `nil` and error explaining 
 
 ## resty.openssl.x509.revoked
 
-Module to interact with X509_REVOKED
+Module to interact with X509_REVOKED.
 
 [Back to TOC](#table-of-contents)
 
@@ -2585,7 +2585,8 @@ Module to interact with X509_REVOKED
 
 **syntax**: *ch, err = revoked.new(serial_number, time, reason)*
 
-Creates a new `revoked` instance. 
+Creates a new `revoked` instance. `serial_number` can be either a [resty.openssl.bn](#restyopensslbn)
+instance or a number. `time` and `reason` must be numbers.
 
 [Back to TOC](#table-of-contents)
 
