@@ -25,7 +25,7 @@ local function create_self_signed(key_opts, names)
   cert:set_subject_name(nm)
   cert:set_issuer_name(nm)
 
-  cert:sign(key)
+  assert(cert:sign(key))
 
   return cert, key
 end
