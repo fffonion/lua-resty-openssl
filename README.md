@@ -107,6 +107,8 @@ Table of Contents
     + [csr.new](#csrnew)
     + [csr.istype](#csristype)
     + [csr:get_*, csr:set_*](#csrget_-csrset_)
+    + [csr:get_extension](#csrget_extension)
+    + [csr:get_extensions](#csrget_extensions)
     + [csr:sign](#csrsign)
     + [csr:verify](#csrverify)
     + [csr:tostring](#csrtostring)
@@ -120,6 +122,7 @@ Table of Contents
     + [crl:set_extension](#crlset_extension)
     + [crl:get_extension_critical](#crlget_extension_critical)
     + [crl:set_extension_critical](#crlset_extension_critical)
+    + [crl:add_revoked](#crladd_revoked)
     + [crl:sign](#crlsign)
     + [crl:verify](#crlverify)
     + [crl:tostring](#crltostring)
@@ -177,6 +180,9 @@ Table of Contents
     + [store:load_file](#storeload_file)
     + [store:load_directory](#storeload_directory)
     + [store:verify](#storeverify)
+  * [resty.openssl.x509.revoked](#restyopensslx509revoked)
+    + [revoked.new](#revokednew)
+    + [revoked.istype](#revokedistype)
   * [Functions for stack-like objects](#functions-for-stack-like-objects)
     + [metamethods](#metamethods)
     + [each](#each)
@@ -1726,6 +1732,30 @@ with naming convension with other functions.
 
 [Back to TOC](#table-of-contents)
 
+### csr:get_extension
+
+**syntax**: *extension, pos, err = csr:get_extension(nid_or_txt, pos?)*
+
+Get X.509 `extension` matching the given [NID] to certificate, returns a
+[resty.openssl.x509.extension](#restyopensslx509extension) instance and the found position.
+
+If `last_pos` is defined, the function searchs from that position; otherwise it
+finds from beginning. Index is 1-based.
+
+```lua
+local ext, pos, err = csr:get_extension("basicConstraints")
+```
+
+[Back to TOC](#table-of-contents)
+
+### csr:get_extensions
+
+**syntax**: *extensions, err = csr:get_extensions()*
+
+Return all extensions as a [resty.openssl.x509.extensions](#restyopensslx509extensions) instance.
+
+[Back to TOC](#table-of-contents)
+
 ### csr:sign
 
 **syntax**: *ok, err = csr:sign(pkey, digest?)*
@@ -1893,6 +1923,14 @@ Get critical flag of the X.509 `extension` matching the given [NID] from CRL.
 **syntax**: *ok, err = crl:set_extension_critical(nid_or_txt, crit?)*
 
 Set critical flag of the X.509 `extension` matching the given [NID] to CRL.
+
+[Back to TOC](#table-of-contents)
+
+### crl:add_revoked
+
+**syntax**: *ok, err = crl:add_revoked(revoked)*
+
+Adds a [resty.openssl.x509.revoked](#restyopensslx509revoked) instance to the CRL.
 
 [Back to TOC](#table-of-contents)
 
@@ -2534,6 +2572,28 @@ argument, which must be a [resty.openssl.x509.chain](#restyopensslx509chain) ins
 If verification succeed, and `return_chain` is set to true, returns the proof of validation as a 
 [resty.openssl.x509.chain](#restyopensslx509chain); otherwise
 returns `true` only. If verification failed, returns `nil` and error explaining the reason.
+
+[Back to TOC](#table-of-contents)
+
+## resty.openssl.x509.revoked
+
+Module to interact with X509_REVOKED
+
+[Back to TOC](#table-of-contents)
+
+### revoked.new
+
+**syntax**: *ch, err = revoked.new(serial_number, time, reason)*
+
+Creates a new `revoked` instance. 
+
+[Back to TOC](#table-of-contents)
+
+### revoked.istype
+
+**syntax**: *ok = revoked.istype(table)*
+
+Returns `true` if table is an instance of `revoked`. Returns `false` otherwise.
 
 [Back to TOC](#table-of-contents)
 
