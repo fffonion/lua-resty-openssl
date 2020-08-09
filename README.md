@@ -2639,7 +2639,7 @@ name:add("L", "Mars")
         must be set. But a reference should be kept in Lua land to prevent premature
         gc of individual elements. (See x509.altname).
     - Shallow copy for stack is fine because in current design user can't modify the element in the
-      stack directly. Each elemented is duplicated when added to stack and when returned.
+      stack directly. Each elemente is duplicated when added to stack and when returned.
 
 [Back to TOC](#table-of-contents)
 
