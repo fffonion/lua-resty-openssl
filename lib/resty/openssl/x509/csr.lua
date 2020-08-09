@@ -3,21 +3,23 @@ local C = ffi.C
 local ffi_gc = ffi.gc
 
 require "resty.openssl.include.pem"
-require "resty.openssl.include.x509.csr"
-require "resty.openssl.include.x509.extension"
 require "resty.openssl.include.x509v3"
+require "resty.openssl.include.x509.csr"
 require "resty.openssl.include.asn1"
+local stack_macro = require "resty.openssl.include.stack"
 local stack_lib = require "resty.openssl.stack"
 local pkey_lib = require "resty.openssl.pkey"
 local altname_lib = require "resty.openssl.x509.altname"
 local digest_lib = require("resty.openssl.digest")
+local extension_lib = require("resty.openssl.x509.extension")
+local extensions_lib = require("resty.openssl.x509.extensions")
 local util = require "resty.openssl.util"
+local txtnid2nid = require("resty.openssl.objects").txtnid2nid
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
 
 local accessors = {}
-
 
 accessors.set_subject_name = C.X509_REQ_set_subject_name
 accessors.get_pubkey = C.X509_REQ_get_pubkey
@@ -161,6 +163,53 @@ end
 function _M:to_PEM()
   return tostring(self, "PEM")
 end
+
+local x509_extensions_gc = stack_lib.gc_of("X509_EXTENSION")
+
+--- Get all csr extensions
+-- @tparam table self Instance of csr
+-- @treturn Extensions object
+function _M.get_extensions(self)
+  local extensions = C.X509_REQ_get_extensions(self.ctx)
+  -- GC handler is sk_X509_EXTENSION_pop_free
+  ffi_gc(extensions, x509_extensions_gc)
+
+  return extensions_lib.dup(extensions)
+end
+
+--- Get a csr extension
+-- @tparam table self Instance of csr
+-- @tparam string|number Nid number or name of the extension
+-- @tparam number Position to start looking for the extension; default to look from start if omitted
+-- @treturn Parsed extension object or nil if not found
+function _M.get_extension(self, nid, last_pos)
+  local i, err = txtnid2nid(nid)
+  if err then
+    return nil, nil, err
+  end
+
+  local extensions = C.X509_REQ_get_extensions(self.ctx)
+  if extensions == nil then
+    return nil, nil, format_error("csr.get_extension: X509_REQ_get_extensions")
+  end
+  ffi_gc(extensions, x509_extensions_gc)
+
+  -- make 1-index array to 0-index
+  last_pos = (last_pos or 0) -1
+  local ext_idx = C.X509v3_get_ext_by_NID(extensions, i, last_pos)
+  if ext_idx == -1 then
+    err = ("x509.csr.get_extension: X509v3_get_ext_by_NID extension for %d not found"):format(nid)
+    return nil, nil, format_error(err)
+  end
+
+  local ctx = C.X509v3_get_ext(extensions, ext_idx)
+  if ctx == nil then
+    return nil, nil, format_error("csr.get_extension: X509v3_get_ext")
+  end
+
+  return extension_lib.dup(ctx), ext_idx+1, nil
+end
+
 
 -- START AUTO GENERATED CODE
 
