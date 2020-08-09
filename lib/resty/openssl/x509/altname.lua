@@ -65,7 +65,7 @@ function _M.new()
   local self = setmetatable({
     ctx = ctx,
     cast = cast,
-    _is_dup = false,
+    _is_shallow_copy = false,
   }, mt)
 
   return self, nil
@@ -79,6 +79,7 @@ function _M.dup(ctx)
   if ctx == nil or not ffi.istype(general_names_ptr_ct, ctx) then
     return nil, "x509.altname.dup: expect a GENERAL_NAMES* ctx at #1"
   end
+
   local dup_ctx = dup(ctx)
 
   return setmetatable({
@@ -86,7 +87,7 @@ function _M.dup(ctx)
     ctx = dup_ctx,
     -- don't let lua gc the original stack to keep its elements
     _dupped_from = ctx,
-    _is_dup = true,
+    _is_shallow_copy = true,
     _elem_refs = {},
     _elem_refs_idx = 1,
   }, mt), nil
@@ -151,7 +152,7 @@ function _M:add(typ, value)
 
   -- if the stack is duplicated, the gc handler is not pop_free
   -- handle the gc by ourselves
-  if self._is_dup then
+  if self._is_shallow_copy then
     ffi_gc(gn, C.GENERAL_NAME_free)
     self._elem_refs[self._elem_refs_idx] = gn
     self._elem_refs_idx = self._elem_refs_idx + 1

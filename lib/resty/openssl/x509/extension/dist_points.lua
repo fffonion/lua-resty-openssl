@@ -28,7 +28,7 @@ function _M.new()
 
   local self = setmetatable({
     ctx = ctx,
-    _is_dup = false,
+    _is_shallow_copy = false,
   }, mt)
 
   return self, nil
@@ -48,7 +48,7 @@ function _M.dup(ctx)
     ctx = dup_ctx,
     -- don't let lua gc the original stack to keep its elements
     _dupped_from = ctx,
-    _is_dup = true,
+    _is_shallow_copy = true,
     _elem_refs = {},
     _elem_refs_idx = 1,
   }, mt), nil

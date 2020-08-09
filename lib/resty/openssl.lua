@@ -18,6 +18,7 @@ local _M = {
   csr = require("resty.openssl.x509.csr"),
   crl = require("resty.openssl.x509.crl"),
   extension = require("resty.openssl.x509.extension"),
+  extensions = require("resty.openssl.x509.extensions"),
   name = require("resty.openssl.x509.name"),
   store = require("resty.openssl.x509.store"),
 }

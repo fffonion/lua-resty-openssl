@@ -2,7 +2,6 @@ local ffi = require "ffi"
 local C = ffi.C
 local ffi_gc = ffi.gc
 local ffi_str = ffi.string
-local ffi_sizeof = ffi.sizeof
 
 require "resty.openssl.include.x509.name"
 local objects_lib = require "resty.openssl.objects"
@@ -67,7 +66,7 @@ end
 
 function _M.dup(ctx)
   if not ffi.istype(x509_name_ptr_ct, ctx) then
-    return nil, "x509.name.dup: expect a x509.name ctx at #1"
+    return nil, "x509.name.dup: expect a x509.name ctx at #1, got " .. type(ctx)
   end
   local ctx = C.X509_NAME_dup(ctx)
   ffi_gc(ctx, C.X509_NAME_free)

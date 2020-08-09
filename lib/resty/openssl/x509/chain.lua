@@ -34,7 +34,7 @@ end
 
 function _M.dup(ctx)
   if ctx == nil or not ffi.istype(stack_ptr_ct, ctx) then
-    return nil, "x509.chain.dup: expect a stack ctx at #1"
+    return nil, "x509.chain.dup: expect a stack ctx at #1, got " .. type(ctx)
   end
   -- sk_X509_dup plus up ref for each X509 element
   local ctx = C.X509_chain_up_ref(ctx)

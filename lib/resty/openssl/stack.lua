@@ -143,4 +143,13 @@ _M.all_func = function(mt)
   end
 end
 
+_M.deep_copy_of = function(typ)
+  local dup = C[typ .. "_dup"]
+  local free = C[typ .. "_free"]
+
+  return function(ctx)
+    return stack_macro.OPENSSL_sk_deep_copy(ctx, dup, free)
+  end
+end
+
 return _M

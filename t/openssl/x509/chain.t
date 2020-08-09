@@ -143,3 +143,31 @@ __DATA__
 "
 --- no_error_log
 [error]
+
+=== TEST 6: Element is not freed when stack is duplicated
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local cert, key = require("helper").create_self_signed()
+            local chain = require("resty.openssl.x509.chain")
+            local c = myassert(chain.new())
+
+            local ok = myassert(c:add(cert))
+
+            local c2 = myassert(chain.dup(c.ctx))
+
+            c = nil
+            collectgarbage("collect")
+            ngx.say(c2:count())
+            ngx.say(#c2[1]:digest())
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"1
+20
+"
+--- no_error_log
+[error]

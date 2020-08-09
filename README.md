@@ -133,6 +133,7 @@ Table of Contents
     + [name:__metamethods](#name__metamethods)
   * [resty.openssl.x509.altname](#restyopensslx509altname)
     + [altname.new](#altnamenew)
+    + [altname.dup](#altnamedup)
     + [altname.istype](#altnameistype)
     + [altname:add](#altnameadd)
     + [altname:__metamethods](#altname__metamethods)
@@ -156,6 +157,12 @@ Table of Contents
     + [info_access.istype](#info_accessistype)
     + [info_access:add](#info_accessadd)
     + [info_access:__metamethods](#info_access__metamethods)
+  * [resty.openssl.x509.extensions](#restyopensslx509extensions)
+    + [extensions.new](#extensionsnew)
+    + [extensions.dup](#extensionsdup)
+    + [extensions.istype](#extensionsistype)
+    + [extensions:add](#extensionsadd)
+    + [extensions:__metamethods](#extensions__metamethods)
   * [resty.openssl.x509.chain](#restyopensslx509chain)
     + [chain.new](#chainnew)
     + [chain.dup](#chaindup)
@@ -176,6 +183,8 @@ Table of Contents
     + [all](#all)
     + [count](#count)
     + [index](#index)
+- [General rules on garbage collection](#general-rules-on-garbage-collection)
+- [Code generation](#code-generation)
 - [Compatibility](#compatibility)
 - [Copyright and License](#copyright-and-license)
 - [See Also](#see-also)
@@ -237,6 +246,7 @@ return {
   csr = require("resty.openssl.x509.csr"),
   crl = require("resty.openssl.x509.crl"),
   extension = require("resty.openssl.x509.extension"),
+  extensions = require("resty.openssl.x509.extensions"),
   name = require("resty.openssl.x509.name"),
   store = require("resty.openssl.x509.store"),
 }
@@ -2055,6 +2065,15 @@ Creates an empty `altname` instance.
 
 [Back to TOC](#table-of-contents)
 
+### altname.dup
+
+**syntax**: *altname, err = altname.dup(altname_ptr_cdata)*
+
+Duplicates a `STACK_OF(GENERAL_NAMES)` to create a new `altname` instance. The function creates a new
+stack but won't duplicates elements in the stack.
+
+[Back to TOC](#table-of-contents)
+
 ### altname.istype
 
 **syntax**: *altname = digest.istype(table)*
@@ -2246,8 +2265,7 @@ Creates a new `dist_points` instance.
 **syntax**: *dp, err = dist_points.dup(dist_points_ptr_cdata)*
 
 Duplicates a `STACK_OF(DIST_POINT)` to create a new `dist_points` instance. The function creates a new
-stack and increases reference count for all elements by 1. But it won't duplicate the elements
-themselves.
+stack but won't duplicates elements in the stack.
 
 [Back to TOC](#table-of-contents)
 
@@ -2294,8 +2312,7 @@ Creates a new `info_access` instance.
 **syntax**: *aia, err = info_access.dup(info_access_ptr_cdata)*
 
 Duplicates a `AUTHORITY_INFO_ACCESS` to create a new `info_access` instance. The function creates a new
-stack and increases reference count for all elements by 1. But it won't duplicate the elements
-themselves.
+stack but won't duplicates elements in the stack.
 
 [Back to TOC](#table-of-contents)
 
@@ -2323,6 +2340,62 @@ Add a `x509` object to the info_access. The first argument must be a
 **syntax**: *len = #info_access*
 
 **syntax**: *obj = info_access[i]*
+
+Access the underlying objects as it's a Lua table. Make sure your LuaJIT compiled
+with `-DLUAJIT_ENABLE_LUA52COMPAT` flag; otherwise use `all`, `each`, `index` and `count`
+instead.
+
+See also [functions for stack-like objects](#functions-for-stack-like-objects).
+
+[Back to TOC](#table-of-contents)
+
+## resty.openssl.x509.extensions
+
+Module to interact with X.509 Extension stack.
+
+[Back to TOC](#table-of-contents)
+
+### extensions.new
+
+**syntax**: *ch, err = extensions.new()*
+
+Creates a new `extensions` instance.
+
+[Back to TOC](#table-of-contents)
+
+### extensions.dup
+
+**syntax**: *ch, err = extensions.dup(extensions_ptr_cdata)*
+
+Duplicates a `STACK_OF(X509_EXTENSION)` to create a new `extensions` instance. The function creates a new
+stack but won't duplicates elements in the stack.
+
+[Back to TOC](#table-of-contents)
+
+### extensions.istype
+
+**syntax**: *ok = extensions.istype(table)*
+
+Returns `true` if table is an instance of `extensions`. Returns `false` otherwise.
+
+[Back to TOC](#table-of-contents)
+
+### extensions:add
+
+**syntax**: *ok, err = extensions:add(x509)*
+
+Add a `x509` object to the extensions. The first argument must be a
+[resty.openssl.x509](#restyopensslx509) instance.
+
+[Back to TOC](#table-of-contents)
+
+### extensions:__metamethods
+
+**syntax**: *for i, obj in ipairs(extensions)*
+
+**syntax**: *len = #extensions*
+
+**syntax**: *obj = extensions[i]*
 
 Access the underlying objects as it's a Lua table. Make sure your LuaJIT compiled
 with `-DLUAJIT_ENABLE_LUA52COMPAT` flag; otherwise use `all`, `each`, `index` and `count`
@@ -2564,7 +2637,27 @@ name:add("L", "Mars")
     - If not, set GC handler to sk_free
       - Additionally, the stack duplicates the element when it's added to stack, a GC handler for the duplicate
         must be set. But a reference should be kept in Lua land to prevent premature
-        gc of individual elements. (See x509.altname)
+        gc of individual elements. (See x509.altname).
+    - Shallow copy for stack is fine because in current design user can't modify the element in the
+      stack directly. Each elemented is duplicated when added to stack and when returned.
+
+[Back to TOC](#table-of-contents)
+
+Code generation
+====
+
+Lots of functions and tests for X509, CSR and CRL are generated from templates under
+[scripts](https://github.com/fffonion/lua-resty-openssl/tree/master/scripts)
+directory. Those functions and tests are either commented with `AUTO GENERATED` or `AUTOGEN`.
+
+When making changes to them, please update the template under `scripts/templates` instead. Then
+regenerate them again.
+
+```
+cd scripts
+pip3 install -r requirements.txt
+python3 ./x509_autogen.py
+```
 
 [Back to TOC](#table-of-contents)
 

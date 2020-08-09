@@ -1,5 +1,6 @@
 local ffi = require "ffi"
 local C = ffi.C
+local ffi_gc = ffi.gc
 
 local stack_lib = require "resty.openssl.stack"
 local extension_lib = require "resty.openssl.x509.extension"
@@ -10,13 +11,11 @@ local _M = {}
 local stack_ptr_ct = ffi.typeof("OPENSSL_STACK*")
 
 local STACK = "X509_EXTENSION"
+local gc = stack_lib.gc_of(STACK)
 local new = stack_lib.new_of(STACK)
 local add = stack_lib.add_of(STACK)
+local dup = stack_lib.dup_of(STACK)
 local mt = stack_lib.mt_of(STACK, extension_lib.dup, _M)
-
-_M.all = stack_lib.all_func(mt)
-_M.index = mt.__index
-_M.count = mt.__len
 
 function _M.new()
   local raw = new()
@@ -34,6 +33,22 @@ function _M.istype(l)
             and l.stack_of and l.stack_of == STACK
 end
 
+function _M.dup(ctx)
+  if ctx == nil or not ffi.istype(stack_ptr_ct, ctx) then
+    return nil, "x509.extensions.dup: expect a stack ctx at #1, got " .. type(ctx)
+  end
+
+  local dup_ctx = dup(ctx)
+
+  return setmetatable({
+    ctx = dup_ctx,
+    -- don't let lua gc the original stack to keep its elements
+    _dupped_from = ctx,
+    _is_shallow_copy = true,
+    _elem_refs = {},
+    _elem_refs_idx = 1,
+  }, mt), nil
+end
 
 function _M:add(extension)
   if not extension_lib.istype(extension) then
@@ -51,7 +66,20 @@ function _M:add(extension)
     return nil, err
   end
 
+  -- if the stack is duplicated, the gc handler is not pop_free
+  -- handle the gc by ourselves
+  if self._is_shallow_copy then
+    ffi_gc(dup, C.X509_EXTENSION_free)
+    self._elem_refs[self._elem_refs_idx] = dup
+    self._elem_refs_idx = self._elem_refs_idx + 1
+  end
+
   return true
 end
+
+_M.all = stack_lib.all_func(mt)
+_M.each = mt.__ipairs
+_M.index = mt.__index
+_M.count = mt.__len
 
 return _M

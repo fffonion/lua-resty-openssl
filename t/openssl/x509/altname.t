@@ -139,3 +139,31 @@ DNS 2.com
 "
 --- no_error_log
 [error]
+
+=== TEST 6: Element is not freed when stack is duplicated
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local altname = require("resty.openssl.x509.altname")
+            local c = myassert(altname.new())
+
+            local ok = myassert(c:add("DNS", "example.com"))
+
+            local c2 = myassert(altname.dup(c.ctx))
+
+            c = nil
+            collectgarbage("collect")
+            ngx.say(c2:count())
+            local k, v = unpack(c2[1])
+            ngx.say(k, " ", v)
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"1
+DNS example.com
+"
+--- no_error_log
+[error]
