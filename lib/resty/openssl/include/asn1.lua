@@ -22,6 +22,7 @@ ffi.cdef [[
 
   int ASN1_INTEGER_set(ASN1_INTEGER *a, long v);
   long ASN1_INTEGER_get(const ASN1_INTEGER *a);
+  int ASN1_ENUMERATED_set(ASN1_ENUMERATED *a, long v);
 ]]
 
 local function declare_asn1_functions(typ)
@@ -41,6 +42,7 @@ end
 declare_asn1_functions("ASN1_INTEGER")
 declare_asn1_functions("ASN1_OBJECT")
 declare_asn1_functions("ASN1_STRING")
+declare_asn1_functions("ASN1_ENUMERATED")
 
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER

@@ -44,6 +44,7 @@ build = {
       ["resty.openssl.include.x509.extension"] = "lib/resty/openssl/include/x509/extension.lua",
       ["resty.openssl.include.x509.init"] = "lib/resty/openssl/include/x509/init.lua",
       ["resty.openssl.include.x509.name"] = "lib/resty/openssl/include/x509/name.lua",
+      ["resty.openssl.include.x509.revoked"] = "lib/resty/openssl/include/x509/revoked.lua",
       ["resty.openssl.include.x509_vfy"] = "lib/resty/openssl/include/x509_vfy.lua",
       ["resty.openssl.include.x509v3"] = "lib/resty/openssl/include/x509v3.lua",
       ["resty.openssl.kdf"] = "lib/resty/openssl/kdf.lua",
@@ -65,6 +66,7 @@ build = {
       ["resty.openssl.x509.extensions"] = "lib/resty/openssl/x509/extensions.lua",
       ["resty.openssl.x509.init"] = "lib/resty/openssl/x509/init.lua",
       ["resty.openssl.x509.name"] = "lib/resty/openssl/x509/name.lua",
+      ["resty.openssl.x509.revoked"] = "lib/resty/openssl/x509/revoked.lua",
       ["resty.openssl.x509.store"] = "lib/resty/openssl/x509/store.lua"
    }
 }

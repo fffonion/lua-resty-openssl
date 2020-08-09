@@ -42,7 +42,8 @@ local function create_csr(domain_pkey, ...)
     return nil, err
   end
 
-  ok, err = csr:sign(domain_pkey)
+  local d = require("resty.openssl.digest").new("SHA256")
+  ok, err = csr:sign(domain_pkey, d)
   if err then
     return nil, err
   end

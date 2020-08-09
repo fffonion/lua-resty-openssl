@@ -6,6 +6,7 @@ require "resty.openssl.include.x509.crl"
 require "resty.openssl.include.pem"
 require "resty.openssl.include.x509v3"
 local asn1_lib = require("resty.openssl.asn1")
+local revoked_lib = require("resty.openssl.x509.revoked")
 local digest_lib = require("resty.openssl.digest")
 local extension_lib = require("resty.openssl.x509.extension")
 local pkey_lib = require("resty.openssl.pkey")
@@ -152,6 +153,28 @@ end
 function _M:to_PEM()
   return tostring(self, "PEM")
 end
+
+--- Adds revoked item to stack of revoked certificates of crl
+-- @tparam table Instance of crl module
+-- @tparam table Instance of revoked module
+-- @treturn boolean true if revoked item was successfully added or false otherwise
+-- @treturn[opt] string Returns optional error message in case of error
+function _M:add_revoked(revoked)
+  if not revoked_lib.istype(revoked) then
+    return false, "x509.crl:add_revoked: expect a revoked instance at #1"
+  end
+  local ctx = C.X509_REVOKED_dup(revoked.ctx)
+  if ctx == nil then
+    return nil, "x509.crl:add_revoked: X509_REVOKED_dup() failed"
+  end
+
+  if C.X509_CRL_add0_revoked(self.ctx, ctx) == 0 then
+     return false, format_error("x509.crl:add_revoked")
+  end
+
+  return true
+end
+
 
 -- START AUTO GENERATED CODE
 
