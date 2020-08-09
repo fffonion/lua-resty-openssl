@@ -553,7 +553,7 @@ function _M:verify(signature, digest)
     end
     ffi_gc(md_ctx, C.EVP_MD_CTX_free)
     if C.EVP_DigestVerifyInit(md_ctx, nil, nil, nil, self.ctx) ~= 1 then
-      return nil, format_error("pkey:verify: EVP_DigestSignInit")
+      return nil, format_error("pkey:verify: EVP_DigestVerifyInit")
     end
     code = C.EVP_DigestVerify(md_ctx, signature, #signature, digest, #digest)
   end
