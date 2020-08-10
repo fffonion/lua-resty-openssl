@@ -43,6 +43,7 @@ declare_asn1_functions("ASN1_INTEGER")
 declare_asn1_functions("ASN1_OBJECT")
 declare_asn1_functions("ASN1_STRING")
 declare_asn1_functions("ASN1_ENUMERATED")
+declare_asn1_functions("ASN1_TIME")
 
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER

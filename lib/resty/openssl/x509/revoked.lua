@@ -56,7 +56,7 @@ function _M.new(sn, time, reason)
   if time == nil then
     return nil, format_error("x509.revoked.new: ASN1_TIME_set()")
   end
-  ffi_gc(time, C.ASN1_STRING_free)
+  ffi_gc(time, C.ASN1_TIME_free)
 
   if C.X509_REVOKED_set_revocationDate(ctx, time) == 0 then
     return nil, format_error("x509.revoked.new: X509_REVOKED_set_revocationDate()")
