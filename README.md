@@ -192,6 +192,7 @@ Table of Contents
 - [General rules on garbage collection](#general-rules-on-garbage-collection)
 - [Code generation](#code-generation)
 - [Compatibility](#compatibility)
+- [Credits](#credits)
 - [Copyright and License](#copyright-and-license)
 - [See Also](#see-also)
 
@@ -2742,6 +2743,15 @@ If you plan to use this library on an untested version of OpenSSL (like custom b
 
 [Back to TOC](#table-of-contents)
 
+
+Credits
+====
+
+This project receives contribution from following developers:
+
+- [@nasrullo](https://github.com/nasrullo)
+
+[Back to TOC](#table-of-contents)
 
 Copyright and License
 =====================
