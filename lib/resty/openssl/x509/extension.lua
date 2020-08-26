@@ -2,10 +2,12 @@ local ffi = require "ffi"
 local C = ffi.C
 local ffi_gc = ffi.gc
 local ffi_new = ffi.new
+local ffi_cast = ffi.cast
 
 require "resty.openssl.include.x509"
 require "resty.openssl.include.x509.extension"
 local objects_lib = require "resty.openssl.objects"
+local stack_lib = require("resty.openssl.stack")
 local util = require "resty.openssl.util"
 local format_error = require("resty.openssl.err").format_error
 
@@ -101,6 +103,35 @@ function _M.from_data(any, nid, crit)
   }, mt)
 
   return self, nil
+end
+
+local NID_subject_alt_name = C.OBJ_sn2nid("subjectAltName")
+assert(NID_subject_alt_name ~= 0)
+
+function _M.to_data(extension, nid)
+  if not _M.istype(extension) then
+    return nil, "x509.extension.dup: expect a x509.extension ctx at #1"
+  elseif type(nid) ~= "number" then
+    return nil, "x509.extension.to_data: expect a table at #2"
+  end
+
+  local void_ptr = C.X509V3_EXT_d2i(extension.ctx)
+  if void_ptr == nil then
+    return nil, format_error("x509.extension:to_data: X509V3_EXT_d2i")
+  end
+
+  if nid == NID_subject_alt_name then
+    -- Note: here we only free the stack itself not elements
+    -- since there seems no way to increase ref count for a GENERAL_NAME
+    -- we left the elements referenced by the new-dup'ed stack
+    ffi_gc(void_ptr, stack_lib.gc_of("GENERAL_NAME"))
+    local got = ffi_cast("GENERAL_NAMES*", void_ptr)
+    local lib = require("resty.openssl.x509.altname")
+    -- the internal ptr is returned, ie we need to copy it
+    return lib.dup(got)
+  end
+
+  return nil, string.format("x509.extension:to_data: don't know how to convert to NID %d", nid)
 end
 
 function _M:get_object()

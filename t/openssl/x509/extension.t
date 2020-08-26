@@ -195,3 +195,26 @@ DNS:test.com, DNS:test2.com
 '
 --- no_error_log
 [error]
+
+=== TEST 8: Convert extension to data
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local altname = require("resty.openssl.x509.altname").new()
+            altname:add("DNS", "test.com")
+            altname:add("DNS", "test2.com")
+            local extension = require("resty.openssl.x509.extension")
+            local c = myassert(extension.from_data(altname, 85, false))
+
+            local alt2 = myassert(extension.to_data(c, 85))
+            ngx.say(alt2:_tostring())
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+'DNS=test.com/DNS=test2.com
+'
+--- no_error_log
+[error]

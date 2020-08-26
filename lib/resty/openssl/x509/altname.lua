@@ -180,9 +180,8 @@ _M.count = mt.__len
 
 -- for use of test only
 function _M:_tostring()
-  local all = self:all()
   local values = {}
-  for k, v in pairs(all) do
+  for k, v in pairs(self) do
     table.insert(values, k .. "=" .. v)
   end
   table.sort(values)

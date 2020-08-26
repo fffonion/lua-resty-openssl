@@ -120,7 +120,7 @@ SwIDAQAB
     "type": "x509.altname",
     "dup": True,
     "extension": "subjectAltName",
-    "sample_printable": 'DNS=www.github.com',
+    "sample_printable": 'DNS=github.com/DNS=www.github.com',
     "get_converter": '''
   -- Note: here we only free the stack itself not elements
   -- since there seems no way to increase ref count for a GENERAL_NAME

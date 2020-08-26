@@ -803,7 +803,7 @@ SwIDAQAB
 --- request
     GET /t
 --- response_body eval
-"DNS=www.github.com"
+"DNS=github.com/DNS=www.github.com"
 --- no_error_log
 [error]
 
