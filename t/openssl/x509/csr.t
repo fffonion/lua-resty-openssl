@@ -149,7 +149,7 @@ x509.csr:sign: expect a pkey instance at #1
 --- config
     location =/t {
         content_by_lua_block {
-            local f = io.open("t/fixtures/ext.csr"):read("*a")
+            local f = io.open("t/fixtures/test.csr"):read("*a")
             local c = myassert(require("resty.openssl.x509.csr").new(f))
             local exts = c:get_extensions()
             if #exts == 0 then
@@ -172,7 +172,7 @@ x509.csr:sign: expect a pkey instance at #1
 --- config
     location =/t {
         content_by_lua_block {
-            local f = io.open("t/fixtures/ext.csr"):read("*a")
+            local f = io.open("t/fixtures/test.csr"):read("*a")
             local c = myassert(require("resty.openssl.x509.csr").new(f))
             local ext, pos = c:get_extension(83)
             if not ext then
@@ -203,7 +203,7 @@ nil
 --- config
     location =/t {
         content_by_lua_block {
-            local f = io.open("t/fixtures/ext.csr"):read("*a")
+            local f = io.open("t/fixtures/test.csr"):read("*a")
             local c = myassert(require("resty.openssl.x509.csr").new(f))
             local ext = c:get_extension('basicConstraints')
             if not ext then
@@ -220,12 +220,12 @@ nil
 --- no_error_log
 [error]
 
-=== TEST 9: x509.csr:get_extension shud return nil if wrong nid name is given
+=== TEST 9: x509.csr:get_extension should return nil if wrong nid name is given
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
         content_by_lua_block {
-            local f = io.open("t/fixtures/ext.csr"):read("*a")
+            local f = io.open("t/fixtures/test.csr"):read("*a")
             local c = myassert(require("resty.openssl.x509.csr").new(f))
             local ext, err = c:get_extension('test')
             if not ext then
@@ -242,13 +242,74 @@ nil
 --- no_error_log
 [error]
 
-
-=== TEST 10: x509.csr:sign should succeed
+=== TEST 10: Adds extension
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
         content_by_lua_block {
-            local f = io.open("t/fixtures/ext.csr"):read("*a")
+            local f = io.open("t/fixtures/test.csr"):read("*a")
+            local c = myassert(require("resty.openssl.x509.csr").new(f))
+            local altname = require("resty.openssl.x509.altname").new()
+            altname:add("DNS", "test.com")
+            altname:add("DNS", "test2.com")
+            local extension = require("resty.openssl.x509.extension")
+            local ext = myassert(extension.from_data(altname, 85, false))
+
+            local ok = myassert(c:add_extension(ext))
+
+            local ext, _ = c:get_extension("subjectAltName")
+
+            ngx.update_time()
+            local fname = "ci_" .. math.floor(ngx.now() * 1000)
+            local f = io.open(fname, "wb")
+            f:write(c:tostring())
+            f:close()
+            ngx.say(io.popen("openssl req -in " .. fname .. " -noout -text", 'r'):read("*a"))
+            os.remove(fname)
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+"DNS:example.com.+DNS:test.com, DNS:test2.com
+"
+--- no_error_log
+[error]
+
+=== TEST 11: Set extension
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/test.csr"):read("*a")
+            local c = myassert(require("resty.openssl.x509.csr").new(f))
+            local altname = require("resty.openssl.x509.altname").new()
+            altname:add("DNS", "test.com")
+            altname:add("DNS", "test2.com")
+            local extension = require("resty.openssl.x509.extension")
+            local ext = myassert(extension.from_data(altname, 85, false))
+
+            local ok = myassert(c:set_extension(ext))
+
+            local ext, _ = c:get_extension("subjectAltName")
+
+            ngx.say(tostring(ext))
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"DNS:test.com, DNS:test2.com
+"
+--- no_error_log
+[error]
+
+=== TEST 12: x509.csr:sign should succeed
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/test.csr"):read("*a")
             local c = myassert(require("resty.openssl.x509.csr").new(f))
             local d = myassert(require("resty.openssl.digest").new("SHA256"))
             local p = myassert(require("resty.openssl.pkey").new())
@@ -270,7 +331,7 @@ nil
 # START AUTO GENERATED CODE
 
 
-=== TEST 11: x509.csr:get_subject_name (AUTOGEN)
+=== TEST 13: x509.csr:get_subject_name (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -286,11 +347,11 @@ nil
 --- request
     GET /t
 --- response_body eval
-"C=US/CN=test.mars/L=San Francisco/O=Mars Co./OU=Terraforming Department/ST=California"
+"C=US/CN=example.com/L=Los Angeles/O=SSL Support/OU=SSL Support/ST=California"
 --- no_error_log
 [error]
 
-=== TEST 12: x509.csr:set_subject_name (AUTOGEN)
+=== TEST 14: x509.csr:set_subject_name (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -318,7 +379,7 @@ nil
 --- no_error_log
 [error]
 
-=== TEST 13: x509.csr:get_pubkey (AUTOGEN)
+=== TEST 15: x509.csr:get_pubkey (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -335,19 +396,19 @@ nil
     GET /t
 --- response_body eval
 "-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAy00jcwmJKMr9+/RwQd0G
-CAvw685rqAJD1uKuBotlHTeN95xHI+xZCsRpFblAdhtaDb5Xlc33Fn+cjJ8nF2WS
-1HslaZVM51m3sePsDlufBuVCKh+7KqQk64pNejYBasSR+jG7WWEjivR8yclQouJZ
-T7WaF6SEET2dxiqXWAWmSbT4J3heP4b3xAAEqsa9kZJX9vQNOB5mqOyvrtqlULNm
-WJkKjf8gOtuZePfopEHuyUK2YGVBHCciIfHKeBsIPc2EMajEZYSl0N5/1i4zFxdU
-XlLP/qQqafrc2noEz6lv5LXbK2v4T05/5L+klJzcVnCnWnVsaYAUkaEJ5kNyIHpU
-AQIDAQAB
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwPOIBIoblSLFv/ifj8GD
+CNL5NhDX2JVUQKcWC19KtWYQg1HPnaGIy+Dj9tYSBw8T8xc9hbJ1TYGbBIMKfBUz
+KoTt5yLdVIM/HJm3m9ImvAbK7TYcx1U9TJEMxN6686whAUMBr4B7ql4VTXqu6TgD
+cdbcQ5wsPVOiFHJTTwgVwt7eVCBMFAkZn+qQz+WigM5HEp8KFrzwAK142H2ucuyf
+gGS4+XQSsUdwNWh9GPRZgRt3R2h5ymYkQB/cbg596alCquoizI6QCfwQx3or9Dg1
+f3rlwf8H5HIVH3hATGIr7GpbKka/JH2PYNGfi5KqsJssVQfu84m+5WXDB+90KHJE
+cwIDAQAB
 -----END PUBLIC KEY-----
 "
 --- no_error_log
 [error]
 
-=== TEST 14: x509.csr:set_pubkey (AUTOGEN)
+=== TEST 16: x509.csr:set_pubkey (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -375,7 +436,7 @@ AQIDAQAB
 --- no_error_log
 [error]
 
-=== TEST 15: x509.csr:get_version (AUTOGEN)
+=== TEST 17: x509.csr:get_version (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -394,7 +455,7 @@ AQIDAQAB
 --- no_error_log
 [error]
 
-=== TEST 16: x509.csr:set_version (AUTOGEN)
+=== TEST 18: x509.csr:set_version (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -417,6 +478,76 @@ AQIDAQAB
     GET /t
 --- response_body eval
 "ok"
+--- no_error_log
+[error]
+
+=== TEST 19: x509.csr:get_subject_alt_name (AUTOGEN)
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/test.csr"):read("*a")
+            local c = myassert(require("resty.openssl.x509.csr").new(f))
+
+            local get = myassert(c:get_subject_alt_name())
+            get = get:_tostring()
+            ngx.print(get)
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"DNS=example.com"
+--- no_error_log
+[error]
+
+=== TEST 20: x509.csr:set_subject_alt_name (AUTOGEN)
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/test.csr"):read("*a")
+            local c = myassert(require("resty.openssl.x509.csr").new(f))
+            local toset = require("resty.openssl.x509.altname").new():add('DNS', 'earth.galaxy')
+            local ok = myassert(c:set_subject_alt_name(toset))
+
+            local get = myassert(c:get_subject_alt_name())
+            get = get:_tostring()
+            toset = toset:_tostring()
+            if get ~= toset then
+              ngx.say(get)
+              ngx.say(toset)
+            else
+              ngx.print("ok")
+            end
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"ok"
+--- no_error_log
+[error]
+
+=== TEST 22: x509.csr:get/set_subject_alt_name_critical (AUTOGEN)
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/test.csr"):read("*a")
+            local c = myassert(require("resty.openssl.x509.csr").new(f))
+
+            local crit = myassert(c:get_subject_alt_name_critical())
+
+            local ok, err = myassert(c:set_subject_alt_name_critical(not crit))
+
+            ngx.say(c:get_subject_alt_name_critical() == not crit)
+        }
+    }
+--- request
+    GET /t
+--- response_body
+true
 --- no_error_log
 [error]
 # END AUTO GENERATED CODE

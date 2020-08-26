@@ -515,8 +515,6 @@ function _M:set_serial_number(toset)
   if accessors.set_serial_number(self.ctx, toset) == 0 then
     return false, format_error("x509:set_serial_number")
   end
-
-  return true
 end
 
 -- AUTO GENERATED
@@ -543,8 +541,6 @@ function _M:set_not_before(toset)
   if accessors.set_not_before(self.ctx, toset) == 0 then
     return false, format_error("x509:set_not_before")
   end
-
-  return true
 end
 
 -- AUTO GENERATED
@@ -571,8 +567,6 @@ function _M:set_not_after(toset)
   if accessors.set_not_after(self.ctx, toset) == 0 then
     return false, format_error("x509:set_not_after")
   end
-
-  return true
 end
 
 -- AUTO GENERATED
@@ -596,8 +590,6 @@ function _M:set_pubkey(toset)
   if accessors.set_pubkey(self.ctx, toset) == 0 then
     return false, format_error("x509:set_pubkey")
   end
-
-  return true
 end
 
 -- AUTO GENERATED
@@ -621,8 +613,6 @@ function _M:set_subject_name(toset)
   if accessors.set_subject_name(self.ctx, toset) == 0 then
     return false, format_error("x509:set_subject_name")
   end
-
-  return true
 end
 
 -- AUTO GENERATED
@@ -646,8 +636,6 @@ function _M:set_issuer_name(toset)
   if accessors.set_issuer_name(self.ctx, toset) == 0 then
     return false, format_error("x509:set_issuer_name")
   end
-
-  return true
 end
 
 -- AUTO GENERATED
@@ -675,8 +663,6 @@ function _M:set_version(toset)
   if accessors.set_version(self.ctx, toset) == 0 then
     return false, format_error("x509:set_version")
   end
-
-  return true
 end
 
 local NID_subject_alt_name = C.OBJ_sn2nid("subjectAltName")
@@ -720,7 +706,6 @@ function _M:set_subject_alt_name(toset)
   if C.X509_add1_ext_i2d(self.ctx, NID_subject_alt_name, toset, 0, 0x2) ~= 1 then
     return false, format_error("x509:set_subject_alt_name")
   end
-
   return true
 end
 
@@ -775,7 +760,6 @@ function _M:set_issuer_alt_name(toset)
   if C.X509_add1_ext_i2d(self.ctx, NID_issuer_alt_name, toset, 0, 0x2) ~= 1 then
     return false, format_error("x509:set_issuer_alt_name")
   end
-
   return true
 end
 
@@ -867,7 +851,6 @@ function _M:set_basic_constraints(toset)
   if C.X509_add1_ext_i2d(self.ctx, NID_basic_constraints, toset, 0, 0x2) ~= 1 then
     return false, format_error("x509:set_basic_constraints")
   end
-
   return true
 end
 
@@ -922,7 +905,6 @@ function _M:set_info_access(toset)
   if C.X509_add1_ext_i2d(self.ctx, NID_info_access, toset, 0, 0x2) ~= 1 then
     return false, format_error("x509:set_info_access")
   end
-
   return true
 end
 
@@ -977,7 +959,6 @@ function _M:set_crl_distribution_points(toset)
   if C.X509_add1_ext_i2d(self.ctx, NID_crl_distribution_points, toset, 0, 0x2) ~= 1 then
     return false, format_error("x509:set_crl_distribution_points")
   end
-
   return true
 end
 

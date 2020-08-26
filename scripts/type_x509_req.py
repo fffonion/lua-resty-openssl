@@ -10,20 +10,20 @@ defines = {
     "field": "subject_name",
     "type": "x509.name",
     "dup": True,
-    "sample_printable": "C=US/CN=test.mars/L=San Francisco/O=Mars Co./OU=Terraforming Department/ST=California",
+    "sample_printable": "C=US/CN=example.com/L=Los Angeles/O=SSL Support/OU=SSL Support/ST=California",
 },
 
 {
     "field": "pubkey",
     "type": "pkey",
     "sample_printable": '''-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAy00jcwmJKMr9+/RwQd0G
-CAvw685rqAJD1uKuBotlHTeN95xHI+xZCsRpFblAdhtaDb5Xlc33Fn+cjJ8nF2WS
-1HslaZVM51m3sePsDlufBuVCKh+7KqQk64pNejYBasSR+jG7WWEjivR8yclQouJZ
-T7WaF6SEET2dxiqXWAWmSbT4J3heP4b3xAAEqsa9kZJX9vQNOB5mqOyvrtqlULNm
-WJkKjf8gOtuZePfopEHuyUK2YGVBHCciIfHKeBsIPc2EMajEZYSl0N5/1i4zFxdU
-XlLP/qQqafrc2noEz6lv5LXbK2v4T05/5L+klJzcVnCnWnVsaYAUkaEJ5kNyIHpU
-AQIDAQAB
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwPOIBIoblSLFv/ifj8GD
+CNL5NhDX2JVUQKcWC19KtWYQg1HPnaGIy+Dj9tYSBw8T8xc9hbJ1TYGbBIMKfBUz
+KoTt5yLdVIM/HJm3m9ImvAbK7TYcx1U9TJEMxN6686whAUMBr4B7ql4VTXqu6TgD
+cdbcQ5wsPVOiFHJTTwgVwt7eVCBMFAkZn+qQz+WigM5HEp8KFrzwAK142H2ucuyf
+gGS4+XQSsUdwNWh9GPRZgRt3R2h5ymYkQB/cbg596alCquoizI6QCfwQx3or9Dg1
+f3rlwf8H5HIVH3hATGIr7GpbKka/JH2PYNGfi5KqsJssVQfu84m+5WXDB+90KHJE
+cwIDAQAB
 -----END PUBLIC KEY-----
 ''',
 },
@@ -42,6 +42,23 @@ AQIDAQAB
 '''
   got = tonumber(got) + 1
 ''',
+},
+
+################## extensions ######################
+
+{
+    "field": "subject_alt_name",
+    "type": "x509.altname",
+    "dup": True,
+    "extension": "subjectAltName",
+    "sample_printable": 'DNS=example.com',
+    "get_converter": '''
+  -- Note: here we only free the stack itself not elements
+  -- since there seems no way to increase ref count for a GENERAL_NAME
+  -- we left the elements referenced by the new-dup'ed stack
+  local got_ref = got
+  ffi_gc(got_ref, stack_lib.gc_of("GENERAL_NAME"))
+  got = ffi_cast("GENERAL_NAMES*", got_ref)''',
 },
 ]
 }

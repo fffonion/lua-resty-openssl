@@ -1,19 +1,19 @@
 local ffi = require "ffi"
 local C = ffi.C
 local ffi_gc = ffi.gc
+local ffi_cast = ffi.cast
 
 require "resty.openssl.include.pem"
 require "resty.openssl.include.x509v3"
 require "resty.openssl.include.x509.csr"
 require "resty.openssl.include.asn1"
-local stack_macro = require "resty.openssl.include.stack"
 local stack_lib = require "resty.openssl.stack"
 local pkey_lib = require "resty.openssl.pkey"
-local altname_lib = require "resty.openssl.x509.altname"
 local digest_lib = require("resty.openssl.digest")
 local extension_lib = require("resty.openssl.x509.extension")
 local extensions_lib = require("resty.openssl.x509.extensions")
 local util = require "resty.openssl.util"
+local ctypes = require "resty.openssl.aux.ctypes"
 local txtnid2nid = require("resty.openssl.objects").txtnid2nid
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
@@ -58,6 +58,9 @@ local _M = {}
 local mt = { __index = _M, __tostring = tostring }
 
 local x509_req_ptr_ct = ffi.typeof("X509_REQ*")
+
+local stack_ptr_type = ffi.typeof("struct stack_st *[1]")
+local x509_extensions_gc = stack_lib.gc_of("X509_EXTENSION")
 
 function _M.new(csr, fmt)
   local ctx
@@ -114,45 +117,6 @@ function _M.istype(l)
   return l and l and l.ctx and ffi.istype(x509_req_ptr_ct, l.ctx)
 end
 
-
-local X509_EXTENSION_stack_gc = stack_lib.gc_of("X509_EXTENSION")
-local stack_ptr_type = ffi.typeof("struct stack_st *[1]")
-
--- https://github.com/wahern/luaossl/blob/master/src/openssl.c
-local function xr_modifyRequestedExtension(csr, target_nid, value, crit, flags)
-  local has_attrs = C.X509_REQ_get_attr_count(csr)
-  if has_attrs > 0 then
-    return false, "x509.csr:xr_modifyRequestedExtension: X509_REQ already has more than more attributes" ..
-          "modifying is currently not supported"
-  end
-
-  local sk = stack_ptr_type()
-  sk[0] = C.X509_REQ_get_extensions(csr)
-
-  local code
-  code = C.X509V3_add1_i2d(sk, target_nid, value, crit, flags)
-  local err
-  if code ~= 1 then
-    err = "x509.csr:xr_modifyRequestedExtension: X509V3_add1_i2d() failed: " .. code
-  end
-  code = C.X509_REQ_add_extensions(csr, sk[0])
-  if code ~= 1 then
-    err = "x509.csr:xr_modifyRequestedExtension: X509_REQ_add_extensions() failed: " .. code
-  end
-
-  X509_EXTENSION_stack_gc(sk[0])
-  return true, err
-end
-
-function _M:set_subject_alt_name(alt)
-  if not altname_lib.istype(alt) then
-    return false, "x509.csr:set_subject_alt_name: expect a x509.altname instance at #1"
-  end
-  -- #define NID_subject_alt_name            85
-  -- #define X509V3_ADD_REPLACE              2L
-  return xr_modifyRequestedExtension(self.ctx, 85, alt.ctx, 0, 2)
-end
-
 -- backward compatibility
 _M.set_subject_alt = _M.set_subject_alt_name
 
@@ -164,12 +128,10 @@ function _M:to_PEM()
   return tostring(self, "PEM")
 end
 
-local x509_extensions_gc = stack_lib.gc_of("X509_EXTENSION")
-
 --- Get all csr extensions
 -- @tparam table self Instance of csr
 -- @treturn Extensions object
-function _M.get_extensions(self)
+function _M:get_extensions()
   local extensions = C.X509_REQ_get_extensions(self.ctx)
   -- GC handler is sk_X509_EXTENSION_pop_free
   ffi_gc(extensions, x509_extensions_gc)
@@ -177,18 +139,13 @@ function _M.get_extensions(self)
   return extensions_lib.dup(extensions)
 end
 
---- Get a csr extension
--- @tparam table self Instance of csr
--- @tparam string|number Nid number or name of the extension
--- @tparam number Position to start looking for the extension; default to look from start if omitted
--- @treturn Parsed extension object or nil if not found
-function _M.get_extension(self, nid, last_pos)
-  local i, err = txtnid2nid(nid)
+local function get_extension(ctx, nid_txt, last_pos)
+  local nid, err = txtnid2nid(nid_txt)
   if err then
     return nil, nil, err
   end
 
-  local extensions = C.X509_REQ_get_extensions(self.ctx)
+  local extensions = C.X509_REQ_get_extensions(ctx)
   if extensions == nil then
     return nil, nil, format_error("csr.get_extension: X509_REQ_get_extensions")
   end
@@ -196,20 +153,137 @@ function _M.get_extension(self, nid, last_pos)
 
   -- make 1-index array to 0-index
   last_pos = (last_pos or 0) -1
-  local ext_idx = C.X509v3_get_ext_by_NID(extensions, i, last_pos)
+  local ext_idx = C.X509v3_get_ext_by_NID(extensions, nid, last_pos)
   if ext_idx == -1 then
-    err = ("x509.csr.get_extension: X509v3_get_ext_by_NID extension for %d not found"):format(nid)
-    return nil, nil, format_error(err)
+    err = ("X509v3_get_ext_by_NID extension for %d not found"):format(nid)
+    return nil, -1, format_error(err)
   end
 
   local ctx = C.X509v3_get_ext(extensions, ext_idx)
   if ctx == nil then
-    return nil, nil, format_error("csr.get_extension: X509v3_get_ext")
+    return nil, nil, format_error("X509v3_get_ext")
   end
 
-  return extension_lib.dup(ctx), ext_idx+1, nil
+  return ctx, ext_idx, nil
 end
 
+--- Get a csr extension
+-- @tparam table self Instance of csr
+-- @tparam string|number Nid number or name of the extension
+-- @tparam number Position to start looking for the extension; default to look from start if omitted
+-- @treturn Parsed extension object or nil if not found
+function _M:get_extension(nid_txt, last_pos)
+  local ctx, pos, err = get_extension(self.ctx, nid_txt, last_pos)
+  if err then
+    return nil, nil, "x509.csr:get_extension: " .. err
+  end
+  local ext, err = extension_lib.dup(ctx)
+  if err then
+    return nil, nil, "x509.csr:get_extension: " .. err
+  end
+  return ext, pos+1
+end
+
+local function modify_extension(replace, ctx, nid, toset, crit)
+  local extensions_ptr = stack_ptr_type()
+  extensions_ptr[0] = C.X509_REQ_get_extensions(ctx)
+  local need_cleanup = extensions_ptr[0] ~= nil
+  -- extensions_ptr being nil is fine: it may just because there's no extension yet
+
+  local flag
+  if replace then
+    -- x509v3.h: # define X509V3_ADD_REPLACE              2L
+    flag = 0x2
+  else
+    -- x509v3.h: # define X509V3_ADD_APPEND               1L
+    flag = 0x1
+  end
+
+  local code = C.X509V3_add1_i2d(extensions_ptr, nid, toset, crit and 1 or 0, flag)
+  -- when the stack is newly allocated, we want to cleanup the newly created stack as well
+  -- setting the gc handler here as it's mutated in X509V3_add1_i2d if it's pointing to NULL
+  ffi_gc(extensions_ptr[0], x509_extensions_gc)
+  if code ~= 1 then
+    return false, format_error("X509V3_add1_i2d", code)
+  end
+
+  code = C.X509_REQ_add_extensions(ctx, extensions_ptr[0])
+  if code ~= 1 then
+    return false, format_error("X509_REQ_add_extensions", code)
+  end
+
+  if need_cleanup then
+    -- cleanup old attributes
+    -- delete the first only, why?
+    local attr = C.X509_REQ_delete_attr(ctx, 0)
+    if attr ~= nil then
+      C.X509_ATTRIBUTE_free(attr)
+    end
+  end
+
+  -- mark encoded form as invalid so next time it will be re-encoded
+  if OPENSSL_11_OR_LATER then
+    C.i2d_re_X509_REQ_tbs(ctx, nil)
+  else
+    ctx.req_info.enc.modified = 1
+  end
+
+  return true
+end
+
+local function add_extension(...)
+  return modify_extension(false, ...)
+end
+
+local function replace_extension(...)
+  return modify_extension(true, ...)
+end
+
+function _M:add_extension(extension)
+  if not extension_lib.istype(extension) then
+    return false, "x509:set_extension: expect a x509.extension instance at #1"
+  end
+
+  local nid = extension:get_object().nid
+  local toset = extension_lib.to_data(extension, nid)
+  return add_extension(self.ctx, nid, toset.ctx, extension:get_critical())
+end
+
+function _M:set_extension(extension)
+  if not extension_lib.istype(extension) then
+    return false, "x509:set_extension: expect a x509.extension instance at #1"
+  end
+
+  local nid = extension:get_object().nid
+  local toset = extension_lib.to_data(extension, nid)
+  return replace_extension(self.ctx, nid, toset.ctx, extension:get_critical())
+end
+
+function _M:set_extension_critical(nid_txt, crit, last_pos)
+  local nid, err = txtnid2nid(nid_txt)
+  if err then
+    return nil, "x509.csr:set_extension_critical: " .. err
+  end
+
+  local extension, _, err = get_extension(self.ctx, nid, last_pos)
+  if err then
+    return nil, "x509.csr:set_extension_critical: " .. err
+  end
+
+  local toset = extension_lib.to_data({
+    ctx = extension
+  }, nid)
+  return replace_extension(self.ctx, nid, toset.ctx, crit and 1 or 0)
+end
+
+function _M:get_extension_critical(nid_txt, last_pos)
+  local ctx, _, err = get_extension(self.ctx, nid_txt, last_pos)
+  if err then
+    return nil, "x509.csr:get_extension_critical: " .. err
+  end
+
+  return C.X509_EXTENSION_get_critical(ctx) == 1
+end
 
 -- START AUTO GENERATED CODE
 
@@ -273,8 +347,6 @@ function _M:set_subject_name(toset)
   if accessors.set_subject_name(self.ctx, toset) == 0 then
     return false, format_error("x509.csr:set_subject_name")
   end
-
-  return true
 end
 
 -- AUTO GENERATED
@@ -298,8 +370,6 @@ function _M:set_pubkey(toset)
   if accessors.set_pubkey(self.ctx, toset) == 0 then
     return false, format_error("x509.csr:set_pubkey")
   end
-
-  return true
 end
 
 -- AUTO GENERATED
@@ -327,8 +397,57 @@ function _M:set_version(toset)
   if accessors.set_version(self.ctx, toset) == 0 then
     return false, format_error("x509.csr:set_version")
   end
+end
 
-  return true
+local NID_subject_alt_name = C.OBJ_sn2nid("subjectAltName")
+assert(NID_subject_alt_name ~= 0)
+
+-- AUTO GENERATED: EXTENSIONS
+function _M:get_subject_alt_name()
+  local crit = ctypes.ptr_of_int()
+  local extensions = C.X509_REQ_get_extensions(self.ctx)
+  -- GC handler is sk_X509_EXTENSION_pop_free
+  ffi_gc(extensions, x509_extensions_gc)
+  local got = C.X509V3_get_d2i(extensions, NID_subject_alt_name, crit, nil)
+  crit = tonumber(crit[0])
+  if crit == -1 then -- not found
+    return nil
+  elseif crit == -2 then
+    return nil, "x509.csr:get_subject_alt_name: extension of subject_alt_name occurs more than one times, " ..
+                "this is not yet implemented. Please use get_extension instead."
+  elseif got == nil then
+    return nil, format_error("x509.csr:get_subject_alt_name")
+  end
+
+  -- Note: here we only free the stack itself not elements
+  -- since there seems no way to increase ref count for a GENERAL_NAME
+  -- we left the elements referenced by the new-dup'ed stack
+  local got_ref = got
+  ffi_gc(got_ref, stack_lib.gc_of("GENERAL_NAME"))
+  got = ffi_cast("GENERAL_NAMES*", got_ref)
+  local lib = require("resty.openssl.x509.altname")
+  -- the internal ptr is returned, ie we need to copy it
+  return lib.dup(got)
+end
+
+-- AUTO GENERATED: EXTENSIONS
+function _M:set_subject_alt_name(toset)
+  local lib = require("resty.openssl.x509.altname")
+  if lib.istype and not lib.istype(toset) then
+    return false, "x509.csr:set_subject_alt_name: expect a x509.altname instance at #1"
+  end
+  toset = toset.ctx
+  return replace_extension(self.ctx, NID_subject_alt_name, toset)
+end
+
+-- AUTO GENERATED: EXTENSIONS
+function _M:set_subject_alt_name_critical(crit)
+  return _M.set_extension_critical(self, NID_subject_alt_name, crit)
+end
+
+-- AUTO GENERATED: EXTENSIONS
+function _M:get_subject_alt_name_critical()
+  return _M.get_extension_critical(self, NID_subject_alt_name)
 end
 
 

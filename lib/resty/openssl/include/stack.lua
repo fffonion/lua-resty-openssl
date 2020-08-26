@@ -29,6 +29,7 @@ if OPENSSL_11_OR_LATER then
     void *OPENSSL_sk_value(const OPENSSL_STACK *, int);
     OPENSSL_STACK *OPENSSL_sk_dup(const OPENSSL_STACK *st);
     void OPENSSL_sk_free(OPENSSL_STACK *);
+    void *OPENSSL_sk_delete(OPENSSL_STACK *st, int loc);
 
     typedef void (*OPENSSL_sk_freefunc)(void *);
     typedef void *(*OPENSSL_sk_copyfunc)(const void *);
@@ -44,6 +45,7 @@ if OPENSSL_11_OR_LATER then
   _M.OPENSSL_sk_num = C.OPENSSL_sk_num
   _M.OPENSSL_sk_value = C.OPENSSL_sk_value
   _M.OPENSSL_sk_dup = C.OPENSSL_sk_dup
+  _M.OPENSSL_sk_delete = C.OPENSSL_sk_delete
   _M.OPENSSL_sk_free = C.OPENSSL_sk_free
   _M.OPENSSL_sk_deep_copy = C.OPENSSL_sk_deep_copy
 elseif OPENSSL_10 then
@@ -59,6 +61,7 @@ elseif OPENSSL_10 then
     void *sk_value(const _STACK *, int);
     _STACK *sk_dup(_STACK *st);
     void sk_free(_STACK *st);
+    void *sk_delete(_STACK *st, int loc);
 
     _STACK *sk_deep_copy(_STACK *, void *(*)(void *), void (*)(void *));
   ]]
@@ -69,6 +72,7 @@ elseif OPENSSL_10 then
   _M.OPENSSL_sk_pop_free = C.sk_pop_free
   _M.OPENSSL_sk_num = C.sk_num
   _M.OPENSSL_sk_value = C.sk_value
+  _M.OPENSSL_sk_delete = C.sk_delete
   _M.OPENSSL_sk_dup = C.sk_dup
   _M.OPENSSL_sk_free = C.sk_free
   _M.OPENSSL_sk_deep_copy = C.sk_deep_copy

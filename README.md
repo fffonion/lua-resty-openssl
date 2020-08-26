@@ -108,7 +108,10 @@ Table of Contents
     + [csr.istype](#csristype)
     + [csr:get_*, csr:set_*](#csrget_-csrset_)
     + [csr:get_extension](#csrget_extension)
-    + [csr:get_extensions](#csrget_extensions)
+    + [csr:add_extension](#csradd_extension)
+    + [csr:set_extension](#csrset_extension)
+    + [csr:get_extension_critical](#csrget_extension_critical)
+    + [csr:set_extension_critical](#csrset_extension_critical)
     + [csr:sign](#csrsign)
     + [csr:verify](#csrverify)
     + [csr:tostring](#csrtostring)
@@ -1712,6 +1715,9 @@ Additionally, getters and setters for extensions are also available:
 | ------------   | ---- | ----------- |
 | subject_alt_name   | [x509.altname](#restyopensslx509altname) | [Subject Alternative Name](https://tools.ietf.org/html/rfc5280#section-4.2.1.6) of the certificate request, SANs are usually used to define "additional Common Names"  |
 
+For all extensions, `get_{extension}_critical` and `set_{extension}_critical` is also supported to
+access the `critical` flag of the extension.
+
 If the attribute is not found, getter will return `nil, nil`.
 
 ```lua
@@ -1722,7 +1728,14 @@ ngx.say(version)
 -- outputs 3
 ```
 
-Setters and getters for x509 attributes share the same syntax.
+Note that user may also access the certain extension by [csr:get_extension](#csrget_extension) and
+[csr:set_extension](#csrset_extension), while the later two function returns or requires
+[extension](#restyopensslx509extension) instead. User may use getter and setters listed here if modification
+of current extensions is needed; use [csr:get_extension](#csrget_extension) or
+[csr:set_extension](#csrset_extension) if user are adding or replacing the whole extension or
+getters/setters are not implemented. If the getter returned a type of `x509.*` instance, it can be
+converted to a [extension](#restyopensslx509extension) instance by [extension:from_data](#extensionfrom_data),
+and thus used by [csr:get_extension](#csrget_extension) and [csr:set_extension](#csrset_extension) 
 
 [Back to TOC](#table-of-contents)
 
@@ -1754,6 +1767,45 @@ local ext, pos, err = csr:get_extension("basicConstraints")
 **syntax**: *extensions, err = csr:get_extensions()*
 
 Return all extensions as a [resty.openssl.x509.extensions](#restyopensslx509extensions) instance.
+
+[Back to TOC](#table-of-contents)
+
+### csr:add_extension
+
+**syntax**: *ok, err = csr:add_extension(extension)*
+
+Adds an X.509 `extension` to csr, the first argument must be a
+[resty.openssl.x509.extension](#restyopensslx509extension) instance.
+
+[Back to TOC](#table-of-contents)
+
+### csr:set_extension
+
+**syntax**: *ok, err = csr:set_extension(extension)*
+
+Adds an X.509 `extension` to csr, the first argument must be a
+[resty.openssl.x509.extension](#restyopensslx509extension) instance.
+The difference from [csr:add_extension](#csradd_extension) is that
+in this function if a `extension` with same type already exists,
+the old extension will be replaced.
+
+Note this function is not thread-safe.
+
+[Back to TOC](#table-of-contents)
+
+### csr:get_extension_critical
+
+**syntax**: *ok, err = csr:get_extension_critical(nid_or_txt)*
+
+Get critical flag of the X.509 `extension` matching the given [NID] from csr.
+
+[Back to TOC](#table-of-contents)
+
+### csr:set_extension_critical
+
+**syntax**: *ok, err = csr:set_extension_critical(nid_or_txt, crit?)*
+
+Set critical flag of the X.509 `extension` matching the given [NID] to csr.
 
 [Back to TOC](#table-of-contents)
 

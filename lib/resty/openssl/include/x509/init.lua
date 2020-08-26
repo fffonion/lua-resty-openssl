@@ -15,11 +15,8 @@ ffi.cdef [[
   int i2d_X509_bio(BIO *bp, X509 *x509);
   X509 *d2i_X509_bio(BIO *bp, X509 **x509);
 
-
   // STACK_OF(X509)
   OPENSSL_STACK *X509_chain_up_ref(OPENSSL_STACK *chain);
-
-  typedef struct X509_extension_st X509_EXTENSION;
 
   int X509_sign(X509 *x, EVP_PKEY *pkey, const EVP_MD *md);
   int X509_verify(X509 *a, EVP_PKEY *r);

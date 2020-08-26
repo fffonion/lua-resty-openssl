@@ -16,6 +16,8 @@ ffi.cdef(
   typedef struct evp_cipher_ctx_st EVP_CIPHER_CTX;
   typedef struct engine_st ENGINE;
   typedef struct x509_st X509;
+  typedef struct x509_attributes_st X509_ATTRIBUTE;
+  typedef struct X509_extension_st X509_EXTENSION;
   typedef struct X509_name_st X509_NAME;
   typedef struct X509_name_entry_st X509_NAME_ENTRY;
   typedef struct X509_req_st X509_REQ;

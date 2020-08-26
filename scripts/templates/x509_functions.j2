@@ -165,9 +165,16 @@ function _M:get_{{ f.field }}({%- if f.extension and f.type == "table" -%}name{%
   end
   {%- else %}
   local crit = ctypes.ptr_of_int()
+  {%- if modname == "x509.csr" %}
+  local extensions = C.X509_REQ_get_extensions(self.ctx)
+  -- GC handler is sk_X509_EXTENSION_pop_free
+  ffi_gc(extensions, x509_extensions_gc)
+  local got = C.X509V3_get_d2i(extensions, NID_{{ f.field }}, crit, nil)
+  {%- else %}
   -- X509_get_ext_d2i returns internal pointer, always dup
   -- for now this function always returns the first found extension
   local got = C.X509_get_ext_d2i(self.ctx, NID_{{ f.field }}, crit, nil)
+  {%- endif %}
   crit = tonumber(crit[0])
   if crit == -1 then -- not found
     return nil
@@ -221,13 +228,16 @@ function _M:set_{{ f.field }}(toset)
     return false, format_error("{{ modname }}:set_{{ f.field }}")
   end
   {%- else %}
+  {%- if modname == "x509.csr" %}
+  return replace_extension(self.ctx, NID_{{ f.field }}, toset)
+  {%- else %}
   -- x509v3.h: # define X509V3_ADD_REPLACE              2L
   if C.X509_add1_ext_i2d(self.ctx, NID_{{ f.field }}, toset, 0, 0x2) ~= 1 then
     return false, format_error("{{ modname }}:set_{{ f.field }}")
   end
-  {%- endif %}
-
   return true
+  {%- endif %}
+  {%- endif %}
 end
   {%- if f.extension %}
 
