@@ -2,6 +2,13 @@
 ## [Unreleased]
 
 
+<a name="0.6.4"></a>
+## [0.6.4] - 2020-08-27
+### feat
+- **x509.csr:** finish {set,add}_extension functions [d34b702](https://github.com/fffonion/lua-resty-openssl/commit/d34b702a17b4f491e2a97e971da1d6125d482066)
+- **x509.extension:** add ability to convert to other data type [15a5c7f](https://github.com/fffonion/lua-resty-openssl/commit/15a5c7ff38452a7bd04919b4a7e9c9dc1dfa931d)
+
+
 <a name="0.6.3"></a>
 ## [0.6.3] - 2020-08-10
 ### feat
@@ -224,7 +231,8 @@
 <a name="init"></a>
 ## init - 2019-09-25
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.3...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.4...HEAD
+[0.6.4]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.3...0.6.4
 [0.6.3]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.2...0.6.3
 [0.6.2]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.1...0.6.2
 [0.6.1]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.0...0.6.1
