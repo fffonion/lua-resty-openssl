@@ -138,7 +138,7 @@ x509.store:load_file.+
     GET /t
 --- response_body_like eval
 "1
-self signed certificate
+(?:self signed|self-signed) certificate
 true
 "
 --- no_error_log

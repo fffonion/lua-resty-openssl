@@ -37,7 +37,8 @@ env:
     - NGINX_VERSION=1.17.8 OPENSSL_VER=1.1.0l
     - NGINX_VERSION=1.17.8 OPENSSL_VER=1.1.1g
     # add -Wno-error to fix deprecation warnings from openssl
-    - NGINX_VERSION=1.15.8 OPENSSL_HASH=5606922c3d2e8c3d3ffda4347cb9fe3992d75f89 NGINX_CC_OPTS=-Wno-error
+    - NGINX_VERSION=1.15.8 OPENSSL_VER=3.0.0-alpha6 NGINX_CC_OPTS=-Wno-error
+    - NGINX_VERSION=1.17.8 OPENSSL_VER=3.0.0-alpha6 NGINX_CC_OPTS=-Wno-error
 
 install:
   - export NGX_BUILD_CC=$CC
