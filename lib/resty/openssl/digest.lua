@@ -32,7 +32,7 @@ function _M.new(typ)
     dtyp = C.EVP_md_null()
   else
     dtyp = C.EVP_get_digestbyname(typ or 'sha1')
-    if dtyp == nil then
+    if dtyp == ffi.NULL  then
       return nil, string.format("digest.new: invalid digest type \"%s\"", typ)
     end
   end

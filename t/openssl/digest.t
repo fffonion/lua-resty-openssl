@@ -115,3 +115,19 @@ __DATA__
 "
 --- no_error_log
 [error]
+
+=== TEST 6: Check that wrong digest name returns error
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local _, err = require("resty.openssl.digest").new("test")
+            ngx.say(err)
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"digest.new: invalid digest type \"test\"\x{0a}"
+--- no_error_log
+[error]
