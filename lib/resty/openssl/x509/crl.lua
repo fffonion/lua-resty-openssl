@@ -346,6 +346,7 @@ function _M:set_issuer_name(toset)
   if accessors.set_issuer_name(self.ctx, toset) == 0 then
     return false, format_error("x509.crl:set_issuer_name")
   end
+  return true
 end
 
 -- AUTO GENERATED
@@ -372,6 +373,7 @@ function _M:set_last_update(toset)
   if accessors.set_last_update(self.ctx, toset) == 0 then
     return false, format_error("x509.crl:set_last_update")
   end
+  return true
 end
 
 -- AUTO GENERATED
@@ -398,6 +400,7 @@ function _M:set_next_update(toset)
   if accessors.set_next_update(self.ctx, toset) == 0 then
     return false, format_error("x509.crl:set_next_update")
   end
+  return true
 end
 
 -- AUTO GENERATED
@@ -425,6 +428,7 @@ function _M:set_version(toset)
   if accessors.set_version(self.ctx, toset) == 0 then
     return false, format_error("x509.crl:set_version")
   end
+  return true
 end
 
 

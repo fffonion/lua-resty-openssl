@@ -347,6 +347,7 @@ function _M:set_subject_name(toset)
   if accessors.set_subject_name(self.ctx, toset) == 0 then
     return false, format_error("x509.csr:set_subject_name")
   end
+  return true
 end
 
 -- AUTO GENERATED
@@ -370,6 +371,7 @@ function _M:set_pubkey(toset)
   if accessors.set_pubkey(self.ctx, toset) == 0 then
     return false, format_error("x509.csr:set_pubkey")
   end
+  return true
 end
 
 -- AUTO GENERATED
@@ -397,6 +399,7 @@ function _M:set_version(toset)
   if accessors.set_version(self.ctx, toset) == 0 then
     return false, format_error("x509.csr:set_version")
   end
+  return true
 end
 
 local NID_subject_alt_name = C.OBJ_sn2nid("subjectAltName")

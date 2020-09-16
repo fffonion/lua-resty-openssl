@@ -227,6 +227,7 @@ function _M:set_{{ f.field }}(toset)
   if accessors.set_{{ f.field }}(self.ctx, toset) == 0 then
     return false, format_error("{{ modname }}:set_{{ f.field }}")
   end
+  return true
   {%- else %}
   {%- if modname == "x509.csr" %}
   return replace_extension(self.ctx, NID_{{ f.field }}, toset)
