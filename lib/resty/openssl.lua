@@ -2,7 +2,7 @@ local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 
 
 local _M = {
-  _VERSION = '0.6.4',
+  _VERSION = '0.6.5',
   bn = require("resty.openssl.bn"),
   cipher = require("resty.openssl.cipher"),
   digest = require("resty.openssl.digest"),

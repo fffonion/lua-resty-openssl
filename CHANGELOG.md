@@ -2,6 +2,12 @@
 ## [Unreleased]
 
 
+<a name="0.6.5"></a>
+## [0.6.5] - 2020-09-16
+### fix
+- ***:** x509.* set should return true on success [2a09575](https://github.com/fffonion/lua-resty-openssl/commit/2a09575425133e92c990513c7ea7445cf2ca47f4)
+
+
 <a name="0.6.4"></a>
 ## [0.6.4] - 2020-08-27
 ### feat
@@ -231,7 +237,8 @@
 <a name="init"></a>
 ## init - 2019-09-25
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.4...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.5...HEAD
+[0.6.5]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.4...0.6.5
 [0.6.4]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.3...0.6.4
 [0.6.3]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.2...0.6.3
 [0.6.2]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.1...0.6.2
