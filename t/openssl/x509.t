@@ -655,7 +655,7 @@ SwIDAQAB
             local c = myassert(require("resty.openssl.x509").new(f))
 
             local get = myassert(c:get_subject_name())
-            get = get:_tostring()
+            get = get:tostring()
             ngx.print(get)
         }
     }
@@ -677,8 +677,8 @@ SwIDAQAB
             local ok = myassert(c:set_subject_name(toset))
 
             local get = myassert(c:get_subject_name())
-            get = get:_tostring()
-            toset = toset:_tostring()
+            get = get:tostring()
+            toset = toset:tostring()
             if get ~= toset then
               ngx.say(get)
               ngx.say(toset)
@@ -703,7 +703,7 @@ SwIDAQAB
             local c = myassert(require("resty.openssl.x509").new(f))
 
             local get = myassert(c:get_issuer_name())
-            get = get:_tostring()
+            get = get:tostring()
             ngx.print(get)
         }
     }
@@ -725,8 +725,8 @@ SwIDAQAB
             local ok = myassert(c:set_issuer_name(toset))
 
             local get = myassert(c:get_issuer_name())
-            get = get:_tostring()
-            toset = toset:_tostring()
+            get = get:tostring()
+            toset = toset:tostring()
             if get ~= toset then
               ngx.say(get)
               ngx.say(toset)
@@ -796,7 +796,7 @@ SwIDAQAB
             local c = myassert(require("resty.openssl.x509").new(f))
 
             local get = myassert(c:get_subject_alt_name())
-            get = get:_tostring()
+            get = get:tostring()
             ngx.print(get)
         }
     }
@@ -818,8 +818,8 @@ SwIDAQAB
             local ok = myassert(c:set_subject_alt_name(toset))
 
             local get = myassert(c:get_subject_alt_name())
-            get = get:_tostring()
-            toset = toset:_tostring()
+            get = get:tostring()
+            toset = toset:tostring()
             if get ~= toset then
               ngx.say(get)
               ngx.say(toset)

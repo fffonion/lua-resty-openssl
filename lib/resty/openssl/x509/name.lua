@@ -113,9 +113,9 @@ end
 -- fallback function to iterate if LUAJIT_ENABLE_LUA52COMPAT not enabled
 function _M:all()
   local ret = {}
-  local next_ = iter(self)
+  local _next = iter(self)
   while true do
-    local k, obj = next_()
+    local k, obj = _next()
     if obj then
       ret[k] = obj
     else
@@ -129,15 +129,21 @@ function _M:each()
   return iter(self)
 end
 
--- for use of test only
-function _M:_tostring()
-  local all = self:all()
+mt.__tostring = function(self)
   local values = {}
-  for k, v in pairs(all) do
-    table.insert(values, k .. "=" .. v.blob)
+  local _next = iter(self)
+  while true do
+    local k, v = _next()
+    if k then
+      table.insert(values, k .. "=" .. v.blob)
+    else
+      break
+    end
   end
   table.sort(values)
   return table.concat(values, "/")
 end
+
+_M.tostring = mt.__tostring
 
 return _M

@@ -50,7 +50,7 @@ cwIDAQAB
     "field": "subject_alt_name",
     "type": "x509.altname",
     "dup": True,
-    "extension": "subjectAltName",
+    "extension_nid": "subjectAltName",
     "sample_printable": 'DNS=example.com',
     "get_converter": '''
   -- Note: here we only free the stack itself not elements

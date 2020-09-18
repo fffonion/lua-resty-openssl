@@ -63,7 +63,7 @@
 [error]
     {%- set ns.idx = ns.idx + 1 %}
   {%- endif %}
-  {%- if f.extension and not f.skip_tests %}
+  {%- if f.extension_nid and not f.skip_tests %}
 
 === TEST {{ ns.idx + 1 }}: {{ modname }}:get/set_{{ f.field }}_critical (AUTOGEN)
 --- http_config eval: $::HttpConfig

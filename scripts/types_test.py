@@ -14,11 +14,11 @@ tests = {
     },
     "x509.name": {
         "new_from": "new():add('CN', 'earth.galaxy')",
-        "print": "_tostring",
+        "print": "tostring",
     },
     "x509.altname": {
         "new_from": "new():add('DNS', 'earth.galaxy')",
-        "print": "_tostring",
+        "print": "tostring",
     },
 
 },

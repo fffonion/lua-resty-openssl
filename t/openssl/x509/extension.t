@@ -208,7 +208,7 @@ DNS:test.com, DNS:test2.com
             local c = myassert(extension.from_data(altname, 85, false))
 
             local alt2 = myassert(extension.to_data(c, 85))
-            ngx.say(alt2:_tostring())
+            ngx.say(alt2:tostring())
         }
     }
 --- request

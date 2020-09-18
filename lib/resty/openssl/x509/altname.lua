@@ -178,14 +178,21 @@ _M.each = mt.__pairs
 _M.index = mt.__index
 _M.count = mt.__len
 
--- for use of test only
-function _M:_tostring()
+mt.__tostring = function(self)
   local values = {}
-  for k, v in pairs(self) do
-    table.insert(values, k .. "=" .. v)
+  local _next = mt.__pairs(self)
+  while true do
+    local k, v = _next()
+    if k then
+      table.insert(values, k .. "=" .. v)
+    else
+      break
+    end
   end
   table.sort(values)
   return table.concat(values, "/")
 end
+
+_M.tostring = mt.__tostring
 
 return _M

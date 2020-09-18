@@ -136,12 +136,14 @@ Table of Contents
     + [name.istype](#nameistype)
     + [name:add](#nameadd)
     + [name:find](#namefind)
+    + [name:tostring](#nametostring)
     + [name:__metamethods](#name__metamethods)
   * [resty.openssl.x509.altname](#restyopensslx509altname)
     + [altname.new](#altnamenew)
     + [altname.dup](#altnamedup)
     + [altname.istype](#altnameistype)
     + [altname:add](#altnameadd)
+    + [altname:tostring](#altnametostring)
     + [altname:__metamethods](#altname__metamethods)
   * [resty.openssl.x509.extension](#restyopensslx509extension)
     + [extension.new](#extensionnew)
@@ -2104,6 +2106,23 @@ ngx.say(obj.blob, " at ", pos)
 
 [Back to TOC](#table-of-contents)
 
+### name:tostring
+
+**syntax**: *txt = name:tostring()*
+
+Outputs name in a text representation.
+
+```lua
+local name, err = require("resty.openssl.x509.name").new()
+local _, err = name:add("CN", "example.com")
+                    :add("CN", "example2.com")
+
+ngx.say(name:tostring())
+-- outputs "CN=example.com/CN=example2.com"
+```
+
+[Back to TOC](#table-of-contents)
+
 ### name:__metamethods
 
 **syntax**: *for k, obj in pairs(name)*
@@ -2192,13 +2211,23 @@ Adds a name to altname stack, first argument is case-insensitive and can be one 
 
 This function can be called multiple times in a chained fashion.
 
+[Back to TOC](#table-of-contents)
+
+### altname:tostring
+
+**syntax**: *txt = altname:tostring()*
+
+Outputs altname in a text representation.
+
 ```lua
-local altname, err = require("resty.openssl.x509").new()
-local _, err = altname:add("DNS", "example.com")
+local altname, err = require("resty.openssl.x509.altname").new()
 
 _, err = altname
     :add("DNS", "2.example.com")
     :add("DnS", "3.example.com")
+
+ngx.say(altname:tostring())
+-- outputs "DNS=2.example.com/DNS=3.example.com"
 ```
 
 [Back to TOC](#table-of-contents)
@@ -2322,9 +2351,9 @@ Returns the text representation of extension
 ```lua
 local objects = require "resty.openssl.objects"
 ngx.say(cjson.encode(objects.obj2table(extension:get_object())))
--- outputs {"ln":"X509v3 Subject Key Identifier","nid":82,"sn":"subjectKeyIdentifier","id":"2.5.29.14"}
+-- outputs '{"ln":"X509v3 Subject Key Identifier","nid":82,"sn":"subjectKeyIdentifier","id":"2.5.29.14"}'
 ngx.say(extension:text())
--- outputs C9:C2:53:61:66:9D:5F:AB:25:F4:26:CD:0F:38:9A:A8:49:EA:48:A9
+-- outputs "C9:C2:53:61:66:9D:5F:AB:25:F4:26:CD:0F:38:9A:A8:49:EA:48:A9"
 ```
 
 [Back to TOC](#table-of-contents)
@@ -2382,6 +2411,23 @@ instead.
 
 See also [functions for stack-like objects](#functions-for-stack-like-objects).
 
+Each object returned when iterrating dist_points instance is a [x509.altname](#restyopensslx509altname)
+instance.
+
+```lua
+local x = x509.new(io.open("/path/to/a_cert_has_dist_points.crt"):read("*a"))
+
+local cdp = x:get_crl_distribution_points()
+
+local an = cdp[1]
+ngx.say(an:tostring())
+-- or any other function for resty.openssl.x509.altname
+
+for _, an in ipairs(cdp) do
+  ngx.say(an:tostring())
+end
+```
+
 [Back to TOC](#table-of-contents)
 
 ## resty.openssl.x509.extension.info_access
@@ -2437,6 +2483,23 @@ with `-DLUAJIT_ENABLE_LUA52COMPAT` flag; otherwise use `all`, `each`, `index` an
 instead.
 
 See also [functions for stack-like objects](#functions-for-stack-like-objects).
+
+Each object returned when iterrating dist_points instance is a table of [NID] type and values.
+
+```lua
+local cjson = require("cjosn")
+local x509 = require("resty.openssl.x509")
+local crt = x509.new(io.open("/path/to/a_cert_has_info_access.crt"):read("*a"))
+
+local aia = crt:get_info_access()
+
+ngx.say(cjson.encode(aia[1]))
+-- outputs '[178,"URI","http:\/\/ocsp.starfieldtech.com\/"]'
+
+for _, a in ipairs(aia) do
+  ngx.say(cjson.encode(a))
+end
+```
 
 [Back to TOC](#table-of-contents)
 

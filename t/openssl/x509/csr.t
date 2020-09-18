@@ -340,7 +340,7 @@ nil
             local c = myassert(require("resty.openssl.x509.csr").new(f))
 
             local get = myassert(c:get_subject_name())
-            get = get:_tostring()
+            get = get:tostring()
             ngx.print(get)
         }
     }
@@ -362,8 +362,8 @@ nil
             local ok = myassert(c:set_subject_name(toset))
 
             local get = myassert(c:get_subject_name())
-            get = get:_tostring()
-            toset = toset:_tostring()
+            get = get:tostring()
+            toset = toset:tostring()
             if get ~= toset then
               ngx.say(get)
               ngx.say(toset)
@@ -490,7 +490,7 @@ cwIDAQAB
             local c = myassert(require("resty.openssl.x509.csr").new(f))
 
             local get = myassert(c:get_subject_alt_name())
-            get = get:_tostring()
+            get = get:tostring()
             ngx.print(get)
         }
     }
@@ -512,8 +512,8 @@ cwIDAQAB
             local ok = myassert(c:set_subject_alt_name(toset))
 
             local get = myassert(c:get_subject_alt_name())
-            get = get:_tostring()
-            toset = toset:_tostring()
+            get = get:tostring()
+            toset = toset:tostring()
             if get ~= toset then
               ngx.say(get)
               ngx.say(toset)

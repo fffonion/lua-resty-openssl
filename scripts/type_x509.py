@@ -119,7 +119,7 @@ SwIDAQAB
     "field": "subject_alt_name",
     "type": "x509.altname",
     "dup": True,
-    "extension": "subjectAltName",
+    "extension_nid": "subjectAltName",
     "sample_printable": 'DNS=github.com/DNS=www.github.com',
     "get_converter": '''
   -- Note: here we only free the stack itself not elements
@@ -134,7 +134,7 @@ SwIDAQAB
     "field": "issuer_alt_name",
     "type": "x509.altname",
     "dup": True,
-    "extension": "issuerAltName",
+    "extension_nid": "issuerAltName",
     "skip_tests": True, # need to find a good sample
     "get_converter": '''
   -- Note: here we only free the stack itself not elements
@@ -148,7 +148,7 @@ SwIDAQAB
 {
     "field": "basic_constraints",
     "type": "table",
-    "extension": "basicConstraints",
+    "extension_nid": "basicConstraints",
     "set_converter": es.table_to_c_struct("BASIC_CONSTRAINTS"),
     "get_converter": es.c_struct_to_table("BASIC_CONSTRAINTS"),
 },
@@ -157,7 +157,7 @@ SwIDAQAB
     "field": "info_access",
     "type": "x509.extension.info_access",
     "dup": True,
-    "extension": "authorityInfoAccess",
+    "extension_nid": "authorityInfoAccess",
     "get_converter": '''
   -- Note: here we only free the stack itself not elements
   -- since there seems no way to increase ref count for a ACCESS_DESCRIPTION
@@ -171,7 +171,7 @@ SwIDAQAB
     "field": "crl_distribution_points",
     "type": "x509.extension.dist_points",
     "dup": True,
-    "extension": "crlDistributionPoints",
+    "extension_nid": "crlDistributionPoints",
     "get_converter": '''
   -- Note: here we only free the stack itself not elements
   -- since there seems no way to increase ref count for a DIST_POINT

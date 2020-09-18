@@ -192,7 +192,7 @@ __DATA__
             local c = myassert(require("resty.openssl.x509.crl").new(f))
 
             local get = myassert(c:get_issuer_name())
-            get = get:_tostring()
+            get = get:tostring()
             ngx.print(get)
         }
     }
@@ -214,8 +214,8 @@ __DATA__
             local ok = myassert(c:set_issuer_name(toset))
 
             local get = myassert(c:get_issuer_name())
-            get = get:_tostring()
-            toset = toset:_tostring()
+            get = get:tostring()
+            toset = toset:tostring()
             if get ~= toset then
               ngx.say(get)
               ngx.say(toset)

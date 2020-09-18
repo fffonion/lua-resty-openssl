@@ -151,14 +151,14 @@ end
 {% endif -%}
 
 {%- for f in module.fields -%}
-{%- if f.extension -%}
-local NID_{{ f.field }} = C.OBJ_sn2nid("{{ f.extension }}")
+{%- if f.extension_nid -%}
+local NID_{{ f.field }} = C.OBJ_sn2nid("{{ f.extension_nid }}")
 assert(NID_{{ f.field }} ~= 0)
 
 {% endif -%}
--- AUTO GENERATED{%- if f.extension -%}: EXTENSIONS {%- endif %}
-function _M:get_{{ f.field }}({%- if f.extension and f.type == "table" -%}name{%- endif -%})
-  {%- if not f.extension %}
+-- AUTO GENERATED{%- if f.extension_nid -%}: EXTENSIONS {%- endif %}
+function _M:get_{{ f.field }}({%- if f.extension_nid and f.type == "table" -%}name{%- endif -%})
+  {%- if not f.extension_nid %}
   local got = accessors.get_{{ f.field }}(self.ctx)
   if got == nil then
     return nil
@@ -205,7 +205,7 @@ function _M:get_{{ f.field }}({%- if f.extension and f.type == "table" -%}name{%
   {%- endif %}
 end
 
--- AUTO GENERATED{%- if f.extension -%}: EXTENSIONS {%- endif %}
+-- AUTO GENERATED{%- if f.extension_nid -%}: EXTENSIONS {%- endif %}
 function _M:set_{{ f.field }}(toset)
   {%- if f.type in LUA_TYPES %}
   if type(toset) ~= "{{ f.type }}" then
@@ -223,7 +223,7 @@ function _M:set_{{ f.field }}(toset)
 {{ f.set_converter }}
   {%- endif %}
 
-  {%- if not f.extension %}
+  {%- if not f.extension_nid %}
   if accessors.set_{{ f.field }}(self.ctx, toset) == 0 then
     return false, format_error("{{ modname }}:set_{{ f.field }}")
   end
@@ -240,7 +240,7 @@ function _M:set_{{ f.field }}(toset)
   {%- endif %}
   {%- endif %}
 end
-  {%- if f.extension %}
+  {%- if f.extension_nid %}
 
 -- AUTO GENERATED: EXTENSIONS
 function _M:set_{{ f.field }}_critical(crit)
