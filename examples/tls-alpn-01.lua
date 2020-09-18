@@ -22,18 +22,27 @@ end
 -- with given domain name and challenge token
 function serve_challenge_cert(domain, challenge)
   local dgst = assert(digest.new("sha256"):final(challenge))
+
+  -- There're two ways to set ASN.1 octect string to the extension
+  -- The recommanded way is to pass the string directly to extension.from_der()
+  local ext, err = extension.from_der(dgst, nid, true)
+  if err then
+    return nil, nil, err
+  end
+  -- OR we put the ASN.1 signature for this string by ourselves
   -- 0x04: OCTET STRING
   -- 0x20: length
-  dgst = "DER:0420" .. dgst:gsub("(.)", function(s) return string.format("%02x", string.byte(s)) end)
-
-  local key = pkey.new()
-  local cert = x509.new()
-  cert:set_pubkey(key)
-  local ext, err = extension.new(nid, dgst)
+  local dgst_hex = "DER:0420" .. dgst:gsub("(.)", function(s) return string.format("%02x", string.byte(s)) end)
+  local ext, err = extension.new(nid, dgst_hex)
   if err then
     return nil, nil, err
   end
   ext:set_critical(true)
+
+  local key = pkey.new()
+  local cert = x509.new()
+  cert:set_pubkey(key)
+
   cert:add_extension(ext)
 
   local alt = assert(altname.new():add(

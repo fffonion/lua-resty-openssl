@@ -6,6 +6,10 @@ local ffi_cast = ffi.cast
 
 require "resty.openssl.include.x509"
 require "resty.openssl.include.x509.extension"
+require "resty.openssl.include.x509v3"
+require "resty.openssl.include.asn1"
+require "resty.openssl.include.bio"
+require "resty.openssl.include.conf"
 local objects_lib = require "resty.openssl.objects"
 local stack_lib = require("resty.openssl.stack")
 local util = require "resty.openssl.util"
@@ -21,12 +25,24 @@ local extension_types = {
   subject = "resty.openssl.x509",
   request = "resty.openssl.x509.csr",
   crl     = "resty.openssl.x509.crl",
-  -- db,           -- NYI
 }
+
+local function nconf_load(conf, str)
+  local bio = C.BIO_new_mem_buf(str, #str)
+  if bio == nil then
+    return format_error("BIO_new_mem_buf")
+  end
+  ffi_gc(bio, C.BIO_free)
+
+  if C.NCONF_load_bio(conf, bio, nil) ~= 1 then
+    return format_error("NCONF_load_bio")
+  end
+end
+
 function _M.new(txtnid, value, data)
   local nid, err = objects_lib.txtnid2nid(txtnid)
   if err then
-    return nil, err
+    return nil, "x509.extension.new: " .. err
   end
   if type(value) ~= 'string' then
     return nil, "x509.extension.new: expect string at #2"
@@ -34,8 +50,24 @@ function _M.new(txtnid, value, data)
   -- get a ptr and also zerofill the struct
   local x509_ctx_ptr = ffi_new('X509V3_CTX[1]')
 
+  local conf = C.NCONF_new(nil)
+	if conf == nil then
+    return nil, format_error("NCONF_new")
+  end
+  ffi_gc(conf, C.NCONF_free)
+
   if type(data) == 'table' then
     local args = {}
+    if data.db then
+      if type(data.db) ~= 'string' then
+        return nil, "x509.extension.new: expect data.db must be a string"
+      end
+      err = nconf_load(conf, data)
+      if err then
+        return nil, "x509.extension.new: " .. err
+      end
+    end
+
     for k, t in pairs(extension_types) do
       if data[k] then
         local lib = require(t)
@@ -45,12 +77,21 @@ function _M.new(txtnid, value, data)
         args[k] = data[k].ctx
       end
     end
-    C.X509V3_set_ctx(x509_ctx_ptr[0], args.issuer, args.subject, args.request, nil, 0)
+    C.X509V3_set_ctx(x509_ctx_ptr[0], args.issuer, args.subject, args.request, args.crl, 0)
+  elseif type(data) == 'string' then
+    err = nconf_load(conf, data)
+    if err then
+      return nil, "x509.extension.new: " .. err
+    end
   elseif data then
-    return nil, "x509.extension.new: expect nil or a table at #3"
+    return nil, "x509.extension.new: expect nil, string a table at #3"
   end
 
-  local ctx = C.X509V3_EXT_nconf_nid(nil, x509_ctx_ptr[0], nid, value)
+  -- setting conf is required for some extensions to load
+  -- crypto/x509/v3_conf.c:do_ext_conf "else if (method->r2i) {" branch
+  C.X509V3_set_nconf(x509_ctx_ptr[0], conf)
+
+  local ctx = C.X509V3_EXT_nconf_nid(conf, x509_ctx_ptr[0], nid, value)
   if ctx == nil then
     return nil, format_error("x509.extension.new")
   end
@@ -85,7 +126,45 @@ function _M.dup(ctx)
   return self, nil
 end
 
-function _M.from_data(any, nid, crit)
+function _M.from_der(value, txtnid, crit)
+  local nid, err = objects_lib.txtnid2nid(txtnid)
+  if err then
+    return nil, "x509.extension.from_der: " .. err
+  end
+  if type(value) ~= 'string' then
+    return nil, "x509.extension.from_der: expect string at #1"
+  end
+
+  local asn1 = C.ASN1_STRING_new()
+  if asn1 == nil then
+    return nil, format_error("x509.extension.from_der: ASN1_STRING_new")
+  end
+  ffi_gc(asn1, C.ASN1_STRING_free)
+
+  if C.ASN1_STRING_set(asn1, value, #value) ~= 1 then
+    return nil, format_error("x509.extension.from_der: ASN1_STRING_set")
+  end
+
+  local ctx = C.X509_EXTENSION_create_by_NID(nil, nid, crit and 1 or 0, asn1)
+  if ctx == nil then
+    return nil, format_error("x509.extension.from_der: X509_EXTENSION_create_by_NID")
+  end
+  ffi_gc(ctx, C.X509_EXTENSION_free)
+
+  local self = setmetatable({
+    ctx = ctx,
+  }, mt)
+
+  return self, nil
+
+end
+
+function _M.from_data(any, txtnid, crit)
+  local nid, err = objects_lib.txtnid2nid(txtnid)
+  if err then
+    return nil, "x509.extension.from_der: " .. err
+  end
+
   if type(any) ~= "table" or type(any.ctx) ~= "cdata" then
     return nil, "x509.extension.from_data: expect a table with ctx at #1"
   elseif type(nid) ~= "number" then

@@ -218,3 +218,64 @@ DNS:test.com, DNS:test2.com
 '
 --- no_error_log
 [error]
+
+=== TEST 9: Creates extension by der
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local extension = require("resty.openssl.x509.extension")
+            local c = myassert(extension.from_der("\x00\x01\x02\x03", "basicConstraints"))
+
+            ngx.say(require("cjson").encode(c:get_object()))
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+'{"ln":"X509v3 Basic Constraints","nid":87,"sn":"basicConstraints","id":"2.5.29.19"}
+'
+--- no_error_log
+[error]
+
+=== TEST 10: Creates extension by nconf
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local extension = require("resty.openssl.x509.extension")
+            local c = myassert(extension.new("certificatePolicies", "ia5org,1.2.3.4,1.5.6.7.8,@polsect",
+                [[
+                [polsect]
+                policyIdentifier = 1.3.5.8
+                CPS.1="http://my.host.name/"
+                CPS.2="http://my.your.name/"
+                userNotice.1=@notice
+
+                [notice]
+                explicitText="Explicit Text Here"
+                organization="Organisation Name"
+                noticeNumbers=1,2,3,4
+                ]]
+            ))
+
+            ngx.say(require("cjson").encode(c:get_object()))
+            ngx.say(tostring(c))
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+'{"ln":"X509v3 Certificate Policies","nid":89,"sn":"certificatePolicies","id":"2.5.29.32"}
+Policy: 1.2.3.4
+Policy: 1.5.6.7.8
+Policy: 1.3.5.8
+  CPS: http://my.host.name/
+  CPS: http://my.your.name/
+  User Notice:
+    Organization: Organisation Name
+    Numbers: 1, 2, 3, 4
+    Explicit Text: Explicit Text Here
+'
+--- no_error_log
+[error]

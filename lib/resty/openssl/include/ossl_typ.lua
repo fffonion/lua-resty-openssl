@@ -43,6 +43,7 @@ ffi.cdef(
   typedef struct asn1_string_st ASN1_STRING;
   typedef struct asn1_object_st ASN1_OBJECT;
   typedef struct conf_st CONF;
+  typedef struct conf_method_st CONF_METHOD;
   typedef int ASN1_BOOLEAN;
   typedef int ASN1_NULL;
   typedef struct ec_key_st EC_KEY;

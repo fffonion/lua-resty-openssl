@@ -1557,6 +1557,12 @@ finds from beginning. Index is 1-based.
 
 ```lua
 local ext, pos, err = x509:get_extension("keyUsage")
+ngx.say(ext:text())
+-- outputs "Digital Signature, Key Encipherment"
+
+local ext, pos, err = x509:get_extension("subjectKeyIdentifier")
+ngx.say(ext:text())
+-- outputs "3D:42:13:57:8F:79:BE:30:7D:86:A9:AC:67:50:E5:56:3E:0E:AF:4F"
 ```
 
 [Back to TOC](#table-of-contents)
@@ -1569,9 +1575,9 @@ Adds an X.509 `extension` to certificate, the first argument must be a
 [resty.openssl.x509.extension](#restyopensslx509extension) instance.
 
 ```lua
-local extension, err = require("resty.openssl.extension").new({
-    "keyUsage", "critical,keyCertSign,cRLSign",
-})
+local extension, err = require("resty.openssl.x509.extension").new(
+  "keyUsage", "critical,keyCertSign,cRLSign"
+)
 local x509, err = require("resty.openssl.x509").new()
 local ok, err = x509:add_extension(extension)
 ```
@@ -2261,26 +2267,67 @@ Module to interact with X.509 extensions.
 Creates a new `extension` instance. `name` and `value` are strings in OpenSSL
 [arbitrary extension format](https://www.openssl.org/docs/manmaster/man5/x509v3_config.html).
 
-`data` can be a table or nil. Where data is a table, the following key will be looked up:
+`data` can be a table, string or nil. Where `data` is a table, the following key will be looked up:
 
 ```lua
 data = {
-    issuer = resty.openssl.x509 instance,
-    subject = resty.openssl.x509 instance,
-    request = resty.openssl.x509.csr instance,
-    crl = resty.openssl.x509.crl instance,
+  issuer = resty.openssl.x509 instance,
+  subject = resty.openssl.x509 instance,
+  request = resty.openssl.x509.csr instance,
+  crl = resty.openssl.x509.crl instance,
 }
 ```
 
-Example:
+When `data` is a string, it's the full nconf string. Using section lookup from `value` to
+`data` is also supported.
+
+<details>
+<summary>Example usages:</summary>
+
 ```lua
-local x509, err = require("resty.openssl.x509").new()
 local extension = require("resty.openssl.x509.extension")
+-- extendedKeyUsage=serverAuth,clientAuth
 local ext, err = extension.new("extendedKeyUsage", "serverAuth,clientAuth")
+-- crlDistributionPoints=URI:http://myhost.com/myca.crl
+ext, err = extension.new("crlDistributionPoints", "URI:http://myhost.com/myca.crl")
+-- with section lookup
+ext, err = extension.new(
+  "crlDistributionPoints", "crldp1_section",
+  [[
+  [crldp1_section]
+  fullname=URI:http://myhost.com/myca.crl
+  CRLissuer=dirName:issuer_sect
+  reasons=keyCompromise, CACompromise
+
+  [issuer_sect]
+  C=UK
+  O=Organisation
+  CN=Some Name
+  ]]
+)
+-- combine section lookup with other value
+ext, err = extension.new(
+"certificatePolicies", "ia5org,1.2.3.4,1.5.6.7.8,@polsect",
+  [[
+  [polsect]
+  policyIdentifier = 1.3.5.8
+  CPS.1="http://my.host.name/"
+  CPS.2="http://my.your.name/"
+  userNotice.1=@notice
+
+  [notice]
+  explicitText="Explicit Text Here"
+  organization="Organisation Name"
+  noticeNumbers=1,2,3,4
+ ]]
+))
+-- subjectKeyIdentifier=hash
+local x509, err = require("resty.openssl.x509").new()
 ext, err =  extension.new("subjectKeyIdentifier", "hash", {
-    subject = crt
+    subject = x509
 })
 ```
+</details>
 
 See [examples/tls-alpn-01.lua](https://github.com/fffonion/lua-resty-openssl/blob/master/examples/tls-alpn-01.lua)
 for an example to create extension with an unknown nid.
@@ -2295,9 +2342,24 @@ Creates a new `extension` instance from `X509_EXTENSION*` pointer.
 
 [Back to TOC](#table-of-contents)
 
+### extension.from_der
+
+**syntax**: *ext, ok = extension.from_der(der, nid_or_txt, crit?)*
+
+Creates a new `extension` instance. `der` is the ASN.1 encoded string to be
+set for the extension.
+
+`nid_or_txt` is a number or text representation of [NID] and
+`crit` is the critical flag of the extension.
+
+See [examples/tls-alpn-01.lua](https://github.com/fffonion/lua-resty-openssl/blob/master/examples/tls-alpn-01.lua)
+for an example to create extension with an unknown nid.
+
+[Back to TOC](#table-of-contents)
+
 ### extension.from_data
 
-**syntax**: *ext, ok = extension.from_data(table, nid, crit?)*
+**syntax**: *ext, ok = extension.from_data(table, nid_or_txt, crit?)*
 
 Creates a new `extension` instance. `table` can be instance of:
 
@@ -2305,7 +2367,8 @@ Creates a new `extension` instance. `table` can be instance of:
 - [x509.extension.info_access](#restyopensslx509extensioninfo_access)
 - [x509.extension.dist_points](#restyopensslx509extensiondist_points)
 
-`nid` is a number of [NID] and `crit` is the critical flag of the extension.
+`nid_or_txt` is a number or text representation of [NID] and
+`crit` is the critical flag of the extension.
 
 [Back to TOC](#table-of-contents)
 

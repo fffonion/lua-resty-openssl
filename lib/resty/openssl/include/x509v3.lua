@@ -13,6 +13,7 @@ ffi.cdef [[
   // STACK_OF(OPENSSL_STRING)
   OPENSSL_STACK *X509_get1_ocsp(X509 *x);
   void X509_email_free(OPENSSL_STACK *sk);
+  void X509V3_set_nconf(X509V3_CTX *ctx, CONF *conf);
 
   typedef struct EDIPartyName_st EDIPARTYNAME;
 

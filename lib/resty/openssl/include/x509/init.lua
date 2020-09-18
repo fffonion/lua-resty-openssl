@@ -33,6 +33,9 @@ ffi.cdef [[
   ASN1_OBJECT *X509_EXTENSION_get_object(X509_EXTENSION *ex);
   ASN1_OCTET_STRING *X509_EXTENSION_get_data(X509_EXTENSION *ne);
   X509_EXTENSION *X509V3_EXT_i2d(int ext_nid, int crit, void *ext_struc);
+  X509_EXTENSION *X509_EXTENSION_create_by_NID(X509_EXTENSION **ex,
+                                             int nid, int crit,
+                                             ASN1_OCTET_STRING *data);
 
   // needed by pkey
   EVP_PKEY *d2i_PrivateKey_bio(BIO *bp, EVP_PKEY **a);
