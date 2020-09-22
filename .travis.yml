@@ -32,29 +32,30 @@ env:
     - TEST_NGINX_SLEEP=0.005
     - TEST_NGINX_RANDOMIZE=1
     - LUACHECK_VER=0.21.1
-  matrix:
-    - NGINX_VERSION=1.15.8 OPENSSL_VER=1.0.2u
-    - NGINX_VERSION=1.15.8 OPENSSL_VER=1.1.0l
-    - NGINX_VERSION=1.15.8 OPENSSL_VER=1.1.1g
-    - NGINX_VERSION=1.17.8 OPENSSL_VER=1.0.2u
-    - NGINX_VERSION=1.17.8 OPENSSL_VER=1.1.0l
-    - NGINX_VERSION=1.17.8 OPENSSL_VER=1.1.1g
-    # add -Wno-error to fix deprecation warnings from openssl
-    - NGINX_VERSION=1.15.8 OPENSSL_VER=3.0.0-alpha6 NGINX_CC_OPTS=-Wno-error
-    - NGINX_VERSION=1.17.8 OPENSSL_VER=3.0.0-alpha6 NGINX_CC_OPTS=-Wno-error
 
 matrix:
   include:
+    # valgrind
+    # - env: NGINX_VERSION=1.15.8 OPENSSL_VER=1.1.1h APT_PACKAGES=valgrind NGINX_CC_OPTS=-O0 LUAJIT_CC_OPTS="-DLUAJIT_NUMMODE=2 -DLUAJIT_USE_VALGRIND -DLUAJIT_USE_SYSMALLOC -O0" TEST_NGINX_ENV="TEST_NGINX_USE_VALGRIND=1 TEST_NGINX_TIMEOUT=60 TEST_NGINX_SLEEP=1"
+    - env: NGINX_VERSION=1.15.8 OPENSSL_VER=1.0.2u
+    - env: NGINX_VERSION=1.15.8 OPENSSL_VER=1.1.0l
+    - env: NGINX_VERSION=1.15.8 OPENSSL_VER=1.1.1h
+    - env: NGINX_VERSION=1.17.8 OPENSSL_VER=1.0.2u
+    - env: NGINX_VERSION=1.17.8 OPENSSL_VER=1.1.0l
+    - env: NGINX_VERSION=1.17.8 OPENSSL_VER=1.1.1h
+    # openssl 3.0
+    # add -Wno-error to fix deprecation warnings from openssl
+    - env: NGINX_VERSION=1.15.8 OPENSSL_VER=3.0.0-alpha6 NGINX_CC_OPTS=-Wno-error
+    - env: NGINX_VERSION=1.17.8 OPENSSL_VER=3.0.0-alpha6 NGINX_CC_OPTS=-Wno-error
     - compiler: clang
-      env: NGINX_VERSION=1.15.8 OPENSSL_VER=1.1.1g
+      env: NGINX_VERSION=1.15.8 OPENSSL_VER=1.1.1h
     - arch: arm64
-      compiler: gcc
-      env: NGINX_VERSION=1.15.8 OPENSSL_VER=1.1.1g APT_PACKAGES=libpcre3-dev
+      env: NGINX_VERSION=1.15.8 OPENSSL_VER=1.1.1h APT_PACKAGES=libpcre3-dev
 
 install:
   - export NGX_BUILD_CC=$CC
   - export PATH=$PWD/cache/work/nginx/sbin:$PWD/nginx-devel-utils:$PATH
-  - sudo apt-get install -qq -y cpanminus axel ca-certificates $APT_PACKAGES #valgrind
+  - sudo apt-get install -qq -y cpanminus axel ca-certificates $APT_PACKAGES
   # perl cache
   - pushd cache
   - if [ ! -e perl ]; then sudo cpanm --notest Test::Nginx > build.log 2>&1 || (cat build.log && exit 1); cp -r /usr/local/share/perl/ .; else sudo cp -r perl /usr/local/share; fi
@@ -81,7 +82,7 @@ install:
   # luajit
   - if [ ! -e luajit2 ]; then git clone -b v2.1-agentzh https://github.com/openresty/luajit2.git; fi
   - pushd luajit2/
-  - make -j$JOBS CCDEBUG=-g Q= PREFIX=$LUAJIT_PREFIX CC=$CC XCFLAGS='-DLUA_USE_APICHECK -DLUA_USE_ASSERT -DLUAJIT_ENABLE_LUA52COMPAT' > build.log 2>&1 || (cat build.log && exit 1)
+  - make -j$JOBS CCDEBUG=-g Q= PREFIX=$LUAJIT_PREFIX CC=$CC XCFLAGS="-DLUA_USE_APICHECK -DLUA_USE_ASSERT -DLUAJIT_ENABLE_LUA52COMPAT $LUAJIT_CC_OPTS" > build.log 2>&1 || (cat build.log && exit 1)
   - make install PREFIX=$LUAJIT_PREFIX > build.log 2>&1 || (cat build.log && exit 1)
   - popd
   # lua-cjson
@@ -94,4 +95,6 @@ install:
   - popd
 
 script:
-  - prove -j$JOBS -r t/
+  - export $TEST_NGINX_ENV A=1
+  - prove -j$JOBS -r t/ 2>&1 | tee output.log ; test ${PIPESTATUS[0]} -eq 0
+  - if grep -q 'insert_a_suppression_name_here' output.log; then echo "Valgrind found problems"; exit 1; else echo "All good"; fi
