@@ -118,11 +118,6 @@ kdf.derive: unknown type 19823718236128632
 --- config
     location =/t {
         content_by_lua_block {
-            local version_num = require("resty.openssl.version").version_num
-            if version_num < 0x10100000 then
-                ngx.say("tIBQd46amKgA6uRytksrXA==")
-                ngx.exit(0)
-            end
             local kdf = require("resty.openssl.kdf")
             local key = myassert(kdf.derive({
                 type = kdf.HKDF,
@@ -138,6 +133,8 @@ kdf.derive: unknown type 19823718236128632
     }
 --- request
     GET /t
+--- skip_openssl
+2: < 1.1.0
 --- response_body_like eval
 "tIBQd46amKgA6uRytksrXA=="
 --- no_error_log
@@ -150,11 +147,6 @@ kdf.derive: unknown type 19823718236128632
     location =/t {
         content_by_lua_block {
             local version_num = require("resty.openssl.version").version_num
-            if version_num < 0x10100000 then
-                ngx.say("ckFzOqiMeR5Sl21W4zpczA==")
-                ngx.say("SlKh6iSRnnZV92zOAbLduQ==")
-                ngx.exit(0)
-            end
             local kdf = require("resty.openssl.kdf")
             local key = myassert(kdf.derive({
                 type = kdf.HKDF,
@@ -180,6 +172,8 @@ kdf.derive: unknown type 19823718236128632
     }
 --- request
     GET /t
+--- skip_openssl
+2: < 1.1.0
 --- response_body_like eval
 "ckFzOqiMeR5Sl21W4zpczA==
 SlKh6iSRnnZV92zOAbLduQ==
@@ -193,11 +187,6 @@ SlKh6iSRnnZV92zOAbLduQ==
 --- config
     location =/t {
         content_by_lua_block {
-            local version_num = require("resty.openssl.version").version_num
-            if version_num < 0x10100000 then
-                ngx.say("0xr8qthU+ypv2xRC90la8g==")
-                ngx.exit(0)
-            end
             local kdf = require("resty.openssl.kdf")
             local key = myassert(kdf.derive({
                 type = kdf.TLS1_PRF,
@@ -212,6 +201,8 @@ SlKh6iSRnnZV92zOAbLduQ==
     }
 --- request
     GET /t
+--- skip_openssl
+2: < 1.1.0
 --- response_body_like eval
 "0xr8qthU\\+ypv2xRC90la8g=="
 --- no_error_log
@@ -223,11 +214,6 @@ SlKh6iSRnnZV92zOAbLduQ==
 --- config
     location =/t {
         content_by_lua_block {
-            local version_num = require("resty.openssl.version").version_num
-            if version_num < 0x10100000 then
-                ngx.say("XVVDK9/puTqBOsyTKt8PKQ==")
-                ngx.exit(0)
-            end
             local kdf = require("resty.openssl.kdf")
             local key = myassert(kdf.derive({
                 type = kdf.TLS1_PRF,
@@ -241,6 +227,8 @@ SlKh6iSRnnZV92zOAbLduQ==
     }
 --- request
     GET /t
+--- skip_openssl
+2: < 1.1.0
 --- response_body_like eval
 "XVVDK9/puTqBOsyTKt8PKQ=="
 --- no_error_log
@@ -252,11 +240,6 @@ SlKh6iSRnnZV92zOAbLduQ==
 --- config
     location =/t {
         content_by_lua_block {
-            local version_num = require("resty.openssl.version").version_num
-            if version_num < 0x10100000 then
-                ngx.say("9giFtxace5sESmRb8qxuOw==")
-                ngx.exit(0)
-            end
             local kdf = require("resty.openssl.kdf")
             local key = myassert(kdf.derive({
                 type = kdf.SCRYPT,
@@ -272,6 +255,8 @@ SlKh6iSRnnZV92zOAbLduQ==
     }
 --- request
     GET /t
+--- skip_openssl
+2: < 1.1.0
 --- response_body_like eval
 "9giFtxace5sESmRb8qxuOw=="
 --- no_error_log

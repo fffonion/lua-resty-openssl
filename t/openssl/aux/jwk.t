@@ -177,11 +177,6 @@ true
 --- config
     location =/t {
         content_by_lua_block {
-            local version_num = require("resty.openssl.version").version_num
-            if version_num < 0x10101000 then
-                ngx.say('pkey.new:load_key: failed to construct OKP key from JWK: at least "x" or "d" parameter is required')
-                return
-            end
             local jwk = require("cjson").encode({
                 kty = "OKP",
                 crv = "Ed25519",
@@ -226,6 +221,8 @@ true
     }
 --- request
     GET /t
+--- skip_openssl
+2: < 1.1.1
 --- response_body eval
 'pkey.new:load_key: failed to construct OKP key from JWK: at least "x" or "d" parameter is required
 '

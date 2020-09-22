@@ -93,13 +93,6 @@ true"
 --- config
     location =/t {
         content_by_lua_block {
-            local version_num = require("resty.openssl.version").version_num
-            if version_num < 0x10101000 then
-                ngx.say('-----BEGIN PRIVATE KEY-----')
-                ngx.say('fake')
-                ngx.say('true')
-                return
-            end
             local pkey = require("resty.openssl.pkey")
             local p = myassert(pkey.new({
                 type = 'Ed25519',
@@ -111,6 +104,8 @@ true"
     }
 --- request
     GET /t
+--- skip_openssl
+2: < 1.1.1
 --- response_body_like eval
 "-----BEGIN PRIVATE KEY-----
 .+
@@ -349,12 +344,6 @@ nil
 --- config
     location =/t {
         content_by_lua_block {
-            local version_num = require("resty.openssl.version").version_num
-            if version_num < 0x10101000 then
-                ngx.say('32')
-                ngx.say('32')
-                return
-            end
             local p = myassert(require("resty.openssl.pkey").new({
                 type = "Ed25519",
             }))
@@ -367,6 +356,8 @@ nil
     }
 --- request
     GET /t
+--- skip_openssl
+2: < 1.1.1
 --- response_body_like eval
 "32
 32
@@ -435,12 +426,6 @@ true
 --- config
     location =/t {
         content_by_lua_block {
-            local version_num = require("resty.openssl.version").version_num
-            if version_num < 0x10101000 then
-                ngx.say('64')
-                ngx.say('true')
-                return
-            end
             local p = myassert(require("resty.openssl.pkey").new({
                 type = "Ed25519"
             }))
@@ -454,6 +439,8 @@ true
     }
 --- request
     GET /t
+--- skip_openssl
+2: < 1.1.1
 --- response_body eval
 "64
 true

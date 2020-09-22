@@ -65,27 +65,20 @@ false
     location =/t {
         content_by_lua_block {
             local openssl = require("resty.openssl")
-            if openssl.version.OPENSSL_10 then
-                -- noop
-                local pok, perr = pcall(openssl.resty_hmac_compat)
-                ngx.say(pok)
-                ngx.say("-size of C type is unknown or too large-")
-                ngx.say(true)
-                ngx.say(ngx.null)
-            else
-                require("resty.openssl.hmac")
-                local pok, perr = pcall(require, "resty.hmac")
-                ngx.say(pok)
-                ngx.say(perr)
-                openssl.resty_hmac_compat()
-                local pok, perr = pcall(require, "resty.hmac")
-                ngx.say(pok)
-                ngx.say(perr)
-            end
+            require("resty.openssl.hmac")
+            local pok, perr = pcall(require, "resty.hmac")
+            ngx.say(pok)
+            ngx.say(perr)
+            openssl.resty_hmac_compat()
+            local pok, perr = pcall(require, "resty.hmac")
+            ngx.say(pok)
+            ngx.say(perr)
         }
     }
 --- request
     GET /t
+--- skip_openssl
+2: < 1.1.0
 --- response_body_like
 false
 .+size of C type is unknown or too large.+
