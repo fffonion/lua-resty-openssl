@@ -58,3 +58,53 @@ decrypted = assert(cipher:final(encrypted))
 
 ngx.say("decryption result: ", decrypted)
 
+--[[
+Note in some implementations like `libsodium` or Java, AEAD ciphers append the `tag` (or `MAC`)
+at the end of encrypted ciphertext. In such case, user will need to manually cut off the `tag`
+with correct size(usually 16 bytes) and pass in the ciphertext and `tag` seperately.
+
+-- encrypt with libsodium and decrypt in lua-resty-openssl
+
+<? php
+$encrypted_with_tag = sodium_crypto_aead_aes256gcm_encrypt(
+    $to_be_encrypted,
+    $aad,
+    $iv,
+    $key
+);
+?>
+
+local tag = string.sub(encrypted_with_tag, #encrypted_with_tag-16, #encrypted_with_tag)
+local encrypted = string.sub(encrypted_with_tag, 1, #encrypted_with_tag-16)
+local decrypted = assert(cipher:decrypt(key, iv, encrypted, false, aad, tag))
+
+
+-- encrypt with lua-resty-openssl and decrypt in libsodium
+
+local encrypted = assert(cipher:encrypt(key, iv, to_be_encrypted, false, aad))
+local tag = assert(cipher:get_aead_tag())
+
+<? php
+$decrypted = sodium_crypto_aead_aes256gcm_decrypt(
+    $encrypted . $tag,
+    $aad,
+    $iv,
+    $key
+);
+?>
+
+]]--
+
+--[[
+  If the encryption is not done properly, it's possible that no tag is provided after all.
+  In such case, use the streaming interface and call update() instead of final()
+]]
+
+assert(cipher:init(key, iv, {
+  is_encrypt = false,
+}))
+assert(cipher:update_aead_aad(aad))
+decrypted = assert(cipher:update(encrypted))
+
+ngx.say("decryption result (without checking MAC): ", decrypted)
+

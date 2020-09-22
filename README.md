@@ -1124,6 +1124,10 @@ ngx.say(cipher)
 -- outputs "🦢"
 ```
 
+**Note:** in some implementations like `libsodium` or Java, AEAD ciphers append the `tag` (or `MAC`)
+at the end of encrypted ciphertext. In such case, user will need to manually cut off the `tag`
+with correct size(usually 16 bytes) and pass in the ciphertext and `tag` seperately.
+
 See [examples/aes-gcm-aead.lua](https://github.com/fffonion/lua-resty-openssl/blob/master/examples/aes-gcm-aead.lua)
 for an example to use AEAD modes with authentication.
 
