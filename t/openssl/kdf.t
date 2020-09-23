@@ -123,6 +123,7 @@ kdf.derive: unknown type 19823718236128632
                 type = kdf.HKDF,
                 outlen = 16,
                 md = "md5",
+                salt = "salt",
                 hkdf_key = "secret",
                 hkdf_info = "some info",
                 hkdf_mode = kdf.HKDEF_MODE_EXTRACT_AND_EXPAND,
@@ -135,8 +136,8 @@ kdf.derive: unknown type 19823718236128632
     GET /t
 --- skip_openssl
 2: < 1.1.0
---- response_body_like eval
-"tIBQd46amKgA6uRytksrXA=="
+--- response_body eval
+"aqRd+gO5Ok3YneDEormTcg=="
 --- no_error_log
 [error]
 
@@ -151,18 +152,21 @@ kdf.derive: unknown type 19823718236128632
             local key = myassert(kdf.derive({
                 type = kdf.HKDF,
                 outlen = 16,
+                salt = "salt",
                 hkdf_key = "secret",
+                hkdf_info = "info",
             }))
 
             ngx.say(ngx.encode_base64(key))
 
             if version_num < 0x10101000 then
-                ngx.say("SlKh6iSRnnZV92zOAbLduQ==")
+                ngx.say("W/tSxFnNsHIYwXa13eybYhW9W3Y=")
                 ngx.exit(0)
             end
             local key = myassert(kdf.derive({
                 type = kdf.HKDF,
                 outlen = 16,
+                salt = "salt",
                 hkdf_key = "secret",
                 hkdf_mode = kdf.HKDEF_MODE_EXTRACT_ONLY,
             }))
@@ -175,8 +179,8 @@ kdf.derive: unknown type 19823718236128632
 --- skip_openssl
 2: < 1.1.0
 --- response_body_like eval
-"ckFzOqiMeR5Sl21W4zpczA==
-SlKh6iSRnnZV92zOAbLduQ==
+"aggdq4eoqRiP0Z3GbpxCjg==
+W/tSxFnNsHIYwXa13eybYhW9W3Y=
 "
 --- no_error_log
 [error]

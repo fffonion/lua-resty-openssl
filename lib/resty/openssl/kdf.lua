@@ -87,6 +87,24 @@ local function check_options(opt, nid, field, typ, is_optional, required_only_if
   return v
 end
 
+local function check_hkdf_options(opt)
+  local mode = opt.hkdf_mode
+  if not mode or version_num < 0x10101000 then
+    mode = _M.HKDEF_MODE_EXTRACT_AND_EXPAND
+  end
+
+  if mode == _M.HKDEF_MODE_EXTRACT_AND_EXPAND and (
+    not opt.salt or not opt.hkdf_info) then
+    return '""salt" and "hkdf_info" are required for EXTRACT_AND_EXPAND mode'
+  elseif mode == _M.HKDEF_MODE_EXTRACT_ONLY and not opt.salt then
+    return '"salt" is required for EXTRACT_ONLY mode'
+  elseif mode == _M.EVP_PKEY_HKDEF_MODE_EXPAND_ONLY and not opt.hkdf_info then
+    return '"hkdf_info" is required for EXPAND_ONLY mode'
+  end
+
+  return nil
+end
+
 local options_schema = {
   outlen = { TYPE_NUMBER },
   pass   = { TYPE_STRING, true },
@@ -129,6 +147,13 @@ function _M.derive(options)
       return nil, "kdf.derive: " .. err
     end
     options[k] = v
+  end
+
+  if typ == NID_hkdf then
+    local err = check_hkdf_options(options)
+    if err then
+      return nil, "kdf.derive: " .. err
+    end
   end
 
   local salt_len = 0
@@ -239,6 +264,16 @@ function _M.derive(options)
           kdf_macro.EVP_PKEY_CTRL_HKDF_MODE,
           options.hkdf_mode, nil) then
           return nil, format_error("kdf.derive: EVP_PKEY_CTRL_HKDF_MODE")
+        end
+        if options.hkdf_mode == _M.HKDEF_MODE_EXTRACT_ONLY then
+          local md_size = C.EVP_MD_size(md)
+          if options.outlen ~= md_size then
+            options.outlen = md_size
+            ngx.log(ngx.WARN, "hkdf_mode EXTRACT_ONLY outputs fixed length of ", md_size,
+                    " key, ignoring options.outlen")
+          end
+          outlen[0] = md_size
+          buf = ctypes.uchar_array(md_size)
         end
       else
         ngx.log(ngx.WARN, "hkdf_mode is not effective in ", version_text)

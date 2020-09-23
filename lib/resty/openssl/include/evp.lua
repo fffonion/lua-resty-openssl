@@ -22,6 +22,10 @@ ffi.cdef [[
   void EVP_PKEY_CTX_free(EVP_PKEY_CTX *ctx);
   int EVP_PKEY_CTX_ctrl(EVP_PKEY_CTX *ctx, int keytype, int optype,
                       int cmd, int p1, void *p2);
+  // TODO replace EVP_PKEY_CTX_ctrl with EVP_PKEY_CTX_ctrl_str to reduce
+  // some hardcoded macros
+  int EVP_PKEY_CTX_ctrl_str(EVP_PKEY_CTX *ctx, const char *type,
+                      const char *value);
   int EVP_PKEY_encrypt_init(EVP_PKEY_CTX *ctx);
   int EVP_PKEY_encrypt(EVP_PKEY_CTX *ctx,
                         unsigned char *out, size_t *outlen,
