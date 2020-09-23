@@ -119,7 +119,8 @@ function _M.new(cert, fmt)
           -- BIO_reset; #define BIO_CTRL_RESET 1
           local code = C.BIO_ctrl(bio, 1, 0, nil)
           if code ~= 1 then
-              return nil, "x509.new: BIO_ctrl() failed: " .. code
+            C.BIO_free(bio)
+            return nil, "x509.new: BIO_ctrl() failed: " .. code
           end
           -- clear errors occur when trying
           C.ERR_clear_error()

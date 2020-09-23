@@ -107,6 +107,8 @@ function _M:find(nid, last_pos)
     return nil
   end
 
+  C.ASN1_OBJECT_free(asn1)
+
   return value_at(self.ctx, pos), pos+1
 end
 

@@ -93,10 +93,12 @@ __DATA__
             -- we only get detailed error for "no certificate found" on >= 1.1.1
             ngx.say(err)
             os.remove("cert4-empty.pem")
-            os.execute("openssl req -newkey rsa:2048 -nodes -keyout key4.pem -x509 -days 365 -out cert4.pem -subj '/'")
+            local cert, _ = require("helper").create_self_signed()
+            local f = io.open("cert4.pem", "w")
+            f:write(cert:tostring())
+            f:close()
             local ok = myassert(s:load_file("cert4.pem"))
             os.remove("cert4.pem")
-            os.remove("key4.pem")
         }
     }
 --- request
