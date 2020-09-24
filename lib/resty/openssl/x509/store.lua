@@ -7,7 +7,8 @@ local x509_vfy_macro = require "resty.openssl.include.x509_vfy"
 local x509_lib = require "resty.openssl.x509"
 local chain_lib = require "resty.openssl.x509.chain"
 local crl_lib = require "resty.openssl.x509.crl"
-local format_error = require("resty.openssl.err").format_error
+local format_error = require("resty.openssl.err").format_all_error
+local format_all_error = require("resty.openssl.err").format_error
 
 local _M = {}
 local mt = { __index = _M }
@@ -36,7 +37,7 @@ end
 
 function _M:use_default()
   if C.X509_STORE_set_default_paths(self.ctx) ~= 1 then
-    return false, format_error("x509.store:use_default")
+    return false, format_all_error("x509.store:use_default")
   end
   return true
 end
@@ -51,7 +52,7 @@ function _M:add(item)
     end
     -- ref counter of dup is increased by 1
     if C.X509_STORE_add_cert(self.ctx, dup) ~= 1 then
-      err = format_error("x509.store:add: X509_STORE_add_cert")
+      err = format_all_error("x509.store:add: X509_STORE_add_cert")
     end
     -- decrease the dup ctx ref count immediately to make leak test happy
     C.X509_free(dup)
@@ -62,7 +63,7 @@ function _M:add(item)
     end
     -- ref counter of dup is increased by 1
     if C.X509_STORE_add_crl(self.ctx, dup) ~= 1 then
-      err = format_error("x509.store:add: X509_STORE_add_crl")
+      err = format_all_error("x509.store:add: X509_STORE_add_crl")
     end
 
     -- define X509_V_FLAG_CRL_CHECK                   0x4
@@ -92,7 +93,7 @@ function _M:load_file(path)
     return false, "x509.store:load_file: expect a string at #1"
   else
     if C.X509_STORE_load_locations(self.ctx, path, nil) ~= 1 then
-      return false, format_error("x509.store:load_file")
+      return false, format_all_error("x509.store:load_file")
     end
   end
 
@@ -104,7 +105,7 @@ function _M:load_directory(path)
     return false, "x509.store:load_directory expect a string at #1"
   else
     if C.X509_STORE_load_locations(self.ctx, nil, path) ~= 1 then
-      return false, format_error("x509.store:load_directory")
+      return false, format_all_error("x509.store:load_directory")
     end
   end
 
