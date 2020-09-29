@@ -2,6 +2,18 @@
 ## [Unreleased]
 
 
+<a name="0.6.6"></a>
+## [0.6.6] - 2020-09-29
+### feat
+- **x509.extension:** support create by ASN.1 octet string and nconf [7d8e81f](https://github.com/fffonion/lua-resty-openssl/commit/7d8e81f6789abd951f6e6b3aeb96607f8682c1d5)
+
+### fix
+- ***:** export tostring for x509.name and x509.altname [6143659](https://github.com/fffonion/lua-resty-openssl/commit/6143659706ea5b8c42a418b7fac1eae4179a6280)
+- **kdf:** fix HKDF potential buffer overflow [da6f420](https://github.com/fffonion/lua-resty-openssl/commit/da6f42025c657f610f1ebee95f0489afd3628d9f)
+- **x509.name:** potential memory leak in x509.name:find() [ac51fb1](https://github.com/fffonion/lua-resty-openssl/commit/ac51fb10581ec31e639c1298c080a899466fd57d)
+- **x509.store:** return all error on load_file or add failure [a4ee237](https://github.com/fffonion/lua-resty-openssl/commit/a4ee2379802e41f5b5566ac11e59598d1f338ca5)
+
+
 <a name="0.6.5"></a>
 ## [0.6.5] - 2020-09-16
 ### fix
@@ -237,7 +249,8 @@
 <a name="init"></a>
 ## init - 2019-09-25
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.5...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.6...HEAD
+[0.6.6]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.5...0.6.6
 [0.6.5]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.4...0.6.5
 [0.6.4]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.3...0.6.4
 [0.6.3]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.2...0.6.3
