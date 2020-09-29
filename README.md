@@ -2932,6 +2932,7 @@ Credits
 This project receives contribution from following developers:
 
 - [@nasrullo](https://github.com/nasrullo)
+- [@vinayakhulawale](https://github.com/vinayakhulawale)
 
 [Back to TOC](#table-of-contents)
 
