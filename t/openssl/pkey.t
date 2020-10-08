@@ -521,3 +521,26 @@ pkey:verify: expect a digest instance at #2
 '{"ln":"rsaEncryption","nid":6,"sn":"rsaEncryption","id":"1.2.840.113549.1.1.1"}'
 --- no_error_log
 [error]
+
+=== TEST 20: Raw sign and recover
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local p = myassert(require("resty.openssl.pkey").new())
+
+            local s = myassert(p:sign_raw("🕶️"))
+            ngx.say(#s)
+
+            local v = myassert(p:verify_recover(s))
+            ngx.say(v == "🕶️")
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"256
+true
+"
+--- no_error_log
+[error]

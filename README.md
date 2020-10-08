@@ -32,6 +32,8 @@ Table of Contents
     + [pkey:verify](#pkeyverify)
     + [pkey:encrypt](#pkeyencrypt)
     + [pkey:decrypt](#pkeydecrypt)
+    + [pkey:sign_raw](#pkeysign_raw)
+    + [pkey:verify_recover](#pkeyverify_recover)
     + [pkey:derive](#pkeyderive)
     + [pkey:tostring](#pkeytostring)
     + [pkey:to_PEM](#pkeyto_pem)
@@ -431,7 +433,7 @@ to create EC private key:
 ```lua
 pkey.new({
   type = 'EC',
-  curve = 'prime196v1',
+  curve = 'prime192v1',
 })
 ```
 
@@ -656,6 +658,40 @@ local decrypted, err = privkey:decrypt(s)
 ngx.say(decrypted)
 -- outputs "🦢"
 ```
+
+[Back to TOC](#table-of-contents)
+
+### pkey:sign_raw
+
+**syntax**: *signature, err = pk:sign_raw(txt, padding?)*
+
+Signs the cipher text `cipher_txt` with pkey instance, which must loaded a private key.
+
+The optional second argument `padding` has same meaning in [pkey:encrypt](#pkeyencrypt).
+
+This function may also be called "private encrypt" in some implementations like NodeJS or PHP.
+Do note as the function names suggested, this function is not secure to be regarded as an encryption.
+When developing new applications, user should use [pkey:sign](#pkeysign) for signing with digest, or 
+[pkey:encrypt](#pkeyencrypt) for encryption.
+
+See [examples/raw-sign-and-recover.lua](https://github.com/fffonion/lua-resty-openssl/blob/master/examples/raw-sign-and-recover.lua)
+for an example.
+
+[Back to TOC](#table-of-contents)
+
+### pkey:verify_recover
+
+**syntax**: *txt, err = pk:verify_recover(signature, padding?)*
+
+Verify the cipher text `signature` with pkey instance, which must loaded a public key, and also
+returns the original text being signed. This operation is only supported by RSA key.
+
+The optional second argument `padding` has same meaning in [pkey:encrypt](#pkeyencrypt).
+
+This function may also be called "public decrypt" in some implementations like NodeJS or PHP.
+
+See [examples/raw-sign-and-recover.lua](https://github.com/fffonion/lua-resty-openssl/blob/master/examples/raw-sign-and-recover.lua)
+for an example.
 
 [Back to TOC](#table-of-contents)
 

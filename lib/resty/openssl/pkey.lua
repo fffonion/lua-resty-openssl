@@ -427,7 +427,12 @@ function _M:set_parameters(opts)
   end
 end
 
-local function asymmetric_routine(self, s, is_encrypt, padding)
+local ASYMMETRIC_OP_ENCRYPT = 0x1
+local ASYMMETRIC_OP_DECRYPT = 0x2
+local ASYMMETRIC_OP_SIGN_RAW = 0x4
+local ASYMMETRIC_OP_RECOVER = 0x8
+
+local function asymmetric_routine(self, s, op, padding)
   local pkey_ctx
 
   if self.key_type == evp_macro.EVP_PKEY_RSA then
@@ -454,14 +459,24 @@ local function asymmetric_routine(self, s, is_encrypt, padding)
   end
 
   local f, fint, op_name
-  if is_encrypt then
+  if op == ASYMMETRIC_OP_ENCRYPT then
     fint = C.EVP_PKEY_encrypt_init
     f = C.EVP_PKEY_encrypt
     op_name = "encrypt"
-  else
+  elseif op == ASYMMETRIC_OP_DECRYPT then
     fint = C.EVP_PKEY_decrypt_init
     f = C.EVP_PKEY_decrypt
     op_name = "decrypt"
+  elseif op == ASYMMETRIC_OP_SIGN_RAW then
+    fint = C.EVP_PKEY_sign_init
+    f = C.EVP_PKEY_sign
+    op_name = "sign"
+  elseif op == ASYMMETRIC_OP_RECOVER then
+    fint = C.EVP_PKEY_verify_recover_init
+    f = C.EVP_PKEY_verify_recover
+    op_name = "verify_recover"
+  else
+    error("bad \"op\", got " .. op, 2)
   end
 
   local code = fint(pkey_ctx)
@@ -497,11 +512,19 @@ end
 _M.PADDINGS = rsa_macro.paddings
 
 function _M:encrypt(s, padding)
-  return asymmetric_routine(self, s, true, padding)
+  return asymmetric_routine(self, s, ASYMMETRIC_OP_ENCRYPT, padding)
 end
 
 function _M:decrypt(s, padding)
-  return asymmetric_routine(self, s, false, padding)
+  return asymmetric_routine(self, s, ASYMMETRIC_OP_DECRYPT, padding)
+end
+
+function _M:sign_raw(s, padding)
+  return asymmetric_routine(self, s, ASYMMETRIC_OP_SIGN_RAW, padding)
+end
+
+function _M:verify_recover(s, padding)
+  return asymmetric_routine(self, s, ASYMMETRIC_OP_RECOVER, padding)
 end
 
 function _M:sign(digest)
