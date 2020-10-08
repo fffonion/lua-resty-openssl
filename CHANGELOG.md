@@ -2,6 +2,12 @@
 ## [Unreleased]
 
 
+<a name="0.6.7"></a>
+## [0.6.7] - 2020-10-08
+### feat
+- **pkey:** sign_raw and verify_recover [90ed1b6](https://github.com/fffonion/lua-resty-openssl/commit/90ed1b637729bfde33a94c6467327419186bdd38)
+
+
 <a name="0.6.6"></a>
 ## [0.6.6] - 2020-09-29
 ### feat
@@ -249,7 +255,8 @@
 <a name="init"></a>
 ## init - 2019-09-25
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.6...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.7...HEAD
+[0.6.7]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.6...0.6.7
 [0.6.6]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.5...0.6.6
 [0.6.5]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.4...0.6.5
 [0.6.4]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.3...0.6.4
