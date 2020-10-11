@@ -16,6 +16,7 @@ our $HttpConfig = qq{
             jit.off()
         end
         _G.myassert = require("helper").myassert
+        _G.encode_sorted_json = require("helper").encode_sorted_json
     }
 };
 
@@ -526,13 +527,13 @@ pkey:verify: expect a digest instance or a string at #2
             local p, err = require("resty.openssl.pkey").new({
                 type = 'RSA',
             })
-            ngx.say(require("cjson").encode(p:get_key_type()))
+            ngx.say(encode_sorted_json(p:get_key_type()))
         }
     }
 --- request
     GET /t
 --- response_body_like eval
-'{"ln":"rsaEncryption","nid":6,"sn":"rsaEncryption","id":"1.2.840.113549.1.1.1"}'
+'{"id":"1.2.840.113549.1.1.1","ln":"rsaEncryption","nid":6,"sn":"rsaEncryption"}'
 --- no_error_log
 [error]
 

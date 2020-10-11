@@ -9,12 +9,13 @@ my $pwd = cwd();
 my $use_luacov = $ENV{'TEST_NGINX_USE_LUACOV'} // '';
 
 our $HttpConfig = qq{
-    lua_package_path "$pwd/lib/?.lua;$pwd/lib/?/init.lua;;";
+    lua_package_path "$pwd/t/openssl/?.lua;$pwd/lib/?.lua;$pwd/lib/?/init.lua;;";
     init_by_lua_block {
         if "1" == "$use_luacov" then
             require 'luacov.tick'
             jit.off()
         end
+        _G.encode_sorted_json = require("helper").encode_sorted_json
     }
 };
 
@@ -27,13 +28,13 @@ __DATA__
     location =/t {
         content_by_lua_block {
             local o = require("resty.openssl.objects")
-            ngx.print(require("cjson").encode(o.nid2table(87)))
+            ngx.print(encode_sorted_json(o.nid2table(87)))
         }
     }
 --- request
     GET /t
 --- response_body_like eval
-'{"ln":"X509v3 Basic Constraints","nid":87,"sn":"basicConstraints","id":"2.5.29.19"}'
+'{"id":"2.5.29.19","ln":"X509v3 Basic Constraints","nid":87,"sn":"basicConstraints"}'
 --- no_error_log
 [error]
 
@@ -49,17 +50,16 @@ __DATA__
                 sn = "basicConstraints",
                 id = "2.5.29.19"
             }
+            local r = {}
             for k, v in pairs(t) do
-                ngx.say(k, " ", o.txt2nid(v))
+                r[k] = o.txt2nid(v)
             end
+            ngx.print(encode_sorted_json(r))
         }
     }
 --- request
     GET /t
 --- response_body_like eval
-"id 87
-sn 87
-ln 87
-"
+'{"id":87,"ln":87,"sn":87}'
 --- no_error_log
 [error]

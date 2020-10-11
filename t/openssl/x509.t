@@ -16,6 +16,7 @@ our $HttpConfig = qq{
             jit.off()
         end
         _G.myassert = require("helper").myassert
+        _G.encode_sorted_json = require("helper").encode_sorted_json
     }
 };
 
@@ -380,7 +381,7 @@ URI http://crl4.digicert.com/sha2-ev-server-g2.crl
             ngx.say(ocsp)
 
             local ocsp = myassert(c:get_ocsp_url(true))
-            ngx.say(require("cjson").encode(ocsp))
+            ngx.say(encode_sorted_json(ocsp))
 
             local f = io.open("t/fixtures/GlobalSign.pem"):read("*a")
             local c = myassert(require("resty.openssl.x509").new(f))
@@ -410,7 +411,7 @@ nil
             ngx.say(crl)
 
             local crl = myassert(c:get_crl_url(true))
-            ngx.say(require("cjson").encode(crl))
+            ngx.say(encode_sorted_json(crl))
 
             local f = io.open("t/fixtures/GlobalSign.pem"):read("*a")
             local c = myassert(require("resty.openssl.x509").new(f))
