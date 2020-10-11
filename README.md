@@ -564,21 +564,24 @@ ngx.say(require("cjson").encode(pkey:get_key_type()))
 
 **syntax**: *signature, err = pk:sign(digest)*
 
-Sign a [digest](#restyopenssldigest) using the private key defined in `pkey`
+Perform a digest signing using the private key defined in `pkey`
 instance. The `digest` parameter must be a [resty.openssl.digest](#restyopenssldigest) 
-instance. Returns the signed raw binary and error if any. For EC key, this function
-does a ECDSA signing.
+instance or a string. Returns the signed text and error if any.
 
-The passed in `digest` parameter should not have been called [final()](#restydigestfinal),
-user should only use [update()](#restydigestupdate).
+When passing a [digest](#restyopenssldigest) instance as `digest` parameter, it should not
+have been called [final()](#restydigestfinal), user should only use [update()](#restydigestupdate).
+
+For RSA and EC keys, passing a string as `digest` parameter does the SHA256 signing
+by default. For Ed25519 or Ed448 keys, this function does a PureEdDSA
+verification and requires `digest` to be the string that needs signing. No message
+digest is performed by default for Ed keys.
+
+For EC key, this function does a ECDSA signing.
 
 Note that OpenSSL does not support EC digital signature (ECDSA) with the
 obsolete MD5 hash algorithm and will return error on this combination. See
 [EVP_DigestSign(3)](https://www.openssl.org/docs/manmaster/man3/EVP_DigestSign.html)
 for a list of algorithms and associated public key algorithms.
-
-For Ed25519 or Ed448 keys, this function does a PureEdDSA verification and requires
-`digest` to be the string that needs signing.
 
 ```lua
 -- RSA and EC keys
@@ -588,6 +591,8 @@ digest:update("dog")
 -- WRONG: 
 -- digest:final("dog")
 local signature, err = pk:sign(digest)
+-- uses SHA256 by default
+local signature, err = pk:sign("dog")
 ngx.say(ngx.encode_base64(signature))
 
 -- Ed25519 and Ed448 keys

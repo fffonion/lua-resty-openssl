@@ -24,6 +24,7 @@ local format_error = require("resty.openssl.err").format_error
 
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
+local OPENSSL_111_OR_LATER = require("resty.openssl.version").OPENSSL_111_OR_LATER
 local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 
 local ptr_of_uint = ctypes.ptr_of_uint
@@ -430,7 +431,7 @@ end
 local ASYMMETRIC_OP_ENCRYPT = 0x1
 local ASYMMETRIC_OP_DECRYPT = 0x2
 local ASYMMETRIC_OP_SIGN_RAW = 0x4
-local ASYMMETRIC_OP_RECOVER = 0x8
+local ASYMMETRIC_OP_VERIFY_RECOVER = 0x8
 
 local function asymmetric_routine(self, s, op, padding)
   local pkey_ctx
@@ -471,7 +472,7 @@ local function asymmetric_routine(self, s, op, padding)
     fint = C.EVP_PKEY_sign_init
     f = C.EVP_PKEY_sign
     op_name = "sign"
-  elseif op == ASYMMETRIC_OP_RECOVER then
+  elseif op == ASYMMETRIC_OP_VERIFY_RECOVER then
     fint = C.EVP_PKEY_verify_recover_init
     f = C.EVP_PKEY_verify_recover
     op_name = "verify_recover"
@@ -524,24 +525,23 @@ function _M:sign_raw(s, padding)
 end
 
 function _M:verify_recover(s, padding)
-  return asymmetric_routine(self, s, ASYMMETRIC_OP_RECOVER, padding)
+  return asymmetric_routine(self, s, ASYMMETRIC_OP_VERIFY_RECOVER, padding)
 end
 
 function _M:sign(digest)
-  if not self.key_type_is_ecx then
-    if not digest_lib.istype(digest) then
-      return nil, "pkey:sign: expect a digest instance at #1"
-    end
+  if digest_lib.istype(digest) then
     local length = ptr_of_uint()
     if C.EVP_SignFinal(digest.ctx, self.buf, length, self.ctx) ~= 1 then
       return nil, format_error("pkey:sign: EVP_SignFinal")
     end
     return ffi_str(self.buf, length[0]), nil
-  else
-    if type(digest) ~= "string" then
-      return nil, "pkey:sign expect a string at #1"
+  elseif type(digest) == "string" then
+    if not OPENSSL_111_OR_LATER then
+      -- we can still support earilier version with *Update and *Final
+      -- but we choose to not relying on the legacy interface for simplicity
+      return nil, "pkey:sign: one shot sign only available in OpenSSL 1.1 or later"
     end
-    -- use on shot signing for Ed keys
+    -- one shot signing
     local md_ctx = C.EVP_MD_CTX_new()
     if md_ctx == nil then
       return nil, "pkey:sign: EVP_MD_CTX_new() failed"
@@ -555,30 +555,40 @@ function _M:sign(digest)
       return nil, format_error("pkey:sign: EVP_DigestSign")
     end
     return ffi_str(self.buf, length[0]), nil
+  else
+    return nil, "pkey:sign: expect a digest instance or a string at #1"
   end
 end
 
 function _M:verify(signature, digest)
   local code
-  if not self.key_type_is_ecx then
+  if digest_lib.istype(digest) then
     if not digest_lib.istype(digest) then
       return nil, "pkey:verify: expect a digest instance at #2"
     end
     code = C.EVP_VerifyFinal(digest.ctx, signature, #signature, self.ctx)
-  else
+  elseif type(digest) == "string" then
+    if not OPENSSL_111_OR_LATER then
+      -- we can still support earilier version with *Update and *Final
+      -- but we choose to not relying on the legacy interface for simplicity
+      return nil, "pkey:verify: one shot verify only available in OpenSSL 1.1 or later"
+    end
+    -- one shot verification
     if type(digest) ~= "string" then
       return nil, "pkey:verify expect a string at #2"
     end
-    -- use on shot verification for Ed keys
     local md_ctx = C.EVP_MD_CTX_new()
     if md_ctx == nil then
       return nil, "pkey:verify: EVP_MD_CTX_new() failed"
     end
     ffi_gc(md_ctx, C.EVP_MD_CTX_free)
+
     if C.EVP_DigestVerifyInit(md_ctx, nil, nil, nil, self.ctx) ~= 1 then
       return nil, format_error("pkey:verify: EVP_DigestVerifyInit")
     end
     code = C.EVP_DigestVerify(md_ctx, signature, #signature, digest, #digest)
+  else
+    return nil, "pkey:verify: expect a digest instance or a string at #2"
   end
 
   if code == 0 then

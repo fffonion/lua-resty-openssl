@@ -426,8 +426,20 @@ true
 --- config
     location =/t {
         content_by_lua_block {
+            -- pureeddsa
             local p = myassert(require("resty.openssl.pkey").new({
                 type = "Ed25519"
+            }))
+            local digest = "23333"
+            local s = myassert(p:sign(digest))
+            ngx.say(#s)
+
+            local v = myassert(p:verify(s, digest))
+            ngx.say(v)
+
+            -- uses default md type
+            local p = myassert(require("resty.openssl.pkey").new({
+                type = "RSA"
             }))
             local digest = "23333"
             local s = myassert(p:sign(digest))
@@ -444,6 +456,8 @@ true
 --- response_body eval
 "64
 true
+256
+true
 "
 --- no_error_log
 [error]
@@ -455,17 +469,17 @@ true
         content_by_lua_block {
             local p = myassert(require("resty.openssl.pkey").new())
 
-            local s, err = p:sign("not a cdata")
+            local s, err = p:sign(p)
             ngx.say(err)
-            local v, err = p:verify(s, "not a cdata")
+            local v, err = p:verify(s, p)
             ngx.say(err)
         }
     }
 --- request
     GET /t
 --- response_body eval
-"pkey:sign: expect a digest instance at #1
-pkey:verify: expect a digest instance at #2
+"pkey:sign: expect a digest instance or a string at #1
+pkey:verify: expect a digest instance or a string at #2
 "
 --- no_error_log
 [error]
@@ -540,6 +554,62 @@ pkey:verify: expect a digest instance at #2
     GET /t
 --- response_body eval
 "256
+true
+"
+--- no_error_log
+[error]
+
+=== TEST 21: Streaming sign and one shot sign can cross verify
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local p = myassert(require("resty.openssl.pkey").new())
+            local pec = myassert(require("resty.openssl.pkey").new({
+                type = "EC",
+            }))
+
+            -- one shot sign RSA, verify with digest instance
+            local s = myassert(p:sign("🕶️+1s"))
+
+            local digest = myassert(require("resty.openssl.digest").new("SHA256"))
+            digest:update("🕶️+1s")
+            local v, err = p:verify(s, digest)
+            ngx.say(v)
+
+            -- sign with digest RSA, one shot verify
+            local digest = myassert(require("resty.openssl.digest").new("SHA256"))
+            digest:update("🕶️+1s")
+            local s = myassert(p:sign(digest))
+
+            local v, err = p:verify(s, "🕶️+1s")
+            ngx.say(v)
+
+            -- one shot sign EC, verify with digest instance
+            local s = myassert(pec:sign("🕶️+1s"))
+
+            local digest = myassert(require("resty.openssl.digest").new("SHA256"))
+            digest:update("🕶️+1s")
+            local v, err = pec:verify(s, digest)
+            ngx.say(v)
+
+            -- sign with digest EC, one shot verify
+            local digest = myassert(require("resty.openssl.digest").new("SHA256"))
+            digest:update("🕶️+1s")
+            local s = myassert(pec:sign(digest))
+
+            local v, err = pec:verify(s, "🕶️+1s")
+            ngx.say(v)
+        }
+    }
+--- request
+    GET /t
+--- skip_openssl
+2: < 1.1.1
+--- response_body eval
+"true
+true
+true
 true
 "
 --- no_error_log
