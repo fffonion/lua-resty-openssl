@@ -214,8 +214,6 @@ function _M:verify(pkey)
   else -- typically -1
     return false, format_error("x509.crl:verify", code)
   end
-
-  return true
 end
 
 -- AUTO GENERATED

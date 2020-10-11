@@ -323,8 +323,6 @@ function _M:verify(pkey)
   else -- typically -1
     return false, format_error("x509.csr:verify", code)
   end
-
-  return true
 end
 -- AUTO GENERATED
 function _M:get_subject_name()

@@ -4,11 +4,6 @@ require "resty.openssl.include.ossl_typ"
 require "resty.openssl.include.stack"
 local asn1_macro = require "resty.openssl.include.asn1"
 
-local BASIC_CONSTRAINTS = {
-  ca = "number",
-  pathlen = "ASN1_INTEGER",
-}
-
 ffi.cdef [[
   // STACK_OF(OPENSSL_STRING)
   OPENSSL_STACK *X509_get1_ocsp(X509 *x);

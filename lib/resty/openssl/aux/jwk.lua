@@ -11,7 +11,6 @@ local ec_lib = require "resty.openssl.ec"
 local ecx_lib = require "resty.openssl.ecx"
 local bn_lib = require "resty.openssl.bn"
 local digest_lib = require "resty.openssl.digest"
-local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 
 local _M = {}
 
