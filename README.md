@@ -571,10 +571,9 @@ instance or a string. Returns the signed text and error if any.
 When passing a [digest](#restyopenssldigest) instance as `digest` parameter, it should not
 have been called [final()](#restydigestfinal), user should only use [update()](#restydigestupdate).
 
-For RSA and EC keys, passing a string as `digest` parameter does the SHA256 signing
-by default. For Ed25519 or Ed448 keys, this function does a PureEdDSA
-verification and requires `digest` to be the string that needs signing. No message
-digest is performed by default for Ed keys.
+For RSA and EC keys, passing a string as `digest` parameter does the SHA256 as digest method
+by default. For Ed25519 or Ed448 keys, this function does a PureEdDSA verification and requires
+`digest` to be the string that needs signing. No message digest is used for Ed keys.
 
 For EC key, this function does a ECDSA signing.
 
@@ -611,12 +610,40 @@ ngx.say(ngx.encode_base64(signature))
 
 Verify a signture (which can be the string returned by [pkey:sign](#pkey-sign)). The second
 argument must be a [resty.openssl.digest](#restyopenssldigest) instance that uses
-the same digest algorithm as used in `sign`. `ok` returns `true` if verficiation is
+the same digest algorithm as used in `sign` or a string. `ok` returns `true` if verficiation is
 successful and `false` otherwise. Note when verfication failed `err` will not be set.
 For EC key, this function does a ECDSA verification.
 
-For Ed25519 or Ed448 keys, this function does a PureEdDSA verification and requires
-both `signature` and `digest` to be string.
+For RSA and EC keys, passing a string as `digest` parameter uses the SHA256 as digest method
+by default. For Ed25519 or Ed448 keys, this function does a PureEdDSA verification and requires
+both `signature` and `digest` to be string. No message digest is used for Ed keys.
+
+```lua
+-- RSA and EC keys
+local pk, err = require("resty.openssl.pkey").new()
+local digest, err = require("resty.openssl.digest").new("SHA256")
+digest:update("dog")
+-- WRONG:
+-- digest:final("dog")
+local signature, err = pk:sign(digest)
+-- uses SHA256 by default
+local signature, err = pk:sign("dog")
+ngx.say(ngx.encode_base64(signature))
+
+digest, err = require("resty.openssl.digest").new("SHA256")
+digest:update("dog")
+local ok, err = pk:verify(signature, digest)
+-- uses SHA256 by default
+local ok, err = pk:verify(signature, "dog")
+
+-- Ed25519 and Ed448 keys
+local pk, err = require("resty.openssl.pkey").new({
+  type = "Ed25519",
+})
+local signature, err = pk:sign("23333")
+ngx.say(ngx.encode_base64(signature))
+
+```
 
 [Back to TOC](#table-of-contents)
 

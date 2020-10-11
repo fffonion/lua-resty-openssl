@@ -19,11 +19,11 @@ local function create_self_signed(key_opts, names)
 
   local nm = name.new()
   for k, v in ipairs(names or {}) do
-    nm:add(k, v)
+    assert(nm:add(k, v))
   end
 
-  cert:set_subject_name(nm)
-  cert:set_issuer_name(nm)
+  assert(cert:set_subject_name(nm))
+  assert(cert:set_issuer_name(nm))
 
   assert(cert:sign(key))
 

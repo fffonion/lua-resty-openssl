@@ -11,7 +11,6 @@ local _M = {}
 local stack_ptr_ct = ffi.typeof("OPENSSL_STACK*")
 
 local STACK = "X509_EXTENSION"
-local gc = stack_lib.gc_of(STACK)
 local new = stack_lib.new_of(STACK)
 local add = stack_lib.add_of(STACK)
 local dup = stack_lib.dup_of(STACK)
