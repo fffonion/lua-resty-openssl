@@ -13,6 +13,8 @@ ffi.cdef [[
 
   RSA *EVP_PKEY_get0_RSA(EVP_PKEY *pkey);
   EC_KEY *EVP_PKEY_get0_EC_KEY(EVP_PKEY *pkey);
+  DH *EVP_PKEY_get0_DH(EVP_PKEY *pkey);
+
   int EVP_PKEY_assign(EVP_PKEY *pkey, int type, void *key);
   int EVP_PKEY_base_id(const EVP_PKEY *pkey);
   int EVP_PKEY_size(const EVP_PKEY *pkey);
@@ -135,6 +137,8 @@ ffi.cdef [[
 
   int EVP_PKEY_keygen_init(EVP_PKEY_CTX *ctx);
   int EVP_PKEY_keygen(EVP_PKEY_CTX *ctx, EVP_PKEY **ppkey);
+  int EVP_PKEY_paramgen_init(EVP_PKEY_CTX *ctx);
+  int EVP_PKEY_paramgen(EVP_PKEY_CTX *ctx, EVP_PKEY **ppkey);
 ]]
 
 if OPENSSL_30 then
@@ -240,10 +244,18 @@ local _M = {
   EVP_PKEY_X448 = ffi.C.OBJ_txt2nid("X448"),
   EVP_PKEY_ED448 = ffi.C.OBJ_txt2nid("ED448"),
 
+  EVP_PKEY_OP_PARAMGEN = bit.lshift(1, 1),
+  EVP_PKEY_OP_KEYGEN = bit.lshift(1, 2),
   EVP_PKEY_OP_DERIVE = OPENSSL_30 and bit.lshift(1, 12) or bit.lshift(1, 10),
 
   EVP_PKEY_ALG_CTRL = 0x1000,
-  EVP_PKEY_CTRL_RSA_PADDING = 0x1000 + 1,
+
+
+  EVP_PKEY_CTRL_DH_PARAMGEN_PRIME_LEN = 0x1000 + 1,
+  EVP_PKEY_CTRL_EC_PARAMGEN_CURVE_NID = 0x1000 + 1,
+  EVP_PKEY_CTRL_RSA_PADDING           = 0x1000 + 1,
+  EVP_PKEY_CTRL_RSA_KEYGEN_BITS       = 0x1000 + 3,
+  EVP_PKEY_CTRL_RSA_KEYGEN_PUBEXP     = 0x1000 + 4,
 
   EVP_CTRL_AEAD_SET_IVLEN = 0x9,
   EVP_CTRL_AEAD_GET_TAG = 0x10,

@@ -247,7 +247,7 @@ ok
 .+
 -----END PRIVATE KEY-----
 
-121
+(121|138|364)
 .+kid.+"
 --- no_error_log
 [error]
@@ -524,9 +524,9 @@ pkey:verify: expect a digest instance or a string at #2
 --- config
     location =/t {
         content_by_lua_block {
-            local p, err = require("resty.openssl.pkey").new({
+            local p, err = myassert(require("resty.openssl.pkey").new({
                 type = 'RSA',
-            })
+            }))
             ngx.say(encode_sorted_json(p:get_key_type()))
         }
     }
@@ -613,5 +613,82 @@ true
 true
 true
 "
+--- no_error_log
+[error]
+
+=== TEST 22: Generates and loads DH key explictly
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local pkey = require("resty.openssl.pkey")
+            local p = myassert(pkey.new({
+                type = 'DH',
+                bits = 512
+            }))
+            local pem = myassert(p:to_PEM('private'))
+            ngx.say(pem)
+            ngx.say(pem == pkey.new(pem):to_PEM('private'))
+            -- skip for 3.0 since it only allows 2048 bits and is toooo slow
+        }
+    }
+--- request
+    GET /t
+--- skip_openssl
+2: > 1.1.1
+--- response_body_like eval
+"-----BEGIN PRIVATE KEY-----
+.+
+true"
+--- no_error_log
+[error]
+
+=== TEST 23: Uses DH predefined groups
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local pkey = require("resty.openssl.pkey")
+            local p = myassert(pkey.new({
+                type = 'DH',
+                group = "dh_1024_160",
+            }))
+            local pem = myassert(p:to_PEM('private'))
+            ngx.say(pem)
+            ngx.say(pem == pkey.new(pem):to_PEM('private'))
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+"-----BEGIN PRIVATE KEY-----
+.+
+true"
+--- no_error_log
+[error]
+
+=== TEST 24: Outpus DH and EC params
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local pkey = require("resty.openssl.pkey")
+            ngx.say(myassert(pkey.paramgen({
+                type = 'DH',
+                group = "dh_1024_160",
+            })))
+            ngx.say(myassert(pkey.paramgen({
+                type = 'EC',
+                curve = "prime192v1",
+            })))
+            collectgarbage()
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+"-----BEGIN DH PARAMETERS-----
+.+
+-----BEGIN EC PARAMETERS-----"
 --- no_error_log
 [error]

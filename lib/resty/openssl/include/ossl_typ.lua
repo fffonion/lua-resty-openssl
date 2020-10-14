@@ -49,6 +49,7 @@ ffi.cdef(
   typedef struct ec_key_st EC_KEY;
   typedef struct ec_method_st EC_METHOD;
   typedef struct ec_point_st EC_POINT;
+  typedef struct ec_group_st EC_GROUP;
   typedef struct rsa_meth_st RSA_METHOD;
   // typedef struct evp_keymgmt_st EVP_KEYMGMT;
   // typedef struct crypto_ex_data_st CRYPTO_EX_DATA;
@@ -58,5 +59,6 @@ ffi.cdef(
   // typedef void CRYPTO_RWLOCK;
   typedef struct hmac_ctx_st HMAC_CTX;
   typedef struct x509_revoked_st X509_REVOKED;
+  typedef struct dh_st DH;
 ]])
 

@@ -28,6 +28,7 @@ build = {
       ["resty.openssl.include.bn"] = "lib/resty/openssl/include/bn.lua",
       ["resty.openssl.include.conf"] = "lib/resty/openssl/include/conf.lua",
       ["resty.openssl.include.crypto"] = "lib/resty/openssl/include/crypto.lua",
+      ["resty.openssl.include.dh"] = "lib/resty/openssl/include/dh.lua",
       ["resty.openssl.include.ec"] = "lib/resty/openssl/include/ec.lua",
       ["resty.openssl.include.evp"] = "lib/resty/openssl/include/evp.lua",
       ["resty.openssl.include.hmac"] = "lib/resty/openssl/include/hmac.lua",

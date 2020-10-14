@@ -26,4 +26,11 @@ ffi.cdef [[
 
   X509 *PEM_read_bio_X509(BIO *bp, X509 **x, pem_password_cb *cb, void *u);
   int PEM_write_bio_X509(BIO *bp, X509 *x);
+
+  DH *PEM_read_bio_DHparams(BIO *bp, DH **x, pem_password_cb *cb, void *u);
+  int PEM_write_bio_DHparams(BIO *bp, DH *x);
+
+  EC_GROUP *PEM_read_bio_ECPKParameters(BIO *bp, EC_GROUP **x, pem_password_cb *cb, void *u);
+  int PEM_write_bio_ECPKParameters(BIO *bp, const EC_GROUP *x);
+
 ]]

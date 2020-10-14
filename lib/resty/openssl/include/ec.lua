@@ -19,7 +19,6 @@ ffi.cdef [[
   EC_KEY *EC_KEY_new(void);
   void EC_KEY_free(EC_KEY *key);
 
-  typedef struct ec_group_st EC_GROUP;
   EC_GROUP *EC_GROUP_new_by_curve_name(int nid);
   void EC_GROUP_set_asn1_flag(EC_GROUP *group, int flag);
   void EC_GROUP_set_point_conversion_form(EC_GROUP *group,
@@ -28,12 +27,8 @@ ffi.cdef [[
   int EC_GROUP_get_curve_name(const EC_GROUP *group);
 
 
-  EC_GROUP *EC_GROUP_new(const EC_METHOD *meth);
   void EC_GROUP_free(EC_GROUP *group);
-  EC_GROUP *EC_GROUP_dup(const EC_GROUP *src);
 
-  EC_POINT *EC_POINT_new(const EC_GROUP *group);
-  void EC_POINT_free(EC_POINT *point);
   BIGNUM *EC_POINT_point2bn(const EC_GROUP *, const EC_POINT *,
     point_conversion_form_t form, BIGNUM *, BN_CTX *);
   // OpenSSL < 1.1.1
@@ -47,8 +42,6 @@ ffi.cdef [[
     EC_POINT *p, BN_CTX *ctx);
 
   point_conversion_form_t EC_KEY_get_conv_form(const EC_KEY *key);
-
-  int EC_KEY_generate_key(EC_KEY *key);
 
   const BIGNUM *EC_KEY_get0_private_key(const EC_KEY *key);
   int EC_KEY_set_private_key(EC_KEY *key, const BIGNUM *prv);

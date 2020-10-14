@@ -1,4 +1,5 @@
 local ffi = require "ffi"
+local C = ffi.C
 
 require "resty.openssl.include.ossl_typ"
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
@@ -7,7 +8,6 @@ local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
 ffi.cdef [[
   RSA *RSA_new(void);
   void RSA_free(RSA *r);
-  int RSA_generate_key_ex(RSA *rsa, int bits, BIGNUM *e, BN_GENCB *cb);
 ]]
 
 if OPENSSL_11_OR_LATER then
@@ -67,5 +67,5 @@ return {
     RSA_PKCS1_OAEP_PADDING  = 4,
     RSA_X931_PADDING        = 5,
     RSA_PKCS1_PSS_PADDING   = 6,
-  }
+  },
 }

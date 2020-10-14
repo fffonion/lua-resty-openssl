@@ -8,6 +8,7 @@ local ffi_copy = ffi.copy
 local null = ngx.null
 
 local rsa_macro = require "resty.openssl.include.rsa"
+local dh_macro = require "resty.openssl.include.dh"
 require "resty.openssl.include.bio"
 require "resty.openssl.include.pem"
 require "resty.openssl.include.x509"
@@ -22,7 +23,6 @@ local jwk_lib = require "resty.openssl.aux.jwk"
 local ctypes = require "resty.openssl.aux.ctypes"
 local format_error = require("resty.openssl.err").format_error
 
-local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
 local OPENSSL_111_OR_LATER = require("resty.openssl.version").OPENSSL_111_OR_LATER
 local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
@@ -30,108 +30,159 @@ local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 local ptr_of_uint = ctypes.ptr_of_uint
 local ptr_of_size_t = ctypes.ptr_of_size_t
 
--- TODO: rewrite using EVP_PKEY_keygen_*
--- https://www.openssl.org/docs/manmaster/man7/Ed25519.html
-local function generate_key(config)
+local function generate_param(key_type, config)
+  if key_type == evp_macro.EVP_PKEY_DH then
+    local dh_group = config.group
+    if dh_group then
+      local ctx
+      local get_group_func = dh_macro.dh_groups[dh_group]
+      if not get_group_func then
+        return nil, "unknown pre-defined group " .. dh_group
+      end
+      local ctx = get_group_func()
+      if ctx == nil then
+        return nil, format_error("DH_get_x")
+      end
+      local params = C.EVP_PKEY_new()
+      if not params then
+        return nil, format_error("EVP_PKEY_new")
+      end
+      if C.EVP_PKEY_assign(params, key_type, ctx) ~= 1 then
+        return nil, format_error("EVP_PKEY_set1_DH")
+      end
+      ffi_gc(params, C.EVP_PKEY_free)
+      return params
+    end
+  end
 
-  local type = config.type or 'RSA'
+  local pctx = C.EVP_PKEY_CTX_new_id(key_type, nil)
+  if pctx == nil then
+    return nil, format_error("EVP_PKEY_CTX_new_id")
+  end
+  ffi_gc(pctx, C.EVP_PKEY_CTX_free)
 
-  local code, key, key_type
+  if C.EVP_PKEY_paramgen_init(pctx) ~= 1 then
+    return nil, format_error("EVP_PKEY_paramgen_init")
+  end
 
-  local key_free
-  if type == "RSA" then
-    key_type = evp_macro.EVP_PKEY_RSA
-    if key_type == 0 then
-      return nil, "the linked OpenSSL library doesn't support RSA key"
-    end
-    local bits = config.bits or 2048
-    if bits > 4294967295 then
-      return nil, "bits out of range"
-    end
-    local exp = C.BN_new()
-    ffi_gc(exp, C.BN_free)
-    if exp == nil then
-      return nil, "BN_new() failed"
-    end
-    C.BN_set_word(exp, config.exp or 65537)
-
-    key = C.RSA_new()
-    if key == nil then
-      return nil, "RSA_new() failed"
-    end
-    code = C.RSA_generate_key_ex(key, bits, exp, nil)
-    if code ~= 1 then
-      C.RSA_free(key)
-      return nil, "RSA_generate_key_ex() failed"
-    end
-    key_free = C.RSA_free
-  elseif type == "EC" then
-    key_type = evp_macro.EVP_PKEY_EC
-    if key_type == 0 then
-      return nil, "the linked OpenSSL library doesn't support EC key"
-    end
+  if key_type == evp_macro.EVP_PKEY_EC then
     local curve = config.curve or 'prime192v1'
     local nid = C.OBJ_ln2nid(curve)
     if nid == 0 then
       return nil, "unknown curve " .. curve
     end
-    local group = C.EC_GROUP_new_by_curve_name(nid)
-    if group == nil then
-      return nil, "EC_GROUP_new_by_curve_name() failed"
+    -- EVP_PKEY_CTX_set_ec_paramgen_curve_nid
+    if C.EVP_PKEY_CTX_ctrl(pctx,
+            evp_macro.EVP_PKEY_EC,
+            evp_macro.EVP_PKEY_OP_PARAMGEN + evp_macro.EVP_PKEY_OP_KEYGEN,
+            evp_macro.EVP_PKEY_CTRL_EC_PARAMGEN_CURVE_NID,
+            nid, nil) <= 0 then
+      return nil, format_error("EVP_PKEY_CTX_ctrl: EC: curve")
     end
-    ffi_gc(group, C.EC_GROUP_free)
-    -- # define OPENSSL_EC_NAMED_CURVE     0x001
-    C.EC_GROUP_set_asn1_flag(group, 1)
-    C.EC_GROUP_set_point_conversion_form(group, C.POINT_CONVERSION_UNCOMPRESSED)
+  elseif key_type == evp_macro.EVP_PKEY_DH then
+    local bits = config.bits
+    if not config.param and not bits then
+      bits = 2048
+    end
+    -- EVP_PKEY_CTX_set_dh_paramgen_prime_len
+    if bits and C.EVP_PKEY_CTX_ctrl(pctx,
+            evp_macro.EVP_PKEY_DH, evp_macro.EVP_PKEY_OP_PARAMGEN,
+            evp_macro.EVP_PKEY_CTRL_DH_PARAMGEN_PRIME_LEN,
+            bits, nil) <= 0 then
+      return nil, format_error("EVP_PKEY_CTX_ctrl: DH: bits")
+    end
+  end
 
-    key = C.EC_KEY_new()
-    if key == nil then
-      return nil, "EC_KEY_new() failed"
+  local ctx_ptr = ffi_new("EVP_PKEY*[1]")
+  if C.EVP_PKEY_paramgen(pctx, ctx_ptr) ~= 1 then
+    return nil, format_error("EVP_PKEY_paramgen")
+  end
+
+  local params = ctx_ptr[0]
+  ffi_gc(params, C.EVP_PKEY_free)
+
+  return params
+end
+
+local function generate_key(config)
+  local typ = config.type or 'RSA'
+  local key_type
+
+  if typ == "RSA" then
+    key_type = evp_macro.EVP_PKEY_RSA
+  elseif typ == "EC" then
+    key_type = evp_macro.EVP_PKEY_EC
+  elseif typ == "DH" then
+    key_type = evp_macro.EVP_PKEY_DH
+  elseif evp_macro.ecx_curves[typ] then
+    key_type = evp_macro.ecx_curves[typ]
+  else
+    return nil, "unsupported type " .. typ
+  end
+  if key_type == 0 then
+    return nil, "the linked OpenSSL library doesn't support " .. typ .. " key"
+  end
+
+  local pctx
+
+  if key_type == evp_macro.EVP_PKEY_EC or key_type == evp_macro.EVP_PKEY_DH then
+    local params, err = generate_param(key_type, config)
+    if err then
+      return nil, "generate_param: " .. err
     end
-    C.EC_KEY_set_group(key, group)
-    code = C.EC_KEY_generate_key(key)
-    if code == 0 then
-      C.EC_KEY_free(key)
-      return nil, "EC_KEY_generate_key() failed"
+    pctx = C.EVP_PKEY_CTX_new(params, nil)
+    if pctx == nil then
+      return nil, format_error("EVP_PKEY_CTX_new")
     end
-    key_free = C.EC_KEY_free
-  elseif evp_macro.ecx_curves[type] then
-    key_type = evp_macro.ecx_curves[type]
-    if key_type == 0 then
-      return nil, string.format("the linked OpenSSL library doesn't support %s key", type)
-    end
-    local pctx = C.EVP_PKEY_CTX_new_id(key_type, nil)
+  else
+    pctx = C.EVP_PKEY_CTX_new_id(key_type, nil)
     if pctx == nil then
       return nil, format_error("EVP_PKEY_CTX_new_id")
     end
-    ffi_gc(pctx, C.EVP_PKEY_CTX_free)
-    if C.EVP_PKEY_keygen_init(pctx) ~= 1 then
-      return nil, format_error("EVP_PKEY_keygen_init")
+  end
+
+  ffi_gc(pctx, C.EVP_PKEY_CTX_free)
+
+  if C.EVP_PKEY_keygen_init(pctx) ~= 1 then
+    return nil, format_error("EVP_PKEY_keygen_init")
+  end
+  -- RSA key parameters are set for keygen ctx not paramgen
+  if key_type == evp_macro.EVP_PKEY_RSA then
+    local bits = config.bits or 2048
+    if bits > 4294967295 then
+      return nil, "bits out of range"
     end
-    local ctx_ptr = ffi_new("EVP_PKEY*[1]")
-    -- TODO: move to use EVP_PKEY_gen after drop support for <1.1.1
-    if C.EVP_PKEY_keygen(pctx, ctx_ptr) ~= 1 then
-      return nil, format_error("EVP_PKEY_gen")
+
+    -- EVP_PKEY_CTX_set_rsa_keygen_bits
+    if C.EVP_PKEY_CTX_ctrl(pctx,
+              evp_macro.EVP_PKEY_RSA, evp_macro.EVP_PKEY_OP_KEYGEN,
+              evp_macro.EVP_PKEY_CTRL_RSA_KEYGEN_BITS,
+              bits, nil) <= 0 then
+      return nil, format_error("EVP_PKEY_CTX_ctrl: RSA: bits")
     end
-    return ctx_ptr[0]
-  else
-    return nil, "unsupported type " .. type
-  end
 
-  local ctx = C.EVP_PKEY_new()
-  if ctx == nil then
-    key_free(key)
-    return nil, "EVP_PKEY_new() failed"
+    if config.exp then
+      -- don't free exp as it's used internally in key
+      local exp = C.BN_new()
+      if exp == nil then
+        return nil, "BN_new() failed"
+      end
+      C.BN_set_word(exp, config.exp)
+      -- EVP_PKEY_CTX_set_rsa_keygen_pubexp
+      if C.EVP_PKEY_CTX_ctrl(pctx,
+                evp_macro.EVP_PKEY_RSA, evp_macro.EVP_PKEY_OP_KEYGEN,
+                evp_macro.EVP_PKEY_CTRL_RSA_KEYGEN_PUBEXP,
+                0, exp) <= 0 then
+        return nil, format_error("EVP_PKEY_CTX_ctrl: RSA: exp")
+      end
+    end
   end
-
-  code = C.EVP_PKEY_assign(ctx, key_type, key)
-  if code ~= 1 then
-    key_free(key)
-    C.EVP_PKEY_free(ctx)
-    return nil, "EVP_PKEY_assign() failed"
+  local ctx_ptr = ffi_new("EVP_PKEY*[1]")
+  -- TODO: move to use EVP_PKEY_gen after drop support for <1.1.1
+  if C.EVP_PKEY_keygen(pctx, ctx_ptr) ~= 1 then
+    return nil, format_error("EVP_PKEY_gen")
   end
-
-  return ctx, nil
+  return ctx_ptr[0]
 end
 
 local load_key_try_args_pem = { null, null, null }
@@ -361,39 +412,30 @@ function _M:get_key_type()
   return objects_lib.nid2table(self.key_type)
 end
 
-local function get_pkey_key(self)
-  if self.key_type == evp_macro.EVP_PKEY_RSA then
-    local rsa_st
-    if OPENSSL_11_OR_LATER then
-      rsa_st = C.EVP_PKEY_get0_RSA(self.ctx)
-      if rsa_st == nil then
-        return nil, "pkey:get_pkey_key EVP_PKEY_get0_RSA() failed"
-      end
-    elseif OPENSSL_10 then
-      rsa_st = self.ctx.pkey and self.ctx.pkey.rsa
-    end
-    return rsa_st
-  elseif self.key_type == evp_macro.EVP_PKEY_EC then
-    local ec_key_st
-    if OPENSSL_11_OR_LATER then
-      ec_key_st = C.EVP_PKEY_get0_EC_KEY(self.ctx)
-      if ec_key_st == nil then
-        return nil, "pkey:get_pkey_key: EVP_PKEY_get0_EC_KEY() failed"
-      end
-    elseif OPENSSL_10 then
-      ec_key_st = self.ctx.pkey and self.ctx.pkey.ec
-    end
-    return ec_key_st
-  end
-
-  return nil, string.format("pkey:get_pkey_key: key type %d not supported", self.key_type)
+local get_pkey_key
+if OPENSSL_11_OR_LATER then
+  get_pkey_key = {
+    [evp_macro.EVP_PKEY_RSA] = function(ctx) return C.EVP_PKEY_get0_RSA(ctx) end,
+    [evp_macro.EVP_PKEY_EC] = function(ctx) return C.EVP_PKEY_get0_EC_KEY(ctx) end,
+    [evp_macro.EVP_PKEY_DH]  = function(ctx) return C.EVP_PKEY_get0_DH(ctx) end
+  }
+else
+  get_pkey_key = {
+    [evp_macro.EVP_PKEY_RSA] = function(ctx) return ctx.pkey and ctx.pkey.rsa end,
+    [evp_macro.EVP_PKEY_EC] = function(ctx) return ctx.pkey and ctx.pkey.ec end,
+    [evp_macro.EVP_PKEY_DH]  = function(ctx) return ctx.pkey and ctx.pkey.dh end,
+  }
 end
 
 function _M:get_parameters()
   if not self.key_type_is_ecx then
-    local key, err = get_pkey_key(self)
-    if err then
-      return nil, err
+    local getter = get_pkey_key[self.key_type]
+    if not getter then
+      return nil, "key getter not defined"
+    end
+    local key = getter(self.ctx)
+    if key == nil then
+      return nil, format_error("EVP_PKEY_get0_{key}")
     end
 
     if self.key_type == evp_macro.EVP_PKEY_RSA then
@@ -408,9 +450,13 @@ end
 
 function _M:set_parameters(opts)
   if not self.key_type_is_ecx then
-    local key, err = get_pkey_key(self)
-    if err then
-      return false, err
+    local getter = get_pkey_key[self.key_type]
+    if not getter then
+      return nil, "key getter not defined"
+    end
+    local key = getter(self.ctx)
+    if key == nil then
+      return nil, format_error("EVP_PKEY_get0_{key}")
     end
 
     if self.key_type == evp_macro.EVP_PKEY_RSA then
@@ -653,6 +699,46 @@ end
 
 function _M:to_PEM(pub_or_priv)
   return self:tostring(pub_or_priv, "PEM")
+end
+
+function _M.paramgen(config)
+  local typ = config.type
+  local key_type, write_func, get_ctx_func
+  if typ == "EC" then
+    key_type = evp_macro.EVP_PKEY_EC
+    if key_type == 0 then
+      return nil, "pkey.paramgen: the linked OpenSSL library doesn't support EC key"
+    end
+    write_func = C.PEM_write_bio_ECPKParameters
+    get_ctx_func = function(ctx)
+      local ctx = get_pkey_key[key_type](ctx)
+      if ctx == nil then
+        error(format_error("pkey.paramgen: EVP_PKEY_get0_{key}"))
+      end
+      return C.EC_KEY_get0_group(ctx)
+    end
+  elseif typ == "DH" then
+    key_type = evp_macro.EVP_PKEY_DH
+    if key_type == 0 then
+      return nil, "pkey.paramgen: the linked OpenSSL library doesn't support EC key"
+    end
+    write_func = C.PEM_write_bio_DHparams
+    get_ctx_func = get_pkey_key[key_type]
+  else
+    return nil, "pkey.paramgen: unsupported type " .. type
+  end
+
+  local params, err = generate_param(key_type, config)
+  if err then
+    return nil, "pkey.paramgen: generate_param: " .. err
+  end
+
+  local ctx = get_ctx_func(params)
+  if ctx == nil then
+    return nil, format_error("pkey.paramgen: EVP_PKEY_get0_{key}")
+  end
+
+  return util.read_using_bio(write_func, ctx)
 end
 
 return _M

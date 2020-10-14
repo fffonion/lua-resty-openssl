@@ -25,6 +25,7 @@ Table of Contents
   * [resty.openssl.pkey](#restyopensslpkey)
     + [pkey.new](#pkeynew)
     + [pkey.istype](#pkeyistype)
+    + [pkey.paramgen](#pkeyparamgen)
     + [pkey:get_parameters](#pkeyget_parameters)
     + [pkey:set_parameters](#pkeyset_parameters)
     + [pkey:get_key_type](#pkeyget_key_type)
@@ -426,18 +427,10 @@ pkey.new({
   bits = 2048,
   exp = 65537
 })
-  ```
-  
-to create EC private key:
-  
-```lua
-pkey.new({
-  type = 'EC',
-  curve = 'prime192v1',
-})
 ```
 
-To see list of supported EC curves, use `openssl ecparam -list_curves`.
+To generate EC or DH key, please refer to [pkey.paramgen](#pkeyparamgen) for possible values of
+`config` table.
 
 Other possible `type`s are `Ed25519`, `X25519`, `Ed448` and `X448`. No additional parameters
 can be set during key generation for those keys.
@@ -477,6 +470,45 @@ approach. User shouldn't free the pointer on their own, since the pointer is not
 **syntax**: *ok = pkey.istype(table)*
 
 Returns `true` if table is an instance of `pkey`. Returns `false` otherwise.
+
+[Back to TOC](#table-of-contents)
+
+### pkey.paramgen
+
+**syntax**: *pem_txt, err = pk.paramgen(config)*
+
+Generate parameters for EC or DH key and output as PEM-encoded text.
+
+For EC private key:
+
+ Parameter | Description
+-----------|-------------
+type | `"EC"`
+curve | EC curves. If omitted, default to `"prime192v1"`. To see list of supported EC curves, use `openssl ecparam -list_curves`.
+
+To see list of supported EC curves, use `openssl ecparam -list_curves`.
+
+For DH private key:
+  
+ Parameter | Description
+-----------|-------------
+type | `"DH"`
+bits | Generate a new DH parameter with `bits` long prime. If omitted, default to `2048`. Starting OpenSSL 3.0, only bits equal to 2048 is allowed.
+group | Use predefined groups.
+
+Possible values for `group` are:
+- [RFC7919](https://tools.ietf.org/html/rfc7919#appendix-A.1) `"ffdhe2048"`, `"ffdhe3072"`,
+`"ffdhe4096"`, `"ffdhe6144"`, `"ffdhe8192"`
+- [RFC5114](https://tools.ietf.org/html/rfc5114#section-2) `"dh_1024_160"`, `"dh_2048_224"`, `"dh_2048_256"`
+- [RFC3526](https://tools.ietf.org/html/rfc3526#page-3) `"modp_1536"`, `"modp_2048"`,
+`"modp_3072"`, `"modp_4096"`, `"modp_6144"`, `"modp_8192"`
+  
+```lua
+local pem, err = pkey.paramgen({
+  type = 'EC',
+  curve = 'prime192v1',
+})
+```
 
 [Back to TOC](#table-of-contents)
 
@@ -569,7 +601,7 @@ instance. The `digest` parameter must be a [resty.openssl.digest](#restyopenssld
 instance or a string. Returns the signed text and error if any.
 
 When passing a [digest](#restyopenssldigest) instance as `digest` parameter, it should not
-have been called [final()](#restydigestfinal), user should only use [update()](#restydigestupdate).
+have been called [final()](#digestfinal), user should only use [update()](#digestupdate).
 
 For RSA and EC keys, passing a string as `digest` parameter does the SHA256 as digest method
 by default. For Ed25519 or Ed448 keys, this function does a PureEdDSA verification and requires

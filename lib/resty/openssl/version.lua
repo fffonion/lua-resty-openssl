@@ -96,6 +96,7 @@ return setmetatable({
     end,
     OPENSSL_30 = version_num >= 0x30000000 and version_num < 0x30100000,
     OPENSSL_11 = version_num >= 0x10100000 and version_num < 0x10200000,
+    OPENSSL_111 = version_num >= 0x10101000 and version_num < 0x10200000,
     OPENSSL_11_OR_LATER = version_num >= 0x10100000 and version_num < 0x30100000,
     OPENSSL_111_OR_LATER = version_num >= 0x10101000 and version_num < 0x30100000,
     OPENSSL_10 = version_num < 0x10100000 and version_num > 0x10000000,
