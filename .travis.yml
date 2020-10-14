@@ -41,6 +41,7 @@ matrix:
     - env: NGINX_VERSION=1.15.8 OPENSSL_VER=1.1.0l
     - env: NGINX_VERSION=1.15.8 OPENSSL_VER=1.1.1h
     - env: NGINX_VERSION=1.17.8 OPENSSL_VER=1.0.2u
+    - env: NGINX_VERSION=1.17.8 OPENSSL_VER=1.0.2u OPENSSL_FIPS=2.0.16 OPENSSL_OPTS="fips --with-fipsdir=/tmp/ssl/fips"
     - env: NGINX_VERSION=1.17.8 OPENSSL_VER=1.1.0l
     - env: NGINX_VERSION=1.17.8 OPENSSL_VER=1.1.1h
     # openssl 3.0
@@ -71,12 +72,14 @@ install:
   - git clone https://github.com/openresty/lua-resty-string ../lua-resty-string
   # openssl
   # openssl 1.0.2 config doesn't work correctly on a cached directory
+  - if [ "X$OPENSSL_FIPS" != "X" ]; then wget https://www.openssl.org/source/old/fips/openssl-fips-$OPENSSL_FIPS.tar.gz -O - | tar zxf - ; pushd openssl-fips-$OPENSSL_FIPS/; FIPSDIR=$OPENSSL_PREFIX/fips ./config; make -j$JOBS; make install; popd; fi
   - if [ "X$OPENSSL_HASH" != "X" ]; then wget https://github.com/openssl/openssl/archive/$OPENSSL_HASH.tar.gz -O - | tar zxf - ; pushd openssl-$OPENSSL_HASH/; fi
   - if [ "X$OPENSSL_HASH" = "X" ] ; then wget https://www.openssl.org/source/openssl-$OPENSSL_VER.tar.gz -O - | tar zxf -; pushd openssl-$OPENSSL_VER/; fi
-  - if [ ! -e $OPENSSL_PREFIX/include ]; then ./config shared --prefix=$OPENSSL_PREFIX -DPURIFY > build.log 2>&1 || (cat build.log && exit 1); fi
+  - if [ ! -e $OPENSSL_PREFIX/include ]; then ./config shared --prefix=$OPENSSL_PREFIX -DPURIFY $OPENSSL_OPTS > build.log 2>&1 || (cat build.log && exit 1); fi
   - if [ ! -e $OPENSSL_PREFIX/include ]; then make -j$JOBS > build.log 2>&1 || (cat build.log && exit 1); fi
   - if [ ! -e $OPENSSL_PREFIX/include ]; then sudo make PATH=$PATH install_sw > build.log 2>&1 || (cat build.log && exit 1); fi
   - mkdir -p $OPENSSL_PREFIX/certs/ && cp -r /etc/ssl/certs/* $OPENSSL_PREFIX/certs/
+  - LD_LIBRARY_PATH=/tmp/ssl/lib /tmp/ssl/bin/openssl version
   - popd
   - pushd cache
   # luajit
