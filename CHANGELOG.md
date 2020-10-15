@@ -2,6 +2,19 @@
 ## [Unreleased]
 
 
+<a name="0.6.8"></a>
+## [0.6.8] - 2020-10-15
+### feat
+- **pkey:** allow to pass params for EC and DH keygen [e9aa7c7](https://github.com/fffonion/lua-resty-openssl/commit/e9aa7c751458134d03dfcda1318186cf3a691c1d)
+- **pkey:** get and set DH parameters [ebaad8d](https://github.com/fffonion/lua-resty-openssl/commit/ebaad8d1e6533c9ad4980f557ead986104b947d0)
+- **pkey:** support DH key and paramgen [f4661c6](https://github.com/fffonion/lua-resty-openssl/commit/f4661c6eb1d57d36daa93e8c86105b77ba8fe0cb)
+- **pkey:** support one shot signing for all key types [79ca0d4](https://github.com/fffonion/lua-resty-openssl/commit/79ca0d43feda10894bfe5f0e72c4460dd4778c66)
+
+### fix
+- **pkey:** correctly free parameter after new parameters are set for RSA and DH keys on OpenSSL 1.0.2 [32d8c12](https://github.com/fffonion/lua-resty-openssl/commit/32d8c127f29e4ee0f13a8191f05f85ec74c2d8d4)
+- **tests:** sort json in tests [aeeb7c3](https://github.com/fffonion/lua-resty-openssl/commit/aeeb7c3c2c7899b1b9c36b620476cca81b8eefdc)
+
+
 <a name="0.6.7"></a>
 ## [0.6.7] - 2020-10-08
 ### feat
@@ -255,7 +268,8 @@
 <a name="init"></a>
 ## init - 2019-09-25
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.7...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.8...HEAD
+[0.6.8]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.7...0.6.8
 [0.6.7]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.6...0.6.7
 [0.6.6]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.5...0.6.6
 [0.6.5]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.4...0.6.5
