@@ -80,8 +80,10 @@ __DATA__
 
             for i=0,2,1 do
                 local ok = myassert(c:add(ext))
-
             end
+
+            collectgarbage()
+            
             for _, cc in ipairs(c) do
                 ngx.say(cc:text())
             end

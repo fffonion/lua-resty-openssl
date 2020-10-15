@@ -124,6 +124,9 @@ function _M.set_parameters(dh_st, opts)
       elseif k == "private" then
         k = "priv_key"
       end
+      if dh_st[k] ~= nil then
+        C.BN_free(dh_st[k])
+      end
       dh_st[k]= v
     end
     return true

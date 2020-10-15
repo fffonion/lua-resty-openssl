@@ -135,6 +135,9 @@ function _M.set_parameters(rsa_st, opts)
     return true
   elseif OPENSSL_10 then
     for k, v in pairs(opts_bn) do
+      if rsa_st[k] ~= nil then
+        C.BN_free(rsa_st[k])
+      end
       rsa_st[k]= v
     end
     return true
