@@ -103,5 +103,5 @@ jobs:
         export LD_LIBRARY_PATH=$LUAJIT_LIB:$LD_LIBRARY_PATH
         export TEST_NGINX_USE_VALGRIND='--num-callers=100 -q --tool=memcheck --leak-check=full --show-possibly-lost=no --gen-suppressions=all --suppressions=valgrind.suppress --track-origins=yes' TEST_NGINX_TIMEOUT=60 TEST_NGINX_SLEEP=1
         export PATH=$BASE_PATH/work/nginx/sbin:$PATH
-        prove -j$JOBS -r t/ 2>&1 | tee output.log
+        stdbuf -o 0 -e 0 prove -j$JOBS -r t/ 2>&1 | grep -v "Connection refused" | grep -v "Retry connecting after" | tee output.log
         if grep -q 'insert_a_suppression_name_here' output.log; then echo "Valgrind found problems"; exit 1; fi

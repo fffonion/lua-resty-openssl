@@ -423,7 +423,7 @@ Function to generate a key pair, or load existing key in PEM or DER format.
 1. Pass a `config` table to create a new PKEY pair. Which defaults to:
   
 ```lua
-pkey.new({
+locak key, err = pkey.new({
   type = 'RSA',
   bits = 2048,
   exp = 65537
@@ -431,7 +431,21 @@ pkey.new({
 ```
 
 To generate EC or DH key, please refer to [pkey.paramgen](#pkeyparamgen) for possible values of
-`config` table.
+`config` table. It's also possible to load a PEM-encoded EC or DH parameters for key generation:
+
+```lua
+local dhparam = pkey.paramgen({
+  type = 'DH',
+  group = 'dh_1024_160'
+})
+-- OR
+-- local dhparam = io.read("dhparams.pem"):read("*a")
+
+local key, err = pkey.new({
+  type = 'DH',
+  param = dhparam,
+}) 
+```
 
 Other possible `type`s are `Ed25519`, `X25519`, `Ed448` and `X448`. No additional parameters
 can be set during key generation for those keys.
@@ -493,7 +507,7 @@ For DH key:
 -----------|-------------
 type | `"DH"`
 bits | Generate a new DH parameter with `bits` long prime. If omitted, default to `2048`. Starting OpenSSL 3.0, only bits equal to 2048 is allowed.
-group | Use predefined groups.
+group | Use predefined groups instead of generating new one. `bit` will be ignored if `group` is set.
 
 Possible values for `group` are:
 - [RFC7919](https://tools.ietf.org/html/rfc7919#appendix-A.1) `"ffdhe2048"`, `"ffdhe3072"`,

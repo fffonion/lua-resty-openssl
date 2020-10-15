@@ -31,11 +31,101 @@ local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 local ptr_of_uint = ctypes.ptr_of_uint
 local ptr_of_size_t = ctypes.ptr_of_size_t
 
+local load_pem_args = { null, null, null }
+local load_der_args = { null }
+
+local function load_pem_der(txt, opts, funcs)
+  local fmt = opts.format or '*'
+  if fmt ~= 'PEM' and fmt ~= 'DER' and fmt ~= "JWK" and fmt ~= '*' then
+    return nil, "expecting 'DER', 'PEM', 'JWK' or '*' as \"format\""
+  end
+
+  local typ = opts.type or '*'
+  if typ ~= 'pu' and typ ~= 'pr' and typ ~= '*' then
+    return nil, "expecting 'pr', 'pu' or '*' as \"type\""
+  end
+
+  if fmt == "JWK" and (typ == "pu" or type == "pr") then
+    return nil, "explictly load private or public key from JWK format is not supported"
+  end
+
+  ngx.log(ngx.DEBUG, "load key using fmt: ", fmt, ", type: ", typ)
+
+  local bio = C.BIO_new_mem_buf(txt, #txt)
+  if bio == nil then
+    return "BIO_new_mem_buf() failed"
+  end
+  ffi_gc(bio, C.BIO_free)
+
+  local ctx
+
+  local fs = funcs[fmt][typ]
+  local passphrase_cb
+  for f, arg in pairs(fs) do
+    -- don't need BIO when loading JWK key: we parse it in Lua land
+    if f == "load_jwk" then
+      local err
+      ctx, err = jwk_lib[f](txt)
+      if ctx == nil then
+        -- if fmt is explictly set to JWK, we should return an error now
+        if fmt == "JWK" then
+          return nil, err
+        end
+        ngx.log(ngx.DEBUG, "jwk decode failed: ", err, ", continuing")
+      end
+    else
+      -- #define BIO_CTRL_RESET 1
+      local code = C.BIO_ctrl(bio, 1, 0, nil)
+      if code ~= 1 then
+        return nil, "BIO_ctrl() failed"
+      end
+
+      if fmt == "PEM" or fmt == "*" then
+        if opts.passphrase then
+          local passphrase = opts.passphrase
+          if type(passphrase) ~= "string" then
+            return nil, "passphrase must be a string"
+          end
+          arg = { null, nil, passphrase }
+        elseif opts.passphrase_cb then
+          passphrase_cb = ffi_cast("pem_password_cb*", function(buf, size)
+            local p = opts.passphrase_cb()
+            local len = #p -- 1 byte for \0
+            if len > size then
+              ngx.log(ngx.WARN, "pkey:load_pem_der: passphrase truncated from ", len, " to ", size)
+              len = size
+            end
+            ffi_copy(buf, p, len)
+            return len
+          end)
+          arg = { null, passphrase_cb, null }
+        end
+      end
+
+      ctx = C[f](bio, unpack(arg))
+    end
+
+    if ctx ~= nil then
+      ngx.log(ngx.DEBUG, "pkey:load_pem_der: loaded pkey using function ", f)
+      break
+    end
+  end
+  if passphrase_cb ~= nil then
+    passphrase_cb:free()
+  end
+
+  if ctx == nil then
+    return nil, format_error()
+  end
+  -- clear errors occur when trying
+  C.ERR_clear_error()
+  return ctx, nil
+end
+
 local function generate_param(key_type, config)
   if key_type == evp_macro.EVP_PKEY_DH then
     local dh_group = config.group
     if dh_group then
-      local ctx
       local get_group_func = dh_macro.dh_groups[dh_group]
       if not get_group_func then
         return nil, "unknown pre-defined group " .. dh_group
@@ -48,10 +138,10 @@ local function generate_param(key_type, config)
       if not params then
         return nil, format_error("EVP_PKEY_new")
       end
-      if C.EVP_PKEY_assign(params, key_type, ctx) ~= 1 then
-        return nil, format_error("EVP_PKEY_set1_DH")
-      end
       ffi_gc(params, C.EVP_PKEY_free)
+      if C.EVP_PKEY_assign(params, key_type, ctx) ~= 1 then
+        return nil, format_error("EVP_PKEY_assign")
+      end
       return params
     end
   end
@@ -105,6 +195,25 @@ local function generate_param(key_type, config)
   return params
 end
 
+local load_param_funcs = {
+  [evp_macro.EVP_PKEY_EC] = {
+    ["*"] = {
+      ["*"] = {
+        ['PEM_read_bio_ECPKParameters'] = load_pem_args,
+        -- ['d2i_ECPKParameters_bio'] = load_der_args,
+      }
+    },
+  },
+  [evp_macro.EVP_PKEY_DH] = {
+    ["*"] = {
+      ["*"] = {
+        ['PEM_read_bio_DHparams'] = load_pem_args,
+        -- ['d2i_DHparams_bio'] = load_der_args,
+      }
+    },
+  },
+}
+
 local function generate_key(config)
   local typ = config.type or 'RSA'
   local key_type
@@ -127,9 +236,38 @@ local function generate_key(config)
   local pctx
 
   if key_type == evp_macro.EVP_PKEY_EC or key_type == evp_macro.EVP_PKEY_DH then
-    local params, err = generate_param(key_type, config)
-    if err then
-      return nil, "generate_param: " .. err
+    local params, err
+    if config.param then
+      -- HACK
+      config.type = nil
+      local ctx, err = load_pem_der(config.param, config, load_param_funcs[key_type])
+      if err then
+        return nil, "load_pem_der: " .. err
+      end
+      if key_type == evp_macro.EVP_PKEY_EC then
+        local ec_group = ctx
+        ffi_gc(ec_group, C.EC_GROUP_free)
+        ctx = C.EC_KEY_new()
+        if ctx == nil then
+          return nil, "EC_KEY_new() failed"
+        end
+        if C.EC_KEY_set_group(ctx, ec_group) ~= 1 then
+          return nil, format_error("EC_KEY_set_group")
+        end
+      end
+      params = C.EVP_PKEY_new()
+      if not params then
+        return nil, format_error("EVP_PKEY_new")
+      end
+      ffi_gc(params, C.EVP_PKEY_free)
+      if C.EVP_PKEY_assign(params, key_type, ctx) ~= 1 then
+        return nil, format_error("EVP_PKEY_assign")
+      end
+    else
+      params, err = generate_param(key_type, config)
+      if err then
+        return nil, "generate_param: " .. err
+      end
     end
     pctx = C.EVP_PKEY_CTX_new(params, nil)
     if pctx == nil then
@@ -186,25 +324,22 @@ local function generate_key(config)
   return ctx_ptr[0]
 end
 
-local load_key_try_args_pem = { null, null, null }
-local load_key_try_args_der = { null }
-
 local load_key_try_funcs = {
   PEM = {
     -- Note: make sure we always try load priv key first
     pr = {
-      ['PEM_read_bio_PrivateKey'] = load_key_try_args_pem,
+      ['PEM_read_bio_PrivateKey'] = load_pem_args,
     },
     pu = {
-      ['PEM_read_bio_PUBKEY'] = load_key_try_args_pem,
+      ['PEM_read_bio_PUBKEY'] = load_pem_args,
     },
   },
   DER = {
     pr = {
-      ['d2i_PrivateKey_bio'] = load_key_try_args_der,
+      ['d2i_PrivateKey_bio'] = load_der_args,
     },
     pu = {
-      ['d2i_PUBKEY_bio'] = load_key_try_args_der,
+      ['d2i_PUBKEY_bio'] = load_der_args,
     },
   },
   JWK = {
@@ -234,94 +369,6 @@ load_key_try_funcs["*"] = {}
 load_key_try_funcs["*"]["*"] = all_funcs
 for typ, fs in pairs(typ_funcs) do
   load_key_try_funcs[typ] = fs
-end
-
-local function load_key(txt, opts)
-  local fmt = opts.format or '*'
-  if fmt ~= 'PEM' and fmt ~= 'DER' and fmt ~= "JWK" and fmt ~= '*' then
-    return nil, "expecting 'DER', 'PEM', 'JWK' or '*' as \"format\""
-  end
-
-  local typ = opts.type or '*'
-  if typ ~= 'pu' and typ ~= 'pr' and typ ~= '*' then
-    return nil, "expecting 'pr', 'pu' or '*' as \"type\""
-  end
-
-  if fmt == "JWK" and (typ == "pu" or type == "pr") then
-    return nil, "explictly load private or public key from JWK format is not supported"
-  end
-
-  ngx.log(ngx.DEBUG, "load key using fmt: ", fmt, ", type: ", typ)
-
-  local bio = C.BIO_new_mem_buf(txt, #txt)
-  if bio == nil then
-    return "BIO_new_mem_buf() failed"
-  end
-  ffi_gc(bio, C.BIO_free)
-
-  local ctx
-
-  local fs = load_key_try_funcs[fmt][typ]
-  local passphrase_cb
-  for f, arg in pairs(fs) do
-    -- don't need BIO when loading JWK key: we parse it in Lua land
-    if f == "load_jwk" then
-      local err
-      ctx, err = jwk_lib[f](txt)
-      if ctx == nil then
-        -- if fmt is explictly set to JWK, we should return an error now
-        if fmt == "JWK" then
-          return nil, err
-        end
-        ngx.log(ngx.DEBUG, "jwk decode failed: ", err, ", continuing")
-      end
-    else
-      -- #define BIO_CTRL_RESET 1
-      local code = C.BIO_ctrl(bio, 1, 0, nil)
-      if code ~= 1 then
-        return nil, "BIO_ctrl() failed"
-      end
-
-      if fmt == "PEM" or fmt == "*" then
-        if opts.passphrase then
-          local passphrase = opts.passphrase
-          if type(passphrase) ~= "string" then
-            return nil, "passphrase must be a string"
-          end
-          arg = { null, nil, passphrase }
-        elseif opts.passphrase_cb then
-          passphrase_cb = ffi_cast("pem_password_cb*", function(buf, size)
-            local p = opts.passphrase_cb()
-            local len = #p -- 1 byte for \0
-            if len > size then
-              ngx.log(ngx.WARN, "pkey.new:load_key: passphrase truncated from ", len, " to ", size)
-              len = size
-            end
-            ffi_copy(buf, p, len)
-            return len
-          end)
-          arg = { null, passphrase_cb, null }
-        end
-      end
-
-      ctx = C[f](bio, unpack(arg))
-    end
-
-    if ctx ~= nil then
-      ngx.log(ngx.DEBUG, "pkey.new:load_key: loaded pkey using function ", f)
-      break
-    end
-  end
-  if passphrase_cb ~= nil then
-    passphrase_cb:free()
-  end
-
-  if ctx == nil then
-    return nil, format_error()
-  end
-  -- clear errors occur when trying
-  C.ERR_clear_error()
-  return ctx, nil
 end
 
 local function tostring(self, is_priv, fmt)
@@ -359,7 +406,7 @@ function _M.new(s, opts)
       err = "pkey.new:generate_key: " .. err
     end
   elseif type(s) == 'string' then
-    ctx, err = load_key(s, opts or empty_table)
+    ctx, err = load_pem_der(s, opts or empty_table, load_key_try_funcs)
     if err then
       err = "pkey.new:load_key: " .. err
     end
