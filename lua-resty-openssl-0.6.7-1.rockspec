@@ -18,6 +18,7 @@ build = {
       ["resty.openssl.aux.jwk"] = "lib/resty/openssl/aux/jwk.lua",
       ["resty.openssl.bn"] = "lib/resty/openssl/bn.lua",
       ["resty.openssl.cipher"] = "lib/resty/openssl/cipher.lua",
+      ["resty.openssl.dh"] = "lib/resty/openssl/dh.lua",
       ["resty.openssl.digest"] = "lib/resty/openssl/digest.lua",
       ["resty.openssl.ec"] = "lib/resty/openssl/ec.lua",
       ["resty.openssl.ecx"] = "lib/resty/openssl/ecx.lua",

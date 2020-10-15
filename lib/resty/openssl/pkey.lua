@@ -16,6 +16,7 @@ local evp_macro = require "resty.openssl.include.evp"
 local util = require "resty.openssl.util"
 local digest_lib = require "resty.openssl.digest"
 local rsa_lib = require "resty.openssl.rsa"
+local dh_lib = require "resty.openssl.dh"
 local ec_lib = require "resty.openssl.ec"
 local ecx_lib = require "resty.openssl.ecx"
 local objects_lib = require "resty.openssl.objects"
@@ -442,6 +443,8 @@ function _M:get_parameters()
       return rsa_lib.get_parameters(key)
     elseif self.key_type == evp_macro.EVP_PKEY_EC then
       return ec_lib.get_parameters(key)
+    elseif self.key_type == evp_macro.EVP_PKEY_DH then
+      return dh_lib.get_parameters(key)
     end
   else
     return ecx_lib.get_parameters(self.ctx)
@@ -463,6 +466,8 @@ function _M:set_parameters(opts)
       return rsa_lib.set_parameters(key, opts)
     elseif self.key_type == evp_macro.EVP_PKEY_EC then
       return ec_lib.set_parameters(key, opts)
+    elseif self.key_type == evp_macro.EVP_PKEY_DH then
+      return dh_lib.set_parameters(key, opts)
     end
   else
     -- for ecx keys we always create a new EVP_PKEY and release the old one

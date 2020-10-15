@@ -399,6 +399,7 @@ Each key type may only support part of operations:
 Key Type | Load existing key | Key generation | Encrypt/Decrypt | Sign/Verify | Key Exchange |
 ---------|----------|----------------|-----------------|-------------|---------- |
 RSA| Y | Y | Y | Y | |
+DH | Y | Y | | | Y |
 EC | Y | Y | | Y (ECDSA) | Y (ECDH) |
 Ed25519 | Y | Y | | Y (PureEdDSA) | |
 X25519 | Y | Y | | | Y (ECDH) |
@@ -417,9 +418,9 @@ X448 | Y | Y | | | Y (ECDH) |
 
 **syntax**: *pk, err = pkey.new()*
 
-Creates a new pkey instance. The first argument can be:
+Function to generate a key pair, or load existing key in PEM or DER format.
   
-1. A `config` table to create a new PKEY pair. Which defaults to:
+1. Pass a `config` table to create a new PKEY pair. Which defaults to:
   
 ```lua
 pkey.new({
@@ -435,7 +436,7 @@ To generate EC or DH key, please refer to [pkey.paramgen](#pkeyparamgen) for pos
 Other possible `type`s are `Ed25519`, `X25519`, `Ed448` and `X448`. No additional parameters
 can be set during key generation for those keys.
 
-2. A `string` of private or public key in PEM, DER or JWK format text; optionally accpet a table
+2. Pass a `string` of private or public key in PEM, DER or JWK format text; optionally accpet a table
 `opts` to explictly load `format` and key `type`. When loading a key in PEM format,
 `passphrase` or `passphrase_cb` may be provided to decrypt the key.
 
@@ -459,8 +460,8 @@ pkey.new(pem_or_der_text, {
   - Public key part for `OKP` keys
   (the `x` parameter) is always not honored and derived from private key part (the `d` parameter) if it's specified.
 
-3. `nil` to create a 2048 bits RSA key.
-4. A `EVP_PKEY*` pointer, to return a wrapped `pkey` instance. Normally user won't use this
+3. Pass `nil` to create a 2048 bits RSA key.
+4. Pass a `EVP_PKEY*` pointer, to return a wrapped `pkey` instance. Normally user won't use this
 approach. User shouldn't free the pointer on their own, since the pointer is not copied.
 
 [Back to TOC](#table-of-contents)
@@ -479,16 +480,14 @@ Returns `true` if table is an instance of `pkey`. Returns `false` otherwise.
 
 Generate parameters for EC or DH key and output as PEM-encoded text.
 
-For EC private key:
+For EC key:
 
  Parameter | Description
 -----------|-------------
 type | `"EC"`
 curve | EC curves. If omitted, default to `"prime192v1"`. To see list of supported EC curves, use `openssl ecparam -list_curves`.
 
-To see list of supported EC curves, use `openssl ecparam -list_curves`.
-
-For DH private key:
+For DH key:
   
  Parameter | Description
 -----------|-------------
@@ -507,6 +506,11 @@ Possible values for `group` are:
 local pem, err = pkey.paramgen({
   type = 'EC',
   curve = 'prime192v1',
+})
+
+local pem, err = pkey.paramgen({
+  type = 'DH',
+  group = 'ffdhe4096',
 })
 ```
 
@@ -567,6 +571,17 @@ group | the named curve group | [NID] as a number, when passed in as `set_parame
 
 It's not possible to set `x`, `y` with `public` at same time as `x` and `y` is basically another representation
 of `public`. Also currently it's only possible to set `x` and `y` at same time.
+
+Parameters for DH key:
+
+ Parameter | Description | Type
+-----------|-------------|-----
+private | private key | [bn](#restyopensslbn)
+public | public key | [bn](#restyopensslbn)
+p | prime modulus | [bn](#restyopensslbn)
+q | reference position | [bn](#restyopensslbn)
+p | base generator | [bn](#restyopensslbn)
+
 
 Parameters for Curve25519 and Curve448 keys:
 

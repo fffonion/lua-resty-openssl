@@ -114,7 +114,58 @@ true"
 --- no_error_log
 [error]
 
-=== TEST 5: Rejects invalid arg
+=== TEST 5: Generates and loads DH key explictly
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local pkey = require("resty.openssl.pkey")
+            local p = myassert(pkey.new({
+                type = 'DH',
+                bits = 512
+            }))
+            local pem = myassert(p:to_PEM('private'))
+            ngx.say(pem)
+            ngx.say(pem == pkey.new(pem):to_PEM('private'))
+            -- skip for 3.0 since it only allows 2048 bits and is toooo slow
+        }
+    }
+--- request
+    GET /t
+--- skip_openssl
+2: > 1.1.1
+--- response_body_like eval
+"-----BEGIN PRIVATE KEY-----
+.+
+true"
+--- no_error_log
+[error]
+
+=== TEST 6: Uses DH predefined groups
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local pkey = require("resty.openssl.pkey")
+            local p = myassert(pkey.new({
+                type = 'DH',
+                group = "dh_1024_160",
+            }))
+            local pem = myassert(p:to_PEM('private'))
+            ngx.say(pem)
+            ngx.say(pem == pkey.new(pem):to_PEM('private'))
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+"-----BEGIN PRIVATE KEY-----
+.+
+true"
+--- no_error_log
+[error]
+
+=== TEST 7: Rejects invalid arg
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -135,7 +186,7 @@ pkey.new:load_key: .+
 --- no_error_log
 [error]
 
-=== TEST 6: Loads encrypted PEM pkey with passphrase
+=== TEST 8: Loads encrypted PEM pkey with passphrase
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -165,7 +216,7 @@ ok
 --- no_error_log
 [error]
 
-=== TEST 7: Loads encrypted PEM pkey with passphrase callback
+=== TEST 9: Loads encrypted PEM pkey with passphrase callback
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -199,7 +250,7 @@ ok
 --- no_error_log
 [error]
 
-=== TEST 8: Loads DER format
+=== TEST 10: Loads DER format
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -221,7 +272,7 @@ ok
 --- no_error_log
 [error]
 
-=== TEST 9: Outputs DER and JWK
+=== TEST 11: Outputs DER and JWK
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -252,7 +303,7 @@ ok
 --- no_error_log
 [error]
 
-=== TEST 10: Outputs public key
+=== TEST 12: Outputs public key
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -268,7 +319,7 @@ ok
 --- no_error_log
 [error]
 
-=== TEST 11: Extracts RSA parameters
+=== TEST 13: Extracts RSA parameters
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -303,7 +354,7 @@ nil
 --- no_error_log
 [error]
 
-=== TEST 12: Extracts EC parameters
+=== TEST 14: Extracts EC parameters
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -340,7 +391,7 @@ nil
 --- no_error_log
 [error]
 
-=== TEST 13: Extracts Ed25519 parameters
+=== TEST 15: Extracts Ed25519 parameters
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -366,7 +417,36 @@ nil
 --- no_error_log
 [error]
 
-=== TEST 14: Encrypt and decrypt
+=== TEST 16: Extracts DH parameters
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local p = myassert(require("resty.openssl.pkey").new({
+                type = "DH",
+                group = "dh_1024_160",
+            }))
+
+            local params = myassert(p:get_parameters())
+
+            ngx.say(params.p:to_hex())
+            ngx.say(params.g:to_hex())
+            ngx.say(params.private:to_hex())
+            ngx.say(params.public:to_hex())
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+"B10B8F96A080E01DDE92DE5EAE5D54EC52C99FBCFB06A3C69A6A9DCA52D23B616073E28675A23D189838EF1E2EE652C013ECB4AEA906112324975C3CD49B83BFACCBDD7D90C4BD7098488E9C219A73724EFFD6FAE5644738FAA31A4FF55BCCC0A151AF5F0DC8B4BD45BF37DF365C1A65E68CFDA76D4DA708DF1FB2BC2E4A4371
+A4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507FD6406CFF14266D31266FEA1E5C41564B777E690F5504F213160217B4B01B886A5E91547F9E2749F4D7FBD7D3B9A92EE1909D0D2263F80A76A6A24C087A091F531DBF0A0169B6A28AD662A4D18E73AFA32D779D5918D08BC8858F4DCEF97C2A24855E6EEB22B3B2E5
+[A-F0-9]+
+[A-F0-9]+
+"
+--- no_error_log
+[error]
+
+=== TEST 17: Encrypt and decrypt
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -395,7 +475,7 @@ nil
 [error]
 
 
-=== TEST 15: Sign and verify
+=== TEST 18: Sign and verify
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -422,7 +502,7 @@ true
 --- no_error_log
 [error]
 
-=== TEST 16: One shot sign and verify
+=== TEST 19: One shot sign and verify
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -463,7 +543,7 @@ true
 --- no_error_log
 [error]
 
-=== TEST 17: Error on bad digest or verify parameters
+=== TEST 20: Error on bad digest or verify parameters
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -485,7 +565,7 @@ pkey:verify: expect a digest instance or a string at #2
 --- no_error_log
 [error]
 
-=== TEST 18: Key derivation for EC, X448 and X25519
+=== TEST 21: Key derivation for EC, X448 and X25519
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -519,7 +599,7 @@ pkey:verify: expect a digest instance or a string at #2
 --- no_error_log
 [error]
 
-=== TEST 19: get key type
+=== TEST 22: get key type
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -537,7 +617,7 @@ pkey:verify: expect a digest instance or a string at #2
 --- no_error_log
 [error]
 
-=== TEST 20: Raw sign and recover
+=== TEST 23: Raw sign and recover
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -560,7 +640,7 @@ true
 --- no_error_log
 [error]
 
-=== TEST 21: Streaming sign and one shot sign can cross verify
+=== TEST 24: Streaming sign and one shot sign can cross verify
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -616,58 +696,7 @@ true
 --- no_error_log
 [error]
 
-=== TEST 22: Generates and loads DH key explictly
---- http_config eval: $::HttpConfig
---- config
-    location =/t {
-        content_by_lua_block {
-            local pkey = require("resty.openssl.pkey")
-            local p = myassert(pkey.new({
-                type = 'DH',
-                bits = 512
-            }))
-            local pem = myassert(p:to_PEM('private'))
-            ngx.say(pem)
-            ngx.say(pem == pkey.new(pem):to_PEM('private'))
-            -- skip for 3.0 since it only allows 2048 bits and is toooo slow
-        }
-    }
---- request
-    GET /t
---- skip_openssl
-2: > 1.1.1
---- response_body_like eval
-"-----BEGIN PRIVATE KEY-----
-.+
-true"
---- no_error_log
-[error]
-
-=== TEST 23: Uses DH predefined groups
---- http_config eval: $::HttpConfig
---- config
-    location =/t {
-        content_by_lua_block {
-            local pkey = require("resty.openssl.pkey")
-            local p = myassert(pkey.new({
-                type = 'DH',
-                group = "dh_1024_160",
-            }))
-            local pem = myassert(p:to_PEM('private'))
-            ngx.say(pem)
-            ngx.say(pem == pkey.new(pem):to_PEM('private'))
-        }
-    }
---- request
-    GET /t
---- response_body_like eval
-"-----BEGIN PRIVATE KEY-----
-.+
-true"
---- no_error_log
-[error]
-
-=== TEST 24: Outpus DH and EC params
+=== TEST 25: Outpus DH and EC params
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -690,5 +719,49 @@ true"
 "-----BEGIN DH PARAMETERS-----
 .+
 -----BEGIN EC PARAMETERS-----"
+--- no_error_log
+[error]
+
+
+=== TEST 26: Set DH parameters
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local p = myassert(require("resty.openssl.pkey").new({
+                type = "DH",
+                group = "dh_1024_160",
+            }))
+
+            local params1 = myassert(p:get_parameters())
+
+            local p = myassert(require("resty.openssl.pkey").new({
+                type = "DH",
+                group = "dh_2048_224",
+            }))
+
+            myassert(p:set_parameters({
+                p = params1.p,
+                g = params1.g,
+                private = params1.private,
+                public = params1.public,
+            }))
+
+            local params = myassert(p:get_parameters())
+
+            ngx.say(params.p:to_hex())
+            ngx.say(params.g:to_hex())
+            ngx.say(params.private:to_hex())
+            ngx.say(params.public:to_hex())
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+"B10B8F96A080E01DDE92DE5EAE5D54EC52C99FBCFB06A3C69A6A9DCA52D23B616073E28675A23D189838EF1E2EE652C013ECB4AEA906112324975C3CD49B83BFACCBDD7D90C4BD7098488E9C219A73724EFFD6FAE5644738FAA31A4FF55BCCC0A151AF5F0DC8B4BD45BF37DF365C1A65E68CFDA76D4DA708DF1FB2BC2E4A4371
+A4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507FD6406CFF14266D31266FEA1E5C41564B777E690F5504F213160217B4B01B886A5E91547F9E2749F4D7FBD7D3B9A92EE1909D0D2263F80A76A6A24C087A091F531DBF0A0169B6A28AD662A4D18E73AFA32D779D5918D08BC8858F4DCEF97C2A24855E6EEB22B3B2E5
+[A-F0-9]{1,256}
+[A-F0-9]{1,256}
+"
 --- no_error_log
 [error]

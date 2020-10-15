@@ -64,6 +64,9 @@ function _M.get_parameters(rsa_st)
         ret = rsa_st[k]
       end
 
+      if ret == nil then
+        return nil
+      end
       return bn_lib.dup(ret)
     end
   }), nil
