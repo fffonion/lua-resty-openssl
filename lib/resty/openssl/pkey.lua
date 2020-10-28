@@ -324,7 +324,7 @@ local function generate_key(config)
   return ctx_ptr[0]
 end
 
-local load_key_try_funcs = {
+local _load_key_try_funcs = {
   PEM = {
     -- Note: make sure we always try load priv key first
     pr = {
@@ -351,7 +351,10 @@ local load_key_try_funcs = {
 -- populate * funcs
 local all_funcs = {}
 local typ_funcs = {}
-for fmt, ffs in pairs(load_key_try_funcs) do
+local load_key_try_funcs = {}
+for fmt, ffs in pairs(_load_key_try_funcs) do
+  load_key_try_funcs[fmt] = ffs
+
   local funcs = {}
   for typ, fs in pairs(ffs) do
     for f, arg in pairs(fs) do
@@ -370,6 +373,7 @@ load_key_try_funcs["*"]["*"] = all_funcs
 for typ, fs in pairs(typ_funcs) do
   load_key_try_funcs[typ] = fs
 end
+_load_key_try_funcs = nil
 
 local function tostring(self, is_priv, fmt)
   if fmt == "JWK" then

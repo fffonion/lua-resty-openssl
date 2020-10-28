@@ -8,7 +8,7 @@ local GEN_URI = 6
 local GEN_IPADD = 7
 -- local GEN_RID = 8
 
-local types = {
+local default_types = {
   RFC822Name = GEN_EMAIL,
   RFC822 = GEN_EMAIL,
   Email = GEN_EMAIL,
@@ -29,8 +29,10 @@ local literals = {
   [GEN_IPADD] = "IP",
 }
 
-for t, gid in pairs(types) do
+local types = {}
+for t, gid in pairs(default_types) do
   types[t:lower()] = gid
+  types[t] = gid
 end
 
 return {

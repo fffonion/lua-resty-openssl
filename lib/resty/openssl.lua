@@ -33,11 +33,14 @@ _M.bignum = _M.bn
 function _M.luaossl_compat()
   for mod, tbl in pairs(_M) do
     if type(tbl) == 'table' then
+
+      -- avoid using a same table as the iterrator will change
+      local new_tbl = {}
       -- luaossl always error() out
       for k, f in pairs(tbl) do
         if type(f) == 'function' then
           local of = f
-          tbl[k] = function(...)
+          new_tbl[k] = function(...)
             local ret = { of(...) }
             if ret and #ret > 1 and ret[#ret] then
               error(mod .. "." .. k .. "(): " .. ret[#ret])
@@ -45,6 +48,10 @@ function _M.luaossl_compat()
             return unpack(ret)
           end
         end
+      end
+
+      for k, f in pairs(new_tbl) do
+        tbl[k] = f
       end
 
       setmetatable(tbl, {
