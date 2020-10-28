@@ -80,7 +80,7 @@ if version_num >= 0x30000000 then
 
   info_func = C.OPENSSL_info
 else
-  info_func = function()
+  info_func = function(_)
     error(string.format("OPENSSL_info is not supported on %s", ffi_str(version_func(0))))
   end
 end

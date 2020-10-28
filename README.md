@@ -19,9 +19,17 @@ Table of Contents
     + [version_text](#version_text)
     + [version.version](#versionversion)
     + [version.info](#versioninfo)
-    + [OPENSSL_30](#openssl_30)
-    + [OPENSSL_11](#openssl_11)
-    + [OPENSSL_10](#openssl_10)
+    + [version.OPENSSL_30](#versionopenssl_30)
+    + [version.OPENSSL_11](#versionopenssl_11)
+    + [version.OPENSSL_10](#versionopenssl_10)
+  * [resty.openssl.provider](#restyopensslprovider)
+    + [provider.load](#providerload)
+    + [provider.istype](#provideristype)
+    + [provider.is_available](#provideris_available)
+    + [provider.set_default_search_path](#providerset_default_search_path)
+    + [provider:unload](#providerunload)
+    + [provider:self_test](#providerself_test)
+    + [provider:get_params](#providerget_params)
   * [resty.openssl.pkey](#restyopensslpkey)
     + [pkey.new](#pkeynew)
     + [pkey.istype](#pkeyistype)
@@ -372,21 +380,100 @@ ngx.say(version.version(version.INFO_DSO_EXTENSION))
 
 [Back to TOC](#table-of-contents)
 
-### OPENSSL_30
+### version.OPENSSL_30
 
 A boolean indicates whether the linked OpenSSL is 3.0 series.
 
 [Back to TOC](#table-of-contents)
 
-### OPENSSL_11
+### version.OPENSSL_11
 
 A boolean indicates whether the linked OpenSSL is 1.1 series.
 
 [Back to TOC](#table-of-contents)
 
-### OPENSSL_10
+### version.OPENSSL_10
 
 A boolean indicates whether the linked OpenSSL is 1.0 series.
+
+[Back to TOC](#table-of-contents)
+
+## resty.openssl.provider
+
+Module to interact with providers. This module only work on OpenSSL >= 3.0.0.
+
+[Back to TOC](#table-of-contents)
+
+### provider.load
+
+**syntax**: *pro, err = provider.load(name, try?)*
+
+Load provider with `name`. If `try` is set to true, OpenSSL will not disable the
+fall-back providers if the provider cannot be loaded and initialized. If the provider
+loads successfully, however, the fall-back providers are disabled.
+
+[Back to TOC](#table-of-contents)
+
+### provider.istype
+
+**syntax**: *ok = pkey.provider(table)*
+
+Returns `true` if table is an instance of `provider`. Returns `false` otherwise.
+
+[Back to TOC](#table-of-contents)
+
+### provider.is_available
+
+**syntax**: *ok, err = provider.is_available(name)*
+
+Checks if a named provider is available for use.
+
+[Back to TOC](#table-of-contents)
+
+### provider.set_default_search_path
+
+**syntax**: *ok, err = provider.set_default_search_path(name)*
+
+Specifies the default search path that is to be used for looking for providers.
+
+[Back to TOC](#table-of-contents)
+
+### provider:unload
+
+**syntax**: *ok, err = pro:unload(name)*
+
+Unload a provider that is previously loaded by `provider.load`.
+
+[Back to TOC](#table-of-contents)
+
+### provider:self_test
+
+**syntax**: *ok, err = pro:self_test(name)*
+
+Runs a provider's self tests on demand. If the self tests fail then the provider
+will fail to provide any further services and algorithms.
+
+[Back to TOC](#table-of-contents)
+
+### provider:get_params
+
+**syntax**: *ok, err = pro:get_params(key1, key2?...)*
+
+Returns one or more provider parameter values.
+
+```lua
+local pro = require "resty.openssl.provider"
+
+local p = pro.load("default")
+
+local name = assert(p:get_params("name"))
+print(name)
+-- outputs "OpenSSL Default Provider"
+
+local result = assert(p:get_params("name", "version", "buildinfo", "status"))
+print(require("cjson").encode(result))
+-- outputs '{"buildinfo":"3.0.0-alpha7","name":"OpenSSL Default Provider","status":1,"version":"3.0.0"}'
+```
 
 [Back to TOC](#table-of-contents)
 
