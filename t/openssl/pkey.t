@@ -210,7 +210,7 @@ pkey.new:load_key: .+
 --- request
     GET /t
 --- response_body_like eval
-"pkey.new.+bad decrypt
+"pkey.new.+(?:bad decrypt|failed)
 ok
 "
 --- no_error_log
@@ -244,7 +244,7 @@ ok
 --- request
     GET /t
 --- response_body_like eval
-"pkey.new.+bad decrypt
+"pkey.new.+(?:bad decrypt|failed)
 ok
 "
 --- no_error_log
@@ -259,7 +259,7 @@ ok
             local p1 = myassert(pkey.new())
 
             local pem = p1:to_PEM('private')
-            local der, err = require("ngx.ssl").priv_key_pem_to_der(pem)
+            local der = myassert(p1:tostring('private', 'DER'))
             local p2 = myassert(pkey.new(der))
     
             ngx.print(p2 and pem == p2:to_PEM('private'))

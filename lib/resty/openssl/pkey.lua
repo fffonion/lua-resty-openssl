@@ -53,7 +53,7 @@ local function load_pem_der(txt, opts, funcs)
 
   local bio = C.BIO_new_mem_buf(txt, #txt)
   if bio == nil then
-    return "BIO_new_mem_buf() failed"
+    return nil, "BIO_new_mem_buf() failed"
   end
   ffi_gc(bio, C.BIO_free)
 

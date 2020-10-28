@@ -128,8 +128,12 @@ DNS 2.com
             local cc = c[1]
             c = nil
             collectgarbage("collect")
-            local k, v = unpack(cc)
-            ngx.say(k, " ", v)
+            if cc ~= nil then
+                local k, v = unpack(cc)
+                ngx.say(k, " ", v)
+            else
+                ngx.say("incorrectly GC'ed")
+            end
         }
     }
 --- request
