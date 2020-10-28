@@ -772,7 +772,7 @@ function _M.paramgen(config)
   elseif typ == "DH" then
     key_type = evp_macro.EVP_PKEY_DH
     if key_type == 0 then
-      return nil, "pkey.paramgen: the linked OpenSSL library doesn't support EC key"
+      return nil, "pkey.paramgen: the linked OpenSSL library doesn't support DH key"
     end
     write_func = C.PEM_write_bio_DHparams
     get_ctx_func = get_pkey_key[key_type]
