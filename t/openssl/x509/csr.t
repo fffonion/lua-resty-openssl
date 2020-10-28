@@ -250,8 +250,8 @@ nil
             local f = io.open("t/fixtures/test.csr"):read("*a")
             local c = myassert(require("resty.openssl.x509.csr").new(f))
             local altname = require("resty.openssl.x509.altname").new()
-            altname:add("DNS", "test.com")
-            altname:add("DNS", "test2.com")
+            myassert(altname:add("DNS", "test.com"))
+            myassert(altname:add("DNS", "test2.com"))
             local extension = require("resty.openssl.x509.extension")
             local ext = myassert(extension.from_data(altname, 85, false))
 
@@ -284,8 +284,8 @@ nil
             local f = io.open("t/fixtures/test.csr"):read("*a")
             local c = myassert(require("resty.openssl.x509.csr").new(f))
             local altname = require("resty.openssl.x509.altname").new()
-            altname:add("DNS", "test.com")
-            altname:add("DNS", "test2.com")
+            myassert(altname:add("DNS", "test.com"))
+            myassert(altname:add("DNS", "test2.com"))
             local extension = require("resty.openssl.x509.extension")
             local ext = myassert(extension.from_data(altname, 85, false))
 

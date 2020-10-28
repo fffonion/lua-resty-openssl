@@ -179,8 +179,8 @@ CA Issuers - URI:http://cacerts.digicert.com/DigiCertSHA2ExtendedValidationServe
     location =/t {
         content_by_lua_block {
             local altname = require("resty.openssl.x509.altname").new()
-            altname:add("DNS", "test.com")
-            altname:add("DNS", "test2.com")
+            myassert(altname:add("DNS", "test.com"))
+            myassert(altname:add("DNS", "test2.com"))
             local extension = require("resty.openssl.x509.extension")
             local c = myassert(extension.from_data(altname, 85, false))
 
@@ -203,8 +203,8 @@ DNS:test.com, DNS:test2.com
     location =/t {
         content_by_lua_block {
             local altname = require("resty.openssl.x509.altname").new()
-            altname:add("DNS", "test.com")
-            altname:add("DNS", "test2.com")
+            myassert(altname:add("DNS", "test.com"))
+            myassert(altname:add("DNS", "test2.com"))
             local extension = require("resty.openssl.x509.extension")
             local c = myassert(extension.from_data(altname, 85, false))
 
