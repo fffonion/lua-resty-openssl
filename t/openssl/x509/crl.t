@@ -210,7 +210,7 @@ __DATA__
         content_by_lua_block {
             local f = io.open("t/fixtures/TrustAsiaEVTLSProCAG2.crl"):read("*a")
             local c = myassert(require("resty.openssl.x509.crl").new(f))
-            local toset = require("resty.openssl.x509.name").new():add('CN', 'earth.galaxy')
+            local toset = myassert(require("resty.openssl.x509.name").new():add('CN', 'earth.galaxy'))
             local ok = myassert(c:set_issuer_name(toset))
 
             local get = myassert(c:get_issuer_name())

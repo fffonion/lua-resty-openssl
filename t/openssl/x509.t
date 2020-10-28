@@ -479,7 +479,7 @@ nil
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
             local c = myassert(require("resty.openssl.x509").new(f))
-            local toset = require("resty.openssl.bn").new(math.random(1, 2333333))
+            local toset = myassert(require("resty.openssl.bn").new(math.random(1, 2333333)))
             local ok = myassert(c:set_serial_number(toset))
 
             local get = myassert(c:get_serial_number())
@@ -626,7 +626,7 @@ SwIDAQAB
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
             local c = myassert(require("resty.openssl.x509").new(f))
-            local toset = require("resty.openssl.pkey").new()
+            local toset = myassert(require("resty.openssl.pkey").new())
             local ok = myassert(c:set_pubkey(toset))
 
             local get = myassert(c:get_pubkey())
@@ -674,7 +674,7 @@ SwIDAQAB
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
             local c = myassert(require("resty.openssl.x509").new(f))
-            local toset = require("resty.openssl.x509.name").new():add('CN', 'earth.galaxy')
+            local toset = myassert(require("resty.openssl.x509.name").new():add('CN', 'earth.galaxy'))
             local ok = myassert(c:set_subject_name(toset))
 
             local get = myassert(c:get_subject_name())
@@ -722,7 +722,7 @@ SwIDAQAB
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
             local c = myassert(require("resty.openssl.x509").new(f))
-            local toset = require("resty.openssl.x509.name").new():add('CN', 'earth.galaxy')
+            local toset = myassert(require("resty.openssl.x509.name").new():add('CN', 'earth.galaxy'))
             local ok = myassert(c:set_issuer_name(toset))
 
             local get = myassert(c:get_issuer_name())
@@ -815,7 +815,7 @@ SwIDAQAB
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
             local c = myassert(require("resty.openssl.x509").new(f))
-            local toset = require("resty.openssl.x509.altname").new():add('DNS', 'earth.galaxy')
+            local toset = myassert(require("resty.openssl.x509.altname").new():add('DNS', 'earth.galaxy'))
             local ok = myassert(c:set_subject_alt_name(toset))
 
             local get = myassert(c:get_subject_alt_name())

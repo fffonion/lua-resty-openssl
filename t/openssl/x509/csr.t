@@ -358,7 +358,7 @@ nil
         content_by_lua_block {
             local f = io.open("t/fixtures/test.csr"):read("*a")
             local c = myassert(require("resty.openssl.x509.csr").new(f))
-            local toset = require("resty.openssl.x509.name").new():add('CN', 'earth.galaxy')
+            local toset = myassert(require("resty.openssl.x509.name").new():add('CN', 'earth.galaxy'))
             local ok = myassert(c:set_subject_name(toset))
 
             local get = myassert(c:get_subject_name())
@@ -415,7 +415,7 @@ cwIDAQAB
         content_by_lua_block {
             local f = io.open("t/fixtures/test.csr"):read("*a")
             local c = myassert(require("resty.openssl.x509.csr").new(f))
-            local toset = require("resty.openssl.pkey").new()
+            local toset = myassert(require("resty.openssl.pkey").new())
             local ok = myassert(c:set_pubkey(toset))
 
             local get = myassert(c:get_pubkey())
@@ -508,7 +508,7 @@ cwIDAQAB
         content_by_lua_block {
             local f = io.open("t/fixtures/test.csr"):read("*a")
             local c = myassert(require("resty.openssl.x509.csr").new(f))
-            local toset = require("resty.openssl.x509.altname").new():add('DNS', 'earth.galaxy')
+            local toset = myassert(require("resty.openssl.x509.altname").new():add('DNS', 'earth.galaxy'))
             local ok = myassert(c:set_subject_alt_name(toset))
 
             local get = myassert(c:get_subject_alt_name())

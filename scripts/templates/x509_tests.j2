@@ -35,7 +35,7 @@
             local c = myassert(require("resty.openssl.{{ modname }}").new(f))
 
             {%- if f.type not in LUA_TYPES %}
-            local toset = require("resty.openssl.{{ f.type }}").{{ tests.types[f.type].new_from }}
+            local toset = myassert(require("resty.openssl.{{ f.type }}").{{ tests.types[f.type].new_from }})
             {%- else %}
             local toset = {{ tests.types[f.type].new_from }}
             {%- endif %}
