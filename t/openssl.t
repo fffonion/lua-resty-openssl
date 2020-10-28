@@ -70,9 +70,9 @@ false
             ngx.say(pok)
             ngx.say(perr)
             openssl.resty_hmac_compat()
-            local pok, perr = pcall(require, "resty.hmac")
+            local pok, mod = pcall(require, "resty.hmac")
             ngx.say(pok)
-            ngx.say(perr)
+            ngx.say(mod ~= nil)
         }
     }
 --- request
@@ -83,6 +83,6 @@ false
 false
 .+size of C type is unknown or too large.+
 true
-null
+true
 --- no_error_log
 [error]
