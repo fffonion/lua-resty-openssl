@@ -94,7 +94,7 @@ function _M:add(nid, typ, value)
   local err = altname_lib.gn_set(ad.location, typ, value)
   if err then
     C.ACCESS_DESCRIPTION_free(ad)
-    return err
+    return nil, err
   end
 
   local _, err = add(self.ctx, ad)

@@ -94,35 +94,33 @@ function _M.dup(ctx)
 end
 
 local function gn_set(gn, typ, value)
-  if not typ then
+  if type(typ) ~= 'string' then
     return "x509.altname:gn_set: expect a string at #1"
   end
-  typ = typ:lower()
+  local typ_lower = typ:lower()
   if type(value) ~= 'string' then
     return "x509.altname:gn_set: except a string at #2"
   end
 
   local txt = value
-  local gn_type = types[typ]
+  local gn_type = types[typ_lower]
+
   if not gn_type then
     return "x509.altname:gn_set: unknown type " .. typ
   end
-
   gn.type = gn_type
 
   local asn1_string = C.ASN1_IA5STRING_new()
   if asn1_string == nil then
-    C.GENERAL_NAME_free(gn)
     return "x509.altname:gn_set: ASN1_STRING_type_new() failed"
   end
 
-  gn.d.ia5 = asn1_string
-
-  local code = C.ASN1_STRING_set(gn.d.ia5, txt, #txt)
+  local code = C.ASN1_STRING_set(asn1_string, txt, #txt)
   if code ~= 1 then
-    C.GENERAL_NAME_free(gn)
+    C.ASN1_STRING_free(asn1_string)
     return "x509.altname:gn_set: ASN1_STRING_set() failed: " .. code
   end
+  gn.d.ia5 = asn1_string
 end
 
 -- shared with info_access
@@ -141,7 +139,8 @@ function _M:add(typ, value)
 
   local err = gn_set(gn, typ, value)
   if err then
-    return err
+    C.GENERAL_NAME_free(gn)
+    return nil, err
   end
 
   local _, err = add(self.ctx, gn)
