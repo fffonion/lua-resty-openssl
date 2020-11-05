@@ -723,8 +723,8 @@ When passing a [digest](#restyopenssldigest) instance as `digest` parameter, it 
 have been called [final()](#digestfinal), user should only use [update()](#digestupdate).
 
 For RSA and EC keys, passing a string as `digest` parameter does the SHA256 as digest method
-by default. For Ed25519 or Ed448 keys, this function does a PureEdDSA verification and requires
-`digest` to be the string that needs signing. No message digest is used for Ed keys.
+by default. For Ed25519 or Ed448 keys, this function does a PureEdDSA signing and requires
+`digest` to be a string. No message digest is used for Ed keys.
 
 For EC key, this function does a ECDSA signing.
 
