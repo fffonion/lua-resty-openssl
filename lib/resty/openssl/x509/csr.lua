@@ -460,24 +460,20 @@ end
 
 
 -- AUTO GENERATED
-local function get_signature_nid(ctx)
-  local nid = accessors.get_signature_nid(ctx)
+function _M:get_signature_nid()
+  local nid = accessors.get_signature_nid(self.ctx)
   if nid <= 0 then
     return nil, format_error("x509.csr:get_signature_nid")
   end
+
   return nid
 end
 
 -- AUTO GENERATED
-function _M:get_signature_nid()
-  return get_signature_nid(self.ctx)
-end
-
--- AUTO GENERATED
 function _M:get_signature_name()
-  local nid, err = get_signature_nid(self.ctx)
-  if err ~= nil then
-    return nil, err
+  local nid = accessors.get_signature_nid(self.ctx)
+  if nid <= 0 then
+    return nil, format_error("x509.csr:get_signature_name")
   end
 
   return ffi.string(C.OBJ_nid2sn(nid))
