@@ -2,6 +2,19 @@
 ## [Unreleased]
 
 
+<a name="0.6.9"></a>
+## [0.6.9] - 2020-11-09
+### feat
+- **provider:** add the provider module [dff92af](https://github.com/fffonion/lua-resty-openssl/commit/dff92af37102b094f1187914a0c76b6635130626)
+- **x509.*:** add get_signature_nid and get_signature_name [a35ae0a](https://github.com/fffonion/lua-resty-openssl/commit/a35ae0af6ad98251d4226e0daceab07c2832fc17)
+
+### fix
+- ***:** not mutating tables when doing pairs to avoid missing of iterration [836d5c9](https://github.com/fffonion/lua-resty-openssl/commit/836d5c915b27c0e63782c47effae16515ba71fed)
+- **pkey:** fix typo in paramgen error message [d341246](https://github.com/fffonion/lua-resty-openssl/commit/d341246b5db5f912a3bcb06b7be1d08ffee093b3)
+- **tests:** openssl3.0 alpha7 [5caa0e6](https://github.com/fffonion/lua-resty-openssl/commit/5caa0e60193ea535d0c0f1fe8491bc6779c9e720)
+- **x509.altname:** organize GC handling better [f5a138c](https://github.com/fffonion/lua-resty-openssl/commit/f5a138c8b10dd285d9cacb6f2b3877b7831d0fba)
+
+
 <a name="0.6.8"></a>
 ## [0.6.8] - 2020-10-15
 ### feat
@@ -268,7 +281,8 @@
 <a name="init"></a>
 ## init - 2019-09-25
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.8...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.9...HEAD
+[0.6.9]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.8...0.6.9
 [0.6.8]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.7...0.6.8
 [0.6.7]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.6...0.6.7
 [0.6.6]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.5...0.6.6
