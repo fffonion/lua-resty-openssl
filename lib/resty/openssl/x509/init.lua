@@ -49,7 +49,6 @@ if OPENSSL_11_OR_LATER then
   accessors.set_not_after = C.X509_set1_notAfter
   accessors.get_version = C.X509_get_version -- returns int
   accessors.get_serial_number = C.X509_get0_serialNumber -- returns internal ptr, we convert to bn
-  accessors.get_issuer_name = C.X509_get_issuer_name -- returns internal ptr, we dup it
 elseif OPENSSL_10 then
   accessors.get_not_before = function(x509)
     if x509 == nil or x509.cert_info == nil or x509.cert_info.validity == nil then
