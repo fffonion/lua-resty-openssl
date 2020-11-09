@@ -40,13 +40,15 @@ if OPENSSL_11_OR_LATER then
     long X509_CRL_get_version(const X509_CRL *crl);
 
     X509_EXTENSION *X509_CRL_delete_ext(X509_CRL *x, int loc);
+
+    int X509_CRL_get_signature_nid(const X509_CRL *crl);
   ]]
 elseif OPENSSL_10 then
   -- in openssl 1.0.x some getters are direct accessor to struct members (defiend by macros)
   ffi.cdef [[
     typedef struct X509_crl_info_st {
       ASN1_INTEGER *version;
-      /*X509_ALGOR*/ void *sig_alg;
+      X509_ALGOR *sig_alg;
       X509_NAME *issuer;
       ASN1_TIME *lastUpdate;
       ASN1_TIME *nextUpdate;

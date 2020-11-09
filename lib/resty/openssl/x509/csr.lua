@@ -29,6 +29,7 @@ accessors.set_version = C.X509_REQ_set_version
 if OPENSSL_11_OR_LATER then
   accessors.get_subject_name = C.X509_REQ_get_subject_name -- returns internal ptr
   accessors.get_version = C.X509_REQ_get_version
+  accessors.get_signature_nid = C.X509_REQ_get_signature_nid
 elseif OPENSSL_10 then
   accessors.get_subject_name = function(csr)
     if csr == nil or csr.req_info == nil then
@@ -41,6 +42,12 @@ elseif OPENSSL_10 then
       return nil
     end
     return C.ASN1_INTEGER_get(csr.req_info.version)
+  end
+  accessors.get_signature_nid = function(csr)
+    if csr == nil or csr.sig_alg == nil then
+      return nil
+    end
+    return C.OBJ_obj2nid(csr.sig_alg.algorithm)
   end
 end
 
@@ -452,6 +459,29 @@ function _M:get_subject_alt_name_critical()
 end
 
 
+-- AUTO GENERATED
+local function get_signature_nid(ctx)
+  local nid = accessors.get_signature_nid(ctx)
+  if nid <= 0 then
+    return nil, format_error("x509.csr:get_signature_nid")
+  end
+  return nid
+end
+
+-- AUTO GENERATED
+function _M:get_signature_nid()
+  return get_signature_nid(self.ctx)
+end
+
+-- AUTO GENERATED
+function _M:get_signature_name()
+  local nid, err = get_signature_nid(self.ctx)
+  if err ~= nil then
+    return nil, err
+  end
+
+  return ffi.string(C.OBJ_nid2sn(nid))
+end
 -- END AUTO GENERATED CODE
 
 return _M

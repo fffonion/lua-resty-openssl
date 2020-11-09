@@ -923,4 +923,29 @@ true
 true
 --- no_error_log
 [error]
+
+=== TEST 40: x509:get_get_signature_name (AUTOGEN)
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/Github.pem"):read("*a")
+            local c = myassert(require("resty.openssl.x509").new(f))
+
+            local nid = myassert(c:get_signature_nid())
+
+            ngx.say(nid)
+
+            local name = myassert(c:get_signature_name())
+
+            ngx.say(name)
+        }
+    }
+--- request
+    GET /t
+--- response_body
+668
+RSA-SHA256
+--- no_error_log
+[error]
 # END AUTO GENERATED CODE

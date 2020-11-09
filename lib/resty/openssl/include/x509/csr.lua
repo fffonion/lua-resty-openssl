@@ -50,6 +50,8 @@ if OPENSSL_11_OR_LATER then
   ffi.cdef [[
     X509_NAME *X509_REQ_get_subject_name(const X509_REQ *req);
     long X509_REQ_get_version(const X509_REQ *req);
+
+    int X509_REQ_get_signature_nid(const X509_REQ *crl);
   ]]
 elseif OPENSSL_10 then
   ffi.cdef [[
@@ -65,8 +67,8 @@ elseif OPENSSL_10 then
     // Note: this struct is trimmed
     typedef struct X509_req_st {
       X509_REQ_INFO *req_info;
+      X509_ALGOR *sig_alg;
       // trimmed
-      //X509_ALGOR* *sig_alg;
       //ASN1_BIT_STRING *signature;
       //int references;
     } X509_REQ;

@@ -46,8 +46,8 @@ matrix:
     - env: NGINX_VERSION=1.17.8 OPENSSL_VER=1.1.1h
     # openssl 3.0
     # add -Wno-error to fix deprecation warnings from openssl
-    - env: NGINX_VERSION=1.15.8 OPENSSL_VER=3.0.0-alpha7 NGINX_CC_OPTS=-Wno-error
-    - env: NGINX_VERSION=1.17.8 OPENSSL_VER=3.0.0-alpha7 NGINX_CC_OPTS=-Wno-error
+    - env: NGINX_VERSION=1.15.8 OPENSSL_VER=3.0.0-alpha8 NGINX_CC_OPTS=-Wno-error
+    - env: NGINX_VERSION=1.17.8 OPENSSL_VER=3.0.0-alpha8 NGINX_CC_OPTS=-Wno-error
     - compiler: clang
       env: NGINX_VERSION=1.15.8 OPENSSL_VER=1.1.1h
     - arch: arm64

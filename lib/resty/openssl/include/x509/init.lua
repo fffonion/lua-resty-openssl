@@ -60,6 +60,8 @@ ffi.cdef [[
 
   const char *X509_verify_cert_error_string(long n);
   int X509_verify_cert(X509_STORE_CTX *ctx);
+
+  int X509_get_signature_nid(const X509 *x);
 ]]
 
 if OPENSSL_11_OR_LATER then
@@ -81,11 +83,17 @@ elseif OPENSSL_10 then
       ASN1_TIME *notBefore;
       ASN1_TIME *notAfter;
     } X509_VAL;
+
+    typedef struct X509_algor_st {
+      ASN1_OBJECT *algorithm;
+      ASN1_TYPE *parameter;
+    } X509_ALGOR;
+
     // Note: this struct is trimmed
     typedef struct x509_cinf_st {
       /*ASN1_INTEGER*/ void *version;
       /*ASN1_INTEGER*/ void *serialNumber;
-      /*X509_ALGOR*/ void *signature;
+      X509_ALGOR *signature;
       X509_NAME *issuer;
       X509_VAL *validity;
       X509_NAME *subject;

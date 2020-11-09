@@ -6,6 +6,8 @@ defines = {
     "extensions_in_struct":"crl.extensions",
     "has_sign_verify": True,
     "sample": "TrustAsiaEVTLSProCAG2.crl",
+    "sample_signature_nid": 668,
+    "sample_signature_name": "RSA-SHA256",
     "fields":
 [
 {

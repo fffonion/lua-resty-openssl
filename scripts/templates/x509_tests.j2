@@ -89,3 +89,28 @@ true
     {%- set ns.idx = ns.idx + 1 %}
   {%- endif %}
 {%- endfor %}
+
+=== TEST {{ ns.idx + 1 }}: {{ modname }}:get_get_signature_name (AUTOGEN)
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/{{ module.sample }}"):read("*a")
+            local c = myassert(require("resty.openssl.{{ modname }}").new(f))
+
+            local nid = myassert(c:get_signature_nid())
+
+            ngx.say(nid)
+
+            local name = myassert(c:get_signature_name())
+
+            ngx.say(name)
+        }
+    }
+--- request
+    GET /t
+--- response_body
+{{ module.sample_signature_nid }}
+{{ module.sample_signature_name }}
+--- no_error_log
+[error]

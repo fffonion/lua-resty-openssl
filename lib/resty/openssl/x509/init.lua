@@ -34,6 +34,7 @@ accessors.get_subject_name = C.X509_get_subject_name -- returns internal ptr, we
 accessors.set_subject_name = C.X509_set_subject_name
 accessors.get_issuer_name = C.X509_get_issuer_name -- returns internal ptr, we dup it
 accessors.set_issuer_name = C.X509_set_issuer_name
+accessors.get_signature_nid = C.X509_get_signature_nid
 
 if OPENSSL_11_OR_LATER then
   -- generally, use get1 if we return a lua table wrapped ctx which doesn't support dup.
@@ -979,6 +980,29 @@ function _M:get_crl_distribution_points_critical()
 end
 
 
+-- AUTO GENERATED
+local function get_signature_nid(ctx)
+  local nid = accessors.get_signature_nid(ctx)
+  if nid <= 0 then
+    return nil, format_error("x509:get_signature_nid")
+  end
+  return nid
+end
+
+-- AUTO GENERATED
+function _M:get_signature_nid()
+  return get_signature_nid(self.ctx)
+end
+
+-- AUTO GENERATED
+function _M:get_signature_name()
+  local nid, err = get_signature_nid(self.ctx)
+  if err ~= nil then
+    return nil, err
+  end
+
+  return ffi.string(C.OBJ_nid2sn(nid))
+end
 -- END AUTO GENERATED CODE
 
 return _M

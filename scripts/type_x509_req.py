@@ -4,6 +4,8 @@ defines = {
     "type": "X509_REQ",
     "has_sign_verify": True,
     "sample": "test.csr",
+    "sample_signature_nid": 65,
+    "sample_signature_name": "RSA-SHA1",
     "fields":
 [
 {

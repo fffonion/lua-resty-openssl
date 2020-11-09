@@ -29,6 +29,7 @@ if OPENSSL_11_OR_LATER then
   accessors.set_next_update = C.X509_CRL_set1_nextUpdate
   accessors.get_version = C.X509_CRL_get_version
   accessors.get_issuer_name = C.X509_CRL_get_issuer -- returns internal ptr
+  accessors.get_signature_nid = C.X509_CRL_get_signature_nid
 elseif OPENSSL_10 then
   accessors.get_last_update = function(crl)
     if crl == nil or crl.crl == nil then
@@ -55,6 +56,12 @@ elseif OPENSSL_10 then
       return nil
     end
     return crl.crl.issuer
+  end
+  accessors.get_signature_nid = function(crl)
+    if crl == nil or crl.crl == nil or crl.crl.sig_alg == nil then
+      return nil
+    end
+    return C.OBJ_obj2nid(crl.crl.sig_alg.algorithm)
   end
 end
 
@@ -430,6 +437,29 @@ function _M:set_version(toset)
 end
 
 
+-- AUTO GENERATED
+local function get_signature_nid(ctx)
+  local nid = accessors.get_signature_nid(ctx)
+  if nid <= 0 then
+    return nil, format_error("x509.crl:get_signature_nid")
+  end
+  return nid
+end
+
+-- AUTO GENERATED
+function _M:get_signature_nid()
+  return get_signature_nid(self.ctx)
+end
+
+-- AUTO GENERATED
+function _M:get_signature_name()
+  local nid, err = get_signature_nid(self.ctx)
+  if err ~= nil then
+    return nil, err
+  end
+
+  return ffi.string(C.OBJ_nid2sn(nid))
+end
 -- END AUTO GENERATED CODE
 
 return _M

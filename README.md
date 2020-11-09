@@ -103,6 +103,7 @@ Table of Contents
     + [x509:get_*, x509:set_*](#x509get_-x509set_)
     + [x509:get_lifetime](#x509get_lifetime)
     + [x509:set_lifetime](#x509set_lifetime)
+    + [x509:get_signature_name, x509:get_signature_nid](#x509get_signature_name-x509get_signature_nid)
     + [x509:get_extension](#x509get_extension)
     + [x509:add_extension](#x509add_extension)
     + [x509:set_extension](#x509set_extension)
@@ -118,6 +119,7 @@ Table of Contents
     + [csr.new](#csrnew)
     + [csr.istype](#csristype)
     + [csr:get_*, csr:set_*](#csrget_-csrset_)
+    + [csr:get_signature_name, csr:get_signature_nid](#csrget_signature_name-csrget_signature_nid)
     + [csr:get_extension](#csrget_extension)
     + [csr:add_extension](#csradd_extension)
     + [csr:set_extension](#csrset_extension)
@@ -131,6 +133,7 @@ Table of Contents
     + [crl.new](#crlnew)
     + [crl.istype](#crlistype)
     + [crl:get_*, crl:set_*](#crlget_-crlset_)
+    + [crl:get_signature_name, crl:get_signature_nid](#crlget_signature_name-crlget_signature_nid)
     + [crl:get_extension](#crlget_extension)
     + [crl:add_extension](#crladd_extension)
     + [crl:set_extension](#crlset_extension)
@@ -1681,9 +1684,9 @@ If `digest_name` is omitted, it's default to `sha1`.
 
 ### x509:get_*, x509:set_*
 
-**syntax**: *ok, err = x509:set_attribute(instance)*
+**syntax**: *ok, err = x509:set_**attribute**(instance)*
 
-**syntax**: *instance, err = x509:get_attribute()*
+**syntax**: *instance, err = x509:get_**attribute**()*
 
 Setters and getters for x509 attributes share the same syntax.
 
@@ -1750,7 +1753,6 @@ and thus used by [x509:get_extension](#x509get_extension) and [x509:set_extensio
 
 [Back to TOC](#table-of-contents)
 
-
 ### x509:get_lifetime
 
 **syntax**: *not_before, not_after, err = x509:get_lifetime()*
@@ -1765,6 +1767,16 @@ A shortcut of `x509:get_not_before` plus `x509:get_not_after`
 
 A shortcut of `x509:set_not_before`
 plus `x509:set_not_after`.
+
+[Back to TOC](#table-of-contents)
+
+### x509:get_signature_name, x509:get_signature_nid
+
+**syntax**: *sn, err = x509:get_signature_name()*
+
+**syntax**: *nid, err = x509:get_signature_nid()*
+
+Return the [NID] or the short name (SN) of the signature of the certificate.
 
 [Back to TOC](#table-of-contents)
 
@@ -1928,9 +1940,9 @@ Returns `true` if table is an instance of `csr`. Returns `false` otherwise.
 
 ### csr:get_*, csr:set_*
 
-**syntax**: *ok, err = csr:set_attribute(instance)*
+**syntax**: *ok, err = csr:set_**attribute**(instance)*
 
-**syntax**: *instance, err = csr:get_attribute()*
+**syntax**: *instance, err = csr:get_**attribute**()*
 
 Setters and getters for x509 attributes share the same syntax.
 
@@ -1974,6 +1986,16 @@ and thus used by [csr:get_extension](#csrget_extension) and [csr:set_extension](
 
 Same as [csr:set_subject_alt_name](#csrget_-csrset_), this function is deprecated to align
 with naming convension with other functions.
+
+[Back to TOC](#table-of-contents)
+
+### csr:get_signature_name, csr:get_signature_nid
+
+**syntax**: *sn, err = csr:get_signature_name()*
+
+**syntax**: *nid, err = csr:get_signature_nid()*
+
+Return the [NID] or the short name (SN) of the signature of the certificate request.
 
 [Back to TOC](#table-of-contents)
 
@@ -2113,9 +2135,9 @@ Returns `true` if table is an instance of `crl`. Returns `false` otherwise.
 
 ### crl:get_*, crl:set_*
 
-**syntax**: *ok, err = crl:set_attribute(instance)*
+**syntax**: *ok, err = crl:set_**attribute**(instance)*
 
-**syntax**: *instance, err = crl:get_attribute()*
+**syntax**: *instance, err = crl:get_**attribute**()*
 
 Setters and getters for crl attributes share the same syntax.
 
@@ -2155,6 +2177,15 @@ and thus used by [crl:get_extension](#crlget_extension) and [crl:set_extension](
 
 [Back to TOC](#table-of-contents)
 
+### crl:get_signature_name, crl:get_signature_nid
+
+**syntax**: *sn, err = crl:get_signature_name()*
+
+**syntax**: *nid, err = crl:get_signature_nid()*
+
+Return the [NID] or the short name (SN) of the signature of the CRL.
+
+[Back to TOC](#table-of-contents)
 
 ### crl:get_extension
 
