@@ -335,6 +335,21 @@ function _M:pubkey_digest(typ)
   return digest(self, C.X509_pubkey_digest, typ)
 end
 
+function _M:check_private_key(key)
+  if not pkey_lib.istype(key) then
+    return false, "x509:check_private_key: except a pkey instance at #1"
+  end
+
+  if not key:is_private() then
+    return false, "x509:check_private_key: not a private key"
+  end
+
+  if C.X509_check_private_key(self.ctx, key.ctx) == 1 then
+    return true
+  end
+  return false, format_error("x509:check_private_key")
+end
+
 -- START AUTO GENERATED CODE
 
 -- AUTO GENERATED

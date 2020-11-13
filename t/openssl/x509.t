@@ -449,10 +449,46 @@ nil
 --- no_error_log
 [error]
 
+=== TEST 19: Check private key match
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local cert, key = require("helper").create_self_signed({ type = "EC" })
+            local ok, err = cert:check_private_key(key)
+            ngx.say(ok)
+            ngx.say(err)
+
+            local f = io.open("t/fixtures/GlobalSign.pem"):read("*a")
+            local c = myassert(require("resty.openssl.x509").new(f))
+            local ok, err = c:check_private_key(key)
+            ngx.say(ok)
+            ngx.say(err)
+
+            local key2 = require("resty.openssl.pkey").new({
+                type = 'EC',
+            })
+            local ok, err = cert:check_private_key(key2)
+            ngx.say(ok)
+            ngx.say(err)
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+"true
+nil
+false
+.+key type mismatch
+.+key values mismatch
+"
+--- no_error_log
+[error]
+
 # START AUTO GENERATED CODE
 
 
-=== TEST 19: x509:get_serial_number (AUTOGEN)
+=== TEST 20: x509:get_serial_number (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -472,7 +508,7 @@ nil
 --- no_error_log
 [error]
 
-=== TEST 20: x509:set_serial_number (AUTOGEN)
+=== TEST 21: x509:set_serial_number (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -500,7 +536,7 @@ nil
 --- no_error_log
 [error]
 
-=== TEST 21: x509:get_not_before (AUTOGEN)
+=== TEST 22: x509:get_not_before (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -519,7 +555,7 @@ nil
 --- no_error_log
 [error]
 
-=== TEST 22: x509:set_not_before (AUTOGEN)
+=== TEST 23: x509:set_not_before (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -545,7 +581,7 @@ nil
 --- no_error_log
 [error]
 
-=== TEST 23: x509:get_not_after (AUTOGEN)
+=== TEST 24: x509:get_not_after (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -564,7 +600,7 @@ nil
 --- no_error_log
 [error]
 
-=== TEST 24: x509:set_not_after (AUTOGEN)
+=== TEST 25: x509:set_not_after (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -590,7 +626,7 @@ nil
 --- no_error_log
 [error]
 
-=== TEST 25: x509:get_pubkey (AUTOGEN)
+=== TEST 26: x509:get_pubkey (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -619,7 +655,7 @@ SwIDAQAB
 --- no_error_log
 [error]
 
-=== TEST 26: x509:set_pubkey (AUTOGEN)
+=== TEST 27: x509:set_pubkey (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -647,7 +683,7 @@ SwIDAQAB
 --- no_error_log
 [error]
 
-=== TEST 27: x509:get_subject_name (AUTOGEN)
+=== TEST 28: x509:get_subject_name (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -667,7 +703,7 @@ SwIDAQAB
 --- no_error_log
 [error]
 
-=== TEST 28: x509:set_subject_name (AUTOGEN)
+=== TEST 29: x509:set_subject_name (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -695,7 +731,7 @@ SwIDAQAB
 --- no_error_log
 [error]
 
-=== TEST 29: x509:get_issuer_name (AUTOGEN)
+=== TEST 30: x509:get_issuer_name (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -715,7 +751,7 @@ SwIDAQAB
 --- no_error_log
 [error]
 
-=== TEST 30: x509:set_issuer_name (AUTOGEN)
+=== TEST 31: x509:set_issuer_name (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -743,7 +779,7 @@ SwIDAQAB
 --- no_error_log
 [error]
 
-=== TEST 31: x509:get_version (AUTOGEN)
+=== TEST 32: x509:get_version (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -762,7 +798,7 @@ SwIDAQAB
 --- no_error_log
 [error]
 
-=== TEST 32: x509:set_version (AUTOGEN)
+=== TEST 33: x509:set_version (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -788,7 +824,7 @@ SwIDAQAB
 --- no_error_log
 [error]
 
-=== TEST 33: x509:get_subject_alt_name (AUTOGEN)
+=== TEST 34: x509:get_subject_alt_name (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -808,7 +844,7 @@ SwIDAQAB
 --- no_error_log
 [error]
 
-=== TEST 34: x509:set_subject_alt_name (AUTOGEN)
+=== TEST 35: x509:set_subject_alt_name (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -836,7 +872,7 @@ SwIDAQAB
 --- no_error_log
 [error]
 
-=== TEST 36: x509:get/set_subject_alt_name_critical (AUTOGEN)
+=== TEST 37: x509:get/set_subject_alt_name_critical (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -858,7 +894,7 @@ true
 --- no_error_log
 [error]
 
-=== TEST 37: x509:get/set_basic_constraints_critical (AUTOGEN)
+=== TEST 38: x509:get/set_basic_constraints_critical (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -880,7 +916,7 @@ true
 --- no_error_log
 [error]
 
-=== TEST 38: x509:get/set_info_access_critical (AUTOGEN)
+=== TEST 39: x509:get/set_info_access_critical (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -902,7 +938,7 @@ true
 --- no_error_log
 [error]
 
-=== TEST 39: x509:get/set_crl_distribution_points_critical (AUTOGEN)
+=== TEST 40: x509:get/set_crl_distribution_points_critical (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -924,7 +960,7 @@ true
 --- no_error_log
 [error]
 
-=== TEST 40: x509:get_get_signature_name (AUTOGEN)
+=== TEST 41: x509:get_get_signature_name (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {

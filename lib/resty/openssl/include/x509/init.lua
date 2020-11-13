@@ -65,6 +65,7 @@ ffi.cdef [[
 
   unsigned char *X509_alias_get0(X509 *x, int *len);
   unsigned char *X509_keyid_get0(X509 *x, int *len);
+  int X509_check_private_key(X509 *x, EVP_PKEY *k);
 ]]
 
 if OPENSSL_11_OR_LATER then
