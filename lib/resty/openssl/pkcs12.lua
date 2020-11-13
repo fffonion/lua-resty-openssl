@@ -84,6 +84,12 @@ local function encode(opts, passphrase)
   if not x509_lib.istype(cert) then
     return nil, "expect cert to be a x509 instance"
   end
+
+  local ok, err = cert:check_private_key(pkey)
+  if not ok then
+    return nil, "key doesn't match cert: " .. err
+  end
+
   local x509stack
   local cacerts = opts.cacerts
   if cacerts then

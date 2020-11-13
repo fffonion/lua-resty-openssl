@@ -109,6 +109,26 @@ function _M.luaossl_compat()
     return kdf_derive(o)
   end
 
+  _M.pkcs12.new = function(tbl)
+    local certs = {}
+    local passphrase = tbl.passphrase
+    if not tbl.key then
+      return nil, "key must be set"
+    end
+    for _, cert in ipairs(tbl.certs) do
+      if not _M.x509.istype(cert) then
+        return nil, "certs must contains only x509 instance"
+      end
+      if cert:check_private_key(tbl.key) then
+        tbl.cert = cert
+      else
+        certs[#certs+1] = cert
+      end
+    end
+    tbl.cacerts = certs
+    return _M.pkcs12.encode(tbl, passphrase)
+  end
+
   for mod, tbl in pairs(_M) do
     if type(tbl) == 'table' then
 
@@ -153,9 +173,6 @@ function _M.luaossl_compat()
   end
 
   -- skip error() conversion
-  _M.pkcs12.new = function(tbl)
-    error("not compatible, use pkcs12.encode")
-  end
   _M.pkcs12.parse = function(p12, passphrase)
     local r, err = _M.pkcs12.decode(p12, passphrase)
     if err then error(err) end

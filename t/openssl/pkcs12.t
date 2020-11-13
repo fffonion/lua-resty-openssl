@@ -181,12 +181,43 @@ pkcs12.decode.+mac verify failure
 --- request
     GET /t
 --- response_body_like eval
-'48
+'4\d
 0
 2
 myname
 true
 pkcs12.decode.+mac verify failure
+'
+--- no_error_log
+[error]
+
+=== TEST 5: Check cert and key mismatch
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            if require("resty.openssl.version").OPENSSL_30 then
+                local pro = require "resty.openssl.provider"
+                myassert(pro.load("legacy"))
+            end
+
+            local pkcs12 = require "resty.openssl.pkcs12"
+            local cert, key = require("helper").create_self_signed({ type = 'EC' })
+            local key2 = require("resty.openssl.pkey").new({ type = 'EC' })
+            
+            local r, err = pkcs12.encode({
+                friendly_name = "myname",
+                key = key2,
+                cert = cert,
+                cacerts = { ca1, ca2 }
+            }, "test-pkcs12")
+            ngx.say(r == nil, err)
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+'true.+key values mismatch
 '
 --- no_error_log
 [error]
