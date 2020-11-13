@@ -221,3 +221,37 @@ pkcs12.decode.+mac verify failure
 '
 --- no_error_log
 [error]
+
+=== TEST 6: Creates pkcs12 with newer algorithm
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            -- don't load the legacy provider for this test
+            -- by default nid_key is RC2 and is moved to legacy provider in 3.0
+
+            local pkcs12 = require "resty.openssl.pkcs12"
+            local cert, key = require("helper").create_self_signed({ type = 'EC' })
+            local x509 = require("resty.openssl.x509")
+            local ca1 = myassert(x509.new(io.open("t/fixtures/GlobalSign.pem"):read("*a")))
+            local ca2 = myassert(x509.new(io.open("t/fixtures/GlobalSign_sub.pem"):read("*a")))
+            
+            local r = myassert(pkcs12.encode({
+                friendly_name = "myname",
+                key = key,
+                cert = cert,
+                cacerts = { ca1, ca2 },
+                nid_key = "aes-128-cbc",
+                nid_cert = "aes-128-cbc",
+                mac_iter = 2000,
+            }, "test-pkcs12"))
+            ngx.say(#r)
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+'\d{3,4}
+'
+--- no_error_log
+[error]

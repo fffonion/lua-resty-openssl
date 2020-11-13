@@ -11,6 +11,7 @@ local pkey_lib = require "resty.openssl.pkey"
 local x509_lib = require "resty.openssl.x509"
 local stack_macro = require "resty.openssl.include.stack"
 local stack_lib = require "resty.openssl.stack"
+local objects_lib = require "resty.openssl.objects"
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 
 local stack_of_x509_new = stack_lib.new_of("X509")
@@ -90,6 +91,22 @@ local function encode(opts, passphrase)
     return nil, "key doesn't match cert: " .. err
   end
 
+  local nid_key = opts.nid_key
+  if nid_key then
+    nid_key, err = objects_lib.txtnid2nid(nid_key)
+    if err then
+      return nil, "invalid nid_key"
+    end
+  end
+
+  local nid_cert = opts.nid_cert
+  if nid_cert then
+    nid_cert, err = objects_lib.txtnid2nid(nid_cert)
+    if err then
+      return nil, "invalid nid_cert"
+    end
+  end
+
   local x509stack
   local cacerts = opts.cacerts
   if cacerts then
@@ -122,7 +139,8 @@ local function encode(opts, passphrase)
 
   local p12 = C.PKCS12_create(passphrase or "", opts.friendly_name,
                               pkey.ctx, cert.ctx, x509stack,
-                              0, 0, 0, 0, 0)
+                              nid_key or 0, nid_cert or 0,
+                              opts.iter or 0, opts.mac_iter or 0, 0)
   if p12 == nil then
     return nil, format_error("pkcs12.encode: PKCS12_create")
   end
