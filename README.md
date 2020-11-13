@@ -93,6 +93,9 @@ Table of Contents
     + [objects.obj2table](#objectsobj2table)
     + [objects.nid2table](#objectsnid2table)
     + [objects.txt2nid](#objectstxt2nid)
+  * [resty.openssl.pkcs12](#restyopensslpkcs12)
+    + [pkcs12.encode](#pkcs12encode)
+    + [pkcs12.decode](#pkcs12decode)
   * [resty.openssl.rand](#restyopensslrand)
     + [rand.bytes](#randbytes)
   * [resty.openssl.x509](#restyopensslx509)
@@ -1618,6 +1621,59 @@ Convert a [NID] to a Lua table, returns the same format as
 **syntax**: *nid, err = objects.txt2nid(txt)*
 
 Convert a text representation to [NID]. 
+
+[Back to TOC](#table-of-contents)
+
+## resty.openssl.pkcs12
+
+Module to interact with PKCS#12 format.
+
+[Back to TOC](#table-of-contents)
+
+### pkcs12.encode
+
+**syntax**: *der, err = pkcs12.encode(data, passphrase?)*
+
+Encode data in `data` to a PKCS#12 text.
+
+`data` is a table that contains:
+
+| Key | Type | Description | Required or default |
+| ------------   | ---- | ----------- | ------ |
+| key   | [pkey](#restyopensslpkey) | Private key | **required** |
+| cert   | [x509](#restyopensslx509) | Certificate | **required** |
+| cacerts   | A list of [x509](#restyopensslx509) as Lua table | Additional certificates | `[]` |
+| friendly_name | string | The name used for the supplied certificate and key | `""` |
+| nid_key | number or string | The [NID] or text to specify algorithm to encrypt key | `"PBE-SHA1-RC2-4"` if compiled with RC2, otherwise `"PBE-SHA1-3DES"` |
+| nid_cert | number or string | The [NID] or text to specify algorithm to encrypt cert | `"PBE-SHA1-3DES"` |
+| iter | number | Key iterration count | `PKCS12_DEFAULT_ITER` (2048) |
+| mac_iter | number | MAC iterration count | 1 |
+
+`passphrase` is the string for encryption. If omitted, an empty string will be used.
+
+Note in OpenSSL 3.0 `RC2` has been moved to **legacy** provider. In order to encode p12 data with RC2
+encryption, you need to [load the legacy provider](#providerload) first.
+
+```lua
+local pro = require "resty.openssl.provider"
+local legacy_provider = assert(pro.load("legacy"))
+local p12, err = pkcs12.encode({ key = key, cert = cert})
+assert(legacy_provider:unload())
+```
+
+[Back to TOC](#table-of-contents)
+
+### pkcs12.decode
+
+**syntax**: *data, err = pkcs12.decode(p12, passphrase?)*
+
+Decode a PKCS#12 text to Lua table `data`. Similar to the `data` table passed to [pkcs12.encode](#pkcs12encode),
+but onle `cert`, `key`, `cacerts` and `friendly_name` are returned.
+
+`passphrase` is the string for encryption. If omitted, an empty string will be used.
+
+Note in OpenSSL 3.0 `RC2` has been moved to **legacy** provider. In order to decode p12 data with RC2
+encryption, you need to [load the legacy provider](#providerload) first.
 
 [Back to TOC](#table-of-contents)
 
