@@ -62,10 +62,15 @@ ffi.cdef [[
   int X509_verify_cert(X509_STORE_CTX *ctx);
 
   int X509_get_signature_nid(const X509 *x);
+
+  unsigned char *X509_alias_get0(X509 *x, int *len);
+  unsigned char *X509_keyid_get0(X509 *x, int *len);
 ]]
 
 if OPENSSL_11_OR_LATER then
   ffi.cdef [[
+    int X509_up_ref(X509 *a);
+
     int X509_set1_notBefore(X509 *x, const ASN1_TIME *tm);
     int X509_set1_notAfter(X509 *x, const ASN1_TIME *tm);
     /*const*/ ASN1_TIME *X509_get0_notBefore(const X509 *x);

@@ -136,6 +136,13 @@ function _M.new(cert, fmt)
       return nil, format_error("x509.new")
     end
     ffi_gc(ctx, C.X509_free)
+  elseif type(cert) == 'cdata' then
+    if ffi.istype(x509_ptr_ct, cert) then
+      ctx = cert
+      ffi_gc(ctx, C.X509_free)
+    else
+      return nil, "x509.new: expect a X509* cdata at #1"
+    end
   else
     return nil, "x509.new: expect nil or a string at #1"
   end

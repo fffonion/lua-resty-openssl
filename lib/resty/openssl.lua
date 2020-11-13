@@ -22,6 +22,7 @@ local _M = {
   name = require("resty.openssl.x509.name"),
   revoked = require("resty.openssl.x509.revoked"),
   store = require("resty.openssl.x509.store"),
+  pkcs12 = require("resty.openssl.pkcs12"),
 }
 
 if OPENSSL_30 then
@@ -31,49 +32,6 @@ end
 _M.bignum = _M.bn
 
 function _M.luaossl_compat()
-  for mod, tbl in pairs(_M) do
-    if type(tbl) == 'table' then
-
-      -- avoid using a same table as the iterrator will change
-      local new_tbl = {}
-      -- luaossl always error() out
-      for k, f in pairs(tbl) do
-        if type(f) == 'function' then
-          local of = f
-          new_tbl[k] = function(...)
-            local ret = { of(...) }
-            if ret and #ret > 1 and ret[#ret] then
-              error(mod .. "." .. k .. "(): " .. ret[#ret])
-            end
-            return unpack(ret)
-          end
-        end
-      end
-
-      for k, f in pairs(new_tbl) do
-        tbl[k] = f
-      end
-
-      setmetatable(tbl, {
-        __index = function(t, k)
-          local tok
-          -- handle special case
-          if k == 'toPEM' then
-            tok = 'to_PEM'
-          else
-            tok = k:gsub("(%l)(%u)", function(a, b) return a .. "_" .. b:lower() end)
-            if tok == k then
-              return
-            end
-          end
-          if type(tbl[tok]) == 'function' then
-            return tbl[tok]
-          end
-        end
-      })
-    end
-  end
-
   _M.csr.setSubject = _M.csr.set_subject_name
   _M.csr.setPublicKey = _M.csr.set_pubkey
 
@@ -149,6 +107,59 @@ function _M.luaossl_compat()
       o.hkdf_mode = _M.kdf.HKDEF_MODE_EXPAND_ONLY
     end
     return kdf_derive(o)
+  end
+
+  for mod, tbl in pairs(_M) do
+    if type(tbl) == 'table' then
+
+      -- avoid using a same table as the iterrator will change
+      local new_tbl = {}
+      -- luaossl always error() out
+      for k, f in pairs(tbl) do
+        if type(f) == 'function' then
+          local of = f
+          new_tbl[k] = function(...)
+            local ret = { of(...) }
+            if ret and #ret > 1 and ret[#ret] then
+              error(mod .. "." .. k .. "(): " .. ret[#ret])
+            end
+            return unpack(ret)
+          end
+        end
+      end
+
+      for k, f in pairs(new_tbl) do
+        tbl[k] = f
+      end
+
+      setmetatable(tbl, {
+        __index = function(t, k)
+          local tok
+          -- handle special case
+          if k == 'toPEM' then
+            tok = 'to_PEM'
+          else
+            tok = k:gsub("(%l)(%u)", function(a, b) return a .. "_" .. b:lower() end)
+            if tok == k then
+              return
+            end
+          end
+          if type(tbl[tok]) == 'function' then
+            return tbl[tok]
+          end
+        end
+      })
+    end
+  end
+
+  -- skip error() conversion
+  _M.pkcs12.new = function(tbl)
+    error("not compatible, use pkcs12.encode")
+  end
+  _M.pkcs12.parse = function(p12, passphrase)
+    local r, err = _M.pkcs12.decode(p12, passphrase)
+    if err then error(err) end
+    return r.key, r.cert, r.cacerts
   end
 end
 

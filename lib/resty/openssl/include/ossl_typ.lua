@@ -60,5 +60,6 @@ ffi.cdef(
   typedef struct hmac_ctx_st HMAC_CTX;
   typedef struct x509_revoked_st X509_REVOKED;
   typedef struct dh_st DH;
+  typedef struct PKCS12_st PKCS12;
 ]])
 

@@ -3,13 +3,14 @@ local C = ffi.C
 local ffi_gc = ffi.gc
 local ffi_new = ffi.new
 local ffi_cast = ffi.cast
+local ffi_str = ffi.string
 
 require "resty.openssl.include.x509"
 require "resty.openssl.include.x509.extension"
 require "resty.openssl.include.x509v3"
-require "resty.openssl.include.asn1"
 require "resty.openssl.include.bio"
 require "resty.openssl.include.conf"
+local asn1_macro = require("resty.openssl.include.asn1")
 local objects_lib = require "resty.openssl.objects"
 local stack_lib = require("resty.openssl.stack")
 local util = require "resty.openssl.util"
@@ -156,7 +157,12 @@ function _M.from_der(value, txtnid, crit)
   }, mt)
 
   return self, nil
+end
 
+function _M:to_der()
+  local asn1 = C.X509_EXTENSION_get_data(self.ctx)
+
+  return ffi_str(asn1_macro.ASN1_STRING_get0_data(asn1))
 end
 
 function _M.from_data(any, txtnid, crit)

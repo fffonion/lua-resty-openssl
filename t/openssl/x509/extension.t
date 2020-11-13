@@ -280,3 +280,35 @@ Policy: 1.3.5.8
 '
 --- no_error_log
 [error]
+
+=== TEST 11: Returns DER encoded data
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/Github.pem"):read("*a")
+            local c = myassert(require("resty.openssl.x509").new(f))
+
+            local extension, _, err = c:get_extension("subjectKeyIdentifier")
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.say(require("helper").to_hex(extension:to_der()))
+
+            local extension, _, err = c:get_extension("Authority Information Access")
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.say(require("helper").to_hex(extension:to_der()))
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+"0414C9C25361669D5FAB25F426CD0F389AA849EA48A9
+307A302406082B060105050730018618687474703A2F2F6F6373702E64696769636572742E636F6D305206082B060105050730028646687474703A2F2F636163657274732E64696769636572742E636F6D2F446967694365727453484132457874656E64656456616C69646174696F6E53657276657243412E637274
+"
+--- no_error_log
+[error]
