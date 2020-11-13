@@ -41,7 +41,8 @@ function _M.get_parameters(ec_key_st)
           return nil, format_error("ec.get_parameters: EC_POINT_point2bn")
         end
         ffi_gc(bn, C.BN_free)
-      elseif k == 'private' or k == "priv ~=_key" then
+      elseif k == 'private' or k == "priv_key" then
+        -- get0, don't GC
         bn = C.EC_KEY_get0_private_key(ec_key_st)
       elseif k == 'x' or k == 'y' then
         local pub_point = C.EC_KEY_get0_public_key(ec_key_st)
@@ -72,6 +73,9 @@ function _M.get_parameters(ec_key_st)
         return nil, "ec.get_parameters: unknown parameter \"" .. k .. "\" for EC key"
       end
 
+      if bn == nil then
+       return nil
+      end
       return bn_lib.dup(bn)
     end
   }), nil

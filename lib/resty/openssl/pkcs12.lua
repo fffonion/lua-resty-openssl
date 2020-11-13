@@ -75,27 +75,27 @@ end
 
 local function encode(opts, passphrase)
   if passphrase and type(passphrase) ~= "string" then
-    return nil, "expect passphrase to be a string"
+    return nil, "pkcs12.encode: expect passphrase to be a string"
   end
   local pkey = opts.key
   if not pkey_lib.istype(pkey) then
-    return nil, "expect key to be a pkey instance"
+    return nil, "pkcs12.encode: expect key to be a pkey instance"
   end
   local cert = opts.cert
   if not x509_lib.istype(cert) then
-    return nil, "expect cert to be a x509 instance"
+    return nil, "pkcs12.encode: expect cert to be a x509 instance"
   end
 
   local ok, err = cert:check_private_key(pkey)
   if not ok then
-    return nil, "key doesn't match cert: " .. err
+    return nil, "pkcs12.encode: key doesn't match cert: " .. err
   end
 
   local nid_key = opts.nid_key
   if nid_key then
     nid_key, err = objects_lib.txtnid2nid(nid_key)
     if err then
-      return nil, "invalid nid_key"
+      return nil, "pkcs12.encode: invalid nid_key"
     end
   end
 
@@ -103,7 +103,7 @@ local function encode(opts, passphrase)
   if nid_cert then
     nid_cert, err = objects_lib.txtnid2nid(nid_cert)
     if err then
-      return nil, "invalid nid_cert"
+      return nil, "pkcs12.encode: invalid nid_cert"
     end
   end
 
@@ -111,7 +111,7 @@ local function encode(opts, passphrase)
   local cacerts = opts.cacerts
   if cacerts then
     if type(cacerts) ~= "table" then
-      return nil, "expect cacerts to be a table"
+      return nil, "pkcs12.encode: expect cacerts to be a table"
     end
     if #cacerts > 0 then
       -- stack lib handles gc
@@ -119,12 +119,12 @@ local function encode(opts, passphrase)
       for _, c in ipairs(cacerts) do
         if not OPENSSL_10 then
           if C.X509_up_ref(c.ctx) ~= 1 then
-            return nil, "failed to add cacerts: X509_up_ref failed"
+            return nil, "pkcs12.encode: failed to add cacerts: X509_up_ref failed"
           end
         end
         local ok, err = stack_of_x509_add(x509stack, c.ctx)
         if not ok then
-          return nil, "failed to add cacerts: " .. err
+          return nil, "pkcs12.encode: failed to add cacerts: " .. err
         end
       end
       if OPENSSL_10 then

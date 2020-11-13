@@ -808,3 +808,75 @@ A4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507FD6406CFF14266D31266FEA1E5C41564B
 "
 --- no_error_log
 [error]
+
+=== TEST 28: Checks if it's private key
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local opts = {
+                { type = 'RSA', bits = 1024 },
+                { type = 'EC' },
+                { type = 'DH', group = "dh_1024_160",},
+            }
+            for _, opt in ipairs(opts) do
+                local priv = myassert(require("resty.openssl.pkey").new(opt))
+
+                local ok, err = priv:is_private()
+                if not ok then
+                    ngx.say(opt.type .. ": should be a private key, but returns false: ".. (err or "nil"))
+                end
+
+                local pem = myassert(priv:to_PEM("public"))
+
+                local pub = myassert(require("resty.openssl.pkey").new(pem))
+
+                local ok, err = pub:is_private()
+                if ok then
+                    ngx.say(opt.type .. ": should not be a private key, but returns true: ".. (err or "nil"))
+                end
+            end
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+""
+--- no_error_log
+[error]
+
+=== TEST 29: Checks if it's private key: ecx
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local opts = {
+                { type = 'Ed25519'},
+            }
+            for _, opt in ipairs(opts) do
+                local priv = myassert(require("resty.openssl.pkey").new(opt))
+
+                local ok, err = priv:is_private()
+                if not ok then
+                    ngx.say(opt.type .. ": should be a private key, but returns false: ".. (err or "nil"))
+                end
+
+                local pem = myassert(priv:to_PEM("public"))
+
+                local pub = myassert(require("resty.openssl.pkey").new(pem))
+
+                local ok, err = pub:is_private()
+                if ok then
+                    ngx.say(opt.type .. ": should not be a private key, but returns true: ".. (err or "nil"))
+                end
+            end
+        }
+    }
+--- request
+    GET /t
+--- skip_openssl
+2: < 1.1.1
+--- response_body eval
+""
+--- no_error_log
+[error]

@@ -36,6 +36,7 @@ Table of Contents
     + [pkey.paramgen](#pkeyparamgen)
     + [pkey:get_parameters](#pkeyget_parameters)
     + [pkey:set_parameters](#pkeyset_parameters)
+    + [pkey:is_private](#pkeyis_private)
     + [pkey:get_key_type](#pkeyget_key_type)
     + [pkey:sign](#pkeysign)
     + [pkey:verify](#pkeyverify)
@@ -100,6 +101,7 @@ Table of Contents
     + [x509.istype](#x509istype)
     + [x509:digest](#x509digest)
     + [x509:pubkey_digest](#x509pubkey_digest)
+    + [x509:check_private_key](#x509check_private_key)
     + [x509:get_*, x509:set_*](#x509get_-x509set_)
     + [x509:get_lifetime](#x509get_lifetime)
     + [x509:set_lifetime](#x509set_lifetime)
@@ -118,6 +120,7 @@ Table of Contents
   * [resty.openssl.x509.csr](#restyopensslx509csr)
     + [csr.new](#csrnew)
     + [csr.istype](#csristype)
+    + [csr:check_private_key](#csrcheck_private_key)
     + [csr:get_*, csr:set_*](#csrget_-csrset_)
     + [csr:get_signature_name, csr:get_signature_nid](#csrget_signature_name-csrget_signature_nid)
     + [csr:get_extension](#csrget_extension)
@@ -699,6 +702,15 @@ public | raw public key represented as bytes | string
 
 [Back to TOC](#table-of-contents)
 
+### pkey:is_private
+
+**syntax**: *ok = pk:is_private()*
+
+Checks whether `pk` is a private key. Returns true if it's a private key, returns false if
+it's a public key.
+
+[Back to TOC](#table-of-contents)
+
 ### pkey:get_key_type
 
 **syntax**: *obj, err = pk:get_key_type()*
@@ -908,7 +920,7 @@ If both arguments are omitted, this functions returns the `PEM` representation o
 
 **syntax**: *pem, err = pk:to_PEM(private_or_public?)*
 
-Equivalent to `pk:tostring(private_or_public, "PEM")`.
+Equivalent to `pkey:tostring(private_or_public, "PEM")`.
 
 [Back to TOC](#table-of-contents)
 
@@ -1682,6 +1694,18 @@ If `digest_name` is omitted, it's default to `sha1`.
 
 [Back to TOC](#table-of-contents)
 
+### x509:check_private_key
+
+**syntax**: *match, err = x509:check_private_key(pkey)*
+
+Checks the consistency of private key `pkey` with the public key in current X509 object.
+
+Returns a boolean indicating if it's a match and err describing the reason.
+
+Note this function also checks if k itself is indeed a private key or not.
+
+[Back to TOC](#table-of-contents)
+
 ### x509:get_*, x509:set_*
 
 **syntax**: *ok, err = x509:set_**attribute**(instance)*
@@ -1935,6 +1959,18 @@ When `txt` is omitted, `new()` creates an empty `csr` instance.
 **syntax**: *ok = csr.istype(table)*
 
 Returns `true` if table is an instance of `csr`. Returns `false` otherwise.
+
+[Back to TOC](#table-of-contents)
+
+### csr:check_private_key
+
+**syntax**: *match, err = csr:check_private_key(pkey)*
+
+Checks the consistency of private key `pkey` with the public key in current CSR object.
+
+Returns a boolean indicating if it's a match and err describing the reason.
+
+Note this function also checks if k itself is indeed a private key or not.
 
 [Back to TOC](#table-of-contents)
 

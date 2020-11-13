@@ -530,6 +530,15 @@ function _M:set_parameters(opts)
   end
 end
 
+function _M:is_private()
+  local params = self:get_parameters()
+  if self.key_type == evp_macro.EVP_PKEY_RSA then
+    return params.d ~= nil
+  else
+    return params.private ~= nil
+  end
+end
+
 local ASYMMETRIC_OP_ENCRYPT = 0x1
 local ASYMMETRIC_OP_DECRYPT = 0x2
 local ASYMMETRIC_OP_SIGN_RAW = 0x4
