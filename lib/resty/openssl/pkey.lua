@@ -168,7 +168,17 @@ local function generate_param(key_type, config)
             evp_macro.EVP_PKEY_OP_PARAMGEN + evp_macro.EVP_PKEY_OP_KEYGEN,
             evp_macro.EVP_PKEY_CTRL_EC_PARAMGEN_CURVE_NID,
             nid, nil) <= 0 then
-      return nil, format_error("EVP_PKEY_CTX_ctrl: EC: curve")
+      return nil, format_error("EVP_PKEY_CTX_ctrl: EC: curve_nid")
+    end
+    -- use the named-curve encoding for best backward-compatibilty
+    -- and for playing well with go:crypto/x509
+    -- # define OPENSSL_EC_NAMED_CURVE  0x001
+    if C.EVP_PKEY_CTX_ctrl(pctx,
+            evp_macro.EVP_PKEY_EC,
+            evp_macro.EVP_PKEY_OP_PARAMGEN + evp_macro.EVP_PKEY_OP_KEYGEN,
+            evp_macro.EVP_PKEY_CTRL_EC_PARAM_ENC,
+            1, nil) <= 0 then
+      return nil, format_error("EVP_PKEY_CTX_ctrl: EC: param_enc")
     end
   elseif key_type == evp_macro.EVP_PKEY_DH then
     local bits = config.bits
