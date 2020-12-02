@@ -27,6 +27,9 @@ local function create_self_signed(key_opts, names)
 
   assert(cert:sign(key))
 
+  -- make sure the private key is not included
+  cert = x509.new(cert:to_PEM())
+
   return cert, key
 end
 
