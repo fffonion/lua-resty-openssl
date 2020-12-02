@@ -54,7 +54,7 @@ function _M.set_parameters(key_type, evp_pkey_st, opts)
       return nil, format_error("ecx.set_parameters: EVP_PKEY_new_raw_public_key")
     end
   else
-    return "no parameter is specified"
+    return nil, "no parameter is specified"
   end
 
   if evp_pkey_st ~= nil then
