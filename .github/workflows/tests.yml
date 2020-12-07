@@ -1,16 +1,50 @@
-name: Valgrind
+name: Tests
 
 on: [push, pull_request]
 
 jobs:
-  valgrind:
-    name: Valgrind
+  tests:
+    name: Tests
     runs-on: ubuntu-20.04
+    continue-on-error: true
 
     strategy:
       matrix:
-        nginx: ["1.15.8", "1.17.8"]
-        openssl: ["1.0.2u", "1.1.1h"]
+        include:
+        # TODO: arm64
+        # latest and one version older for valgrind
+        - nginx: "1.17.8"
+          openssl: "1.0.2u"
+          valgrind: "valgrind"
+        - nginx: "1.17.8"
+          openssl: "1.1.1h"
+          valgrind: "valgrind"
+        - nginx: "1.19.3"
+          openssl: "1.0.2u"
+          valgrind: "valgrind"
+        - nginx: "1.19.3"
+          openssl: "1.1.1h"
+          valgrind: "valgrind"
+        # two versions older nginx with 1.0.2 and 1.1.1
+        - nginx: "1.15.8"
+          openssl: "1.0.2u"
+        - nginx: "1.15.8"
+          openssl: "1.1.1h"
+        # latest version with EOL 1.1.0
+        - nginx: "1.19.3"
+          openssl: "1.1.0l"
+        # # version that kong uses, for fips
+        # - nginx: "1.17.8"
+        #   openssl: "1.0.2u"
+        #   fips: "2.0.16"
+        #   openssl_opts: "fips --with-fipsdir=/home/runner/work/cache/ssl/fips"
+        # latest and one older version with alpha release
+        - nginx: "1.17.8"
+          openssl: "3.0.0-alpha9"
+          nginx_cc_opts: "-Wno-error"
+        - nginx: "1.19.3"
+          openssl: "3.0.0-alpha9"
+          nginx_cc_opts: "-Wno-error"
 
     env:
       JOBS: 3
@@ -30,8 +64,6 @@ jobs:
       CC: gcc
       NGX_BUILD_CC: gcc
   
-      NGINX_CC_OPTS: -O0
-      LUAJIT_CC_OPTS: "-DLUAJIT_NUMMODE=2 -DLUAJIT_USE_VALGRIND -DLUAJIT_USE_SYSMALLOC -O0"
       NGINX_VERSION: ${{ matrix.nginx }}
       OPENSSL_VER: ${{ matrix.openssl }}
 
@@ -44,11 +76,11 @@ jobs:
       with:
         path: |
           /home/runner/work/cache
-        key: ${{ runner.os }}-${{ hashFiles('**/valgrind.yml') }}-nginx-${{ matrix.nginx }}-openssl-${{ matrix.openssl }}
+        key: ${{ runner.os }}-${{ hashFiles('**/tests.yml') }}-nginx-${{ matrix.nginx }}-openssl-${{ matrix.openssl }}-${{ matrix.fips }}
 
     - name: Setup tools
       run: |
-        sudo apt-get install -qq -y cpanminus axel ca-certificates valgrind
+        sudo apt-get install -qq -y cpanminus axel ca-certificates valgrind haveged
         mkdir -p $OPENSSL_PREFIX $LUAJIT_PREFIX
         # perl cache
         pushd /home/runner/work/cache
@@ -68,16 +100,26 @@ jobs:
         git clone https://github.com/openresty/lua-resty-string ../lua-resty-string
     
     - name: Build OpenSSL
+      env:
+        FIPS: ${{ matrix.fips }}
+        OPENSSL_OPTS: ${{ matrix.openssl_opts }}
       run: |
+        mkdir -p $OPENSSL_PREFIX
+        if [ "X$FIPS" != "X" ]; then wget https://www.openssl.org/source/old/fips/openssl-fips-$FIPS.tar.gz -O - | tar zxf - ; pushd openssl-fips-$FIPS/; FIPSDIR=$OPENSSL_PREFIX/fips ./config; make -j$JOBS; make install; popd; fi
         if [ "X$OPENSSL_HASH" != "X" ]; then wget https://github.com/openssl/openssl/archive/$OPENSSL_HASH.tar.gz -O - | tar zxf ; pushd openssl-$OPENSSL_HASH/; fi
         if [ "X$OPENSSL_HASH" = "X" ] ; then wget https://www.openssl.org/source/openssl-$OPENSSL_VER.tar.gz -O - | tar zxf -; pushd openssl-$OPENSSL_VER/; fi
-        if [ ! -e $OPENSSL_PREFIX/include ]; then ./config shared -d --prefix=$OPENSSL_PREFIX -DPURIFY > build.log 2>&1 || (cat build.log && exit 1); fi
+        if [ ! -e $OPENSSL_PREFIX/include ]; then ./config shared -d --prefix=$OPENSSL_PREFIX -DPURIFY $OPENSSL_OPTS > build.log 2>&1 || (cat build.log && exit 1); fi
         if [ ! -e $OPENSSL_PREFIX/include ]; then make -j$JOBS > build.log 2>&1 || (cat build.log && exit 1); fi
         if [ ! -e $OPENSSL_PREFIX/include ]; then sudo make PATH=$PATH install_sw > build.log 2>&1 || (cat build.log && exit 1); fi
         mkdir -p $OPENSSL_PREFIX/certs/ && cp -r /etc/ssl/certs/* $OPENSSL_PREFIX/certs/
 
     - name: Build LuaJIT
+      env:
+        LUAJIT_CC_OPTS: ${{ matrix.luajit_cc_opts }}
+        USE_VALGRIND: ${{ matrix.valgrind }}
       run: |
+        if ["$USE_VALGRIND" != ""]; then LUAJIT_CC_OPTS="$LUAJIT_CC_OPTS -DLUAJIT_NUMMODE=2 -DLUAJIT_USE_VALGRIND -DLUAJIT_USE_SYSMALLOC -O0"; fi
+        export
         cd $LUAJIT_PREFIX
         if [ ! -e luajit2 ]; then git clone -b v2.1-agentzh https://github.com/openresty/luajit2.git; fi
         cd luajit2
@@ -90,15 +132,27 @@ jobs:
         pushd ./lua-cjson && make && sudo PATH=$PATH make install && popd
 
     - name: Build Nginx
+      env:
+        NGINX_CC_OPTS: ${{ matrix.nginx_cc_opts }}
+        USE_VALGRIND: ${{ matrix.valgrind }}
       run: |
+        if ["$USE_VALGRIND" != ""]; then NGINX_CC_OPTS="$NGINX_CC_OPTS -O0"; fi
         export PATH=$BASE_PATH/work/nginx/sbin:$BASE_PATH/../nginx-devel-utils:$PATH
         export LD_LIBRARY_PATH=$LUAJIT_LIB:$LD_LIBRARY_PATH
+        export
         cd $BASE_PATH
         if [ ! -e work ]; then ngx-build $NGINX_VERSION --add-module=../ndk-nginx-module --add-module=../lua-nginx-module --with-http_ssl_module --with-cc-opt="-I$OPENSSL_INC $NGINX_CC_OPTS" --with-ld-opt="-L$OPENSSL_LIB -Wl,-rpath,$OPENSSL_LIB" --with-debug > build.log 2>&1 || (cat build.log && exit 1); fi
         nginx -V
         ldd `which nginx`|grep -E 'luajit|ssl|pcre'
 
+    - name: Run Test
+      run: |
+        export LD_LIBRARY_PATH=$LUAJIT_LIB:$LD_LIBRARY_PATH
+        export PATH=$BASE_PATH/work/nginx/sbin:$PATH
+        TEST_NGINX_TIMEOUT=10 prove -j$JOBS -r t/ 2>&1
+
     - name: Run Valgrind
+      if: ${{ matrix.valgrind != '' }}
       run: |
         export LD_LIBRARY_PATH=$LUAJIT_LIB:$LD_LIBRARY_PATH
         export TEST_NGINX_USE_VALGRIND='--num-callers=100 -q --tool=memcheck --leak-check=full --show-possibly-lost=no --gen-suppressions=all --suppressions=valgrind.suppress --track-origins=yes' TEST_NGINX_TIMEOUT=60 TEST_NGINX_SLEEP=1
