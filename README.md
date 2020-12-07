@@ -2,7 +2,7 @@
 
 FFI-based OpenSSL binding for LuaJIT, supporting OpenSSL 3.0, 1.1 and 1.0.2 series
 
-![Build Status](https://travis-ci.com/fffonion/lua-resty-openssl.svg?branch=master) ![luarocks](https://img.shields.io/luarocks/v/fffonion/lua-resty-openssl?color=%232c3e67) ![opm](https://img.shields.io/opm/v/fffonion/lua-resty-openssl?color=%23599059)
+![Build Status](https://github.com/fffonion/lua-resty-openssl/workflows/Tests/badge.svg) ![luarocks](https://img.shields.io/luarocks/v/fffonion/lua-resty-openssl?color=%232c3e67) ![opm](https://img.shields.io/opm/v/fffonion/lua-resty-openssl?color=%23599059)
 
 
 Table of Contents
