@@ -23,6 +23,8 @@ local _M = {
   revoked = require("resty.openssl.x509.revoked"),
   store = require("resty.openssl.x509.store"),
   pkcs12 = require("resty.openssl.pkcs12"),
+  ssl = require("resty.openssl.ssl"),
+  ssl_ctx = require("resty.openssl.ssl_ctx"),
 }
 
 if OPENSSL_30 then

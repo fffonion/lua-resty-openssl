@@ -208,6 +208,14 @@ Table of Contents
   * [resty.openssl.x509.revoked](#restyopensslx509revoked)
     + [revoked.new](#revokednew)
     + [revoked.istype](#revokedistype)
+  * [resty.openssl.ssl](#restyopensslssl)
+    + [ssl.from_request](#sslfrom_request)
+    + [ssl.from_socket](#sslfrom_socket)
+    + [ssl:get_peer_certificate](#sslget_peer_certificate)
+    + [ssl:get_peer_cert_chain](#sslget_peer_cert_chain)
+  * [resty.openssl.ssl_ctx](#restyopensslssl_ctx)
+    + [ssl_ctx.from_request](#ssl_ctxfrom_request)
+    + [ssl_ctx.from_socket](#ssl_ctxfrom_socket)
   * [Functions for stack-like objects](#functions-for-stack-like-objects)
     + [metamethods](#metamethods)
     + [each](#each)
@@ -281,6 +289,8 @@ return {
   extensions = require("resty.openssl.x509.extensions"),
   name = require("resty.openssl.x509.name"),
   store = require("resty.openssl.x509.store"),
+  ssl = require("resty.openssl.ssl"),
+  ssl_ctx = require("resty.openssl.ssl_ctx"),
 }
 ```
 
@@ -3120,6 +3130,80 @@ instance or a number. `time` and `reason` must be numbers.
 **syntax**: *ok = revoked.istype(table)*
 
 Returns `true` if table is an instance of `revoked`. Returns `false` otherwise.
+
+[Back to TOC](#table-of-contents)
+
+## resty.openssl.ssl
+
+Module to interact with SSL connection.
+
+**This module is currently considered experimental.**
+
+**Note: to use this module in production, user is encouraged to compile [lua-resty-openssl-aux-module](https://github.com/fffonion/lua-resty-openssl-aux-module).**
+
+[Back to TOC](#table-of-contents)
+
+### ssl.from_request
+
+**syntax**: *sess, err = ssl.from_request()*
+
+Wraps the `SSL*` instance from current downstream request.
+
+[Back to TOC](#table-of-contents)
+
+### ssl.from_socket
+
+**syntax**: *sess, err = ssl.from_socket(sock)*
+
+Wraps the `SSL*` instance from a TCP cosocket, the cosocket must have already
+been called `sslhandshake`.
+
+[Back to TOC](#table-of-contents)
+
+### ssl:get_peer_certificate
+
+**syntax**: *x509, err = ssl:get_peer_certificate()*
+
+Return the peer certificate as a [x509](#restyopensslx509) instance. Depending on the type
+of `ssl`, peer certificate means the server certificate on client side, or the client certificate
+on server side.
+
+[Back to TOC](#table-of-contents)
+
+### ssl:get_peer_cert_chain
+
+**syntax**: *chain, err = ssl:get_peer_certificate()*
+
+Return the whole peer certificate chain as a [x509.chain](#restyopensslx509chain) instance.
+Depending on the type of `ssl`, peer certificate means the server certificate on client side,
+or the client certificate on server side.
+
+[Back to TOC](#table-of-contents)
+
+## resty.openssl.ssl_ctx
+
+Module to interact with SSL_CTX context.
+
+**This module is currently considered experimental.**
+
+**Note: to use this module in production, user is encouraged to compile [lua-resty-openssl-aux-module](https://github.com/fffonion/lua-resty-openssl-aux-module).**
+
+[Back to TOC](#table-of-contents)
+
+### ssl_ctx.from_request
+
+**syntax**: *ctx, err = ssl_ctx.from_request()*
+
+Wraps the `SSL_CTX*` instance from current downstream request.
+
+[Back to TOC](#table-of-contents)
+
+### ssl_ctx.from_request
+
+**syntax**: *sess, err = ssl_ctx.from_socket(sock)*
+
+Wraps the `SSL_CTX*` instance from a TCP cosocket, the cosocket must have already
+been called `sslhandshake`.
 
 [Back to TOC](#table-of-contents)
 
