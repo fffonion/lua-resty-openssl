@@ -24,7 +24,7 @@ end
 
 _M.gc_of = gc_of
 
-_M.mt_of = function(typ, convert, index_tbl)
+_M.mt_of = function(typ, convert, index_tbl, no_gc)
   if type(typ) ~= "string" then
     error("expect a string at #1")
   elseif type(convert) ~= "function" then
@@ -58,7 +58,7 @@ _M.mt_of = function(typ, convert, index_tbl)
     end
   end
 
-  return {
+  local ret = {
     __pairs = iter,
     __ipairs = iter,
     __len = function(tbl)
@@ -77,8 +77,12 @@ _M.mt_of = function(typ, convert, index_tbl)
       end
       return value_at(tbl.ctx, i-1)
     end,
-    __gc = gc_of(typ),
   }
+
+  if not no_gc then
+    ret.__gc = gc_of(typ)
+  end
+  return ret
 end
 
 _M.new_of = function(typ)

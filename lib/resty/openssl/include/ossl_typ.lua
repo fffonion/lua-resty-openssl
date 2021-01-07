@@ -61,5 +61,7 @@ ffi.cdef(
   typedef struct x509_revoked_st X509_REVOKED;
   typedef struct dh_st DH;
   typedef struct PKCS12_st PKCS12;
+  typedef struct ssl_st SSL;
+  typedef struct ssl_ctx_st SSL_CTX;
 ]])
 
