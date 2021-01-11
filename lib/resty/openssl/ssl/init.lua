@@ -4,11 +4,11 @@ local ffi_str = ffi.string
 
 require "resty.openssl.include.ssl"
 
-local nginx_ssl = require("resty.openssl.aux.nginx")
+local nginx_aux = require("resty.openssl.aux.nginx")
 local x509_lib = require("resty.openssl.x509")
 local chain_lib = require("resty.openssl.x509.chain")
 local stack_lib = require("resty.openssl.stack")
-
+local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 local format_error = require("resty.openssl.err").format_error
 
 local _M = {}
@@ -22,7 +22,7 @@ end
 
 function _M.from_request()
   -- don't GC this
-  local ctx, err = nginx_ssl.get_req_ssl()
+  local ctx, err = nginx_aux.get_req_ssl()
   if err ~= nil then
     return nil, err
   end
@@ -41,7 +41,7 @@ function _M.from_socket(socket)
     return nil, "expect a ngx.socket.tcp instance at #1"
   end
   -- don't GC this
-  local ctx, err = nginx_ssl.get_socket_ssl(socket)
+  local ctx, err = nginx_aux.get_socket_ssl(socket)
   if err ~= nil then
     return nil, err
   end
@@ -60,13 +60,27 @@ function _M.istype(l)
 end
 
 function _M:get_peer_certificate()
-  local x509 = C.SSL_get_peer_certificate(self.ctx)
+  local x509
+  if OPENSSL_30 then
+    x509 = C.SSL_get1_peer_certificate(self.ctx)
+  else
+    x509 = C.SSL_get_peer_certificate(self.ctx)
+  end
 
   if x509 == nil then
     return nil
   end
+  ffi.gc(x509, C.X509_free)
 
-  return x509_lib.new(x509)
+  local err
+  -- always copy, although the ref counter of returned x509 is
+  -- already increased by one.
+  x509, err = x509_lib.dup(x509)
+  if err then
+    return nil, err
+  end
+
+  return x509
 end
 
 function _M:get_peer_cert_chain()
@@ -77,6 +91,24 @@ function _M:get_peer_cert_chain()
   end
 
   return chain_lib.dup(stack)
+end
+
+-- TLSv1.3
+function _M:set_ciphersuites(ciphers)
+  if C.SSL_set_ciphersuites(self.ctx, ciphers) ~= 1 then
+    return false, format_error("ssl:set_ciphers: SSL_set_ciphersuites")
+  end
+
+  return true
+end
+
+-- TLSv1.2 and lower
+function _M:set_cipher_list(ciphers)
+  if C.SSL_set_cipher_list(self.ctx, ciphers) ~= 1 then
+    return false, format_error("ssl:set_ciphers: SSL_set_cipher_list")
+  end
+
+  return true
 end
 
 function _M:get_ciphers()
@@ -96,10 +128,10 @@ function _M:get_ciphers()
     ret[i] = ffi_str(cipher)
   end
 
-  return ret
+  return table.concat(ret, ":")
 end
 
-function _M:get_current_cipher()
+function _M:get_cipher_name()
   local cipher = C.SSL_get_current_cipher(self.ctx)
 
   if cipher == nil then
@@ -111,6 +143,29 @@ function _M:get_current_cipher()
     return nil, format_error("ssl:get_current_cipher: SSL_CIPHER_get_name")
   end
   return ffi_str(cipher)
+end
+
+function _M:set_timeout(epoch)
+  local session = C.SSL_get_session(self.ctx)
+
+  if session == nil then
+    return false, format_error("ssl:set_timeout: SSL_get_session")
+  end
+
+  if C.SSL_SESSION_set_timeout(session, epoch) ~= 1 then
+    return false, format_error("ssl:set_timeout: SSL_SESSION_set_timeout")
+  end
+  return true
+end
+
+function _M:get_timeout()
+  local session = C.SSL_get_session(self.ctx)
+
+  if session == nil then
+    return false, format_error("ssl:get_timeout: SSL_get_session")
+  end
+
+  return tonumber(C.SSL_SESSION_get_timeout(session))
 end
 
 

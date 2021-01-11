@@ -6,7 +6,7 @@ local concat = table.concat
 
 require "resty.openssl.include.ssl"
 
-local nginx_ssl = require("resty.openssl.aux.nginx")
+local nginx_aux = require("resty.openssl.aux.nginx")
 
 local _M = {}
 local mt = {__index = _M}
@@ -15,7 +15,7 @@ local ssl_ctx_ptr_ct = ffi.typeof('SSL_CTX*')
 
 function _M.from_request()
   -- don't GC this
-  local ctx, err = nginx_ssl.get_req_ssl_ctx()
+  local ctx, err = nginx_aux.get_req_ssl_ctx()
   if err ~= nil then
     return nil, err
   end
@@ -26,6 +26,25 @@ function _M.from_request()
     _managed = false,
     -- this is the Server SSL session
     _server = true,
+  }, mt)
+end
+
+function _M.from_socket(socket)
+  if not socket then
+    return nil, "expect a ngx.socket.tcp instance at #1"
+  end
+  -- don't GC this
+  local ctx, err = nginx_aux.get_socket_ssl_ctx(socket)
+  if err ~= nil then
+    return nil, err
+  end
+
+  return setmetatable({
+    ctx = ctx,
+    -- the cdata is not manage by Lua, don't GC on Lua side
+    _managed = false,
+    -- this is the client SSL session
+    _server = false,
   }, mt)
 end
 

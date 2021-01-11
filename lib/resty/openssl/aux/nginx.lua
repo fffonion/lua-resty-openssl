@@ -1,19 +1,20 @@
-local ffi = require "ffi"
-local C = ffi.C
-
 local get_req_ssl, get_req_ssl_ctx
 local get_socket_ssl, get_socket_ssl_ctx
 
 local pok, nginx_c = pcall(require, "resty.openssl.aux.nginx_c")
 
-if pok then
+if pok and not os.getenv("CI_SKIP_NGINX_C") then
   get_req_ssl = nginx_c.get_req_ssl
   get_req_ssl_ctx = nginx_c.get_req_ssl
   get_socket_ssl = nginx_c.get_socket_ssl
   get_socket_ssl_ctx = nginx_c.get_socket_ssl
 else
-  ngx.log(ngx.WARN, "resty.openssl.aux.nginx is using plain FFI, ",
-                    "consider using lua-resty-openssl-aux-module in production")
+  ngx.log(ngx.WARN, "note resty.openssl.aux.nginx is using plain FFI ",
+                    "and it's only intended to be used in development, ",
+                    "consider using lua-resty-openssl-aux-module in production.")
+
+  local ffi = require "ffi"
+
   ffi.cdef [[
     typedef long off_t;
     typedef unsigned int socklen_t; // windows uses int, same size
@@ -212,14 +213,13 @@ else
 
 
     typedef
-        int (*ngx_stream_lua_socket_tcp_retval_handler)(ngx_stream_lua_request_t *r,
+        int (*ngx_stream_lua_socket_tcp_retval_handler)(void *r,
             void *u, void *L);
-
 
     typedef void (*ngx_stream_lua_socket_tcp_upstream_handler_pt)
         (void *r, void *u);
 
-    typedef struct ngx_stream_lua_socket_tcp_upstream_t {
+    typedef struct {
       ngx_stream_lua_socket_tcp_retval_handler            read_prepare_retvals;
       ngx_stream_lua_socket_tcp_retval_handler            write_prepare_retvals;
       ngx_stream_lua_socket_tcp_upstream_handler_pt       read_event_handler;
@@ -231,9 +231,9 @@ else
       void                    *cleanup;
       void                    *request;
   
-      ngx_peer_connection_t            peer;
+      ngx_peer_connection_s            peer;
       // trimmed
-    } ngx_stream_lua_socket_tcp_upstream_t;
+    } ngx_stream_lua_socket_tcp_upstream_s;
   ]]
 
   if ngx.config

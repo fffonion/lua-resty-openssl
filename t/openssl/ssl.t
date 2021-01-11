@@ -52,6 +52,8 @@ our $ClientContentBy = qq{
 
 no_long_string();
 
+env_to_nginx("CI_SKIP_NGINX_C");
+
 run_tests();
 
 __DATA__
@@ -68,9 +70,9 @@ __DATA__
                 local sess = myassert(ssl.from_request())
 
                 local ciphers = myassert(sess:get_ciphers())
-                ngx.say(require("cjson").encode(ciphers))
+                ngx.say(ciphers)
 
-                local cipher = myassert(sess:get_current_cipher())
+                local cipher = myassert(sess:get_cipher_name())
                 ngx.say(cipher)
             }
         }
@@ -86,12 +88,11 @@ __DATA__
 --- request
     GET /t
 --- response_body_like
-\[".+,.+"\]
+.*ECDHE-RSA-AES256-GCM-SHA384.*
 ECDHE-RSA-AES256-GCM-SHA384
 
 --- no_error_log
 [error]
-[alert]
 [emerg]
 
 
@@ -107,8 +108,6 @@ ECDHE-RSA-AES256-GCM-SHA384
             content_by_lua_block {
                 local ssl = require "resty.openssl.ssl"
                 local sess = myassert(ssl.from_request())
-
-                local ciphers = myassert(sess:get_ciphers())
 
                 local crt = myassert(sess:get_peer_certificate())
                 ngx.say(myassert(crt:get_subject_name():tostring()))
@@ -133,7 +132,6 @@ CN=test.com
 
 --- no_error_log
 [error]
-[alert]
 [emerg]
 
 
@@ -175,7 +173,6 @@ CN=test.com
 
 --- no_error_log
 [error]
-[alert]
 [emerg]
 
 
@@ -196,22 +193,20 @@ CN=test.com
             local ssl = require "resty.openssl.ssl"
             local sess = myassert(ssl.from_socket(sock))
 
-            ngx.say(require("cjson").encode(myassert(sess:get_ciphers())))
+            ngx.say(myassert(sess:get_ciphers()))
 
-            local cipher = myassert(sess:get_current_cipher())
+            local cipher = myassert(sess:get_cipher_name())
             ngx.say(cipher)
         }
-        more_clear_headers Date;
     }
 --- request
     GET /t
 --- response_body_like
-\[".+,.+"\]
+.*ECDHE-RSA-AES256-GCM-SHA384.*
 ECDHE-RSA-AES256-GCM-SHA384
 
 --- no_error_log
 [error]
-[alert]
 [emerg]
 
 
@@ -241,7 +236,6 @@ CN=test.com
 
 --- no_error_log
 [error]
-[alert]
 [emerg]
 
 
@@ -266,7 +260,6 @@ CN=test.com
             local crt = chain[1]
             ngx.say(myassert(crt:get_subject_name():tostring()))
         }
-        more_clear_headers Date;
     }
 --- request
     GET /t
@@ -276,5 +269,4 @@ CN=test.com
 
 --- no_error_log
 [error]
-[alert]
 [emerg]

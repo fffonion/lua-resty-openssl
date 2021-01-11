@@ -1,8 +1,8 @@
 local ffi = require "ffi"
-local C = ffi.C
 
 require "resty.openssl.include.ossl_typ"
 require "resty.openssl.include.stack"
+local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 
 ffi.cdef [[
   // SSL_METHOD
@@ -16,6 +16,11 @@ ffi.cdef [[
   SSL_CTX *SSL_CTX_new(const SSL_METHOD *meth);
   void SSL_CTX_free(SSL_CTX *a);
 
+  // SSL_SESSION
+  typedef struct ssl_session_st SSL_SESSION;
+  SSL_SESSION *SSL_get_session(const SSL *ssl);
+  long SSL_SESSION_set_timeout(SSL_SESSION *s, long t);
+  long SSL_SESSION_get_timeout(const SSL_SESSION *s);
 
   typedef int (*SSL_CTX_alpn_select_cb_func)(SSL *ssl,
                 const unsigned char **out,
@@ -36,9 +41,21 @@ ffi.cdef [[
   SSL *SSL_new(SSL_CTX *ctx);
   void SSL_free(SSL *ssl);
 
+  int SSL_set_cipher_list(SSL *ssl, const char *str);
+  int SSL_set_ciphersuites(SSL *s, const char *str);
+
   /*STACK_OF(SSL_CIPHER)*/ OPENSSL_STACK *SSL_get_ciphers(const SSL *ssl);
   /*STACK_OF(SSL_CIPHER)*/ OPENSSL_STACK *SSL_CTX_get_ciphers(const SSL_CTX *ctx);
-
   OPENSSL_STACK *SSL_get_peer_cert_chain(const SSL *ssl);
-  X509 *SSL_get_peer_certificate(const SSL *ssl);
+  
 ]]
+
+if OPENSSL_30 then
+  ffi.cdef [[
+    X509 *SSL_get1_peer_certificate(const SSL *ssl);
+  ]]
+else
+   ffi.cdef [[
+    X509 *SSL_get_peer_certificate(const SSL *ssl);
+  ]]
+end
