@@ -1,6 +1,7 @@
 local ffi = require "ffi"
 local C = ffi.C
 local ffi_str = ffi.string
+local ffi_cast = ffi.cast
 
 require "resty.openssl.include.ssl"
 
@@ -11,7 +12,13 @@ local stack_lib = require("resty.openssl.stack")
 local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 local format_error = require("resty.openssl.err").format_error
 
-local _M = {}
+local _M = {
+  SSL_VERIFY_NONE                 = 0x00,
+  SSL_VERIFY_PEER                 = 0x01,
+  SSL_VERIFY_FAIL_IF_NO_PEER_CERT = 0x02,
+  SSL_VERIFY_CLIENT_ONCE          = 0x04,
+  SSL_VERIFY_POST_HANDSHAKE       = 0x08,
+}
 local mt = {__index = _M}
 
 local ssl_ptr_ct = ffi.typeof('SSL*')
@@ -145,14 +152,14 @@ function _M:get_cipher_name()
   return ffi_str(cipher)
 end
 
-function _M:set_timeout(epoch)
+function _M:set_timeout(tm)
   local session = C.SSL_get_session(self.ctx)
 
   if session == nil then
     return false, format_error("ssl:set_timeout: SSL_get_session")
   end
 
-  if C.SSL_SESSION_set_timeout(session, epoch) ~= 1 then
+  if C.SSL_SESSION_set_timeout(session, tm) ~= 1 then
     return false, format_error("ssl:set_timeout: SSL_SESSION_set_timeout")
   end
   return true
@@ -166,6 +173,23 @@ function _M:get_timeout()
   end
 
   return tonumber(C.SSL_SESSION_get_timeout(session))
+end
+
+local ssl_verify_default_cb = ffi_cast("verify_callback*", function()
+  return 1
+end)
+
+function _M:set_verify(mode, cb)
+  if cb then
+    cb = ffi_cast("verify_callback*", cb)
+  end
+
+  C.SSL_set_verify(self.ctx, mode, cb or ssl_verify_default_cb)
+  if cb then
+    cb:free()
+  end
+
+  return true
 end
 
 

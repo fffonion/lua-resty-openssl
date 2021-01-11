@@ -102,7 +102,11 @@ ECDHE-RSA-AES256-GCM-SHA384
         listen unix:/tmp/nginx.sock ssl;
         server_name   test.com;
 
-        ssl_verify_client optional_no_ca;
+        ssl_certificate_by_lua_block {
+            local ssl = require "resty.openssl.ssl"
+            local sess = myassert(ssl.from_request())
+            myassert(sess:set_verify(ssl.SSL_VERIFY_PEER, nil))
+        }
 
         location /t {
             content_by_lua_block {
@@ -141,7 +145,11 @@ CN=test.com
         listen unix:/tmp/nginx.sock ssl;
         server_name   test.com;
 
-        ssl_verify_client optional_no_ca;
+        ssl_certificate_by_lua_block {
+            local ssl = require "resty.openssl.ssl"
+            local sess = myassert(ssl.from_request())
+            myassert(sess:set_verify(ssl.SSL_VERIFY_PEER, nil))
+        }
 
         location /t {
             content_by_lua_block {

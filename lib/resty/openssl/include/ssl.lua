@@ -47,6 +47,10 @@ ffi.cdef [[
   /*STACK_OF(SSL_CIPHER)*/ OPENSSL_STACK *SSL_get_ciphers(const SSL *ssl);
   /*STACK_OF(SSL_CIPHER)*/ OPENSSL_STACK *SSL_CTX_get_ciphers(const SSL_CTX *ctx);
   OPENSSL_STACK *SSL_get_peer_cert_chain(const SSL *ssl);
+
+  typedef int verify_callback(int preverify_ok, X509_STORE_CTX *x509_ctx);
+  void SSL_set_verify(SSL *s, int mode,
+                     int (*verify_callback)(int, X509_STORE_CTX *));
   
 ]]
 
