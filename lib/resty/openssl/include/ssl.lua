@@ -44,6 +44,10 @@ ffi.cdef [[
   int SSL_set_cipher_list(SSL *ssl, const char *str);
   int SSL_set_ciphersuites(SSL *s, const char *str);
 
+  long SSL_set_options(SSL *ssl, long options);
+  long SSL_clear_options(SSL *ssl, long options);
+  long SSL_get_options(SSL *ssl);
+
   /*STACK_OF(SSL_CIPHER)*/ OPENSSL_STACK *SSL_get_ciphers(const SSL *ssl);
   /*STACK_OF(SSL_CIPHER)*/ OPENSSL_STACK *SSL_CTX_get_ciphers(const SSL_CTX *ctx);
   OPENSSL_STACK *SSL_get_peer_cert_chain(const SSL *ssl);

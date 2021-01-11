@@ -19,6 +19,47 @@ local _M = {
   SSL_VERIFY_CLIENT_ONCE          = 0x04,
   SSL_VERIFY_POST_HANDSHAKE       = 0x08,
 }
+
+local ops = {
+  SSL_OP_NO_EXTENDED_MASTER_SECRET                = 0x00000001,
+  SSL_OP_CLEANSE_PLAINTEXT                        = 0x00000002,
+  SSL_OP_LEGACY_SERVER_CONNECT                    = 0x00000004,
+  SSL_OP_TLSEXT_PADDING                           = 0x00000010,
+  SSL_OP_SAFARI_ECDHE_ECDSA_BUG                   = 0x00000040,
+  SSL_OP_IGNORE_UNEXPECTED_EOF                    = 0x00000080,
+  SSL_OP_DISABLE_TLSEXT_CA_NAMES                  = 0x00000200,
+  SSL_OP_ALLOW_NO_DHE_KEX                         = 0x00000400,
+  SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS              = 0x00000800,
+  SSL_OP_NO_QUERY_MTU                             = 0x00001000,
+  SSL_OP_COOKIE_EXCHANGE                          = 0x00002000,
+  SSL_OP_NO_TICKET                                = 0x00004000,
+  SSL_OP_CISCO_ANYCONNECT                         = 0x00008000,
+  SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION   = 0x00010000,
+  SSL_OP_NO_COMPRESSION                           = 0x00020000,
+  SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION        = 0x00040000,
+  SSL_OP_NO_ENCRYPT_THEN_MAC                      = 0x00080000,
+  SSL_OP_ENABLE_MIDDLEBOX_COMPAT                  = 0x00100000,
+  SSL_OP_PRIORITIZE_CHACHA                        = 0x00200000,
+  SSL_OP_CIPHER_SERVER_PREFERENCE                 = 0x00400000,
+  SSL_OP_TLS_ROLLBACK_BUG                         = 0x00800000,
+  SSL_OP_NO_ANTI_REPLAY                           = 0x01000000,
+  SSL_OP_NO_SSLv3                                 = 0x02000000,
+  SSL_OP_NO_TLSv1                                 = 0x04000000,
+  SSL_OP_NO_TLSv1_2                               = 0x08000000,
+  SSL_OP_NO_TLSv1_1                               = 0x10000000,
+  SSL_OP_NO_TLSv1_3                               = 0x20000000,
+  SSL_OP_NO_DTLSv1                                = 0x04000000,
+  SSL_OP_NO_DTLSv1_2                              = 0x08000000,
+  SSL_OP_NO_RENEGOTIATION                         = 0x40000000,
+  SSL_OP_CRYPTOPRO_TLSEXT_BUG                     = 0x80000000,
+}
+ops.SSL_OP_NO_SSL_MASK = ops.SSL_OP_NO_SSLv3 + ops.SSL_OP_NO_TLSv1 + ops.SSL_OP_NO_TLSv1_1
+                          + ops.SSL_OP_NO_TLSv1_2 + ops.SSL_OP_NO_TLSv1_3
+ops.SSL_OP_NO_DTLS_MASK = ops.SSL_OP_NO_DTLSv1 + ops.SSL_OP_NO_DTLSv1_2
+for k, v in pairs(ops) do
+  _M[k] = v
+end
+
 local mt = {__index = _M}
 
 local ssl_ptr_ct = ffi.typeof('SSL*')
@@ -190,6 +231,38 @@ function _M:set_verify(mode, cb)
   end
 
   return true
+end
+
+function _M:set_options(...)
+  local bitmask
+  for _, opt in ipairs({...}) do
+    bitmask = C.SSL_set_options(self.ctx, opt)
+  end
+  return tonumber(bitmask)
+end
+
+function _M:get_options(readable)
+  local bitmask = C.SSL_get_options(self.ctx)
+  if not readable then
+    return tonumber(bitmask)
+  end
+
+  local ret = {}
+  for k, v in pairs(ops) do
+    if bit.band(v, bitmask) > 0 then
+      table.insert(ret, k)
+    end
+  end
+
+  return ret
+end
+
+function _M:clear_options(...)
+  local bitmask
+  for _, opt in ipairs({...}) do
+    bitmask = C.SSL_clear_options(self.ctx, opt)
+  end
+  return tonumber(bitmask)
 end
 
 
