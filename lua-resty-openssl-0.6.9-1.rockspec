@@ -72,6 +72,9 @@ build = {
       ["resty.openssl.x509.init"] = "lib/resty/openssl/x509/init.lua",
       ["resty.openssl.x509.name"] = "lib/resty/openssl/x509/name.lua",
       ["resty.openssl.x509.revoked"] = "lib/resty/openssl/x509/revoked.lua",
-      ["resty.openssl.x509.store"] = "lib/resty/openssl/x509/store.lua"
+      ["resty.openssl.x509.store"] = "lib/resty/openssl/x509/store.lua",
+      ["resty.openssl.include.ssl"] = "lib/resty/openssl/include/ssl.lua",
+      ["resty.openssl.ssl"] = "lib/resty/openssl/ssl/init.lua",
+      ["resty.openssl.aux.nginx"] = "lib/resty/openssl/aux/nginx.lua",
    }
 }
