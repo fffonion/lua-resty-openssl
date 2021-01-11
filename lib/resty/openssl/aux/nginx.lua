@@ -209,48 +209,73 @@ else
 
     typedef void (*ngx_http_lua_socket_tcp_upstream_handler_pt_masked)
       (void *r, void *u);
-]]
 
-if ngx.config
+
+    typedef
+        int (*ngx_stream_lua_socket_tcp_retval_handler)(ngx_stream_lua_request_t *r,
+            void *u, void *L);
+
+
+    typedef void (*ngx_stream_lua_socket_tcp_upstream_handler_pt)
+        (void *r, void *u);
+
+    typedef struct ngx_stream_lua_socket_tcp_upstream_t {
+      ngx_stream_lua_socket_tcp_retval_handler            read_prepare_retvals;
+      ngx_stream_lua_socket_tcp_retval_handler            write_prepare_retvals;
+      ngx_stream_lua_socket_tcp_upstream_handler_pt       read_event_handler;
+      ngx_stream_lua_socket_tcp_upstream_handler_pt       write_event_handler;
+  
+      void                    *socket_pool;
+  
+      void                    *conf;
+      void                    *cleanup;
+      void                    *request;
+  
+      ngx_peer_connection_t            peer;
+      // trimmed
+    } ngx_stream_lua_socket_tcp_upstream_t;
+  ]]
+
+  if ngx.config
     and ngx.config.ngx_lua_version
     and ngx.config.ngx_lua_version >= 10019
-then
-  ffi.cdef[[
-    typedef struct {
-      ngx_http_lua_socket_tcp_retval_handler_masked          read_prepare_retvals;
-      ngx_http_lua_socket_tcp_retval_handler_masked          write_prepare_retvals;
-      ngx_http_lua_socket_tcp_upstream_handler_pt_masked     read_event_handler;
-      ngx_http_lua_socket_tcp_upstream_handler_pt_masked     write_event_handler;
+  then
+    ffi.cdef[[
+      typedef struct {
+        ngx_http_lua_socket_tcp_retval_handler_masked          read_prepare_retvals;
+        ngx_http_lua_socket_tcp_retval_handler_masked          write_prepare_retvals;
+        ngx_http_lua_socket_tcp_upstream_handler_pt_masked     read_event_handler;
+        ngx_http_lua_socket_tcp_upstream_handler_pt_masked     write_event_handler;
 
-      void                            *udata_queue; // 0.10.19
+        void                            *udata_queue; // 0.10.19
 
-      void                            *socket_pool;
+        void                            *socket_pool;
 
-      void                            *conf;
-      void                            *cleanup;
-      void                            *request;
-      ngx_peer_connection_s            peer;
-      // trimmed
-    } ngx_http_lua_socket_tcp_upstream_s;
-  ]]
-else
-  -- the struct doesn't seem to get changed a long time since birth
-  ffi.cdef[[
-    typedef struct {
-      ngx_http_lua_socket_tcp_retval_handler_masked          read_prepare_retvals;
-      ngx_http_lua_socket_tcp_retval_handler_masked          write_prepare_retvals;
-      ngx_http_lua_socket_tcp_upstream_handler_pt_masked     read_event_handler;
-      ngx_http_lua_socket_tcp_upstream_handler_pt_masked     write_event_handler;
+        void                            *conf;
+        void                            *cleanup;
+        void                            *request;
+        ngx_peer_connection_s            peer;
+        // trimmed
+      } ngx_http_lua_socket_tcp_upstream_s;
+    ]]
+  else
+    -- the struct doesn't seem to get changed a long time since birth
+    ffi.cdef[[
+      typedef struct {
+        ngx_http_lua_socket_tcp_retval_handler_masked          read_prepare_retvals;
+        ngx_http_lua_socket_tcp_retval_handler_masked          write_prepare_retvals;
+        ngx_http_lua_socket_tcp_upstream_handler_pt_masked     read_event_handler;
+        ngx_http_lua_socket_tcp_upstream_handler_pt_masked     write_event_handler;
 
-      void                            *socket_pool;
+        void                            *socket_pool;
 
-      void                            *conf;
-      void                            *cleanup;
-      void                            *request;
-      ngx_peer_connection_s            peer;
-      // trimmed
-    } ngx_http_lua_socket_tcp_upstream_s;
-  ]]
+        void                            *conf;
+        void                            *cleanup;
+        void                            *request;
+        ngx_peer_connection_s            peer;
+        // trimmed
+      } ngx_http_lua_socket_tcp_upstream_s;
+    ]]
   end
 
   local function get_ngx_ssl_from_socket_ctx(sock)
