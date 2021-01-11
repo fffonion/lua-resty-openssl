@@ -1,11 +1,19 @@
 local ffi = require "ffi"
+local C = ffi.C
 
 local get_req_ssl, get_req_ssl_ctx
-local get_socket_ssl, get_socket_ssl_ctx 
+local get_socket_ssl, get_socket_ssl_ctx
 
-if false then
-  -- TODO: C FFI API
+local pok, nginx_c = pcall(require, "resty.openssl.aux.nginx_c")
+
+if pok then
+  get_req_ssl = nginx_c.get_req_ssl
+  get_req_ssl_ctx = nginx_c.get_req_ssl
+  get_socket_ssl = nginx_c.get_socket_ssl
+  get_socket_ssl_ctx = nginx_c.get_socket_ssl
 else
+  ngx.log(ngx.WARN, "resty.openssl.aux.nginx is using plain FFI, ",
+                    "consider using lua-resty-openssl-aux-module in production")
   ffi.cdef [[
     typedef long off_t;
     typedef unsigned int socklen_t; // windows uses int, same size
@@ -151,6 +159,8 @@ else
     end
   end
 
+  local SOCKET_CTX_INDEX = 1
+
   local function get_ngx_ssl_from_req()
     local c = get_request()
     if ngx.config.subsystem == "stream" then
@@ -243,8 +253,6 @@ else
   ]]
   end
 
-  local SOCKET_CTX_INDEX = 1
-
   local function get_ngx_ssl_from_socket_ctx(sock)
     local u = sock[SOCKET_CTX_INDEX]
     if u == nil then
@@ -293,7 +301,6 @@ else
   end
 
 end
-
 
 
 return {

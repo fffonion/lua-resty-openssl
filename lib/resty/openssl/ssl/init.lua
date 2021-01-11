@@ -108,7 +108,7 @@ function _M:get_current_cipher()
 
   cipher = C.SSL_CIPHER_get_name(cipher)
   if cipher == nil then
-    return nil, format_error("ssl:get_ciphers: SSL_CIPHER_get_name")
+    return nil, format_error("ssl:get_current_cipher: SSL_CIPHER_get_name")
   end
   return ffi_str(cipher)
 end
