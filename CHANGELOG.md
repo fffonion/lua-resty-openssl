@@ -2,6 +2,20 @@
 ## [Unreleased]
 
 
+<a name="0.6.10"></a>
+## [0.6.10] - 2021-01-12
+### feat
+- **pkcs12:** allow to define algorithm to encrypt key and cert [b9678ce](https://github.com/fffonion/lua-resty-openssl/commit/b9678ce4ee4a233fb0bd8ed61d41c6d45a6fbb9d)
+- **pkcs12:** check on cert and key mismatch [5953cc2](https://github.com/fffonion/lua-resty-openssl/commit/5953cc281cff06027f3b2bba23402e2915fd3ae1)
+- **pkcs12:** encode and decode for pkcs12 [1467579](https://github.com/fffonion/lua-resty-openssl/commit/1467579fbe253996570dd188f580b98b8eb1db98)
+- **pkey:** add is_private function to check if it's a private key [eb6cc1c](https://github.com/fffonion/lua-resty-openssl/commit/eb6cc1c2d5f7698c2641950d745a78da7baa6225)
+- **ssl:** add the ssl and ssl_ctx module [40f3999](https://github.com/fffonion/lua-resty-openssl/commit/40f39994446a4cb954fc516f7047194cbf1141f8)
+
+### fix
+- **ecx:** return nil, err in set_parameters [98acaee](https://github.com/fffonion/lua-resty-openssl/commit/98acaeeeaa60dffd93a934f4fbf7ddfd8e9e9652)
+- **pkey:** use named_curve encoding for EC group [1e65d9d](https://github.com/fffonion/lua-resty-openssl/commit/1e65d9d4b71c0e9c5f4d404e640a96e03902fd30)
+
+
 <a name="0.6.9"></a>
 ## [0.6.9] - 2020-11-09
 ### feat
@@ -281,7 +295,8 @@
 <a name="init"></a>
 ## init - 2019-09-25
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.9...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.10...HEAD
+[0.6.10]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.9...0.6.10
 [0.6.9]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.8...0.6.9
 [0.6.8]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.7...0.6.8
 [0.6.7]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.6...0.6.7
