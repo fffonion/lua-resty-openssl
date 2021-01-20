@@ -9,10 +9,6 @@ if pok and not os.getenv("CI_SKIP_NGINX_C") then
   get_socket_ssl = nginx_c.get_socket_ssl
   get_socket_ssl_ctx = nginx_c.get_socket_ssl
 else
-  ngx.log(ngx.WARN, "note resty.openssl.aux.nginx is using plain FFI ",
-                    "and it's only intended to be used in development, ",
-                    "consider using lua-resty-openssl-aux-module in production.")
-
   local ffi = require "ffi"
 
   ffi.cdef [[
@@ -162,7 +158,17 @@ else
 
   local SOCKET_CTX_INDEX = 1
 
+  local NO_C_MODULE_WARNING_MSG_SHOWN = false
+  local NO_C_MODULE_WARNING_MSG = "note resty.openssl.aux.nginx is using plain FFI " ..
+                                  "and it's only intended to be used in development, " ..
+                                  "consider using lua-resty-openssl-aux-module in production."
+
   local function get_ngx_ssl_from_req()
+    if not NO_C_MODULE_WARNING_MSG_SHOWN then
+      ngx.log(ngx.WARN, NO_C_MODULE_WARNING_MSG)
+      NO_C_MODULE_WARNING_MSG_SHOWN = true
+    end
+
     local c = get_request()
     if ngx.config.subsystem == "stream" then
       c = ffi.cast("ngx_stream_lua_request_s*", c)
@@ -279,6 +285,11 @@ else
   end
 
   local function get_ngx_ssl_from_socket_ctx(sock)
+    if not NO_C_MODULE_WARNING_MSG_SHOWN then
+      ngx.log(ngx.WARN, NO_C_MODULE_WARNING_MSG)
+      NO_C_MODULE_WARNING_MSG_SHOWN = true
+    end
+
     local u = sock[SOCKET_CTX_INDEX]
     if u == nil then
       return nil, "lua_socket_tcp_upstream_t not found"
