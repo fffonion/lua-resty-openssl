@@ -221,16 +221,25 @@ local ssl_verify_default_cb = ffi_cast("verify_callback*", function()
 end)
 
 function _M:set_verify(mode, cb)
+  if self._verify_cb then
+    self._verify_cb:free()
+  end
+
   if cb then
     cb = ffi_cast("verify_callback*", cb)
+    self._verify_cb = cb
   end
 
   C.SSL_set_verify(self.ctx, mode, cb or ssl_verify_default_cb)
-  if cb then
-    cb:free()
-  end
 
   return true
+end
+
+function _M:free_verify_cb()
+  if self._verify_cb then
+    self._verify_cb:free()
+    self._verify_cb = nil
+  end
 end
 
 function _M:set_options(...)
