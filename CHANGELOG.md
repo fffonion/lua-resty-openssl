@@ -2,6 +2,14 @@
 ## [Unreleased]
 
 
+<a name="0.6.11"></a>
+## [0.6.11] - 2021-01-21
+### fix
+- **aux/nginx:** only show warning message when function is being called [9964a6d](https://github.com/fffonion/lua-resty-openssl/commit/9964a6d29aded1c0d06c1a8700ee313e08506c2f)
+- **openssl:** not load ssl modules by default [390ad79](https://github.com/fffonion/lua-resty-openssl/commit/390ad79c413ec779ff7a1ad2b86ff0fe389c085d)
+- **ssl:** add function to free the verify callback function [62dc81a](https://github.com/fffonion/lua-resty-openssl/commit/62dc81a4c7be1c745e7e3ab728f3e060c981f446)
+
+
 <a name="0.6.10"></a>
 ## [0.6.10] - 2021-01-12
 ### feat
@@ -295,7 +303,8 @@
 <a name="init"></a>
 ## init - 2019-09-25
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.10...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.11...HEAD
+[0.6.11]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.10...0.6.11
 [0.6.10]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.9...0.6.10
 [0.6.9]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.8...0.6.9
 [0.6.8]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.7...0.6.8
