@@ -21,6 +21,11 @@ elseif OPENSSL_11_OR_LATER then
   end
 end
 
+ffi.cdef [[
+  int FIPS_mode(void);
+  int FIPS_mode_set(int ONOFF);
+]]
+
 return {
   OPENSSL_free = OPENSSL_free,
 }

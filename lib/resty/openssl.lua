@@ -1,4 +1,5 @@
 local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
+local C = require("ffi").C
 
 
 local _M = {
@@ -208,6 +209,24 @@ function _M.resty_hmac_compat()
     }/* EVP_MD_CTX */ ;
   ]]
   resty_hmac_compat_patched = true
+end
+
+local err = require("resty.openssl.err")
+
+function _M.set_fips_mode(enable)
+  if not not enable == _M.get_fips_mode() then
+    return true
+  end
+
+  if C.FIPS_mode_set(enable and 1 or 0) == 0 then
+    return false, err.format_error("openssl.set_fips_mode")
+  end
+
+  return true
+end
+
+function _M.get_fips_mode()
+  return C.FIPS_mode() == 1
 end
 
 return _M
