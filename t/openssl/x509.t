@@ -63,7 +63,7 @@ __DATA__
 --- request
     GET /t
 --- response_body_like eval
-"x509.new.+nested asn1 error.+"
+"x509.new.+(nested asn1 error|NESTED_ASN1_ERROR).+"
 --- no_error_log
 [error]
 
@@ -87,7 +87,7 @@ __DATA__
 --- request
     GET /t
 --- response_body_like eval
-"x509.new.+no start line.+"
+"x509.new.+(no start line|NO_START_LINE).+"
 --- no_error_log
 [error]
 
@@ -107,7 +107,7 @@ __DATA__
     GET /t
 --- response_body_like eval
 "expect nil or a string at #1
-x509.new: .*not enough data
+x509.new: .*(not enough data|NOT_ENOUGH_DATA)
 "
 --- no_error_log
 [error]
@@ -121,7 +121,7 @@ x509.new: .*not enough data
             local c = myassert(require("resty.openssl.x509").new(f))
             local dd = myassert(c:digest())
 
-            local h = myassert(require("helper").to_hex(dd))
+            local h = string.upper(myassert(require("helper").to_hex(dd)))
             ngx.say(h)
         }
     }
@@ -142,7 +142,7 @@ x509.new: .*not enough data
             local c = myassert(require("resty.openssl.x509").new(f))
             local dd = myassert(c:pubkey_digest())
 
-            local h, err = require("helper").to_hex(dd)
+            local h, err = string.upper(require("helper").to_hex(dd))
             ngx.say(h)
         }
     }
@@ -454,7 +454,7 @@ nil
 --- config
     location =/t {
         content_by_lua_block {
-            local cert, key = require("helper").create_self_signed({ type = "EC" })
+            local cert, key = require("helper").create_self_signed({ type = "EC", curve = "prime256v1" })
             local ok, err = cert:check_private_key(key)
             ngx.say(ok)
             ngx.say(err)
@@ -467,6 +467,7 @@ nil
 
             local key2 = require("resty.openssl.pkey").new({
                 type = 'EC',
+                curve = "prime256v1",
             })
             local ok, err = cert:check_private_key(key2)
             ngx.say(ok)
@@ -479,8 +480,8 @@ nil
 "true
 nil
 false
-.+key type mismatch
-.+key values mismatch
+.+(key type mismatch|KEY_TYPE_MISMATCH)
+.+(key values mismatch|KEY_VALUES_MISMATCH)
 "
 --- no_error_log
 [error]
@@ -497,7 +498,7 @@ false
             local c = myassert(require("resty.openssl.x509").new(f))
 
             local get = myassert(c:get_serial_number())
-            get = get:to_hex()
+            get = get:to_hex():upper()
             ngx.print(get)
         }
     }
@@ -519,8 +520,8 @@ false
             local ok = myassert(c:set_serial_number(toset))
 
             local get = myassert(c:get_serial_number())
-            get = get:to_hex()
-            toset = toset:to_hex()
+            get = get:to_hex():upper()
+            toset = toset:to_hex():upper()
             if get ~= toset then
               ngx.say(get)
               ngx.say(toset)

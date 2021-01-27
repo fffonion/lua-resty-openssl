@@ -27,7 +27,7 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            local cipher = myassert(require("resty.openssl.cipher").new("aes256"))
+            local cipher = myassert(require("resty.openssl.cipher").new("aes-256-cbc"))
 
             myassert(cipher:init(string.rep("0", 32), string.rep("0", 16), {
                 is_encrypt = true,
@@ -65,7 +65,7 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            local cipher = myassert(require("resty.openssl.cipher").new("aes256"))
+            local cipher = myassert(require("resty.openssl.cipher").new("aes-256-cbc"))
 
             local s, err = cipher:update("1")
             ngx.say(err)
@@ -87,7 +87,7 @@ cipher:update: cipher not initalized, call cipher:init first
 --- config
     location =/t {
         content_by_lua_block {
-            local cipher = myassert(require("resty.openssl.cipher").new("aes256"))
+            local cipher = myassert(require("resty.openssl.cipher").new("aes-256-cbc"))
 
             local s = myassert(cipher:encrypt(string.rep("0", 32), string.rep("0", 16), '1'))
 
@@ -106,7 +106,7 @@ cipher:update: cipher not initalized, call cipher:init first
 --- config
     location =/t {
         content_by_lua_block {
-            local cipher = myassert(require("resty.openssl.cipher").new("aes256"))
+            local cipher = myassert(require("resty.openssl.cipher").new("aes-256-cbc"))
 
             local s, err = cipher:encrypt(string.rep("0", 32), string.rep("0", 16), '1', true)
             ngx.say(s)
@@ -122,7 +122,7 @@ cipher:update: cipher not initalized, call cipher:init first
     GET /t
 --- response_body_like eval
 "nil
-.+(?:data not multiple of block length|wrong final block length)
+.+(?:data not multiple of block length|wrong final block length|DATA_NOT_MULTIPLE_OF_BLOCK_LENGTH)
 VhGyRCcMvlAgUjTYrqiWpg=="
 --- no_error_log
 [error]
@@ -132,7 +132,7 @@ VhGyRCcMvlAgUjTYrqiWpg=="
 --- config
     location =/t {
         content_by_lua_block {
-            local cipher = myassert(require("resty.openssl.cipher").new("aes256"))
+            local cipher = myassert(require("resty.openssl.cipher").new("aes-256-cbc"))
 
             local s = myassert(cipher:decrypt(string.rep("0", 32), string.rep("0", 16),
                 ngx.decode_base64("VhGyRCcMvlAgUjTYrqiWpg==")))
@@ -152,7 +152,7 @@ VhGyRCcMvlAgUjTYrqiWpg=="
 --- config
     location =/t {
         content_by_lua_block {
-            local cipher = myassert(require("resty.openssl.cipher").new("aes256"))
+            local cipher = myassert(require("resty.openssl.cipher").new("aes-256-cbc"))
 
             local s = myassert(cipher:decrypt(string.rep("0", 32), string.rep("0", 16),
                 ngx.decode_base64("VhGyRCcMvlAgUjTYrqiWpg=="), true))
@@ -172,7 +172,7 @@ VhGyRCcMvlAgUjTYrqiWpg=="
 --- config
     location =/t {
         content_by_lua_block {
-            local cipher = myassert(require("resty.openssl.cipher").new("aes256"))
+            local cipher = myassert(require("resty.openssl.cipher").new("aes-256-cbc"))
 
             local ok = myassert(cipher:init(string.rep("0", 32), string.rep("0", 16), {
                 is_encrypt = true,
@@ -214,7 +214,7 @@ dtpklHxY9IbgmSw84+2XMr0Vy/S1392+rvu0A3GW1Wo=
 --- config
     location =/t {
         content_by_lua_block {
-            local cipher = myassert(require("resty.openssl.cipher").new("aes256"))
+            local cipher = myassert(require("resty.openssl.cipher").new("aes-256-cbc"))
 
             local ok = myassert(cipher:init(string.rep("0", 32), string.rep("0", 16), {
                 is_encrypt = false,
@@ -253,7 +253,7 @@ nothing
 hiabcdefghiabcde
 fghiabcdefghiabc
 nothing
-.+wrong final block length
+.+(wrong final block length|WRONG_FINAL_BLOCK_LENGTH)
 nil
 final
 defghi
@@ -273,9 +273,9 @@ defghi
                 end))
             end
 
-            local cipher = myassert(require("resty.openssl.cipher").new("aes256"))
+            local cipher = myassert(require("resty.openssl.cipher").new("aes-256-cbc"))
 
-            -- openssl enc -aes256 -pass pass:xxx -S 797979 -P -md md5
+            -- openssl enc -aes-256-cbc -pass pass:xxx -S 797979 -P -md md5
             local key, iv = cipher:derive("xxx", "yyy", 1, "md5")
 
             ngx.say(key:tohex())
@@ -311,9 +311,9 @@ no iv
                 end))
             end
 
-            local cipher = myassert(require("resty.openssl.cipher").new("aes256"))
+            local cipher = myassert(require("resty.openssl.cipher").new("aes-256-cbc"))
 
-            -- openssl enc -aes256 -pass pass:xxx -nosalt -P -md sha1
+            -- openssl enc -aes-256-cbc -pass pass:xxx -nosalt -P -md sha1
             local key, iv = cipher:derive("xxx")
 
             ngx.say(key:tohex())

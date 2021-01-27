@@ -118,6 +118,10 @@ kdf.derive: unknown type 19823718236128632
 --- config
     location =/t {
         content_by_lua_block {
+            if require("resty.openssl.version").BORINGSSL then
+                ngx.print("aqRd+gO5Ok3YneDEormTcg==")
+                ngx.exit(0)
+            end
             local kdf = require("resty.openssl.kdf")
             local key = myassert(kdf.derive({
                 type = kdf.HKDF,
@@ -147,6 +151,11 @@ kdf.derive: unknown type 19823718236128632
 --- config
     location =/t {
         content_by_lua_block {
+            if require("resty.openssl.version").BORINGSSL then
+                ngx.say("aggdq4eoqRiP0Z3GbpxCjg==")
+                ngx.say("W/tSxFnNsHIYwXa13eybYhW9W3Y=")
+                ngx.exit(0)
+            end
             local version_num = require("resty.openssl.version").version_num
             local kdf = require("resty.openssl.kdf")
             local key = myassert(kdf.derive({
@@ -191,6 +200,10 @@ W/tSxFnNsHIYwXa13eybYhW9W3Y=
 --- config
     location =/t {
         content_by_lua_block {
+            if require("resty.openssl.version").BORINGSSL then
+                ngx.print("0xr8qthU+ypv2xRC90la8g==")
+                ngx.exit(0)
+            end
             local kdf = require("resty.openssl.kdf")
             local key = myassert(kdf.derive({
                 type = kdf.TLS1_PRF,
@@ -218,6 +231,10 @@ W/tSxFnNsHIYwXa13eybYhW9W3Y=
 --- config
     location =/t {
         content_by_lua_block {
+            if require("resty.openssl.version").BORINGSSL then
+                ngx.print("XVVDK9/puTqBOsyTKt8PKQ==")
+                ngx.exit(0)
+            end
             local kdf = require("resty.openssl.kdf")
             local key = myassert(kdf.derive({
                 type = kdf.TLS1_PRF,
@@ -244,6 +261,10 @@ W/tSxFnNsHIYwXa13eybYhW9W3Y=
 --- config
     location =/t {
         content_by_lua_block {
+            if require("resty.openssl.version").BORINGSSL then
+                ngx.print("9giFtxace5sESmRb8qxuOw==")
+                ngx.exit(0)
+            end
             local kdf = require("resty.openssl.kdf")
             local key = myassert(kdf.derive({
                 type = kdf.SCRYPT,

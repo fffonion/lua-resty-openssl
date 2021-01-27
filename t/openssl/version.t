@@ -33,7 +33,7 @@ __DATA__
 --- request
     GET /t
 --- response_body_like
-OpenSSL \d.\d.\d.+
+(OpenSSL \d.\d.\d.+|BoringSSL)
 --- no_error_log
 [error]
 
@@ -50,7 +50,7 @@ OpenSSL \d.\d.\d.+
 --- request
     GET /t
 --- response_body_like
-OpenSSL \d.\d.\d.+
+(OpenSSL \d.\d.\d.+|BoringSSL)
 compiler:.+
 --- no_error_log
 [error]

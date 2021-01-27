@@ -11,6 +11,7 @@ local C = ffi.C
 require "resty.openssl.include.ossl_typ"
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
+local BORINGSSL = require("resty.openssl.version").BORINGSSL
 
 local _M = {}
 
@@ -18,7 +19,7 @@ ffi.cdef [[
   typedef char *OPENSSL_STRING;
 ]]
 
-if OPENSSL_11_OR_LATER then
+if OPENSSL_11_OR_LATER and not BORINGSSL then
   ffi.cdef [[
     typedef struct stack_st OPENSSL_STACK;
 
@@ -48,7 +49,7 @@ if OPENSSL_11_OR_LATER then
   _M.OPENSSL_sk_delete = C.OPENSSL_sk_delete
   _M.OPENSSL_sk_free = C.OPENSSL_sk_free
   _M.OPENSSL_sk_deep_copy = C.OPENSSL_sk_deep_copy
-elseif OPENSSL_10 then
+elseif OPENSSL_10 or BORINGSSL then
   ffi.cdef [[
     typedef struct stack_st _STACK;
     // i made this up

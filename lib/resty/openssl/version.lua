@@ -12,6 +12,8 @@ ffi.cdef[[
   const char *OpenSSL_version(int t);
   // >= 3.0
   const char *OPENSSL_info(int t);
+  // BoringSSL
+  int BORINGSSL_self_test(void);
 ]]
 
 local version_func, info_func
@@ -85,6 +87,12 @@ else
   end
 end
 
+local BORINGSSL = false
+pcall(function()
+  local _ = C.BORINGSSL_self_test
+  BORINGSSL = true
+end)
+
 return setmetatable({
     version_num = tonumber(version_num),
     version_text = ffi_str(version_func(0)),
@@ -100,6 +108,7 @@ return setmetatable({
     OPENSSL_11_OR_LATER = version_num >= 0x10100000 and version_num < 0x30100000,
     OPENSSL_111_OR_LATER = version_num >= 0x10101000 and version_num < 0x30100000,
     OPENSSL_10 = version_num < 0x10100000 and version_num > 0x10000000,
+    BORINGSSL = BORINGSSL,
   }, {
     __index = types_table,
 })

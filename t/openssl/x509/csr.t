@@ -63,7 +63,7 @@ __DATA__
 --- request
     GET /t
 --- response_body_like eval
-"x509.csr.new.+nested asn1 error.+"
+"x509.csr.new.+(nested asn1 error|NESTED_ASN1_ERROR).+"
 --- no_error_log
 [error]
 
@@ -87,7 +87,7 @@ __DATA__
 --- request
     GET /t
 --- response_body_like eval
-"x509.csr.new.+no start line.+"
+"x509.csr.new.+(no start line|NO_START_LINE).+"
 --- no_error_log
 [error]
 
@@ -334,7 +334,7 @@ nil
     location =/t {
         content_by_lua_block {
             local util = require("csr")
-            local pkey = require("resty.openssl.pkey").new({ type = "EC" })
+            local pkey = require("resty.openssl.pkey").new({ type = "EC", curve = "prime256v1" })
             local der = myassert(util.create_csr(pkey, "dns1.com", "dns2.com", "dns3.com"))
             local csr = myassert(require("resty.openssl.x509.csr").new(der))
             local ok, err = csr:check_private_key(pkey)
@@ -349,6 +349,7 @@ nil
 
             local key2 = require("resty.openssl.pkey").new({
                 type = 'EC',
+                curve = "prime256v1",
             })
             local ok, err = csr:check_private_key(key2)
             ngx.say(ok)
@@ -361,8 +362,8 @@ nil
 "true
 nil
 false
-.+key type mismatch
-.+key values mismatch
+.+(key type mismatch|KEY_TYPE_MISMATCH)
+.+(key values mismatch|KEY_VALUES_MISMATCH)
 "
 --- no_error_log
 [error]

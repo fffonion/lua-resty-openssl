@@ -9,6 +9,7 @@ local kdf_macro = require "resty.openssl.include.kdf"
 local format_error = require("resty.openssl.err").format_error
 local version_num = require("resty.openssl.version").version_num
 local version_text = require("resty.openssl.version").version_text
+local BORINGSSL = require("resty.openssl.version").BORINGSSL
 local ctypes = require "resty.openssl.aux.ctypes"
 local EVP_PKEY_OP_DERIVE = require("resty.openssl.include.evp").EVP_PKEY_OP_DERIVE
 
@@ -30,7 +31,7 @@ if version_num >= 0x10002000 then
   NID_id_pbkdf2 = C.OBJ_txt2nid("PBKDF2")
   assert(NID_id_pbkdf2 > 0)
 end
-if version_num >= 0x10100000 then
+if version_num >= 0x10100000 and not BORINGSSL then
   NID_hkdf = C.OBJ_txt2nid("HKDF")
   assert(NID_hkdf > 0)
   NID_tls1_prf = C.OBJ_txt2nid("TLS1-PRF")

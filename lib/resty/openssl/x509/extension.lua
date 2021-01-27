@@ -15,6 +15,7 @@ local objects_lib = require "resty.openssl.objects"
 local stack_lib = require("resty.openssl.stack")
 local util = require "resty.openssl.util"
 local format_error = require("resty.openssl.err").format_error
+local BORINGSSL = require("resty.openssl.version").BORINGSSL
 
 local _M = {}
 local mt = { __index = _M }
@@ -28,15 +29,22 @@ local extension_types = {
   crl     = "resty.openssl.x509.crl",
 }
 
-local function nconf_load(conf, str)
-  local bio = C.BIO_new_mem_buf(str, #str)
-  if bio == nil then
-    return format_error("BIO_new_mem_buf")
+local nconf_load
+if BORINGSSL then
+  nconf_load = function()
+    return nil, "NCONF_load_bio not exported in BoringSSL"
   end
-  ffi_gc(bio, C.BIO_free)
+else
+  nconf_load = function(conf, str)
+    local bio = C.BIO_new_mem_buf(str, #str)
+    if bio == nil then
+      return format_error("BIO_new_mem_buf")
+    end
+    ffi_gc(bio, C.BIO_free)
 
-  if C.NCONF_load_bio(conf, bio, nil) ~= 1 then
-    return format_error("NCONF_load_bio")
+    if C.NCONF_load_bio(conf, bio, nil) ~= 1 then
+      return format_error("NCONF_load_bio")
+    end
   end
 end
 

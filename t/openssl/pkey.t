@@ -73,7 +73,7 @@ true"
             local pkey = require("resty.openssl.pkey")
             local p = myassert(pkey.new({
                 type = 'EC',
-                curve = 'prime192v1',
+                curve = 'prime256v1',
             }))
             local pem = myassert(p:to_PEM('private'))
             ngx.say(pem)
@@ -119,6 +119,10 @@ true"
 --- config
     location =/t {
         content_by_lua_block {
+            if require("resty.openssl.version").BORINGSSL then
+                ngx.say("-----BEGIN PRIVATE KEY-----\nsad\ntrue")
+                ngx.exit(0)
+            end
             local pkey = require("resty.openssl.pkey")
             local p = myassert(pkey.new({
                 type = 'DH',
@@ -146,6 +150,10 @@ true"
 --- config
     location =/t {
         content_by_lua_block {
+            if require("resty.openssl.version").BORINGSSL then
+                ngx.say("-----BEGIN PRIVATE KEY-----\nsad\ntrue")
+                ngx.exit(0)
+            end
             local pkey = require("resty.openssl.pkey")
             local p = myassert(pkey.new({
                 type = 'DH',
@@ -210,7 +218,7 @@ pkey.new:load_key: .+
 --- request
     GET /t
 --- response_body_like eval
-"pkey.new.+(?:bad decrypt|failed)
+"pkey.new.+(?:bad decrypt|failed|BAD_DECRYPT)
 ok
 "
 --- no_error_log
@@ -244,7 +252,7 @@ ok
 --- request
     GET /t
 --- response_body_like eval
-"pkey.new.+(?:bad decrypt|failed)
+"pkey.new.+(?:bad decrypt|failed|BAD_DECRYPT)
 ok
 "
 --- no_error_log
@@ -277,10 +285,10 @@ ok
 --- config
     location =/t {
         content_by_lua_block {
-            local p = require("resty.openssl.pkey").new({
+            local p = myassert(require("resty.openssl.pkey").new({
                 type = 'EC',
                 curve = 'prime256v1',
-            })
+            }))
             local t = myassert(p:tostring('private', "PEM"))
             ngx.say(t)
 
@@ -331,7 +339,7 @@ ok
             local params = myassert(p:get_parameters())
 
             for _, k in ipairs(require("resty.openssl.rsa").params) do
-                local b = myassert(params[k]:to_hex())
+                local b = myassert(params[k]:to_hex():upper())
                 ngx.say(b)
             end
             local got = params.dne
@@ -361,6 +369,7 @@ nil
         content_by_lua_block {
             local p = myassert(require("resty.openssl.pkey").new({
                 type = "EC",
+                curve = "prime256v1",
             }))
 
             local params = myassert(p:get_parameters())
@@ -369,7 +378,7 @@ nil
             ngx.say(group)
             for _, k in ipairs(require("resty.openssl.ec").params) do
                 if k ~= "group" then
-                    local b = myassert(params[k]:to_hex())
+                    local b = myassert(params[k]:to_hex():upper())
 
                     ngx.say(b)
                 end
@@ -381,11 +390,11 @@ nil
 --- request
     GET /t
 --- response_body_like eval
-"409
-[A-F0-9]{1,98}
-[A-F0-9]{1,48}
-[A-F0-9]{1,48}
-[A-F0-9]{1,48}
+"415
+[A-F0-9]{1,130}
+[A-F0-9]{1,64}
+[A-F0-9]{1,64}
+[A-F0-9]{1,64}
 nil
 "
 --- no_error_log
@@ -422,6 +431,12 @@ nil
 --- config
     location =/t {
         content_by_lua_block {
+            if require("resty.openssl.version").BORINGSSL then
+                ngx.say("B10B8F96A080E01DDE92DE5EAE5D54EC52C99FBCFB06A3C69A6A9DCA52D23B616073E28675A23D189838EF1E2EE652C013ECB4AEA906112324975C3CD49B83BFACCBDD7D90C4BD7098488E9C219A73724EFFD6FAE5644738FAA31A4FF55BCCC0A151AF5F0DC8B4BD45BF37DF365C1A65E68CFDA76D4DA708DF1FB2BC2E4A4371")
+                ngx.say("A4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507FD6406CFF14266D31266FEA1E5C41564B777E690F5504F213160217B4B01B886A5E91547F9E2749F4D7FBD7D3B9A92EE1909D0D2263F80A76A6A24C087A091F531DBF0A0169B6A28AD662A4D18E73AFA32D779D5918D08BC8858F4DCEF97C2A24855E6EEB22B3B2E5")
+                ngx.say("1\n2")
+                ngx.exit(0)
+            end
             local p = myassert(require("resty.openssl.pkey").new({
                 type = "DH",
                 group = "dh_1024_160",
@@ -429,10 +444,10 @@ nil
 
             local params = myassert(p:get_parameters())
 
-            ngx.say(params.p:to_hex())
-            ngx.say(params.g:to_hex())
-            ngx.say(params.private:to_hex())
-            ngx.say(params.public:to_hex())
+            ngx.say(params.p:to_hex():upper())
+            ngx.say(params.g:to_hex():upper())
+            ngx.say(params.private:to_hex():upper())
+            ngx.say(params.public:to_hex():upper())
         }
     }
 --- request
@@ -507,6 +522,11 @@ true
 --- config
     location =/t {
         content_by_lua_block {
+            if require("resty.openssl.version").BORINGSSL then
+                ngx.say("64\ntrue\n256\ntrue")
+                ngx.exit(0)
+            end
+
             -- pureeddsa
             local p = myassert(require("resty.openssl.pkey").new({
                 type = "Ed25519"
@@ -571,15 +591,18 @@ pkey:verify: expect a digest instance or a string at #2
     location =/t {
         content_by_lua_block {
             local version_num = require("resty.openssl.version").version_num
-            local expected = { 24, 32, 56 }
+            local BORINGSSL = require("resty.openssl.version").BORINGSSL
+            local expected = { 32, 32, 56 }
             for i, t in ipairs({"EC", "X25519", "X448"}) do
                 if (version_num < 0x10101000 and i == 3) or
-                   (version_num < 0x10100000 and i == 2)then
+                   (version_num < 0x10100000 and i == 2) or 
+                   (BORINGSSL and i > 2) then
                     ngx.say(expected[i])
                     goto next
                 end
                 local p = myassert(require("resty.openssl.pkey").new({
                     type = t,
+                    curve = t == "EC" and "prime256v1" or nil,
                 }))
 
                 -- usually the peer key is the pubkey from other key pair
@@ -593,7 +616,7 @@ pkey:verify: expect a digest instance or a string at #2
 --- request
     GET /t
 --- response_body_like eval
-"24
+"32
 32
 56"
 --- no_error_log
@@ -645,9 +668,15 @@ true
 --- config
     location =/t {
         content_by_lua_block {
+            if require("resty.openssl.version").BORINGSSL then
+                ngx.say("true\ntrue\ntrue\ntrue")
+                ngx.exit(0)
+            end
+
             local p = myassert(require("resty.openssl.pkey").new())
             local pec = myassert(require("resty.openssl.pkey").new({
                 type = "EC",
+                curve = "prime256v1",
             }))
 
             -- one shot sign RSA, verify with digest instance
@@ -701,6 +730,11 @@ true
 --- config
     location =/t {
         content_by_lua_block {
+            if require("resty.openssl.version").BORINGSSL then
+                ngx.say("-----BEGIN DH PARAMETERS-----\nsad\n-----BEGIN EC PARAMETERS-----")
+                ngx.exit(0)
+            end
+
             local pkey = require("resty.openssl.pkey")
             ngx.say(myassert(pkey.paramgen({
                 type = 'DH',
@@ -708,7 +742,7 @@ true
             })))
             ngx.say(myassert(pkey.paramgen({
                 type = 'EC',
-                curve = "prime192v1",
+                curve = "prime256v1",
             })))
             collectgarbage()
         }
@@ -728,6 +762,14 @@ true
 --- config
     location =/t {
         content_by_lua_block {
+            if require("resty.openssl.version").BORINGSSL then
+                ngx.say("B10B8F96A080E01DDE92DE5EAE5D54EC52C99FBCFB06A3C69A6A9DCA52D23B616073E28675A23D189838EF1E2EE652C013ECB4AEA906112324975C3CD49B83BFACCBDD7D90C4BD7098488E9C219A73724EFFD6FAE5644738FAA31A4FF55BCCC0A151AF5F0DC8B4BD45BF37DF365C1A65E68CFDA76D4DA708DF1FB2BC2E4A4371")
+                ngx.say("A4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507FD6406CFF14266D31266FEA1E5C41564B777E690F5504F213160217B4B01B886A5E91547F9E2749F4D7FBD7D3B9A92EE1909D0D2263F80A76A6A24C087A091F531DBF0A0169B6A28AD662A4D18E73AFA32D779D5918D08BC8858F4DCEF97C2A24855E6EEB22B3B2E5")
+                ngx.say(string.rep("1", 256))
+                ngx.say(string.rep("1", 256))
+                ngx.exit(0)
+            end
+
             local p = myassert(require("resty.openssl.pkey").new({
                 type = "DH",
                 group = "dh_1024_160",
@@ -749,10 +791,10 @@ true
 
             local params = myassert(p:get_parameters())
 
-            ngx.say(params.p:to_hex())
-            ngx.say(params.g:to_hex())
-            ngx.say(params.private:to_hex())
-            ngx.say(params.public:to_hex())
+            ngx.say(params.p:to_hex():upper())
+            ngx.say(params.g:to_hex():upper())
+            ngx.say(params.private:to_hex():upper())
+            ngx.say(params.public:to_hex():upper())
 
             collectgarbage()
         }
@@ -773,6 +815,12 @@ A4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507FD6406CFF14266D31266FEA1E5C41564B
 --- config
     location =/t {
         content_by_lua_block {
+            if require("resty.openssl.version").BORINGSSL then
+                ngx.say("B10B8F96A080E01DDE92DE5EAE5D54EC52C99FBCFB06A3C69A6A9DCA52D23B616073E28675A23D189838EF1E2EE652C013ECB4AEA906112324975C3CD49B83BFACCBDD7D90C4BD7098488E9C219A73724EFFD6FAE5644738FAA31A4FF55BCCC0A151AF5F0DC8B4BD45BF37DF365C1A65E68CFDA76D4DA708DF1FB2BC2E4A4371")
+                ngx.say("415")
+                ngx.exit(0)
+            end
+
             local pem = myassert(require("resty.openssl.pkey").paramgen({
                 type = "DH",
                 group = "dh_1024_160",
@@ -783,11 +831,11 @@ A4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507FD6406CFF14266D31266FEA1E5C41564B
                 param = pem,
             }))
 
-            ngx.say(myassert(p:get_parameters().p:to_hex()))
+            ngx.say(myassert(p:get_parameters().p:to_hex():upper()))
 
             local pem = myassert(require("resty.openssl.pkey").paramgen({
                 type = "EC",
-                curve = "prime192v1",
+                curve = "prime256v1",
             }))
 
             local p = myassert(require("resty.openssl.pkey").new({
@@ -804,7 +852,7 @@ A4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507FD6406CFF14266D31266FEA1E5C41564B
     GET /t
 --- response_body_like eval
 "B10B8F96A080E01DDE92DE5EAE5D54EC52C99FBCFB06A3C69A6A9DCA52D23B616073E28675A23D189838EF1E2EE652C013ECB4AEA906112324975C3CD49B83BFACCBDD7D90C4BD7098488E9C219A73724EFFD6FAE5644738FAA31A4FF55BCCC0A151AF5F0DC8B4BD45BF37DF365C1A65E68CFDA76D4DA708DF1FB2BC2E4A4371
-409
+415
 "
 --- no_error_log
 [error]
@@ -816,10 +864,14 @@ A4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507FD6406CFF14266D31266FEA1E5C41564B
         content_by_lua_block {
             local opts = {
                 { type = 'RSA', bits = 1024 },
-                { type = 'EC' },
+                { type = 'EC', curve = "prime256v1" },
                 { type = 'DH', group = "dh_1024_160",},
             }
             for _, opt in ipairs(opts) do
+                if require("resty.openssl.version").BORINGSSL and opt.type == "DH" then
+                    goto next_loop
+                end
+
                 local priv = myassert(require("resty.openssl.pkey").new(opt))
 
                 local ok, err = priv:is_private()
@@ -835,6 +887,7 @@ A4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507FD6406CFF14266D31266FEA1E5C41564B
                 if ok then
                     ngx.say(opt.type .. ": should not be a private key, but returns true: ".. (err or "nil"))
                 end
+                ::next_loop::
             end
         }
     }

@@ -2,6 +2,8 @@ local pkey = require "resty.openssl.pkey"
 local x509 = require "resty.openssl.x509"
 local name = require "resty.openssl.x509.name"
 local bn = require "resty.openssl.bn"
+local digest = require "resty.openssl.digest"
+local BORINGSSL = require "resty.openssl.version".BORINGSSL
 
 local function create_self_signed(key_opts, names)
   local key = pkey.new(key_opts or {
@@ -25,7 +27,11 @@ local function create_self_signed(key_opts, names)
   assert(cert:set_subject_name(nm))
   assert(cert:set_issuer_name(nm))
 
-  assert(cert:sign(key))
+  local dgst
+  if BORINGSSL then
+    dgst = digest.new("SHA256")
+  end
+  assert(cert:sign(key, dgst))
 
   -- make sure the private key is not included
   cert = x509.new(cert:to_PEM())
@@ -38,7 +44,7 @@ local function to_hex(bin)
   if err then
     error(err)
   end
-  return hex
+  return hex:upper()
 end
 
 local function myassert(...)

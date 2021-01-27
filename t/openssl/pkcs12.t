@@ -39,8 +39,8 @@ __DATA__
 
             local r = myassert(pkcs12.decode(pp, "badssl.com"))
 
-            ngx.say(r.key:get_parameters().d:to_hex())
-            ngx.say(r.cert:get_serial_number():to_hex())
+            ngx.say(r.key:get_parameters().d:to_hex():upper())
+            ngx.say(r.cert:get_serial_number():to_hex():upper())
         }
     }
 --- request
@@ -78,9 +78,9 @@ __DATA__
     GET /t
 --- response_body_like eval
 'true
-pkcs12.decode.+mac verify failure
+pkcs12.decode.+(mac verify failure|INCORRECT_PASSWORD)
 true
-pkcs12.decode.+mac verify failure
+pkcs12.decode.+(mac verify failure|INCORRECT_PASSWORD)
 '
 --- no_error_log
 [error]
@@ -96,7 +96,7 @@ pkcs12.decode.+mac verify failure
             end
 
             local pkcs12 = require "resty.openssl.pkcs12"
-            local cert, key = require("helper").create_self_signed({ type = 'EC' })
+            local cert, key = require("helper").create_self_signed({ type = 'EC', curve = "prime256v1" })
             local x509 = require("resty.openssl.x509")
             local ca1 = myassert(x509.new(io.open("t/fixtures/GlobalSign.pem"):read("*a")))
             local ca2 = myassert(x509.new(io.open("t/fixtures/GlobalSign_sub.pem"):read("*a")))
@@ -152,7 +152,7 @@ pkcs12.decode.+mac verify failure
             end
     
             local pkcs12 = require "resty.openssl.pkcs12"
-            local cert, key = require("helper").create_self_signed({ type = 'EC' })
+            local cert, key = require("helper").create_self_signed({ type = 'EC', curve = "prime256v1" })
             local x509 = require("resty.openssl.x509")
             local ca1 = myassert(x509.new(io.open("t/fixtures/GlobalSign.pem"):read("*a")))
             local ca2 = myassert(x509.new(io.open("t/fixtures/GlobalSign_sub.pem"):read("*a")))
@@ -165,8 +165,8 @@ pkcs12.decode.+mac verify failure
             }))
 
             local r = myassert(pkcs12.decode(p12, nil))
-            ngx.say(#r.key:get_parameters().x:to_hex())
-            ngx.say(r.cert:get_serial_number():to_hex())
+            ngx.say(#r.key:get_parameters().x:to_hex():upper())
+            ngx.say(r.cert:get_serial_number():to_hex():upper())
             ngx.say(#r.cacerts)
             ngx.say(r.friendly_name)
             -- same as empty string
@@ -181,12 +181,12 @@ pkcs12.decode.+mac verify failure
 --- request
     GET /t
 --- response_body_like eval
-'4\d
+'6\d
 0
 2
 myname
 true
-pkcs12.decode.+mac verify failure
+pkcs12.decode.+(mac verify failure|INCORRECT_PASSWORD)
 '
 --- no_error_log
 [error]
@@ -202,8 +202,8 @@ pkcs12.decode.+mac verify failure
             end
 
             local pkcs12 = require "resty.openssl.pkcs12"
-            local cert, key = require("helper").create_self_signed({ type = 'EC' })
-            local key2 = require("resty.openssl.pkey").new({ type = 'EC' })
+            local cert, key = require("helper").create_self_signed({ type = 'EC', curve = "prime256v1" })
+            local key2 = require("resty.openssl.pkey").new({ type = 'EC', curve = "prime256v1" })
             
             local r, err = pkcs12.encode({
                 friendly_name = "myname",
@@ -217,7 +217,7 @@ pkcs12.decode.+mac verify failure
 --- request
     GET /t
 --- response_body_like eval
-'true.+key values mismatch
+'true.+(key values mismatch|KEY_VALUES_MISMATCH)
 '
 --- no_error_log
 [error]
@@ -227,11 +227,16 @@ pkcs12.decode.+mac verify failure
 --- config
     location =/t {
         content_by_lua_block {
+            if require("resty.openssl.version").BORINGSSL then
+                ngx.say("2333")
+                ngx.exit(0)
+            end
+
             -- don't load the legacy provider for this test
             -- by default nid_key is RC2 and is moved to legacy provider in 3.0
 
             local pkcs12 = require "resty.openssl.pkcs12"
-            local cert, key = require("helper").create_self_signed({ type = 'EC' })
+            local cert, key = require("helper").create_self_signed({ type = 'EC', curve = "prime256v1" })
             local x509 = require("resty.openssl.x509")
             local ca1 = myassert(x509.new(io.open("t/fixtures/GlobalSign.pem"):read("*a")))
             local ca2 = myassert(x509.new(io.open("t/fixtures/GlobalSign_sub.pem"):read("*a")))

@@ -31,6 +31,10 @@ ffi.cdef [[
 
   BIGNUM *EC_POINT_point2bn(const EC_GROUP *, const EC_POINT *,
     point_conversion_form_t form, BIGNUM *, BN_CTX *);
+  // for BoringSSL
+  size_t EC_POINT_point2oct(const EC_GROUP *group, const EC_POINT *p,
+        point_conversion_form_t form,
+        unsigned char *buf, size_t len, BN_CTX *ctx);
   // OpenSSL < 1.1.1
   int EC_POINT_get_affine_coordinates_GFp(const EC_GROUP *group,
     const EC_POINT *p,

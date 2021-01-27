@@ -1,4 +1,5 @@
 local ffi = require "ffi"
+local C = ffi.C
 local bit = require("bit")
 
 require "resty.openssl.include.ossl_typ"
@@ -6,6 +7,7 @@ require "resty.openssl.include.objects"
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
 local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
+local BORINGSSL = require("resty.openssl.version").BORINGSSL
 
 ffi.cdef [[
   EVP_PKEY *EVP_PKEY_new(void);
@@ -269,5 +271,68 @@ _M.ecx_curves = {
   Ed448 = _M.EVP_PKEY_ED448,
   X448 = _M.EVP_PKEY_X448,
 }
+
+if OPENSSL_30 or BORINGSSL then
+  ffi.cdef [[
+    int EVP_PKEY_CTX_set_ec_paramgen_curve_nid(EVP_PKEY_CTX *ctx, int nid);
+    int EVP_PKEY_CTX_set_ec_param_enc(EVP_PKEY_CTX *ctx, int param_enc);
+
+    int EVP_PKEY_CTX_set_rsa_keygen_bits(EVP_PKEY_CTX *ctx, int mbits);
+    int EVP_PKEY_CTX_set_rsa_keygen_pubexp(EVP_PKEY_CTX *ctx, BIGNUM *pubexp);
+    int EVP_PKEY_CTX_set_rsa_padding(EVP_PKEY_CTX *ctx, int pad);
+  ]]
+  _M.EVP_PKEY_CTX_set_ec_paramgen_curve_nid = function(pctx, nid)
+    return C.EVP_PKEY_CTX_set_ec_paramgen_curve_nid(pctx, nid)
+  end
+  _M.EVP_PKEY_CTX_set_ec_param_enc = function(pctx, param_enc)
+    return C.EVP_PKEY_CTX_set_ec_param_enc(pctx, param_enc)
+  end
+
+  _M.EVP_PKEY_CTX_set_rsa_keygen_bits = function(pctx, mbits)
+    return C.EVP_PKEY_CTX_set_rsa_keygen_bits(pctx, mbits)
+  end
+  _M.EVP_PKEY_CTX_set_rsa_keygen_pubexp = function(pctx, pubexp)
+    return C.EVP_PKEY_CTX_set_rsa_keygen_pubexp(pctx, pubexp)
+  end
+  _M.EVP_PKEY_CTX_set_rsa_padding = function(pctx, pad)
+    return C.EVP_PKEY_CTX_set_rsa_padding(pctx, pad)
+  end
+else
+  _M.EVP_PKEY_CTX_set_ec_paramgen_curve_nid = function(pctx, nid)
+    return C.EVP_PKEY_CTX_ctrl(pctx,
+                                _M.EVP_PKEY_EC,
+                                _M.EVP_PKEY_OP_PARAMGEN + _M.EVP_PKEY_OP_KEYGEN,
+                                _M.EVP_PKEY_CTRL_EC_PARAMGEN_CURVE_NID,
+                                nid, nil)
+  end
+  _M.EVP_PKEY_CTX_set_ec_param_enc = function(pctx, param_enc)
+    return C.EVP_PKEY_CTX_ctrl(pctx,
+                                _M.EVP_PKEY_EC,
+                                _M.EVP_PKEY_OP_PARAMGEN + _M.EVP_PKEY_OP_KEYGEN,
+                                _M.EVP_PKEY_CTRL_EC_PARAM_ENC,
+                                param_enc, nil)
+  end
+
+  _M.EVP_PKEY_CTX_set_rsa_keygen_bits = function(pctx, mbits)
+    return C.EVP_PKEY_CTX_ctrl(pctx,
+                                _M.EVP_PKEY_RSA,
+                                _M.EVP_PKEY_OP_KEYGEN,
+                                _M.EVP_PKEY_CTRL_RSA_KEYGEN_BITS,
+                                mbits, nil)
+  end
+  _M.EVP_PKEY_CTX_set_rsa_keygen_pubexp = function(pctx, pubexp)
+    return C.EVP_PKEY_CTX_ctrl(pctx,
+                                _M.EVP_PKEY_RSA, _M.EVP_PKEY_OP_KEYGEN,
+                                _M.EVP_PKEY_CTRL_RSA_KEYGEN_PUBEXP,
+                                0, pubexp)
+  end
+  _M.EVP_PKEY_CTX_set_rsa_padding = function(pctx, pad)
+    return C.EVP_PKEY_CTX_ctrl(pctx,
+                                _M.EVP_PKEY_RSA,
+                                -1,
+                                _M.EVP_PKEY_CTRL_RSA_PADDING,
+                                pad, nil)
+  end
+end
 
 return _M

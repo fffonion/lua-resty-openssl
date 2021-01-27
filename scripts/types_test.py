@@ -3,7 +3,7 @@ tests = {
 {
     "bn": {
         "new_from": "new(math.random(1, 2333333))",
-        "print": "to_hex",
+        "print": "to_hex():upper",
     },
     "number": {
         "new_from": "ngx.time()",
