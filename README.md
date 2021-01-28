@@ -1,6 +1,8 @@
 # lua-resty-openssl
 
-FFI-based OpenSSL binding for LuaJIT, supporting OpenSSL 3.0, 1.1 and 1.0.2 series
+FFI-based OpenSSL binding for LuaJIT, supporting OpenSSL 3.0, 1.1 and 1.0.2 series.
+
+BoringSSL is also supported.
 
 ![Build Status](https://github.com/fffonion/lua-resty-openssl/workflows/Tests/badge.svg) ![luarocks](https://img.shields.io/luarocks/v/fffonion/lua-resty-openssl?color=%232c3e67) ![opm](https://img.shields.io/opm/v/fffonion/lua-resty-openssl?color=%23599059)
 
@@ -14,6 +16,8 @@ Table of Contents
   * [resty.openssl](#restyopenssl)
     + [openssl.luaossl_compat](#opensslluaossl_compat)
     + [openssl.resty_hmac_compat](#opensslresty_hmac_compat)
+    + [openssl.get_fips_mode](#opensslget_fips_mode)
+    + [openssl.set_fips_mode](#opensslset_fips_mode)
   * [resty.openssl.version](#restyopensslversion)
     + [version_num](#version_num)
     + [version_text](#version_text)
@@ -261,6 +265,9 @@ using `error()` but instead return as last parameter.
 Each Lua table returned by `new()` contains a cdata object `ctx`. User are not supposed to manully setting
 `ffi.gc` or calling corresponding destructor of the `ctx` struct (like `*_free` functions).
 
+BoringSSL removes some algorithms and not all functionalities below is supported by BoringSSL. Please
+consul its manual for differences between OpenSSL API.
+
 [Back to TOC](#table-of-contents)
 
 ## resty.openssl
@@ -316,6 +323,22 @@ Note that not all `luaossl` API has been implemented, please check readme for so
 
 Call this function before `require("resty.hmac")` to allow these two libraries play nice with
 each other. This function is not available with OpenSSL 1.0.
+
+[Back to TOC](#table-of-contents)
+
+### openssl.get_fips_mode
+
+**syntax**: *enabled = openssl.get_fips_mode()*
+
+Returns a boolean indicating if FIPS mode is enabled.
+
+[Back to TOC](#table-of-contents)
+
+### openssl.get_fips_mode
+
+**syntax**: *ok, err = openssl.set_fips_mode(enabled)*
+
+Toggle FIPS mode on or off.
 
 [Back to TOC](#table-of-contents)
 
