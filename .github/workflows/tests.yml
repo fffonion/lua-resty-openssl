@@ -79,6 +79,7 @@ jobs:
 
     - name: Setup tools
       run: |
+        sudo apt-get update
         sudo apt-get install -qq -y cpanminus axel ca-certificates valgrind haveged
         mkdir -p $OPENSSL_PREFIX $LUAJIT_PREFIX
         # perl cache
