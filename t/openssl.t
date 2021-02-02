@@ -27,6 +27,7 @@ __DATA__
     location =/t {
         content_by_lua_block {
             local openssl = require("resty.openssl")
+            openssl.load_modules()
             ngx.say(string.format("%x", openssl.version.version_num))
         }
     }
@@ -56,33 +57,5 @@ __DATA__
 --- response_body_like
 false
 .+pkey.new.+
---- no_error_log
-[error]
-
-=== TEST 3: lua-resty-hmac compat
---- http_config eval: $::HttpConfig
---- config
-    location =/t {
-        content_by_lua_block {
-            local openssl = require("resty.openssl")
-            require("resty.openssl.hmac")
-            local pok, perr = pcall(require, "resty.hmac")
-            ngx.say(pok)
-            ngx.say(perr)
-            openssl.resty_hmac_compat()
-            local pok, mod = pcall(require, "resty.hmac")
-            ngx.say(pok)
-            ngx.say(mod ~= nil)
-        }
-    }
---- request
-    GET /t
---- skip_openssl
-2: < 1.1.0
---- response_body_like
-false
-.+size of C type is unknown or too large.+
-true
-true
 --- no_error_log
 [error]

@@ -272,12 +272,17 @@ consul its manual for differences between OpenSSL API.
 
 ## resty.openssl
 
-This meta module provides a version sanity check against linked OpenSSL library
-and returns all exported modules to a table.
+This meta module provides a version sanity check against linked OpenSSL library.
+
+[Back to TOC](#table-of-contents)
+
+### openssl.load_modules
+
+**syntax**: *openssl.load_modules()*
+
+Load all available sub modules into current module:
 
 ```lua
-return {
-  _VERSION = 'x.y.z',
   bn = require("resty.openssl.bn"),
   cipher = require("resty.openssl.cipher"),
   digest = require("resty.openssl.digest"),
@@ -298,7 +303,6 @@ return {
   store = require("resty.openssl.x509.store"),
   ssl = require("resty.openssl.ssl"),
   ssl_ctx = require("resty.openssl.ssl_ctx"),
-}
 ```
 
 Starting OpenSSL 3.0, [`provider`](#restyopensslprovider) is also available.
@@ -314,15 +318,6 @@ Provides `luaossl` flavored API which uses *camelCase* naming; user can expect d
 For example, `pkey:get_parameters` is mapped to `pkey:getParameters`.
 
 Note that not all `luaossl` API has been implemented, please check readme for source of truth.
-
-[Back to TOC](#table-of-contents)
-
-### openssl.resty_hmac_compat
-
-**syntax**: *openssl.resty_hmac_compat()*
-
-Call this function before `require("resty.hmac")` to allow these two libraries play nice with
-each other. This function is not available with OpenSSL 1.0.
 
 [Back to TOC](#table-of-contents)
 

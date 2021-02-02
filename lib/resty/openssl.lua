@@ -1,38 +1,46 @@
 local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
+local err = require("resty.openssl.err")
 local C = require("ffi").C
 
 
 local _M = {
   _VERSION = '0.6.11',
-  bn = require("resty.openssl.bn"),
-  cipher = require("resty.openssl.cipher"),
-  digest = require("resty.openssl.digest"),
-  hmac = require("resty.openssl.hmac"),
-  kdf = require("resty.openssl.kdf"),
-  pkey = require("resty.openssl.pkey"),
-  objects = require("resty.openssl.objects"),
-  rand = require("resty.openssl.rand"),
-  version = require("resty.openssl.version"),
-  x509 = require("resty.openssl.x509"),
-  altname = require("resty.openssl.x509.altname"),
-  chain = require("resty.openssl.x509.chain"),
-  csr = require("resty.openssl.x509.csr"),
-  crl = require("resty.openssl.x509.crl"),
-  extension = require("resty.openssl.x509.extension"),
-  extensions = require("resty.openssl.x509.extensions"),
-  name = require("resty.openssl.x509.name"),
-  revoked = require("resty.openssl.x509.revoked"),
-  store = require("resty.openssl.x509.store"),
-  pkcs12 = require("resty.openssl.pkcs12"),
 }
 
-if OPENSSL_30 then
-  _M.provider = require("resty.openssl.provider")
+function _M.load_modules()
+  _M.bn = require("resty.openssl.bn")
+  _M.cipher = require("resty.openssl.cipher")
+  _M.digest = require("resty.openssl.digest")
+  _M.hmac = require("resty.openssl.hmac")
+  _M.kdf = require("resty.openssl.kdf")
+  _M.pkey = require("resty.openssl.pkey")
+  _M.objects = require("resty.openssl.objects")
+  _M.rand = require("resty.openssl.rand")
+  _M.version = require("resty.openssl.version")
+  _M.x509 = require("resty.openssl.x509")
+  _M.altname = require("resty.openssl.x509.altname")
+  _M.chain = require("resty.openssl.x509.chain")
+  _M.csr = require("resty.openssl.x509.csr")
+  _M.crl = require("resty.openssl.x509.crl")
+  _M.extension = require("resty.openssl.x509.extension")
+  _M.extensions = require("resty.openssl.x509.extensions")
+  _M.name = require("resty.openssl.x509.name")
+  _M.revoked = require("resty.openssl.x509.revoked")
+  _M.store = require("resty.openssl.x509.store")
+  _M.pkcs12 = require("resty.openssl.pkcs12")
+  _M.ssl = require("resty.openssl.ssl")
+  _M.ssl_ctx = require("resty.openssl.ssl_ctx")
+
+  if OPENSSL_30 then
+    _M.provider = require("resty.openssl.provider")
+  end
+
+  _M.bignum = _M.bn
 end
 
-_M.bignum = _M.bn
-
 function _M.luaossl_compat()
+  _M.load_modules()
+
   _M.csr.setSubject = _M.csr.set_subject_name
   _M.csr.setPublicKey = _M.csr.set_pubkey
 
@@ -180,38 +188,6 @@ function _M.luaossl_compat()
     return r.key, r.cert, r.cacerts
   end
 end
-
--- we made a typo sometime, this is going to be removed in next major release
-_M.luaossl_compact = _M.luaossl_compat
-
-local resty_hmac_compat_patched = false
-function _M.resty_hmac_compat()
-  if resty_hmac_compat_patched then
-    return
-  end
-  if _M.version.OPENSSL_10 then
-    error("use resty_hmac_compat in OpenSSL 1.0 is not supported")
-  end
-
-  require("resty.openssl.include.evp")
-  require("ffi").cdef [[
-    // originally named evp_cipher_ctx_st in evp.lua
-    struct evp_md_ctx_st {
-      const EVP_MD *digest;
-      ENGINE *engine;             /* functional reference if 'digest' is
-                                  * ENGINE-provided */
-      unsigned long flags;
-      void *md_data;
-      /* Public key context for sign/verify */
-      EVP_PKEY_CTX *pctx;
-      /* Update function: usually copied from EVP_MD */
-      int (*update) (EVP_MD_CTX *ctx, const void *data, size_t count);
-    }/* EVP_MD_CTX */ ;
-  ]]
-  resty_hmac_compat_patched = true
-end
-
-local err = require("resty.openssl.err")
 
 function _M.set_fips_mode(enable)
   if not not enable == _M.get_fips_mode() then
