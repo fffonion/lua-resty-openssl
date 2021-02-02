@@ -7,6 +7,7 @@ require "resty.openssl.include.pem"
 require "resty.openssl.include.x509v3"
 require "resty.openssl.include.x509.csr"
 require "resty.openssl.include.asn1"
+local stack_macro = require "resty.openssl.include.stack"
 local stack_lib = require "resty.openssl.stack"
 local pkey_lib = require "resty.openssl.pkey"
 local digest_lib = require("resty.openssl.digest")
@@ -18,6 +19,7 @@ local txtnid2nid = require("resty.openssl.objects").txtnid2nid
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
+local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 
 local accessors = {}
 
@@ -206,8 +208,12 @@ end
 local function modify_extension(replace, ctx, nid, toset, crit)
   local extensions_ptr = stack_ptr_type()
   extensions_ptr[0] = C.X509_REQ_get_extensions(ctx)
-  local need_cleanup = extensions_ptr[0] ~= nil
+  local need_cleanup = extensions_ptr[0] ~= nil and
   -- extensions_ptr being nil is fine: it may just because there's no extension yet
+  -- https://github.com/openssl/openssl/commit/2039ac07b401932fa30a05ade80b3626e189d78a
+  -- introduces a change that a empty stack instead of NULL will be returned in no extension
+  -- is found. so we need to double check the number if it's not NULL.
+                        stack_macro.OPENSSL_sk_num(extensions_ptr[0]) > 0
 
   local flag
   if replace then
