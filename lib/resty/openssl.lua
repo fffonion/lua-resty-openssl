@@ -1,6 +1,8 @@
+local C = require("ffi").C
+
+require "resty.openssl.include.crypto"
 local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 local err = require("resty.openssl.err")
-local C = require("ffi").C
 
 
 local _M = {
