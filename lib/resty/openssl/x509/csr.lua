@@ -124,9 +124,6 @@ function _M.istype(l)
   return l and l and l.ctx and ffi.istype(x509_req_ptr_ct, l.ctx)
 end
 
--- backward compatibility
-_M.set_subject_alt = _M.set_subject_alt_name
-
 function _M:tostring(fmt)
   return tostring(self, fmt)
 end
