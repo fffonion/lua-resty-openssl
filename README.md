@@ -1068,6 +1068,19 @@ ngx.say(type(n))
 
 [Back to TOC](#table-of-contents)
 
+### bn.generate_prime
+
+**syntax**: *bn, err = bn.generate_prime(bits, safe)*
+
+Generates a pseudo-random prime number of bit length `bits`.
+
+If `safe` is true, it will be a safe prime (i.e. a prime p so that (p-1)/2 is also prime).
+
+The PRNG must be seeded prior to calling BN_generate_prime_ex().
+The prime number generation has a negligible error probability.
+
+[Back to TOC](#table-of-contents)
+
 ### bn:__metamethods
 
 Various mathematical operations can be performed as if it's a number.

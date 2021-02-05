@@ -64,5 +64,7 @@ ffi.cdef(
   int BN_is_odd(BIGNUM *a);
 
   int BN_is_prime_ex(const BIGNUM *p,int nchecks, BN_CTX *ctx, BN_GENCB *cb);
+  int BN_generate_prime_ex(BIGNUM *ret,int bits,int safe, const BIGNUM *add,
+                            const BIGNUM *rem, BN_GENCB *cb);
 ]]
 )

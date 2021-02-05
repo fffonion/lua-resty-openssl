@@ -575,3 +575,38 @@ true
 "
 --- no_error_log
 [error]
+
+=== TEST 18: generate_prime
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local bn = require("resty.openssl.bn")
+            local a, err = bn.generate_prime(10, false)
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            if not a:is_prime() then
+                ngx.log(ngx.ERR, "not prime")
+                return
+            end
+            local a, err = bn.generate_prime(10, true)
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            if not a:is_prime() then
+                ngx.log(ngx.ERR, "not prime")
+                return
+            end
+            ngx.say("ok")
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"ok
+"
+--- no_error_log
+[error]

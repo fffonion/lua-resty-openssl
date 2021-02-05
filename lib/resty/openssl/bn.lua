@@ -132,6 +132,17 @@ function _M:to_number()
 end
 _M.tonumber = _M.to_number
 
+function _M.generate_prime(bits, safe)
+  local ctx = C.BN_new()
+  ffi_gc(ctx, C.BN_free)
+
+  if C.BN_generate_prime_ex(ctx, bits, safe and 1 or 0, nil, nil, nil) == 0 then
+    return nil, format_error("bn.BN_generate_prime_ex")
+  end
+
+  return setmetatable( { ctx = ctx }, mt), nil
+end
+
 -- BN_CTX is used to store temporary variable
 -- we only need one per worker
 local bn_ctx_tmp = C.BN_CTX_new()
