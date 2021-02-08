@@ -59,3 +59,36 @@ false
 .+pkey.new.+
 --- no_error_log
 [error]
+
+
+=== TEST 3: List cipher algorithms
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local openssl = require("resty.openssl")
+            ngx.say(require("cjson").encode(openssl.list_cipher_algorithms()))
+        }
+    }
+--- request
+    GET /t
+--- response_body_like
+\[.+AES.+\]
+--- no_error_log
+[error]
+
+=== TEST 5: List digest algorithms
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local openssl = require("resty.openssl")
+            ngx.say(require("cjson").encode(openssl.list_digest_algorithms()))
+        }
+    }
+--- request
+    GET /t
+--- response_body_like
+\[.+SHA.+\]
+--- no_error_log
+[error]

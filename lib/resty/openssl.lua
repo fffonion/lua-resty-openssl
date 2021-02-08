@@ -1,8 +1,14 @@
-local C = require("ffi").C
+local ffi = require("ffi")
+local C = ffi.C
+local ffi_cast = ffi.cast
+local ffi_str = ffi.string
 
 require "resty.openssl.include.crypto"
+require "resty.openssl.include.evp"
+require "resty.openssl.include.objects"
+local stack_macro = require "resty.openssl.include.stack"
 local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
-local err = require("resty.openssl.err")
+local format_error = require("resty.openssl.err").format_error
 
 
 local _M = {
@@ -197,7 +203,7 @@ function _M.set_fips_mode(enable)
   end
 
   if C.FIPS_mode_set(enable and 1 or 0) == 0 then
-    return false, err.format_error("openssl.set_fips_mode")
+    return false, format_error("openssl.set_fips_mode")
   end
 
   return true
@@ -205,6 +211,39 @@ end
 
 function _M.get_fips_mode()
   return C.FIPS_mode() == 1
+end
+
+local function get_list_func(cf, l)
+  return function(elem, from, to, arg)
+    if elem ~= nil then
+      local nid = cf(elem)
+      table.insert(l, ffi_str(C.OBJ_nid2sn(nid)))
+    end
+  end
+end
+
+function _M.list_cipher_algorithms()
+  local ret = {}
+  local fn = ffi_cast("fake_openssl_cipher_list_fn*",
+                      get_list_func(C.EVP_CIPHER_nid, ret))
+
+  C.EVP_CIPHER_do_all_sorted(fn, nil)
+
+  fn:free()
+
+  return ret
+end
+
+function _M.list_digest_algorithms()
+  local ret = {}
+  local fn = ffi_cast("fake_openssl_md_list_fn*",
+                      get_list_func(C.EVP_MD_type, ret))
+
+  C.EVP_MD_do_all_sorted(fn, nil)
+
+  fn:free()
+
+  return ret
 end
 
 return _M

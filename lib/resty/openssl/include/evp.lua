@@ -141,6 +141,17 @@ ffi.cdef [[
   int EVP_PKEY_keygen(EVP_PKEY_CTX *ctx, EVP_PKEY **ppkey);
   int EVP_PKEY_paramgen_init(EVP_PKEY_CTX *ctx);
   int EVP_PKEY_paramgen(EVP_PKEY_CTX *ctx, EVP_PKEY **ppkey);
+
+  // list functions
+  typedef void* fake_openssl_cipher_list_fn(const EVP_CIPHER *ciph, const char *from,
+                                                const char *to, void *x);
+  void EVP_CIPHER_do_all_sorted(fake_openssl_cipher_list_fn*, void *arg);
+  int EVP_CIPHER_nid(const EVP_CIPHER *cipher);
+
+  typedef void* fake_openssl_md_list_fn(const EVP_MD *ciph, const char *from,
+                                                const char *to, void *x);
+  void EVP_MD_do_all_sorted(fake_openssl_md_list_fn*, void *arg);
+  int EVP_MD_type(const EVP_MD *md);
 ]]
 
 if OPENSSL_30 then
