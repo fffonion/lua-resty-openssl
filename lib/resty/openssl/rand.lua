@@ -3,7 +3,7 @@ local C = ffi.C
 local ffi_str = ffi.string
 
 require "resty.openssl.include.rand"
-local ctypes = require "resty.openssl.aux.ctypes"
+local ctypes = require "resty.openssl.auxiliary.ctypes"
 local format_error = require("resty.openssl.err").format_error
 
 local function bytes(length)

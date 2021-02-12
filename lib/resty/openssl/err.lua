@@ -3,7 +3,7 @@ local C = ffi.C
 local ffi_str = ffi.string
 local ffi_sizeof = ffi.sizeof
 
-local ctypes = require "resty.openssl.aux.ctypes"
+local ctypes = require "resty.openssl.auxiliary.ctypes"
 
 ffi.cdef [[
   unsigned long ERR_peek_error(void);

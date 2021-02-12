@@ -10,7 +10,7 @@ local format_error = require("resty.openssl.err").format_error
 local version_num = require("resty.openssl.version").version_num
 local version_text = require("resty.openssl.version").version_text
 local BORINGSSL = require("resty.openssl.version").BORINGSSL
-local ctypes = require "resty.openssl.aux.ctypes"
+local ctypes = require "resty.openssl.auxiliary.ctypes"
 local EVP_PKEY_OP_DERIVE = require("resty.openssl.include.evp").EVP_PKEY_OP_DERIVE
 
 --[[

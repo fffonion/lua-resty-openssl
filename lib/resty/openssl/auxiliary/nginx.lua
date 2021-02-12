@@ -1,7 +1,7 @@
 local get_req_ssl, get_req_ssl_ctx
 local get_socket_ssl, get_socket_ssl_ctx
 
-local pok, nginx_c = pcall(require, "resty.openssl.aux.nginx_c")
+local pok, nginx_c = pcall(require, "resty.openssl.auxiliary.nginx_c")
 
 if pok and not os.getenv("CI_SKIP_NGINX_C") then
   get_req_ssl = nginx_c.get_req_ssl
@@ -119,7 +119,7 @@ else
     } ngx_connection_s;
   ]]
   else
-    error("resty.openssl.aux.nginx doesn't support Nginx version " .. ngx_version, 2)
+    error("resty.openssl.auxiliary.nginx doesn't support Nginx version " .. ngx_version, 2)
   end
 
   ffi.cdef [[
@@ -159,9 +159,9 @@ else
   local SOCKET_CTX_INDEX = 1
 
   local NO_C_MODULE_WARNING_MSG_SHOWN = false
-  local NO_C_MODULE_WARNING_MSG = "note resty.openssl.aux.nginx is using plain FFI " ..
+  local NO_C_MODULE_WARNING_MSG = "note resty.openssl.auxiliary.nginx is using plain FFI " ..
                                   "and it's only intended to be used in development, " ..
-                                  "consider using lua-resty-openssl-aux-module in production."
+                                  "consider using lua-resty-openssl.auxiliary-module in production."
 
   local function get_ngx_ssl_from_req()
     if not NO_C_MODULE_WARNING_MSG_SHOWN then

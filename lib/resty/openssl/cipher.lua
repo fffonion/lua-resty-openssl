@@ -5,7 +5,7 @@ local ffi_str = ffi.string
 local ffi_cast = ffi.cast
 
 local evp_macro = require "resty.openssl.include.evp"
-local ctypes = require "resty.openssl.aux.ctypes"
+local ctypes = require "resty.openssl.auxiliary.ctypes"
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER

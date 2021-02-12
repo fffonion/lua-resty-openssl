@@ -5,7 +5,7 @@ local ffi_gc = ffi.gc
 require "resty.openssl.include.ec"
 local bn_lib = require "resty.openssl.bn"
 local objects_lib = require "resty.openssl.objects"
-local ctypes = require "resty.openssl.aux.ctypes"
+local ctypes = require "resty.openssl.auxiliary.ctypes"
 
 local version_num = require("resty.openssl.version").version_num
 local format_error = require("resty.openssl.err").format_error

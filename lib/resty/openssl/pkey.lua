@@ -20,8 +20,8 @@ local dh_lib = require "resty.openssl.dh"
 local ec_lib = require "resty.openssl.ec"
 local ecx_lib = require "resty.openssl.ecx"
 local objects_lib = require "resty.openssl.objects"
-local jwk_lib = require "resty.openssl.aux.jwk"
-local ctypes = require "resty.openssl.aux.ctypes"
+local jwk_lib = require "resty.openssl.auxiliary.jwk"
+local ctypes = require "resty.openssl.auxiliary.ctypes"
 local format_error = require("resty.openssl.err").format_error
 
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER

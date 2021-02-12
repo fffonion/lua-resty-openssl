@@ -7,7 +7,7 @@ local floor = math.floor
 
 require "resty.openssl.include.bn"
 local crypto_macro = require("resty.openssl.include.crypto")
-local ctypes = require "resty.openssl.aux.ctypes"
+local ctypes = require "resty.openssl.auxiliary.ctypes"
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 

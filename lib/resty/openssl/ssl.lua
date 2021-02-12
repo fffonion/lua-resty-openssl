@@ -5,7 +5,7 @@ local ffi_cast = ffi.cast
 
 require "resty.openssl.include.ssl"
 
-local nginx_aux = require("resty.openssl.aux.nginx")
+local nginx_aux = require("resty.openssl.auxiliary.nginx")
 local x509_lib = require("resty.openssl.x509")
 local chain_lib = require("resty.openssl.x509.chain")
 local stack_lib = require("resty.openssl.stack")
