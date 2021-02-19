@@ -2,6 +2,21 @@
 ## [Unreleased]
 
 
+<a name="0.7.0"></a>
+## [0.7.0] - 2021-02-19
+### feat
+- ***:** support BoringSSL [9c4e5dc](https://github.com/fffonion/lua-resty-openssl/commit/9c4e5dccefb7fa2e08c489e2922ea05e043e28f2)
+- **bn:** add generate_prime [2cc77a4](https://github.com/fffonion/lua-resty-openssl/commit/2cc77a4513dad2f4d684535d1230484e8e91bfbd)
+- **openssl:** add function to list supported cipher and digest algorithms [5bdc2a4](https://github.com/fffonion/lua-resty-openssl/commit/5bdc2a406c974f471331636de670915df9386f82)
+- **openssl:** add function to get and set fips mode [f6de183](https://github.com/fffonion/lua-resty-openssl/commit/f6de183b19e57616ded39e73518acd198c730056)
+
+### fix
+- **csr:** count extension count in openssl 3.0 [5af0f4b](https://github.com/fffonion/lua-resty-openssl/commit/5af0f4b02edd0fb8c461a1e08b04eb4eb781f744)
+- **csr:** BREAKING: remove csr:set_subject_alt function [513fd8a](https://github.com/fffonion/lua-resty-openssl/commit/513fd8ac61b6f7775465eabc5a3d6a454ccebc54)
+- **openssl:** include crypto header in openssl.lua [ef54bf7](https://github.com/fffonion/lua-resty-openssl/commit/ef54bf72710f2613ac6d6e5e8ebb712fa7135939)
+- **openssl:** BREAKING: not load sub modules by default [a402f05](https://github.com/fffonion/lua-resty-openssl/commit/a402f05f3ea4b85589c1de6b4347cdfc4c397ea7)
+
+
 <a name="0.6.11"></a>
 ## [0.6.11] - 2021-01-21
 ### fix
@@ -303,7 +318,8 @@
 <a name="init"></a>
 ## init - 2019-09-25
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.11...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.7.0...HEAD
+[0.7.0]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.11...0.7.0
 [0.6.11]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.10...0.6.11
 [0.6.10]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.9...0.6.10
 [0.6.9]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.8...0.6.9

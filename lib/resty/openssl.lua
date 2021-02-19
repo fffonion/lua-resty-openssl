@@ -12,7 +12,7 @@ local format_error = require("resty.openssl.err").format_error
 
 
 local _M = {
-  _VERSION = '0.6.11',
+  _VERSION = '0.7.0',
 }
 
 function _M.load_modules()
