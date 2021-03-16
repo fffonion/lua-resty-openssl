@@ -8,6 +8,7 @@ require "resty.openssl.include.x509"
 require "resty.openssl.include.x509v3"
 local asn1_macro = require "resty.openssl.include.asn1"
 local stack_lib = require "resty.openssl.stack"
+local name_lib = require "resty.openssl.x509.name"
 local altname_macro = require "resty.openssl.include.x509.altname"
 
 local _M = {}
@@ -21,22 +22,31 @@ local dup = stack_lib.dup_of(STACK)
 
 local types = altname_macro.types
 
+-- similar to GENERAL_NAME_print, but returns value instead of print
 local gn_decode = function(ctx)
   local typ = ctx.type
   local k = altname_macro.literals[typ]
   local v
-  if typ == types.DNS then
-    v = ffi_str(asn1_macro.ASN1_STRING_get0_data(ctx.d.dNSName))
-  elseif typ == types.URI then
-    v = ffi_str(asn1_macro.ASN1_STRING_get0_data(ctx.d.uniformResourceIdentifier))
+  if typ == types.OtherName then
+    v = "OtherName:<unsupported>"
   elseif typ == types.RFC822Name then
     v = ffi_str(asn1_macro.ASN1_STRING_get0_data(ctx.d.rfc822Name))
-  elseif typ == types.IP then
-    error("NYI")
+  elseif typ == types.DNS then
+    v = ffi_str(asn1_macro.ASN1_STRING_get0_data(ctx.d.dNSName))
+  elseif typ == types.X400 then
+    v = "X400:<unsupported>"
   elseif typ == types.DirName then
-    error("NYI")
+    v = name_lib.dup(ctx.d.directoryName)
+  elseif typ == types.EdiParty then
+    v = "EdiParty:<unsupported>"
+  elseif typ == types.URI then
+    v = ffi_str(asn1_macro.ASN1_STRING_get0_data(ctx.d.uniformResourceIdentifier))
+  elseif typ == types.IP then
+    v = "IP:<unsupported>"
+  elseif typ == types.RID then
+    v = "RID:<unsupported>"
   else
-    error("unknown type" .. typ)
+    error("unknown type" .. typ .. "-> " .. types.OtherName)
   end
   return { k, v }
 end
@@ -108,6 +118,13 @@ local function gn_set(gn, typ, value)
   if not gn_type then
     return "x509.altname:gn_set: unknown type " .. typ
   end
+
+  if gn_type ~= types.Email and
+      gn_type ~= types.URI and
+      gn_type ~= types.DNS then
+    return "x509.altname:gn_set: setting type " .. typ .. " is currently not supported"
+  end
+
   gn.type = gn_type
 
   local asn1_string = C.ASN1_IA5STRING_new()
