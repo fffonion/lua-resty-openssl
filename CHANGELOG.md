@@ -2,6 +2,13 @@
 ## [Unreleased]
 
 
+<a name="0.7.1"></a>
+## [0.7.1] - 2021-03-18
+### fix
+- **altname:** return unsupported as value in not implemented types [ef5e1ed](https://github.com/fffonion/lua-resty-openssl/commit/ef5e1eda9eaea1fd4c8d7d65e438275fed10cdc6)
+- **auxiliary/nginx:** typo in error message [4bd22d8](https://github.com/fffonion/lua-resty-openssl/commit/4bd22d81419ed160af1dcea16f42fd284f8f2ad5)
+
+
 <a name="0.7.0"></a>
 ## [0.7.0] - 2021-02-19
 ### feat
@@ -318,7 +325,8 @@
 <a name="init"></a>
 ## init - 2019-09-25
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.7.0...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.7.1...HEAD
+[0.7.1]: https://github.com/fffonion/lua-resty-openssl/compare/0.7.0...0.7.1
 [0.7.0]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.11...0.7.0
 [0.6.11]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.10...0.6.11
 [0.6.10]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.9...0.6.10
