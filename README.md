@@ -2598,9 +2598,6 @@ Adds a name to altname stack, first argument is case-insensitive and can be one 
     URI
     DNSName
     DNS
-    IPAddress
-    IP
-    DirName
 
 This function can be called multiple times in a chained fashion.
 
@@ -2638,6 +2635,13 @@ with `-DLUAJIT_ENABLE_LUA52COMPAT` flag; otherwise use `all`, `each`, `index` an
 instead.
 
 See also [functions for stack-like objects](#functions-for-stack-like-objects).
+
+Only the following types are decoded, other types are decoded as `"TYPE:<unsupported>"`:
+
+    RFC822Name / Email
+    URI
+    DNS
+    DirName
 
 [Back to TOC](#table-of-contents)
 
