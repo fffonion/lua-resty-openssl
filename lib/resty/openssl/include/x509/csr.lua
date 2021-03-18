@@ -65,7 +65,7 @@ elseif OPENSSL_10 then
       /*  d=2 hl=2 l=  0 cons: cont: 00 */
       /*STACK_OF(X509_ATTRIBUTE)*/ OPENSSL_STACK *attributes; /* [ 0 ] */
     } X509_REQ_INFO;
-  
+
     // Note: this struct is trimmed
     typedef struct X509_req_st {
       X509_REQ_INFO *req_info;

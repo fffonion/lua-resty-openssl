@@ -6,7 +6,6 @@ local ffi_str = ffi.string
 require "resty.openssl.include.crypto"
 require "resty.openssl.include.evp"
 require "resty.openssl.include.objects"
-local stack_macro = require "resty.openssl.include.stack"
 local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 local format_error = require("resty.openssl.err").format_error
 

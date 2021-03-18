@@ -25,25 +25,25 @@ local function create_csr(domain_pkey, ...)
   end
 
   local csr = require("resty.openssl.x509.csr").new()
-  local ok
-  ok, err = csr:set_subject_name(subject)
+  local _
+  _, err = csr:set_subject_name(subject)
   if err then
     return nil, err
   end
 
   if alt then
-    ok, err = csr:set_subject_alt_name(alt)
+    _, err = csr:set_subject_alt_name(alt)
     if err then
       return nil, err
     end
   end
 
-  ok, err = csr:set_pubkey(domain_pkey)
+  _, err = csr:set_pubkey(domain_pkey)
   if err then
     return nil, err
   end
 
-  ok, err = csr:sign(domain_pkey)
+  _, err = csr:sign(domain_pkey)
   if err then
     return nil, err
   end

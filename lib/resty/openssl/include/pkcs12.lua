@@ -1,5 +1,4 @@
 local ffi = require "ffi"
-local C = ffi.C
 
 require "resty.openssl.include.ossl_typ"
 require "resty.openssl.include.stack"
