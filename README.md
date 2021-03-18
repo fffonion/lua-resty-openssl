@@ -3233,7 +3233,7 @@ Wraps the `SSL_CTX*` instance from current downstream request.
 
 [Back to TOC](#table-of-contents)
 
-### ssl_ctx.from_request
+### ssl_ctx.from_socket
 
 **syntax**: *sess, err = ssl_ctx.from_socket(sock)*
 
