@@ -230,13 +230,13 @@ else
       ngx_stream_lua_socket_tcp_retval_handler            write_prepare_retvals;
       ngx_stream_lua_socket_tcp_upstream_handler_pt       read_event_handler;
       ngx_stream_lua_socket_tcp_upstream_handler_pt       write_event_handler;
-  
+
       void                    *socket_pool;
-  
+
       void                    *conf;
       void                    *cleanup;
       void                    *request;
-  
+
       ngx_peer_connection_s            peer;
       // trimmed
     } ngx_stream_lua_socket_tcp_upstream_s;

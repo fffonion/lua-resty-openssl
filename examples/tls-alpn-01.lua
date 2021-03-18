@@ -20,12 +20,12 @@ end
 -- generate the tls-alpn-01 challenge certificate/key per
 -- https://tools.ietf.org/html/draft-ietf-acme-tls-alpn-07
 -- with given domain name and challenge token
-function serve_challenge_cert(domain, challenge)
+local function serve_challenge_cert(domain, challenge)
   local dgst = assert(digest.new("sha256"):final(challenge))
 
   -- There're two ways to set ASN.1 octect string to the extension
   -- The recommanded way is to pass the string directly to extension.from_der()
-  local ext, err = extension.from_der(dgst, nid, true)
+  local _, err = extension.from_der(dgst, nid, true)
   if err then
     return nil, nil, err
   end

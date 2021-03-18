@@ -26,7 +26,6 @@ local format_error = require("resty.openssl.err").format_error
 
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
 local OPENSSL_111_OR_LATER = require("resty.openssl.version").OPENSSL_111_OR_LATER
-local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 local BORINGSSL = require("resty.openssl.version").BORINGSSL
 
 local ptr_of_uint = ctypes.ptr_of_uint
@@ -321,56 +320,56 @@ local function generate_key(config)
   return ctx_ptr[0]
 end
 
-local _load_key_try_funcs = {
-  PEM = {
-    -- Note: make sure we always try load priv key first
-    pr = {
-      ['PEM_read_bio_PrivateKey'] = load_pem_args,
+local load_key_try_funcs = {} do
+  local _load_key_try_funcs = {
+    PEM = {
+      -- Note: make sure we always try load priv key first
+      pr = {
+        ['PEM_read_bio_PrivateKey'] = load_pem_args,
+      },
+      pu = {
+        ['PEM_read_bio_PUBKEY'] = load_pem_args,
+      },
     },
-    pu = {
-      ['PEM_read_bio_PUBKEY'] = load_pem_args,
+    DER = {
+      pr = {
+        ['d2i_PrivateKey_bio'] = load_der_args,
+      },
+      pu = {
+        ['d2i_PUBKEY_bio'] = load_der_args,
+      },
     },
-  },
-  DER = {
-    pr = {
-      ['d2i_PrivateKey_bio'] = load_der_args,
-    },
-    pu = {
-      ['d2i_PUBKEY_bio'] = load_der_args,
-    },
-  },
-  JWK = {
-    pr = {
-      ['load_jwk'] = {},
-    },
+    JWK = {
+      pr = {
+        ['load_jwk'] = {},
+      },
+    }
   }
-}
--- populate * funcs
-local all_funcs = {}
-local typ_funcs = {}
-local load_key_try_funcs = {}
-for fmt, ffs in pairs(_load_key_try_funcs) do
-  load_key_try_funcs[fmt] = ffs
+  -- populate * funcs
+  local all_funcs = {}
+  local typ_funcs = {}
+  for fmt, ffs in pairs(_load_key_try_funcs) do
+    load_key_try_funcs[fmt] = ffs
 
-  local funcs = {}
-  for typ, fs in pairs(ffs) do
-    for f, arg in pairs(fs) do
-      funcs[f] = arg
-      all_funcs[f] = arg
-      if not typ_funcs[typ] then
-        typ_funcs[typ] = {}
+    local funcs = {}
+    for typ, fs in pairs(ffs) do
+      for f, arg in pairs(fs) do
+        funcs[f] = arg
+        all_funcs[f] = arg
+        if not typ_funcs[typ] then
+          typ_funcs[typ] = {}
+        end
+        typ_funcs[typ] = arg
       end
-      typ_funcs[typ] = arg
     end
+    load_key_try_funcs[fmt]["*"] = funcs
   end
-  load_key_try_funcs[fmt]["*"] = funcs
+  load_key_try_funcs["*"] = {}
+  load_key_try_funcs["*"]["*"] = all_funcs
+  for typ, fs in pairs(typ_funcs) do
+    load_key_try_funcs[typ] = fs
+  end
 end
-load_key_try_funcs["*"] = {}
-load_key_try_funcs["*"]["*"] = all_funcs
-for typ, fs in pairs(typ_funcs) do
-  load_key_try_funcs[typ] = fs
-end
-_load_key_try_funcs = nil
 
 local function tostring(self, is_priv, fmt)
   if fmt == "JWK" then

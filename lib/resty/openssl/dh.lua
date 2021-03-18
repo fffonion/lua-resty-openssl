@@ -1,10 +1,8 @@
 local ffi = require "ffi"
 local C = ffi.C
-local ffi_gc = ffi.gc
 
 require "resty.openssl.include.dh"
 local bn_lib = require "resty.openssl.bn"
-local objects_lib = require "resty.openssl.objects"
 
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER

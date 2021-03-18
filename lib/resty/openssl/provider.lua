@@ -4,7 +4,6 @@ local ffi_new = ffi.new
 local ffi_str = ffi.string
 
 local provider_macro = require "resty.openssl.include.provider"
-local crypto_macro = require("resty.openssl.include.crypto")
 local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 local format_error = require("resty.openssl.err").format_error
 

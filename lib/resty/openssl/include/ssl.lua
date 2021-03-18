@@ -55,7 +55,7 @@ ffi.cdef [[
   typedef int verify_callback(int preverify_ok, X509_STORE_CTX *x509_ctx);
   void SSL_set_verify(SSL *s, int mode,
                      int (*verify_callback)(int, X509_STORE_CTX *));
-  
+
   int SSL_add_client_CA(SSL *ssl, X509 *cacert);
 ]]
 
