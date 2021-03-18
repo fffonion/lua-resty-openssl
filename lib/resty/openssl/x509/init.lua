@@ -110,7 +110,7 @@ function _M.new(cert, fmt)
     end
 
     fmt = fmt or "*"
-    while true do
+    while true do -- luacheck: ignore 512 -- loop is executed at most once
       if fmt == "PEM" or fmt == "*" then
         ctx = C.PEM_read_bio_X509(bio, nil, nil, nil)
         if ctx ~= nil then

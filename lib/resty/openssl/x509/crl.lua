@@ -95,7 +95,7 @@ function _M.new(crl, fmt)
     end
 
     fmt = fmt or "*"
-    while true do
+    while true do -- luacheck: ignore 512 -- loop is executed at most once
       if fmt == "PEM" or fmt == "*" then
         ctx = C.PEM_read_bio_X509_CRL(bio, nil, nil, nil)
         if ctx ~= nil then
