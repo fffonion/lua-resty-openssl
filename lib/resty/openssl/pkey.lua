@@ -88,7 +88,7 @@ local function load_pem_der(txt, opts, funcs)
           end
           arg = { null, nil, passphrase }
         elseif opts.passphrase_cb then
-          passphrase_cb = ffi_cast("pem_password_cb*", function(buf, size)
+          passphrase_cb = ffi_cast("pem_password_cb", function(buf, size)
             local p = opts.passphrase_cb()
             local len = #p -- 1 byte for \0
             if len > size then

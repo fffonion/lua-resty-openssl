@@ -216,7 +216,7 @@ function _M:get_timeout()
   return tonumber(C.SSL_SESSION_get_timeout(session))
 end
 
-local ssl_verify_default_cb = ffi_cast("verify_callback*", function()
+local ssl_verify_default_cb = ffi_cast("verify_callback", function()
   return 1
 end)
 
@@ -226,7 +226,7 @@ function _M:set_verify(mode, cb)
   end
 
   if cb then
-    cb = ffi_cast("verify_callback*", cb)
+    cb = ffi_cast("verify_callback", cb)
     self._verify_cb = cb
   end
 
