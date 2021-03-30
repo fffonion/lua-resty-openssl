@@ -568,11 +568,14 @@ true
 --- config
     location =/t {
         content_by_lua_block {
-            local p = myassert(require("resty.openssl.pkey").new())
-
-            local s, err = p:sign(p)
+            local p = myassert(require("resty.openssl.pkey").new({
+                type = 'EC',
+            }))
+            local s, err = p:sign(false)
             ngx.say(err)
-            local v, err = p:verify(s, p)
+            local v, err = p:verify("", false)
+            ngx.say(err)
+            local v, err = p:verify(false, "1")
             ngx.say(err)
         }
     }
@@ -581,6 +584,7 @@ true
 --- response_body eval
 "pkey:sign: expect a digest instance or a string at #1
 pkey:verify: expect a digest instance or a string at #2
+pkey:verify: expect a string at #1
 "
 --- no_error_log
 [error]
@@ -931,5 +935,109 @@ A4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507FD6406CFF14266D31266FEA1E5C41564B
 2: < 1.1.1
 --- response_body eval
 ""
+--- no_error_log
+[error]
+
+=== TEST 30: Sign/verify with md_alg
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            -- uses default md type
+            local p = myassert(require("resty.openssl.pkey").new({
+                type = "RSA"
+            }))
+            local digest = "23333"
+            local s = myassert(p:sign(digest, "sha512"))
+            ngx.say(#s)
+
+            local ok = myassert(p:verify(s, digest, "sha512"))
+            ngx.say(ok)
+
+            -- use wrong md type, should not pass
+            local ok, e = p:verify(s, digest)
+            ngx.say(ok)
+            local ok, e = p:verify(s, digest, "md5")
+            ngx.say(ok)
+        }
+    }
+--- request
+    GET /t
+--- skip_openssl
+2: < 1.1.1
+--- response_body eval
+"256
+true
+false
+false
+"
+--- no_error_log
+[error]
+
+=== TEST 31: Sign/verify with paddings
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            -- uses default md type
+            local p = myassert(require("resty.openssl.pkey").new({
+                type = "RSA"
+            }))
+            local digest = "23333"
+            local s = myassert(p:sign(digest, nil, p.PADDINGS.RSA_PKCS1_PSS_PADDING))
+            ngx.say(#s)
+
+            local ok = myassert(p:verify(s, digest, nil, p.PADDINGS.RSA_PKCS1_PSS_PADDING))
+            ngx.say(ok)
+
+            -- use wrong padding scheme, should not pass
+            local ok, e = p:verify(s, digest)
+            if ok ~= false then ngx.say(e) else ngx.say(ok) end
+            local ok, e = p:verify(s, digest, nil, p.PADDINGS.RSA_PKCS1_PADDING)
+            if ok ~= false then ngx.say(e) else ngx.say(ok) end
+        }
+    }
+--- request
+    GET /t
+--- skip_openssl
+2: < 1.1.1
+--- response_body eval
+"256
+true
+false
+false
+"
+--- no_error_log
+[error]
+
+=== TEST 32: Sign/verify with PSS custom salt_len
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            -- uses default md type
+            local p = myassert(require("resty.openssl.pkey").new({
+                type = "RSA"
+            }))
+            local digest = "23333"
+            local s = myassert(p:sign(digest, nil, p.PADDINGS.RSA_PKCS1_PSS_PADDING, {
+                pss_saltlen = 64,
+            }))
+            ngx.say(#s)
+
+            local ok = myassert(p:verify(s, digest, nil, p.PADDINGS.RSA_PKCS1_PSS_PADDING, {
+                pss_saltlen = 64,
+            }))
+            ngx.say(ok)
+        }
+    }
+--- request
+    GET /t
+--- skip_openssl
+2: < 1.1.1
+--- response_body eval
+"256
+true
+"
 --- no_error_log
 [error]

@@ -595,7 +595,7 @@ local function asymmetric_routine(self, s, op, padding)
   -- EVP_PKEY_CTX_ctrl must be called after *_init
   if self.key_type == evp_macro.EVP_PKEY_RSA and padding then
     if evp_macro.EVP_PKEY_CTX_set_rsa_padding(pkey_ctx, padding) ~= 1 then
-      return nil, format_error("pkey:asymmetric_routine EVP_PKEY_CTX_ctrl")
+      return nil, format_error("pkey:asymmetric_routine EVP_PKEY_CTX_set_rsa_padding")
     end
     self.rsa_padding = padding
   end
@@ -627,7 +627,56 @@ function _M:verify_recover(s, padding)
   return asymmetric_routine(self, s, ASYMMETRIC_OP_VERIFY_RECOVER, padding)
 end
 
-function _M:sign(digest)
+local evp_pkey_ctx_ptr_ptr_ct = ffi.typeof('EVP_PKEY_CTX*[1]')
+
+local function sign_verify_prepare(self, fint, md_alg, padding, opts)
+  local pkey_ctx
+
+  if self.key_type == evp_macro.EVP_PKEY_RSA and padding then
+    pkey_ctx = C.EVP_PKEY_CTX_new(self.ctx, nil)
+    if pkey_ctx == nil then
+      return nil, format_error("pkey:sign_verify_prepare EVP_PKEY_CTX_new()")
+    end
+    ffi_gc(pkey_ctx, C.EVP_PKEY_CTX_free)
+  end
+
+  local md_ctx = C.EVP_MD_CTX_new()
+  if md_ctx == nil then
+    return nil, "pkey:sign_verify_prepare: EVP_MD_CTX_new() failed"
+  end
+  ffi_gc(md_ctx, C.EVP_MD_CTX_free)
+
+  local dtyp
+  if md_alg then
+    dtyp = C.EVP_get_digestbyname(md_alg)
+    if dtyp == nil then
+      return nil, string.format("pkey:sign_verify_prepare: invalid digest type \"%s\"", md_alg)
+    end
+  end
+
+  local ppkey_ctx = evp_pkey_ctx_ptr_ptr_ct()
+  ppkey_ctx[0] = pkey_ctx
+  if fint(md_ctx, ppkey_ctx, dtyp, nil, self.ctx) ~= 1 then
+    return nil, format_error("pkey:sign_verify_prepare: Init failed")
+  end
+
+  if self.key_type == evp_macro.EVP_PKEY_RSA then
+    if padding then
+      if evp_macro.EVP_PKEY_CTX_set_rsa_padding(ppkey_ctx[0], padding) ~= 1 then
+        return nil, format_error("pkey:sign_verify_prepare EVP_PKEY_CTX_set_rsa_padding")
+      end
+    end
+    if opts and opts.pss_saltlen and padding ~= rsa_macro.paddings.RSA_PKCS1_PSS_PADDING then
+      if evp_macro.EVP_PKEY_CTX_set_rsa_pss_saltlen(ppkey_ctx[0], opts.pss_saltlen) ~= 1 then
+        return nil, format_error("pkey:sign_verify_prepare EVP_PKEY_CTX_set_rsa_pss_saltlen")
+      end
+    end
+  end
+
+  return md_ctx
+end
+
+function _M:sign(digest, md_alg, padding, opts)
   if digest_lib.istype(digest) then
     local length = ptr_of_uint()
     if C.EVP_SignFinal(digest.ctx, self.buf, length, self.ctx) ~= 1 then
@@ -638,17 +687,14 @@ function _M:sign(digest)
     if not OPENSSL_111_OR_LATER then
       -- we can still support earilier version with *Update and *Final
       -- but we choose to not relying on the legacy interface for simplicity
-      return nil, "pkey:sign: one shot sign only available in OpenSSL 1.1 or later"
+      return nil, "pkey:sign: new-style sign only available in OpenSSL 1.1 or later"
     end
-    -- one shot signing
-    local md_ctx = C.EVP_MD_CTX_new()
-    if md_ctx == nil then
-      return nil, "pkey:sign: EVP_MD_CTX_new() failed"
+
+    local md_ctx, err = sign_verify_prepare(self, C.EVP_DigestSignInit, md_alg, padding, opts)
+    if err then
+      return nil, err
     end
-    ffi_gc(md_ctx, C.EVP_MD_CTX_free)
-    if C.EVP_DigestSignInit(md_ctx, nil, nil, nil, self.ctx) ~= 1 then
-      return nil, format_error("pkey:sign: EVP_DigestSignInit")
-    end
+
     local length = ptr_of_size_t(self.buf_size)
     if C.EVP_DigestSign(md_ctx, self.buf, length, digest, #digest) ~= 1 then
       return nil, format_error("pkey:sign: EVP_DigestSign")
@@ -659,32 +705,26 @@ function _M:sign(digest)
   end
 end
 
-function _M:verify(signature, digest)
+function _M:verify(signature, digest, md_alg, padding, opts)
+  if type(signature) ~= "string" then
+    return nil, "pkey:verify: expect a string at #1"
+  end
+
   local code
   if digest_lib.istype(digest) then
-    if not digest_lib.istype(digest) then
-      return nil, "pkey:verify: expect a digest instance at #2"
-    end
     code = C.EVP_VerifyFinal(digest.ctx, signature, #signature, self.ctx)
   elseif type(digest) == "string" then
     if not OPENSSL_111_OR_LATER then
       -- we can still support earilier version with *Update and *Final
       -- but we choose to not relying on the legacy interface for simplicity
-      return nil, "pkey:verify: one shot verify only available in OpenSSL 1.1 or later"
+      return nil, "pkey:verify: new-style verify only available in OpenSSL 1.1 or later"
     end
-    -- one shot verification
-    if type(digest) ~= "string" then
-      return nil, "pkey:verify expect a string at #2"
-    end
-    local md_ctx = C.EVP_MD_CTX_new()
-    if md_ctx == nil then
-      return nil, "pkey:verify: EVP_MD_CTX_new() failed"
-    end
-    ffi_gc(md_ctx, C.EVP_MD_CTX_free)
 
-    if C.EVP_DigestVerifyInit(md_ctx, nil, nil, nil, self.ctx) ~= 1 then
-      return nil, format_error("pkey:verify: EVP_DigestVerifyInit")
+    local md_ctx, err = sign_verify_prepare(self, C.EVP_DigestVerifyInit, md_alg, padding, opts)
+    if err then
+      return nil, err
     end
+
     code = C.EVP_DigestVerify(md_ctx, signature, #signature, digest, #digest)
   else
     return nil, "pkey:verify: expect a digest instance or a string at #2"
