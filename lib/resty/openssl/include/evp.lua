@@ -259,6 +259,8 @@ local _M = {
 
   EVP_PKEY_OP_PARAMGEN = bit.lshift(1, 1),
   EVP_PKEY_OP_KEYGEN = bit.lshift(1, 2),
+  EVP_PKEY_OP_SIGN = bit.lshift(1, 3),
+  EVP_PKEY_OP_VERIFY = bit.lshift(1, 4),
   EVP_PKEY_OP_DERIVE = OPENSSL_30 and bit.lshift(1, 12) or bit.lshift(1, 10),
 
   EVP_PKEY_ALG_CTRL = 0x1000,
@@ -267,9 +269,10 @@ local _M = {
   EVP_PKEY_CTRL_DH_PARAMGEN_PRIME_LEN = 0x1000 + 1,
   EVP_PKEY_CTRL_EC_PARAMGEN_CURVE_NID = 0x1000 + 1,
   EVP_PKEY_CTRL_EC_PARAM_ENC          = 0x1000 + 2,
-  EVP_PKEY_CTRL_RSA_PADDING           = 0x1000 + 1,
   EVP_PKEY_CTRL_RSA_KEYGEN_BITS       = 0x1000 + 3,
   EVP_PKEY_CTRL_RSA_KEYGEN_PUBEXP     = 0x1000 + 4,
+  EVP_PKEY_CTRL_RSA_PADDING           = 0x1000 + 1,
+  EVP_PKEY_CTRL_RSA_PSS_SALTLEN       = 0x1000 + 2,
 
   EVP_CTRL_AEAD_SET_IVLEN = 0x9,
   EVP_CTRL_AEAD_GET_TAG = 0x10,
@@ -290,7 +293,9 @@ if OPENSSL_30 or BORINGSSL then
 
     int EVP_PKEY_CTX_set_rsa_keygen_bits(EVP_PKEY_CTX *ctx, int mbits);
     int EVP_PKEY_CTX_set_rsa_keygen_pubexp(EVP_PKEY_CTX *ctx, BIGNUM *pubexp);
+
     int EVP_PKEY_CTX_set_rsa_padding(EVP_PKEY_CTX *ctx, int pad);
+    int EVP_PKEY_CTX_set_rsa_pss_saltlen(EVP_PKEY_CTX *ctx, int len);
   ]]
   _M.EVP_PKEY_CTX_set_ec_paramgen_curve_nid = function(pctx, nid)
     return C.EVP_PKEY_CTX_set_ec_paramgen_curve_nid(pctx, nid)
@@ -305,8 +310,12 @@ if OPENSSL_30 or BORINGSSL then
   _M.EVP_PKEY_CTX_set_rsa_keygen_pubexp = function(pctx, pubexp)
     return C.EVP_PKEY_CTX_set_rsa_keygen_pubexp(pctx, pubexp)
   end
+
   _M.EVP_PKEY_CTX_set_rsa_padding = function(pctx, pad)
     return C.EVP_PKEY_CTX_set_rsa_padding(pctx, pad)
+  end
+  _M.EVP_PKEY_CTX_set_rsa_pss_saltlen = function(pctx, len)
+    return C.EVP_PKEY_CTX_set_rsa_pss_saltlen(pctx, len)
   end
 else
   _M.EVP_PKEY_CTX_set_ec_paramgen_curve_nid = function(pctx, nid)
@@ -337,12 +346,20 @@ else
                                 _M.EVP_PKEY_CTRL_RSA_KEYGEN_PUBEXP,
                                 0, pubexp)
   end
+
   _M.EVP_PKEY_CTX_set_rsa_padding = function(pctx, pad)
     return C.EVP_PKEY_CTX_ctrl(pctx,
                                 _M.EVP_PKEY_RSA,
                                 -1,
                                 _M.EVP_PKEY_CTRL_RSA_PADDING,
                                 pad, nil)
+  end
+  _M.EVP_PKEY_CTX_set_rsa_pss_saltlen = function(pctx, len)
+    return C.EVP_PKEY_CTX_ctrl(pctx,
+                                _M.EVP_PKEY_RSA,
+                                _M.EVP_PKEY_OP_SIGN + _M.EVP_PKEY_OP_VERIFY,
+                                _M.EVP_PKEY_CTRL_RSA_PSS_SALTLEN,
+                                len, nil)
   end
 end
 
