@@ -40,10 +40,10 @@ jobs:
           valgrind: "valgrind"
         # latest and one older version with alpha release
         - nginx: "1.17.8"
-          openssl: "3.0.0-alpha12"
+          openssl: "3.0.0-alpha13"
           nginx_cc_opts: "-Wno-error"
         - nginx: "1.19.3"
-          openssl: "3.0.0-alpha12"
+          openssl: "3.0.0-alpha13"
           nginx_cc_opts: "-Wno-error"
 
     env:
