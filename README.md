@@ -2240,7 +2240,7 @@ Outputs CSR in PEM-formatted text.
 
 [Back to TOC](#table-of-contents)
 
-## resty.openssl.crl
+## resty.openssl.x509.crl
 
 Module to interact with X509_CRL(certificate revocation list).
 
@@ -3116,7 +3116,7 @@ certificates bundle. For example, the package in Debian/Ubuntu is called `ca-cer
 
 Adds a X.509 or a CRL object into store.
 The argument must be a [resty.openssl.x509](#restyopensslx509) instance or a
-[resty.openssl.x509.store](#restyopensslx509store) instance.
+[resty.openssl.x509.crl](#restyopensslx509crl) instance.
 
 [Back to TOC](#table-of-contents)
 
