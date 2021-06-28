@@ -933,3 +933,179 @@ A4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507FD6406CFF14266D31266FEA1E5C41564B
 ""
 --- no_error_log
 [error]
+
+=== TEST 30: Sign/verify with md_alg
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            -- uses default md type
+            local p = myassert(require("resty.openssl.pkey").new({
+                type = "RSA"
+            }))
+            local digest = "23333"
+            local s = myassert(p:sign(digest, "sha512"))
+            ngx.say(#s)
+
+            local ok = myassert(p:verify(s, digest, "sha512"))
+            ngx.say(ok)
+
+            -- use wrong md type, should not pass
+            local ok, e = p:verify(s, digest)
+            ngx.say(ok)
+            local ok, e = p:verify(s, digest, "md5")
+            ngx.say(ok)
+        }
+    }
+--- request
+    GET /t
+--- skip_openssl
+2: < 1.1.1
+--- response_body eval
+"256
+true
+false
+false
+"
+--- no_error_log
+[error]
+
+=== TEST 31: Sign/verify with paddings
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            -- uses default md type
+            local p = myassert(require("resty.openssl.pkey").new({
+                type = "RSA"
+            }))
+            local digest = "23333"
+            local s = myassert(p:sign(digest, nil, p.PADDINGS.RSA_PKCS1_PSS_PADDING))
+            ngx.say(#s)
+
+            local ok = myassert(p:verify(s, digest, nil, p.PADDINGS.RSA_PKCS1_PSS_PADDING))
+            ngx.say(ok)
+
+            -- use wrong padding scheme, should not pass
+            local ok, e = p:verify(s, digest)
+            if ok ~= false then ngx.say(e) else ngx.say(ok) end
+            local ok, e = p:verify(s, digest, nil, p.PADDINGS.RSA_PKCS1_PADDING)
+            if ok ~= false then ngx.say(e) else ngx.say(ok) end
+        }
+    }
+--- request
+    GET /t
+--- skip_openssl
+2: < 1.1.1
+--- response_body eval
+"256
+true
+false
+false
+"
+--- no_error_log
+[error]
+
+=== TEST 32: Sign/verify with PSS custom salt_len
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            -- uses default md type
+            local p = myassert(require("resty.openssl.pkey").new({
+                type = "RSA"
+            }))
+            local digest = "23333"
+            local s = myassert(p:sign(digest, nil, p.PADDINGS.RSA_PKCS1_PSS_PADDING, {
+                pss_saltlen = 64,
+            }))
+            ngx.say(#s)
+
+            local ok = myassert(p:verify(s, digest, nil, p.PADDINGS.RSA_PKCS1_PSS_PADDING, {
+                pss_saltlen = 64,
+            }))
+            ngx.say(ok)
+        }
+    }
+--- request
+    GET /t
+--- skip_openssl
+2: < 1.1.1
+--- response_body eval
+"256
+true
+"
+--- no_error_log
+[error]
+
+=== TEST 33: PEM passphrase_cb won't overflow
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local pkey = require("resty.openssl.pkey")
+            local ffi = require("ffi")
+            local f = function() end
+            local pok, perr, last_ff
+            while true do
+                pok, pret = pcall(ffi.cast, "pem_password_cb", f)
+                if not pok then
+                    last_ff:free()
+                    break
+                end
+                last_ff = pret
+            end
+            ngx.say("errored out with ", pret)
+
+            local f = io.open("t/fixtures/ec_key_encrypted.pem"):read("*a")
+            local privkey, err
+            for i=1, 5 do
+                privkey, err = pkey.new(f, {
+                    format = "PEM",
+                    passphrase_cb = function()
+                        return "wrongpassword"
+                    end,
+                })
+            end
+            -- with random order in lua tables, this could be loaded
+            -- by PEM_read_bio_PUBKEY, in such case, error will be
+            -- PEM routines:get_name:no start line
+            ngx.say(err)
+
+            for i=1, 5 do
+                local privkey = myassert(pkey.new(f, {
+                    format = "PEM",
+                    passphrase_cb = function()
+                        return "123456"
+                    end,
+                }))
+            end
+            ngx.say("ok")
+
+            local p = myassert(pkey.new({
+                type = 'EC',
+                curve = 'prime256v1',
+            }))
+            local pem = myassert(p:to_PEM('private'))
+
+            for i=1, 5 do
+                local privkey = myassert(pkey.new(p, {
+                        format = "PEM",
+                        passphrase_cb = function()
+                            error("should not reach here")
+                        end,
+                    }))
+                end
+            ngx.say("ok")
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+"errored out with too many callbacks
+pkey.new.+(?:bad decrypt|failed|BAD_DECRYPT|no start line)
+ok
+ok
+"
+--- no_error_log
+[error]
