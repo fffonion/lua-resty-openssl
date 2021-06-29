@@ -1,6 +1,20 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Feat
+- **pkey:** allow to specify digest type and padding scheme in sign/verify
+
+### Fix
+- **pkey:** only pass in passphrase/passphrase_cb to PEM_* functions
+- **pkey:** avoid callbacks overflow when setting passphrase_cb
+
+
+<a name="0.7.3"></a>
+## [0.7.3] - 2021-06-29
+### fix
+- **pkey:** only pass in passphrase/passphrase_cb to PEM_* functions [15e512c](https://github.com/fffonion/lua-resty-openssl/commit/15e512c9f71ec34a6f842534b3419172beaf4303)
+- **pkey:** avoid callbacks overflow when setting passphrase_cb [b178224](https://github.com/fffonion/lua-resty-openssl/commit/b178224e57a1353ecf12c45a34987828502243d7)
+
 
 <a name="0.7.3"></a>
 ## [0.7.3] - 2021-06-29
