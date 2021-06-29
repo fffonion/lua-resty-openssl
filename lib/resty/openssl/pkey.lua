@@ -80,7 +80,8 @@ local function load_pem_der(txt, opts, funcs)
         return nil, "BIO_ctrl() failed"
       end
 
-      if fmt == "PEM" or fmt == "*" then
+      -- only pass in passphrase/passphrase_cb to PEM_* functions
+      if fmt == "PEM" or (fmt == "*" and arg == load_pem_args) then
         if opts.passphrase then
           local passphrase = opts.passphrase
           if type(passphrase) ~= "string" then
