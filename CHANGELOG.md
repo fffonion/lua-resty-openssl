@@ -2,6 +2,13 @@
 ## [Unreleased]
 
 
+<a name="0.7.3"></a>
+## [0.7.3] - 2021-06-29
+### fix
+- **pkey:** only pass in passphrase/passphrase_cb to PEM_* functions [15e512c](https://github.com/fffonion/lua-resty-openssl/commit/15e512c9f71ec34a6f842534b3419172beaf4303)
+- **pkey:** avoid callbacks overflow when setting passphrase_cb [b178224](https://github.com/fffonion/lua-resty-openssl/commit/b178224e57a1353ecf12c45a34987828502243d7)
+
+
 <a name="0.7.2"></a>
 ## [0.7.2] - 2021-03-25
 ### fix
@@ -331,7 +338,8 @@
 <a name="init"></a>
 ## init - 2019-09-25
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.7.2...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.7.3...HEAD
+[0.7.3]: https://github.com/fffonion/lua-resty-openssl/compare/0.7.2...0.7.3
 [0.7.2]: https://github.com/fffonion/lua-resty-openssl/compare/0.7.1...0.7.2
 [0.7.1]: https://github.com/fffonion/lua-resty-openssl/compare/0.7.0...0.7.1
 [0.7.0]: https://github.com/fffonion/lua-resty-openssl/compare/0.6.11...0.7.0
