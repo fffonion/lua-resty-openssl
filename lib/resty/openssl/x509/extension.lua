@@ -246,7 +246,13 @@ function _M:set_critical(crit)
 end
 
 function _M:tostring()
-  return util.read_using_bio(C.X509V3_EXT_print, self.ctx, 0, 0)
+  local ret, err = util.read_using_bio(C.X509V3_EXT_print, self.ctx, 0, 0)
+  if not err then
+    return ret
+  end
+  -- fallback to ASN.1 print
+  local asn1 = C.X509_EXTENSION_get_data(self.ctx)
+  return util.read_using_bio(C.ASN1_STRING_print, asn1)
 end
 
 _M.text = _M.tostring

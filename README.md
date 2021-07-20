@@ -173,6 +173,9 @@ Table of Contents
     + [extension.new](#extensionnew)
     + [extension.dup](#extensiondup)
     + [extension.from_data](#extensionfrom_data)
+    + [extension:to_data](#extensionto_data)
+    + [extension.from_der](#extensionfrom_der)
+    + [extension:to_der](#extensionto_der)
     + [extension.istype](#extensionistype)
     + [extension:get_extension_critical](#extensionget_extension_critical)
     + [extension:set_extension_critical](#extensionset_extension_critical)
@@ -2755,6 +2758,18 @@ for an example to create extension with an unknown nid.
 
 [Back to TOC](#table-of-contents)
 
+### extension:to_der
+
+**syntax**: *der, ok = extension:to_der()*
+
+Returns the ASN.1 encoded (DER) value of the extension.
+
+`nid_or_txt` is a number or text representation of [NID]. Note `DER` is a binary
+encoding format. Consider using [extension:text](#extensiontext) for human readable
+or printable output.
+
+[Back to TOC](#table-of-contents)
+
 ### extension.from_data
 
 **syntax**: *ext, ok = extension.from_data(table, nid_or_txt, crit?)*
@@ -2767,6 +2782,18 @@ Creates a new `extension` instance. `table` can be instance of:
 
 `nid_or_txt` is a number or text representation of [NID] and
 `crit` is the critical flag of the extension.
+
+[Back to TOC](#table-of-contents)
+
+### extension.to_data
+
+**syntax**: *ext, ok = extension:to_data(nid_or_txt)*
+
+Convert the `extension` to another wrapper instance. Currently supported following:
+
+- [x509.altname](#restyopensslx509altname)
+
+`nid_or_txt` is a number or text representation of [NID].
 
 [Back to TOC](#table-of-contents)
 
@@ -2807,7 +2834,9 @@ Returns the name of extension as ASN.1 Object. User can further use helper funct
 
 **syntax**: *txt, err = extension:text()*
 
-Returns the text representation of extension
+Returns the text representation of extension. This functions calls `X509V3_EXT_print` under the hood,
+and fallback to `ASN1_STRING_print` if the former failed. It thus has exact same output with that
+of `openssl x509 -text`.
 
 ```lua
 local objects = require "resty.openssl.objects"
