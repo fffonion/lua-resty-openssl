@@ -136,6 +136,20 @@ true
                 return
             end
             ngx.say(tostring(extension))
+
+            -- unknown extension
+            local objects = require("resty.openssl.objects")
+            local id_pe_acmeIdentifier = "1.3.6.1.5.5.7.1.31"
+            local nid = objects.txt2nid(id_pe_acmeIdentifier)
+            if not nid or nid == 0 then
+                nid = objects.create(
+                    id_pe_acmeIdentifier, -- nid
+                    "pe-acmeIdentifier",  -- sn
+                    "ACME Identifier"     -- ln
+                )
+            end
+            local ext = myassert(require("resty.openssl.x509.extension").from_der("valuevalue", nid, true))
+            ngx.say("ACME Identifier: ", tostring(ext))
         }
     }
 --- request
@@ -144,6 +158,7 @@ true
 "C9:C2:53:61:66:9D:5F:AB:25:F4:26:CD:0F:38:9A:A8:49:EA:48:A9
 OCSP - URI:http://ocsp.digicert.com
 CA Issuers - URI:http://cacerts.digicert.com/DigiCertSHA2ExtendedValidationServerCA.crt
+.?ACME Identifier: valuevalue
 "
 --- no_error_log
 [error]
