@@ -224,7 +224,9 @@ end
 function _M.list_cipher_algorithms()
   local ret = {}
   local fn = ffi_cast("fake_openssl_cipher_list_fn*",
-                      get_list_func(C.EVP_CIPHER_nid, ret))
+                      get_list_func(
+                        OPENSSL_30 and C.EVP_CIPHER_get_nid or C.EVP_CIPHER_nid,
+                        ret))
 
   C.EVP_CIPHER_do_all_sorted(fn, nil)
 
@@ -236,7 +238,9 @@ end
 function _M.list_digest_algorithms()
   local ret = {}
   local fn = ffi_cast("fake_openssl_md_list_fn*",
-                      get_list_func(C.EVP_MD_type, ret))
+                      get_list_func(
+                        OPENSSL_30 and C.EVP_MD_get_type or C.EVP_MD_type,
+                        ret))
 
   C.EVP_MD_do_all_sorted(fn, nil)
 

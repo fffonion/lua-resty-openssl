@@ -26,6 +26,7 @@ local format_error = require("resty.openssl.err").format_error
 
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
 local OPENSSL_111_OR_LATER = require("resty.openssl.version").OPENSSL_111_OR_LATER
+local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 local BORINGSSL = require("resty.openssl.version").BORINGSSL
 
 local ptr_of_uint = ctypes.ptr_of_uint
@@ -427,7 +428,7 @@ function _M.new(s, opts)
 
   ffi_gc(ctx, C.EVP_PKEY_free)
 
-  local key_type = C.EVP_PKEY_base_id(ctx)
+  local key_type = OPENSSL_30 and C.EVP_PKEY_get_base_id(ctx) or C.EVP_PKEY_base_id(ctx)
   if key_type == 0 then
     return nil, "pkey.new: cannot get key_type"
   end
@@ -438,7 +439,7 @@ function _M.new(s, opts)
 
   -- although OpenSSL discourages to use this size for digest/verify
   -- but this is good enough for now
-  local buf_size = C.EVP_PKEY_size(ctx)
+  local buf_size = OPENSSL_30 and C.EVP_PKEY_get_size(ctx) or C.EVP_PKEY_size(ctx)
 
   local self = setmetatable({
     ctx = ctx,

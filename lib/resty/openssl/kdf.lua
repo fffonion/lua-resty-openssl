@@ -10,6 +10,7 @@ local format_error = require("resty.openssl.err").format_error
 local version_num = require("resty.openssl.version").version_num
 local version_text = require("resty.openssl.version").version_text
 local BORINGSSL = require("resty.openssl.version").BORINGSSL
+local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 local ctypes = require "resty.openssl.auxiliary.ctypes"
 local EVP_PKEY_OP_DERIVE = require("resty.openssl.include.evp").EVP_PKEY_OP_DERIVE
 
@@ -267,7 +268,7 @@ function _M.derive(options)
           return nil, format_error("kdf.derive: EVP_PKEY_CTRL_HKDF_MODE")
         end
         if options.hkdf_mode == _M.HKDEF_MODE_EXTRACT_ONLY then
-          local md_size = C.EVP_MD_size(md)
+          local md_size = OPENSSL_30 and C.EVP_MD_get_size(md) or C.EVP_MD_size(md)
           if options.outlen ~= md_size then
             options.outlen = md_size
             ngx.log(ngx.WARN, "hkdf_mode EXTRACT_ONLY outputs fixed length of ", md_size,

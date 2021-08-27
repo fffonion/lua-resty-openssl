@@ -1107,7 +1107,7 @@ true
     GET /t
 --- response_body_like eval
 "errored out with too many callbacks
-pkey.new.+(?:bad decrypt|failed|BAD_DECRYPT|no start line)
+pkey.new.+(?:bad decrypt|failed|BAD_DECRYPT|no start line|DECODER routines::unsupported)
 ok
 ok
 "

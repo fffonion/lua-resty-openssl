@@ -9,6 +9,7 @@ local ctypes = require "resty.openssl.auxiliary.ctypes"
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
+local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 
 local uchar_array = ctypes.uchar_array
 local void_ptr = ctypes.void_ptr
@@ -51,9 +52,12 @@ function _M.new(typ)
     ctx = ctx,
     cipher_type = dtyp,
     initialized = false,
-    block_size = tonumber(C.EVP_CIPHER_CTX_block_size(ctx)),
-    key_size = tonumber(C.EVP_CIPHER_CTX_key_length(ctx)),
-    iv_size = tonumber(C.EVP_CIPHER_CTX_iv_length(ctx)),
+    block_size = tonumber(OPENSSL_30 and C.EVP_CIPHER_CTX_get_block_size(ctx)
+                                    or C.EVP_CIPHER_CTX_block_size(ctx)),
+    key_size = tonumber(OPENSSL_30 and C.EVP_CIPHER_CTX_get_key_length(ctx)
+                                    or C.EVP_CIPHER_CTX_key_length(ctx)),
+    iv_size = tonumber(OPENSSL_30 and C.EVP_CIPHER_CTX_get_iv_length(ctx)
+                                    or C.EVP_CIPHER_CTX_iv_length(ctx)),
   }, mt), nil
 end
 

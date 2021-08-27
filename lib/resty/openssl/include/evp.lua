@@ -18,6 +18,7 @@ ffi.cdef [[
   DH *EVP_PKEY_get0_DH(EVP_PKEY *pkey);
 
   int EVP_PKEY_assign(EVP_PKEY *pkey, int type, void *key);
+  // openssl < 3.0
   int EVP_PKEY_base_id(const EVP_PKEY *pkey);
   int EVP_PKEY_size(const EVP_PKEY *pkey);
 
@@ -84,8 +85,14 @@ ffi.cdef [[
   int EVP_DigestVerify(EVP_MD_CTX *ctx, const unsigned char *sigret,
                       size_t siglen, const unsigned char *tbs, size_t tbslen);
 
-  int EVP_MD_size(const EVP_MD *md);
   const EVP_MD *EVP_md_null(void);
+  // openssl < 3.0
+  int EVP_MD_size(const EVP_MD *md);
+  int EVP_MD_type(const EVP_MD *md);
+
+  typedef void* fake_openssl_md_list_fn(const EVP_MD *ciph, const char *from,
+                                              const char *to, void *x);
+  void EVP_MD_do_all_sorted(fake_openssl_md_list_fn*, void *arg);
 
   int EVP_PKEY_get_default_digest_nid(EVP_PKEY *pkey, int *pnid);
   const EVP_MD *EVP_get_digestbyname(const char *name);
@@ -104,7 +111,7 @@ ffi.cdef [[
   int EVP_CIPHER_CTX_cleanup(EVP_CIPHER_CTX *a);
   // openssl >= 1.1.0
   int EVP_CIPHER_CTX_reset(EVP_CIPHER_CTX *ctx);
-
+  // openssl < 3.0
   int EVP_CIPHER_CTX_block_size(const EVP_CIPHER_CTX *ctx);
   int EVP_CIPHER_CTX_key_length(const EVP_CIPHER_CTX *ctx);
   int EVP_CIPHER_CTX_iv_length(const EVP_CIPHER_CTX *ctx);
@@ -147,16 +154,23 @@ ffi.cdef [[
                                                 const char *to, void *x);
   void EVP_CIPHER_do_all_sorted(fake_openssl_cipher_list_fn*, void *arg);
   int EVP_CIPHER_nid(const EVP_CIPHER *cipher);
-
-  typedef void* fake_openssl_md_list_fn(const EVP_MD *ciph, const char *from,
-                                                const char *to, void *x);
-  void EVP_MD_do_all_sorted(fake_openssl_md_list_fn*, void *arg);
-  int EVP_MD_type(const EVP_MD *md);
 ]]
 
 if OPENSSL_30 then
   ffi.cdef [[
     int EVP_PKEY_CTX_set_rsa_padding(EVP_PKEY_CTX *ctx, int pad_mode);
+
+    int EVP_CIPHER_CTX_get_block_size(const EVP_CIPHER_CTX *ctx);
+    int EVP_CIPHER_CTX_get_key_length(const EVP_CIPHER_CTX *ctx);
+    int EVP_CIPHER_CTX_get_iv_length(const EVP_CIPHER_CTX *ctx);
+
+    int EVP_CIPHER_get_nid(const EVP_CIPHER *cipher);
+
+    int EVP_MD_get_size(const EVP_MD *md);
+    int EVP_MD_get_type(const EVP_MD *md);
+
+    int EVP_PKEY_get_base_id(const EVP_PKEY *pkey);
+    int EVP_PKEY_get_size(const EVP_PKEY *pkey);
   ]]
 end
 

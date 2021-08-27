@@ -20,6 +20,7 @@ local ctypes = require "resty.openssl.auxiliary.ctypes"
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
+local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 
 -- accessors provides an openssl version neutral interface to lua layer
 -- it doesn't handle any error, expect that to be implemented in
@@ -316,7 +317,7 @@ local function digest(self, cfunc, typ)
     return nil, string.format("x509:digest: invalid digest type \"%s\"", typ)
   end
 
-  local md_size = C.EVP_MD_size(dtyp)
+  local md_size = OPENSSL_30 and C.EVP_MD_get_size(dtyp) or C.EVP_MD_size(dtyp)
   local buf = ctypes.uchar_array(md_size)
   local length = ctypes.ptr_of_uint()
 
