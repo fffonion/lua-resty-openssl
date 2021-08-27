@@ -39,44 +39,9 @@ else
   ]]
 
   local ngx_version = ngx.config.nginx_version
-  if ngx_version == 1015008 then
-    -- 1.15.8
-    ffi.cdef [[
-    typedef struct {
-      void               *data;
-      void               *read;
-      void               *write;
-
-      int                 fd;
-
-      ngx_recv_pt         recv;
-      ngx_send_pt         send;
-      ngx_recv_chain_pt   recv_chain;
-      ngx_send_chain_pt   send_chain;
-
-      void               *listening;
-
-      off_t               sent;
-
-      void               *log;
-
-      void               *pool;
-
-      int                 type;
-
-      void                *sockaddr;
-      socklen_t           socklen;
-      ngx_str_t           addr_text;
-
-      ngx_str_t           proxy_protocol_addr;
-      in_port_t           proxy_protocol_port;
-
-      ngx_ssl_connection_s  *ssl;
-      // trimmed
-    } ngx_connection_s;
-    ]]
-  elseif ngx_version == 1017008 or ngx_version == 1019003 then
-    -- 1.17.8, 1.19.3
+  if ngx_version == 1017008 or ngx_version == 1019003 or ngx_version == 1019009 then
+    -- 1.17.8, 1.19.3, 1.19.9
+    -- https://github.com/nginx/nginx/blob/master/src/core/ngx_connection.h
     ffi.cdef [[
     typedef struct {
       ngx_str_t           src_addr;
@@ -242,10 +207,12 @@ else
     } ngx_stream_lua_socket_tcp_upstream_s;
   ]]
 
-  if ngx.config
-    and ngx.config.ngx_lua_version
-    and ngx.config.ngx_lua_version >= 10019
-  then
+  local ngx_lua_version = ngx.config and
+        ngx.config.ngx_lua_version and
+        ngx.config.ngx_lua_version
+
+  if ngx_lua_version >= 10019 and ngx_lua_version <= 10020 then
+    -- https://github.com/openresty/lua-nginx-module/blob/master/src/ngx_http_lua_socket_tcp.h
     ffi.cdef[[
       typedef struct {
         ngx_http_lua_socket_tcp_retval_handler_masked          read_prepare_retvals;
@@ -264,7 +231,7 @@ else
         // trimmed
       } ngx_http_lua_socket_tcp_upstream_s;
     ]]
-  else
+  elseif ngx_lua_version < 10019 then
     -- the struct doesn't seem to get changed a long time since birth
     ffi.cdef[[
       typedef struct {
@@ -282,6 +249,8 @@ else
         // trimmed
       } ngx_http_lua_socket_tcp_upstream_s;
     ]]
+  else
+    error("resty.openssl.auxiliary.nginx doesn't support lua-nginx-module version " .. (ngx_lua_version or "nil"), 2)
   end
 
   local function get_ngx_ssl_from_socket_ctx(sock)
