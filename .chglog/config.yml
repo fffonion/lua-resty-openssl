@@ -2,7 +2,7 @@ style: github
 template: CHANGELOG.tpl.md
 info:
   title: CHANGELOG
-  repository_url: https://github.com/fffonion/lua-resty-acme
+  repository_url: https://github.com/fffonion/lua-resty-openssl
 options:
   sort: "semver"
   commits:
