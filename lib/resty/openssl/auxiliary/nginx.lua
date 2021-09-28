@@ -12,7 +12,8 @@ else
   local ffi = require "ffi"
 
   ffi.cdef [[
-    typedef long off_t;
+    // Nginx seems to always config _FILE_OFFSET_BITS=64, this should always be 8 byte
+    typedef long long off_t;
     typedef unsigned int socklen_t; // windows uses int, same size
     typedef unsigned short in_port_t;
 
