@@ -14,10 +14,12 @@ Table of Contents
 - [Status](#status)
 - [Synopsis](#synopsis)
   * [resty.openssl](#restyopenssl)
+    + [openssl.load_modules](#opensslload_modules)
     + [openssl.luaossl_compat](#opensslluaossl_compat)
     + [openssl.resty_hmac_compat](#opensslresty_hmac_compat)
     + [openssl.get_fips_mode](#opensslget_fips_mode)
-    + [openssl.set_fips_mode](#opensslset_fips_mode)
+    + [openssl.list_cipher_algorithms](#openssllist_cipher_algorithms)
+    + [openssl.list_digest_algorithms](#openssllist_digest_algorithms)
   * [resty.openssl.version](#restyopensslversion)
     + [version_num](#version_num)
     + [version_text](#version_text)
@@ -332,11 +334,27 @@ Returns a boolean indicating if FIPS mode is enabled.
 
 [Back to TOC](#table-of-contents)
 
-### openssl.get_fips_mode
+### openssl.set_fips_mode
 
 **syntax**: *ok, err = openssl.set_fips_mode(enabled)*
 
 Toggle FIPS mode on or off.
+
+[Back to TOC](#table-of-contents)
+
+### openssl.list_cipher_algorithms
+
+**syntax**: *ret = openssl.list_cipher_algorithms(enabled)*
+
+Return available cipher algorithms in an array.
+
+[Back to TOC](#table-of-contents)
+
+### openssl.list_digest_algorithms
+
+**syntax**: *ret = openssl.list_digest_algorithms(enabled)*
+
+Return available digest algorithms in an array.
 
 [Back to TOC](#table-of-contents)
 
