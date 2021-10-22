@@ -294,7 +294,7 @@ TLS Web Server Authentication, TLS Web Client Authentication
     GET /t
 --- response_body eval
 "OCSP - URI:http://ocsp.digicert.com
-CA Issuers - URI:http://cacerts.digicert.com/DigiCertSHA2ExtendedValidationServerCA.crt
+CA Issuers - URI:http://cacerts.digicert.com/DigiCertHighAssuranceTLSHybridECCSHA2562020CA1.crt
 "
 --- no_error_log
 [error]
@@ -323,7 +323,7 @@ CA Issuers - URI:http://cacerts.digicert.com/DigiCertSHA2ExtendedValidationServe
     GET /t
 --- response_body eval
 "OCSP - URI:http://ocsp.digicert.com
-CA Issuers - URI:http://cacerts.digicert.com/DigiCertSHA2ExtendedValidationServerCA.crt
+CA Issuers - URI:http://cacerts.digicert.com/DigiCertHighAssuranceTLSHybridECCSHA2562020CA1.crt
 OCSP - URI:http://somedomain.com
 "
 --- no_error_log
@@ -350,8 +350,8 @@ OCSP - URI:http://somedomain.com
 --- request
     GET /t
 --- response_body eval
-"URI http://crl3.digicert.com/sha2-ev-server-g2.crl
-URI http://crl4.digicert.com/sha2-ev-server-g2.crl
+"URI http://crl3.digicert.com/DigiCertHighAssuranceTLSHybridECCSHA2562020CA1.crl
+URI http://crl4.digicert.com/DigiCertHighAssuranceTLSHybridECCSHA2562020CA1.crl
 "
 --- no_error_log
 [error]
@@ -422,8 +422,8 @@ nil
 --- request
     GET /t
 --- response_body eval
-'http://crl3.digicert.com/sha2-ev-server-g2.crl
-["http:\/\/crl3.digicert.com\/sha2-ev-server-g2.crl","http:\/\/crl4.digicert.com\/sha2-ev-server-g2.crl"]
+'http://crl3.digicert.com/DigiCertHighAssuranceTLSHybridECCSHA2562020CA1.crl
+["http:\/\/crl3.digicert.com\/DigiCertHighAssuranceTLSHybridECCSHA2562020CA1.crl","http:\/\/crl4.digicert.com\/DigiCertHighAssuranceTLSHybridECCSHA2562020CA1.crl"]
 nil
 '
 --- no_error_log
@@ -505,7 +505,7 @@ false
 --- request
     GET /t
 --- response_body eval
-"0A0630427F5BBCED6957396593B6451F"
+"0E8BF3770D92D196F0BB61F93C4166BE"
 --- no_error_log
 [error]
 
@@ -552,7 +552,7 @@ false
 --- request
     GET /t
 --- response_body eval
-"1525737600"
+"1616630400"
 --- no_error_log
 [error]
 
@@ -597,7 +597,7 @@ false
 --- request
     GET /t
 --- response_body eval
-"1591185600"
+"1648684799"
 --- no_error_log
 [error]
 
@@ -644,13 +644,8 @@ false
     GET /t
 --- response_body eval
 "-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxjyq8jyXDDrBTyitcnB9
-0865tWBzpHSbindG/XqYQkzFMBlXmqkzC+FdTRBYyneZw5Pz+XWQvL+74JW6LsWN
-c2EF0xCEqLOJuC9zjPAqbr7uroNLghGxYf13YdqbG5oj/4x+ogEG3dF/U5YIwVr6
-58DKyESMV6eoYV9mDVfTuJastkqcwero+5ZAKfYVMLUEsMwFtoTDJFmVf6JlkOWw
-sxp1WcQ/MRQK1cyqOoUFUgYylgdh3yeCDPeF22Ax8AlQxbcaI+GwfQL1FB7Jy+h+
-KjME9lE/UpgV6Qt2R1xNSmvFCBWu+NFX6epwFP/JRbkMfLz0beYFUvmMgLtwVpEP
-SwIDAQAB
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAErfb3dbHTSVQKXRBxvdwlBksiHKIj
+Tp+h/rnQjL05vAwjx8+RppBa2EWrAxO+wSN6ucTInUf2luC5dmtQNmb3DQ==
 -----END PUBLIC KEY-----
 "
 --- no_error_log
@@ -700,7 +695,7 @@ SwIDAQAB
 --- request
     GET /t
 --- response_body eval
-"C=US/CN=github.com/L=San Francisco/O=GitHub, Inc./ST=California/businessCategory=Private Organization/jurisdictionC=US/jurisdictionST=Delaware/serialNumber=5157550"
+"C=US/CN=github.com/L=San Francisco/O=GitHub, Inc./ST=California"
 --- no_error_log
 [error]
 
@@ -748,7 +743,7 @@ SwIDAQAB
 --- request
     GET /t
 --- response_body eval
-"C=US/CN=DigiCert SHA2 Extended Validation Server CA/O=DigiCert Inc/OU=www.digicert.com"
+"C=US/CN=DigiCert High Assurance TLS Hybrid ECC SHA256 2020 CA1/O=DigiCert, Inc."
 --- no_error_log
 [error]
 
@@ -981,8 +976,8 @@ true
 --- request
     GET /t
 --- response_body
-668
-RSA-SHA256
+794
+ecdsa-with-SHA256
 --- no_error_log
 [error]
 # END AUTO GENERATED CODE
