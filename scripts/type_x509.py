@@ -8,8 +8,8 @@ defines = {
     "extensions_in_struct":"cert_info.extensions",
     "has_sign_verify": True,
     "sample": "Github.pem",
-    "sample_signature_nid": 668,
-    "sample_signature_name": "RSA-SHA256",
+    "sample_signature_nid": 794,
+    "sample_signature_name": "ecdsa-with-SHA256",
     "fields":
 [
 {
@@ -20,7 +20,7 @@ defines = {
     # this struct should be copied during return
     "dup": True,
     # the value of sample used in tests
-    "sample_printable": "0A0630427F5BBCED6957396593B6451F",
+    "sample_printable": "0E8BF3770D92D196F0BB61F93C4166BE",
     # the optional type converter
     "set_converter":
 '''
@@ -47,7 +47,7 @@ defines = {
 {
     "field": "not_before",
     "type": "number",
-    "sample_printable": 1525737600,
+    "sample_printable": 1616630400,
     "set_converter": '''
   toset = C.ASN1_TIME_set(nil, toset)
   ffi_gc(toset, C.ASN1_STRING_free)
@@ -60,7 +60,7 @@ defines = {
 {
     "field": "not_after",
     "type": "number",
-    "sample_printable": 1591185600,
+    "sample_printable": 1648684799,
     "set_converter": '''
   toset = C.ASN1_TIME_set(nil, toset)
   ffi_gc(toset, C.ASN1_STRING_free)
@@ -74,13 +74,8 @@ defines = {
     "field": "pubkey",
     "type": "pkey",
     "sample_printable": '''-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxjyq8jyXDDrBTyitcnB9
-0865tWBzpHSbindG/XqYQkzFMBlXmqkzC+FdTRBYyneZw5Pz+XWQvL+74JW6LsWN
-c2EF0xCEqLOJuC9zjPAqbr7uroNLghGxYf13YdqbG5oj/4x+ogEG3dF/U5YIwVr6
-58DKyESMV6eoYV9mDVfTuJastkqcwero+5ZAKfYVMLUEsMwFtoTDJFmVf6JlkOWw
-sxp1WcQ/MRQK1cyqOoUFUgYylgdh3yeCDPeF22Ax8AlQxbcaI+GwfQL1FB7Jy+h+
-KjME9lE/UpgV6Qt2R1xNSmvFCBWu+NFX6epwFP/JRbkMfLz0beYFUvmMgLtwVpEP
-SwIDAQAB
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAErfb3dbHTSVQKXRBxvdwlBksiHKIj
+Tp+h/rnQjL05vAwjx8+RppBa2EWrAxO+wSN6ucTInUf2luC5dmtQNmb3DQ==
 -----END PUBLIC KEY-----
 ''',
 },
@@ -89,14 +84,14 @@ SwIDAQAB
     "field": "subject_name",
     "type": "x509.name",
     "dup": True,
-    "sample_printable": "C=US/CN=github.com/L=San Francisco/O=GitHub, Inc./ST=California/businessCategory=Private Organization/jurisdictionC=US/jurisdictionST=Delaware/serialNumber=5157550",
+    "sample_printable": "C=US/CN=github.com/L=San Francisco/O=GitHub, Inc./ST=California",
 },
 
 {
     "field": "issuer_name",
     "type": "x509.name",
     "dup": True,
-    "sample_printable": "C=US/CN=DigiCert SHA2 Extended Validation Server CA/O=DigiCert Inc/OU=www.digicert.com",
+    "sample_printable": "C=US/CN=DigiCert High Assurance TLS Hybrid ECC SHA256 2020 CA1/O=DigiCert, Inc.",
 },
 
 {
