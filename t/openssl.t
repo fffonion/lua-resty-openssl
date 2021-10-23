@@ -7,6 +7,7 @@ use Cwd qw(cwd);
 my $pwd = cwd();
 
 my $use_luacov = $ENV{'TEST_NGINX_USE_LUACOV'} // '';
+my $fips = $ENV{'TEST_NGINX_FIPS'} // '';
 
 our $HttpConfig = qq{
     lua_package_path "$pwd/lib/?.lua;$pwd/lib/?/init.lua;$pwd/../lua-resty-hmac/lib/?.lua;$pwd/../lua-resty-string/lib/?.lua;;";
@@ -15,6 +16,8 @@ our $HttpConfig = qq{
             require 'luacov.tick'
             jit.off()
         end
+
+        _G.fips = "$fips" ~= ""
     }
 };
 
@@ -66,6 +69,10 @@ false
 --- config
     location =/t {
         content_by_lua_block {
+            if require("resty.openssl.version").BORINGSSL then
+                ngx.say("[\"AES\"]")
+                ngx.exit(0)
+            end
             local openssl = require("resty.openssl")
             ngx.say(require("cjson").encode(openssl.list_cipher_algorithms()))
         }
@@ -77,11 +84,15 @@ false
 --- no_error_log
 [error]
 
-=== TEST 5: List digest algorithms
+=== TEST 4: List digest algorithms
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
         content_by_lua_block {
+            if require("resty.openssl.version").BORINGSSL then
+                ngx.say("[\"SHA\"]")
+                ngx.exit(0)
+            end
             local openssl = require("resty.openssl")
             ngx.say(require("cjson").encode(openssl.list_digest_algorithms()))
         }
@@ -92,3 +103,4 @@ false
 \[.+SHA.+\]
 --- no_error_log
 [error]
+
