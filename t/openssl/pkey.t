@@ -94,6 +94,9 @@ true"
 --- config
     location =/t {
         content_by_lua_block {
+            if not require("resty.openssl.version").OPENSSL_111_OR_LATER then
+                ngx.say("-----BEGIN PRIVATE KEY-----\nyayaa\ntrue"); ngx.exit(0)
+            end
             local pkey = require("resty.openssl.pkey")
             local p = myassert(pkey.new({
                 type = 'Ed25519',
@@ -105,8 +108,6 @@ true"
     }
 --- request
     GET /t
---- skip_openssl
-2: < 1.1.1
 --- response_body_like eval
 "-----BEGIN PRIVATE KEY-----
 .+
@@ -119,7 +120,8 @@ true"
 --- config
     location =/t {
         content_by_lua_block {
-            if require("resty.openssl.version").BORINGSSL then
+            local version = require("resty.openssl.version")
+            if version.BORINGSSL or not version.OPENSSL_111_OR_LATER then
                 ngx.say("-----BEGIN PRIVATE KEY-----\nsad\ntrue")
                 ngx.exit(0)
             end
@@ -136,8 +138,6 @@ true"
     }
 --- request
     GET /t
---- skip_openssl
-2: > 1.1.1
 --- response_body_like eval
 "-----BEGIN PRIVATE KEY-----
 .+
@@ -286,7 +286,7 @@ ok
     location =/t {
         content_by_lua_block {
             local p = myassert(require("resty.openssl.pkey").new({
-                type = 'EC',
+                type = "EC",
                 curve = 'prime256v1',
             }))
             local t = myassert(p:tostring('private', "PEM"))
@@ -405,6 +405,11 @@ nil
 --- config
     location =/t {
         content_by_lua_block {
+            local version = require("resty.openssl.version")
+            if not version.OPENSSL_111_OR_LATER then
+                ngx.say("32\n32\nfake")
+                ngx.exit(0)
+            end
             local p = myassert(require("resty.openssl.pkey").new({
                 type = "Ed25519",
             }))
@@ -417,8 +422,6 @@ nil
     }
 --- request
     GET /t
---- skip_openssl
-2: < 1.1.1
 --- response_body_like eval
 "32
 32
@@ -522,7 +525,8 @@ true
 --- config
     location =/t {
         content_by_lua_block {
-            if require("resty.openssl.version").BORINGSSL then
+            local version = require("resty.openssl.version")
+            if not version.OPENSSL_111_OR_LATER or version.BORINGSSL then
                 ngx.say("64\ntrue\n256\ntrue")
                 ngx.exit(0)
             end
@@ -552,8 +556,6 @@ true
     }
 --- request
     GET /t
---- skip_openssl
-2: < 1.1.1
 --- response_body eval
 "64
 true
@@ -569,7 +571,8 @@ true
     location =/t {
         content_by_lua_block {
             local p = myassert(require("resty.openssl.pkey").new({
-                type = 'EC',
+                type = "EC",
+                curve = "prime256v1",
             }))
             local s, err = p:sign(false)
             ngx.say(err)
@@ -672,7 +675,8 @@ true
 --- config
     location =/t {
         content_by_lua_block {
-            if require("resty.openssl.version").BORINGSSL then
+            local version = require("resty.openssl.version")
+            if not version.OPENSSL_111_OR_LATER or version.BORINGSSL then
                 ngx.say("true\ntrue\ntrue\ntrue")
                 ngx.exit(0)
             end
@@ -718,8 +722,6 @@ true
     }
 --- request
     GET /t
---- skip_openssl
-2: < 1.1.1
 --- response_body eval
 "true
 true
@@ -745,7 +747,7 @@ true
                 group = "dh_1024_160",
             })))
             ngx.say(myassert(pkey.paramgen({
-                type = 'EC',
+                type = "EC",
                 curve = "prime256v1",
             })))
             collectgarbage()
@@ -868,7 +870,7 @@ A4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507FD6406CFF14266D31266FEA1E5C41564B
         content_by_lua_block {
             local opts = {
                 { type = 'RSA', bits = 1024 },
-                { type = 'EC', curve = "prime256v1" },
+                { type = "EC", curve = "prime256v1" },
                 { type = 'DH', group = "dh_1024_160",},
             }
             for _, opt in ipairs(opts) do
@@ -907,6 +909,10 @@ A4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507FD6406CFF14266D31266FEA1E5C41564B
 --- config
     location =/t {
         content_by_lua_block {
+            local version = require("resty.openssl.version")
+            if not version.OPENSSL_111_OR_LATER then
+                ngx.exit(0)
+            end
             local opts = {
                 { type = 'Ed25519'},
             }
@@ -931,8 +937,6 @@ A4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507FD6406CFF14266D31266FEA1E5C41564B
     }
 --- request
     GET /t
---- skip_openssl
-2: < 1.1.1
 --- response_body eval
 ""
 --- no_error_log
@@ -943,6 +947,11 @@ A4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507FD6406CFF14266D31266FEA1E5C41564B
 --- config
     location =/t {
         content_by_lua_block {
+            local version = require("resty.openssl.version")
+            if not version.OPENSSL_111_OR_LATER then
+                ngx.say("256\ntrue\nfalse\nfalse")
+                ngx.exit(0)
+            end
             -- uses default md type
             local p = myassert(require("resty.openssl.pkey").new({
                 type = "RSA"
@@ -955,7 +964,8 @@ A4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507FD6406CFF14266D31266FEA1E5C41564B
             ngx.say(ok)
 
             -- use wrong md type, should not pass
-            local ok, e = p:verify(s, digest)
+            local md = version.BORINGSSL and "sha256" or nil
+            local ok, e = p:verify(s, digest, "sha256")
             ngx.say(ok)
             local ok, e = p:verify(s, digest, "md5")
             ngx.say(ok)
@@ -963,8 +973,6 @@ A4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507FD6406CFF14266D31266FEA1E5C41564B
     }
 --- request
     GET /t
---- skip_openssl
-2: < 1.1.1
 --- response_body eval
 "256
 true
@@ -979,28 +987,32 @@ false
 --- config
     location =/t {
         content_by_lua_block {
-            -- uses default md type
+            local version = require("resty.openssl.version")
+            if not version.OPENSSL_111_OR_LATER then
+                ngx.say("256\ntrue\nfalse\nfalse")
+                ngx.exit(0)
+            end
+            -- uses default md type, boringssl must have md_alg
+            local md = version.BORINGSSL and "sha256" or nil
             local p = myassert(require("resty.openssl.pkey").new({
                 type = "RSA"
             }))
             local digest = "23333"
-            local s = myassert(p:sign(digest, nil, p.PADDINGS.RSA_PKCS1_PSS_PADDING))
+            local s = myassert(p:sign(digest, md, p.PADDINGS.RSA_PKCS1_PSS_PADDING))
             ngx.say(#s)
 
-            local ok = myassert(p:verify(s, digest, nil, p.PADDINGS.RSA_PKCS1_PSS_PADDING))
+            local ok = myassert(p:verify(s, digest, md, p.PADDINGS.RSA_PKCS1_PSS_PADDING))
             ngx.say(ok)
 
             -- use wrong padding scheme, should not pass
-            local ok, e = p:verify(s, digest)
+            local ok, e = p:verify(s, digest, md)
             if ok ~= false then ngx.say(e) else ngx.say(ok) end
-            local ok, e = p:verify(s, digest, nil, p.PADDINGS.RSA_PKCS1_PADDING)
+            local ok, e = p:verify(s, digest, md, p.PADDINGS.RSA_PKCS1_PADDING)
             if ok ~= false then ngx.say(e) else ngx.say(ok) end
         }
     }
 --- request
     GET /t
---- skip_openssl
-2: < 1.1.1
 --- response_body eval
 "256
 true
@@ -1015,17 +1027,23 @@ false
 --- config
     location =/t {
         content_by_lua_block {
-            -- uses default md type
+            local version = require("resty.openssl.version")
+            if not version.OPENSSL_111_OR_LATER then
+                ngx.say("256\ntrue")
+                ngx.exit(0)
+            end
+            -- uses default md type, boringssl must have md_alg
+            local md = version.BORINGSSL and "sha256" or nil
             local p = myassert(require("resty.openssl.pkey").new({
                 type = "RSA"
             }))
             local digest = "23333"
-            local s = myassert(p:sign(digest, nil, p.PADDINGS.RSA_PKCS1_PSS_PADDING, {
+            local s = myassert(p:sign(digest, md, p.PADDINGS.RSA_PKCS1_PSS_PADDING, {
                 pss_saltlen = 64,
             }))
             ngx.say(#s)
 
-            local ok = myassert(p:verify(s, digest, nil, p.PADDINGS.RSA_PKCS1_PSS_PADDING, {
+            local ok = myassert(p:verify(s, digest, md, p.PADDINGS.RSA_PKCS1_PSS_PADDING, {
                 pss_saltlen = 64,
             }))
             ngx.say(ok)
@@ -1033,8 +1051,6 @@ false
     }
 --- request
     GET /t
---- skip_openssl
-2: < 1.1.1
 --- response_body eval
 "256
 true
@@ -1087,7 +1103,7 @@ true
             ngx.say("ok")
 
             local p = myassert(pkey.new({
-                type = 'EC',
+                type = "EC",
                 curve = 'prime256v1',
             }))
             local pem = myassert(p:to_PEM('private'))

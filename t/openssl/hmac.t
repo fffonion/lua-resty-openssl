@@ -104,7 +104,6 @@ __DATA__
 
             myassert(hmac:reset())
 
-            local hmac = myassert(require("resty.openssl.hmac").new("goose", "sha256"))
             myassert(hmac:update("🦢🦢🦢🦢🦢🦢"))
             ngx.say(ngx.encode_base64(myassert(hmac:final())))
         }
