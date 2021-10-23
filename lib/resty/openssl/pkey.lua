@@ -12,7 +12,9 @@ local dh_macro = require "resty.openssl.include.dh"
 require "resty.openssl.include.bio"
 require "resty.openssl.include.pem"
 require "resty.openssl.include.x509"
+require "resty.openssl.include.evp.pkey"
 local evp_macro = require "resty.openssl.include.evp"
+local pkey_macro = require "resty.openssl.include.evp.pkey"
 local util = require "resty.openssl.util"
 local digest_lib = require "resty.openssl.digest"
 local rsa_lib = require "resty.openssl.rsa"
@@ -164,14 +166,14 @@ local function generate_param(key_type, config)
     if nid == 0 then
       return nil, "unknown curve " .. curve
     end
-    if evp_macro.EVP_PKEY_CTX_set_ec_paramgen_curve_nid(pctx, nid) <= 0 then
+    if pkey_macro.EVP_PKEY_CTX_set_ec_paramgen_curve_nid(pctx, nid) <= 0 then
       return nil, format_error("EVP_PKEY_CTX_ctrl: EC: curve_nid")
     end
     if not BORINGSSL then
       -- use the named-curve encoding for best backward-compatibilty
       -- and for playing well with go:crypto/x509
       -- # define OPENSSL_EC_NAMED_CURVE  0x001
-      if evp_macro.EVP_PKEY_CTX_set_ec_param_enc(pctx, 1) <= 0 then
+      if pkey_macro.EVP_PKEY_CTX_set_ec_param_enc(pctx, 1) <= 0 then
         return nil, format_error("EVP_PKEY_CTX_ctrl: EC: param_enc")
       end
     end
@@ -180,11 +182,7 @@ local function generate_param(key_type, config)
     if not config.param and not bits then
       bits = 2048
     end
-    -- EVP_PKEY_CTX_set_dh_paramgen_prime_len
-    if bits and C.EVP_PKEY_CTX_ctrl(pctx,
-            evp_macro.EVP_PKEY_DH, evp_macro.EVP_PKEY_OP_PARAMGEN,
-            evp_macro.EVP_PKEY_CTRL_DH_PARAMGEN_PRIME_LEN,
-            bits, nil) <= 0 then
+    if bits and pkey_macro.EVP_PKEY_CTX_set_dh_paramgen_prime_len(pctx, bits) <= 0 then
       return nil, format_error("EVP_PKEY_CTX_ctrl: DH: bits")
     end
   end
@@ -297,7 +295,7 @@ local function generate_key(config)
       return nil, "bits out of range"
     end
 
-    if evp_macro.EVP_PKEY_CTX_set_rsa_keygen_bits(pctx, bits) <= 0 then
+    if pkey_macro.EVP_PKEY_CTX_set_rsa_keygen_bits(pctx, bits) <= 0 then
       return nil, format_error("EVP_PKEY_CTX_ctrl: RSA: bits")
     end
 
@@ -309,7 +307,7 @@ local function generate_key(config)
       end
       C.BN_set_word(exp, config.exp)
 
-      if evp_macro.EVP_PKEY_CTX_set_rsa_keygen_pubexp(pctx, exp) <= 0 then
+      if pkey_macro.EVP_PKEY_CTX_set_rsa_keygen_pubexp(pctx, exp) <= 0 then
         return nil, format_error("EVP_PKEY_CTX_ctrl: RSA: exp")
       end
     end
@@ -596,7 +594,7 @@ local function asymmetric_routine(self, s, op, padding)
 
   -- EVP_PKEY_CTX_ctrl must be called after *_init
   if self.key_type == evp_macro.EVP_PKEY_RSA and padding then
-    if evp_macro.EVP_PKEY_CTX_set_rsa_padding(pkey_ctx, padding) ~= 1 then
+    if pkey_macro.EVP_PKEY_CTX_set_rsa_padding(pkey_ctx, padding) ~= 1 then
       return nil, format_error("pkey:asymmetric_routine EVP_PKEY_CTX_set_rsa_padding")
     end
     self.rsa_padding = padding
@@ -664,12 +662,12 @@ local function sign_verify_prepare(self, fint, md_alg, padding, opts)
 
   if self.key_type == evp_macro.EVP_PKEY_RSA then
     if padding then
-      if evp_macro.EVP_PKEY_CTX_set_rsa_padding(ppkey_ctx[0], padding) ~= 1 then
+      if pkey_macro.EVP_PKEY_CTX_set_rsa_padding(ppkey_ctx[0], padding) ~= 1 then
         return nil, format_error("pkey:sign_verify_prepare EVP_PKEY_CTX_set_rsa_padding")
       end
     end
     if opts and opts.pss_saltlen and padding ~= rsa_macro.paddings.RSA_PKCS1_PSS_PADDING then
-      if evp_macro.EVP_PKEY_CTX_set_rsa_pss_saltlen(ppkey_ctx[0], opts.pss_saltlen) ~= 1 then
+      if pkey_macro.EVP_PKEY_CTX_set_rsa_pss_saltlen(ppkey_ctx[0], opts.pss_saltlen) ~= 1 then
         return nil, format_error("pkey:sign_verify_prepare EVP_PKEY_CTX_set_rsa_pss_saltlen")
       end
     end

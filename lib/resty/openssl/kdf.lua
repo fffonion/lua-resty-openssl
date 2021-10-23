@@ -2,17 +2,18 @@ local ffi = require "ffi"
 local C = ffi.C
 local ffi_gc = ffi.gc
 local ffi_str = ffi.string
-local ffi_cast = ffi.cast
 
 require("resty.openssl.objects")
-local kdf_macro = require "resty.openssl.include.kdf"
+require("resty.openssl.include.evp.md")
+-- used by legacy EVP_PKEY_derive interface
+require("resty.openssl.include.evp.pkey")
+local kdf_macro = require "resty.openssl.include.evp.kdf"
 local format_error = require("resty.openssl.err").format_error
 local version_num = require("resty.openssl.version").version_num
 local version_text = require("resty.openssl.version").version_text
 local BORINGSSL = require("resty.openssl.version").BORINGSSL
 local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 local ctypes = require "resty.openssl.auxiliary.ctypes"
-local EVP_PKEY_OP_DERIVE = require("resty.openssl.include.evp").EVP_PKEY_OP_DERIVE
 
 --[[
 https://wiki.openssl.org/index.php/EVP_Key_Derivation
@@ -128,8 +129,6 @@ local options_schema = {
   scrypt_p      = { TYPE_NUMBER, nil, NID_id_scrypt },
 }
 
-local void_ptr = ctypes.void_ptr
-
 function _M.derive(options)
   local typ = options.type
   if not typ then
@@ -213,7 +212,6 @@ function _M.derive(options)
   -- end legacay low level routines
 
   -- begin EVP_PKEY_derive routines
-  md = ffi_cast(void_ptr, md)
   local outlen = ctypes.ptr_of_uint64(options.outlen)
 
   local ctx = C.EVP_PKEY_CTX_new_id(typ, nil)
@@ -226,46 +224,35 @@ function _M.derive(options)
   end
 
   if typ == NID_tls1_prf then
-    if 1 ~= C.EVP_PKEY_CTX_ctrl(ctx, -1, EVP_PKEY_OP_DERIVE,
-        kdf_macro.EVP_PKEY_CTRL_TLS_MD, 0, md) then
-      return nil, format_error("kdf.derive: EVP_PKEY_CTRL_TLS_MD")
+    if kdf_macro.EVP_PKEY_CTX_set_tls1_prf_md(ctx, md) ~= 1 then
+      return nil, format_error("kdf.derive: EVP_PKEY_CTX_set_tls1_prf_md")
     end
-    if 1 ~= C.EVP_PKEY_CTX_ctrl(ctx, -1, EVP_PKEY_OP_DERIVE,
-        kdf_macro.EVP_PKEY_CTRL_TLS_SECRET,
-        #options.tls1_prf_secret, ffi_cast(void_ptr, options.tls1_prf_secret)) then
-      return nil, format_error("kdf.derive: EVP_PKEY_CTRL_TLS_SECRET")
+    if kdf_macro.EVP_PKEY_CTX_set1_tls1_prf_secret(ctx, options.tls1_prf_secret) ~= 1 then
+      return nil, format_error("kdf.derive: EVP_PKEY_CTX_set1_tls1_prf_secret")
     end
-    if 1 ~= C.EVP_PKEY_CTX_ctrl(ctx, -1, EVP_PKEY_OP_DERIVE,
-        kdf_macro.EVP_PKEY_CTRL_TLS_SEED,
-        #options.tls1_prf_seed, ffi_cast(void_ptr, options.tls1_prf_seed)) then
-      return nil, format_error("kdf.derive: EVP_PKEY_CTRL_TLS_SEED")
+    if kdf_macro.EVP_PKEY_CTX_add1_tls1_prf_seed(ctx, options.tls1_prf_seed) ~= 1 then
+      return nil, format_error("kdf.derive: EVP_PKEY_CTX_add1_tls1_prf_seed")
     end
   elseif typ == NID_hkdf then
-    if 1 ~= C.EVP_PKEY_CTX_ctrl(ctx, -1, EVP_PKEY_OP_DERIVE,
-        kdf_macro.EVP_PKEY_CTRL_HKDF_MD, 0, md) then
-      return nil, format_error("kdf.derive: EVP_PKEY_CTRL_HKDF_MD")
+    if kdf_macro.EVP_PKEY_CTX_set_hkdf_md(ctx, md) ~= 1 then
+      return nil, format_error("kdf.derive: EVP_PKEY_CTX_set_hkdf_md")
     end
-    if options.salt and 1 ~= C.EVP_PKEY_CTX_ctrl(ctx, -1, EVP_PKEY_OP_DERIVE,
-        kdf_macro.EVP_PKEY_CTRL_HKDF_SALT,
-        #options.salt, ffi_cast(void_ptr, options.salt)) then
-      return nil, format_error("kdf.derive: EVP_PKEY_CTRL_HKDF_SALT")
+    if options.salt and
+      kdf_macro.EVP_PKEY_CTX_set1_hkdf_salt(ctx, options.salt) ~= 1 then
+      return nil, format_error("kdf.derive: EVP_PKEY_CTX_set1_hkdf_salt")
     end
-    if options.hkdf_key and 1 ~= C.EVP_PKEY_CTX_ctrl(ctx, -1, EVP_PKEY_OP_DERIVE,
-        kdf_macro.EVP_PKEY_CTRL_HKDF_KEY,
-        #options.hkdf_key, ffi_cast(void_ptr, options.hkdf_key)) then
-      return nil, format_error("kdf.derive: EVP_PKEY_CTRL_HKDF_KEY")
+    if options.hkdf_key and
+      kdf_macro.EVP_PKEY_CTX_set1_hkdf_key(ctx, options.hkdf_key) ~= 1 then
+      return nil, format_error("kdf.derive: EVP_PKEY_CTX_set1_hkdf_key")
     end
-    if options.hkdf_info and 1 ~= C.EVP_PKEY_CTX_ctrl(ctx, -1, EVP_PKEY_OP_DERIVE,
-        kdf_macro.EVP_PKEY_CTRL_HKDF_INFO,
-        #options.hkdf_info, ffi_cast(void_ptr, options.hkdf_info)) then
-      return nil, format_error("kdf.derive: EVP_PKEY_CTRL_HKDF_INFO")
+    if options.hkdf_info and
+      kdf_macro.EVP_PKEY_CTX_add1_hkdf_info(ctx, options.hkdf_info) ~= 1 then
+      return nil, format_error("kdf.derive: EVP_PKEY_CTX_add1_hkdf_info")
     end
     if options.hkdf_mode then
       if version_num >= 0x10101000 then
-        if 1 ~= C.EVP_PKEY_CTX_ctrl(ctx, -1, EVP_PKEY_OP_DERIVE,
-          kdf_macro.EVP_PKEY_CTRL_HKDF_MODE,
-          options.hkdf_mode, nil) then
-          return nil, format_error("kdf.derive: EVP_PKEY_CTRL_HKDF_MODE")
+        if kdf_macro.EVP_PKEY_CTX_set_hkdf_mode(ctx, options.hkdf_mode) ~= 1 then
+          return nil, format_error("kdf.derive: EVP_PKEY_CTX_set_hkdf_mode")
         end
         if options.hkdf_mode == _M.HKDEF_MODE_EXTRACT_ONLY then
           local md_size = OPENSSL_30 and C.EVP_MD_get_size(md) or C.EVP_MD_size(md)
