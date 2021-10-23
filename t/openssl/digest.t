@@ -87,8 +87,8 @@ __DATA__
     }
 --- request
     GET /t
---- response_body eval
-"digest.new: invalid digest type \"sha257\""
+--- response_body_like eval
+"digest.new: invalid digest type \"sha257\".*"
 --- no_error_log
 [error]
 

@@ -130,7 +130,8 @@ kdf.derive: unknown type 19823718236128632
 --- config
     location =/t {
         content_by_lua_block {
-            if require("resty.openssl.version").BORINGSSL then
+            local version = require("resty.openssl.version")
+            if version.BORINGSSL or not version.OPENSSL_11_OR_LATER then
                 ngx.print("aqRd+gO5Ok3YneDEormTcg==")
                 ngx.exit(0)
             end
@@ -150,8 +151,6 @@ kdf.derive: unknown type 19823718236128632
     }
 --- request
     GET /t
---- skip_openssl
-2: < 1.1.0
 --- response_body eval
 "aqRd+gO5Ok3YneDEormTcg=="
 --- no_error_log
@@ -163,12 +162,13 @@ kdf.derive: unknown type 19823718236128632
 --- config
     location =/t {
         content_by_lua_block {
-            if require("resty.openssl.version").BORINGSSL then
+            local version = require("resty.openssl.version")
+            if version.BORINGSSL or not version.OPENSSL_11_OR_LATER then
                 ngx.say("aggdq4eoqRiP0Z3GbpxCjg==")
                 ngx.say("W/tSxFnNsHIYwXa13eybYhW9W3Y=")
                 ngx.exit(0)
             end
-            local version_num = require("resty.openssl.version").version_num
+            local version_num = version.version_num
             local kdf = require("resty.openssl.kdf")
             local key = myassert(kdf.derive({
                 type = kdf.HKDF,
@@ -180,7 +180,7 @@ kdf.derive: unknown type 19823718236128632
 
             ngx.say(ngx.encode_base64(key))
 
-            if version_num < 0x10101000 then
+            if not version.OPENSSL_111_or_LATER then
                 ngx.say("W/tSxFnNsHIYwXa13eybYhW9W3Y=")
                 ngx.exit(0)
             end
@@ -197,8 +197,6 @@ kdf.derive: unknown type 19823718236128632
     }
 --- request
     GET /t
---- skip_openssl
-2: < 1.1.0
 --- response_body_like eval
 "aggdq4eoqRiP0Z3GbpxCjg==
 W/tSxFnNsHIYwXa13eybYhW9W3Y=
@@ -212,7 +210,8 @@ W/tSxFnNsHIYwXa13eybYhW9W3Y=
 --- config
     location =/t {
         content_by_lua_block {
-            if require("resty.openssl.version").BORINGSSL then
+            local version = require("resty.openssl.version")
+            if version.BORINGSSL or not version.OPENSSL_11_OR_LATER then
                 ngx.print("0xr8qthU+ypv2xRC90la8g==")
                 ngx.exit(0)
             end
@@ -230,8 +229,6 @@ W/tSxFnNsHIYwXa13eybYhW9W3Y=
     }
 --- request
     GET /t
---- skip_openssl
-2: < 1.1.0
 --- response_body_like eval
 "0xr8qthU\\+ypv2xRC90la8g=="
 --- no_error_log
@@ -243,7 +240,8 @@ W/tSxFnNsHIYwXa13eybYhW9W3Y=
 --- config
     location =/t {
         content_by_lua_block {
-            if require("resty.openssl.version").BORINGSSL then
+            local version = require("resty.openssl.version")
+            if version.BORINGSSL or not version.OPENSSL_11_OR_LATER then
                 ngx.print("XVVDK9/puTqBOsyTKt8PKQ==")
                 ngx.exit(0)
             end
@@ -260,8 +258,6 @@ W/tSxFnNsHIYwXa13eybYhW9W3Y=
     }
 --- request
     GET /t
---- skip_openssl
-2: < 1.1.0
 --- response_body_like eval
 "XVVDK9/puTqBOsyTKt8PKQ=="
 --- no_error_log
@@ -273,7 +269,8 @@ W/tSxFnNsHIYwXa13eybYhW9W3Y=
 --- config
     location =/t {
         content_by_lua_block {
-            if require("resty.openssl.version").BORINGSSL then
+            local version = require("resty.openssl.version")
+            if version.BORINGSSL or not version.OPENSSL_11_OR_LATER then
                 ngx.print("9giFtxace5sESmRb8qxuOw==")
                 ngx.exit(0)
             end
@@ -292,8 +289,6 @@ W/tSxFnNsHIYwXa13eybYhW9W3Y=
     }
 --- request
     GET /t
---- skip_openssl
-2: < 1.1.0
 --- response_body_like eval
 "9giFtxace5sESmRb8qxuOw=="
 --- no_error_log

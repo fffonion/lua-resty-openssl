@@ -55,8 +55,8 @@ __DATA__
     }
 --- request
     GET /t
---- response_body eval
-"cipher.new: invalid cipher type \"aes257\""
+--- response_body_like eval
+"cipher.new: invalid cipher type \"aes257\".*"
 --- no_error_log
 [error]
 
