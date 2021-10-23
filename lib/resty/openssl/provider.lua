@@ -1,9 +1,9 @@
 local ffi = require "ffi"
 local C = ffi.C
-local ffi_new = ffi.new
 local ffi_str = ffi.string
 
-local provider_macro = require "resty.openssl.include.provider"
+require "resty.openssl.include.provider"
+local param_macro = require "resty.openssl.include.param"
 local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 local format_error = require("resty.openssl.err").format_error
 
@@ -14,7 +14,7 @@ end
 local _M = {}
 local mt = {__index = _M}
 
-local ossl_lib_ctx_st = ffi.typeof('OSSL_LIB_CTX*')
+local ossl_provider_ctx_ct = ffi.typeof('OSSL_PROVIDER*')
 
 function _M.load(name, try)
   local ctx
@@ -37,10 +37,7 @@ function _M.load(name, try)
 end
 
 function _M.set_default_search_path(path)
-  if C.OSSL_PROVIDER_set_default_search_path(nil, path) ~= 1 then
-    return false, format_error("provider.set_default_search_path")
-  end
-  return true
+  C.OSSL_PROVIDER_set_default_search_path(nil, path)
 end
 
 function _M.is_available(name)
@@ -48,7 +45,7 @@ function _M.is_available(name)
 end
 
 function _M.istype(l)
-  return l and l.ctx and ffi.istype(ossl_lib_ctx_st, l.ctx)
+  return l and l.ctx and ffi.istype(ossl_provider_ctx_ct, l.ctx)
 end
 
 function _M:unload()
@@ -67,16 +64,16 @@ end
 
 local params_well_known = {
   -- Well known parameter names that core passes to providers
-  ["openssl-version"] = provider_macro.OSSL_PARAM_UTF8_PTR,
-  ["provider-name"]   = provider_macro.OSSL_PARAM_UTF8_PTR,
-  ["module-filename"] = provider_macro.OSSL_PARAM_UTF8_PTR,
+  ["openssl-version"] = param_macro.OSSL_PARAM_UTF8_PTR,
+  ["provider-name"]   = param_macro.OSSL_PARAM_UTF8_PTR,
+  ["module-filename"] = param_macro.OSSL_PARAM_UTF8_PTR,
 
   -- Well known parameter names that Providers can define
-  ["name"]                = provider_macro.OSSL_PARAM_UTF8_PTR,
-  ["version"]             = provider_macro.OSSL_PARAM_UTF8_PTR,
-  ["buildinfo"]           = provider_macro.OSSL_PARAM_UTF8_PTR,
-  ["status"]              = provider_macro.OSSL_PARAM_INTEGER,
-  ["security-checks"]     = provider_macro.OSSL_PARAM_INTEGER,
+  ["name"]                = param_macro.OSSL_PARAM_UTF8_PTR,
+  ["version"]             = param_macro.OSSL_PARAM_UTF8_PTR,
+  ["buildinfo"]           = param_macro.OSSL_PARAM_UTF8_PTR,
+  ["status"]              = param_macro.OSSL_PARAM_INTEGER,
+  ["security-checks"]     = param_macro.OSSL_PARAM_INTEGER,
 }
 
 local function load_gettable_names(ctx)
@@ -116,46 +113,22 @@ function _M:get_params(...)
     self.param_types = param_types
   end
 
-  local req = ffi_new("OSSL_PARAM[?]", key_length + 1)
-
   local buffers = {}
-  for i, key in ipairs(keys) do
-    local typ = self.param_types[key]
-    if not typ then
-      return nil, "provider:get_params: unknown key \"" .. key .. "\""
-    end
-    local param
-    if typ == provider_macro.OSSL_PARAM_UTF8_PTR then
-      local buf = ffi_new("char*[1]")
-      buffers[i] = buf
-      param = C.OSSL_PARAM_construct_utf8_ptr(key, buf, 0)
-    elseif typ == provider_macro.OSSL_PARAM_INTEGER then
-      local buf = ffi_new("int[1]")
-      buffers[i] = buf
-      param = C.OSSL_PARAM_construct_int(key, buf)
-    else
-      return nil, "provider:get_params: not yet supported type \"" .. typ .. "\" for \"" .. key .. "\""
-    end
-    req[i-1] = param
+  for _, key in ipairs(keys) do
+    buffers[key] = ngx.null
   end
-
-  req[key_length] = C.OSSL_PARAM_construct_end()
+  local req, err = param_macro.construct(buffers, key_length, self.param_types)
+  if not req then
+    return nil, "provider:get_params: failed to construct params: " .. err
+  end
 
   if C.OSSL_PROVIDER_get_params(self.ctx, req) ~= 1 then
     return nil, format_error("provider:get_params")
   end
 
-  for i=0, key_length do
-    local buf = buffers[i]
-    local key = keys[i]
-    local typ = self.param_types[key]
-    if typ == provider_macro.OSSL_PARAM_UTF8_PTR then
-      buffers[key] = ffi_str(buf[0])
-    elseif typ == provider_macro.OSSL_PARAM_INTEGER then
-      buffers[key] = tonumber(buf[0])
-    end
-    buffers[i] = nil
-    -- crypto_macro.OPENSSL_free(req[i-1].data)
+  buffers, err = param_macro.parse(buffers, key_length, self.param_types)
+  if err then
+    return nil, "provider:get_params: failed to parse params: " .. err
   end
 
   if key_length == 1 then
