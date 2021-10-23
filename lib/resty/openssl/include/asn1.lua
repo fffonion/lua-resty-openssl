@@ -67,6 +67,17 @@ elseif OPENSSL_10 then
   ASN1_STRING_get0_data = C.ASN1_STRING_data
 end
 
+if BORINGSSL_110 then
+  ffi.cdef [[
+    // required by resty/openssl/include/x509/crl.lua
+    typedef struct ASN1_ENCODING_st {
+      unsigned char *enc;         /* DER encoding */
+      long len;                   /* Length of encoding */
+      int modified;               /* set to 1 if 'enc' is invalid */
+    } ASN1_ENCODING;
+  ]]
+end
+
 return {
   ASN1_STRING_get0_data = ASN1_STRING_get0_data,
   declare_asn1_functions = declare_asn1_functions,

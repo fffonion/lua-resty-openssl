@@ -688,6 +688,8 @@ function _M:sign(digest, md_alg, padding, opts)
       -- we can still support earilier version with *Update and *Final
       -- but we choose to not relying on the legacy interface for simplicity
       return nil, "pkey:sign: new-style sign only available in OpenSSL 1.1 or later"
+    elseif BORINGSSL and not md_alg then
+      return nil, "pkey:sign: BoringSSL doesn't provide default digest, md_alg must be specified"
     end
 
     local md_ctx, err = sign_verify_prepare(self, C.EVP_DigestSignInit, md_alg, padding, opts)
@@ -718,6 +720,8 @@ function _M:verify(signature, digest, md_alg, padding, opts)
       -- we can still support earilier version with *Update and *Final
       -- but we choose to not relying on the legacy interface for simplicity
       return nil, "pkey:verify: new-style verify only available in OpenSSL 1.1 or later"
+    elseif BORINGSSL and not md_alg then
+      return nil, "pkey:verify: BoringSSL doesn't provide default digest, md_alg must be specified"
     end
 
     local md_ctx, err = sign_verify_prepare(self, C.EVP_DigestVerifyInit, md_alg, padding, opts)

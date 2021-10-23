@@ -13,16 +13,18 @@ local pkey_lib = require("resty.openssl.pkey")
 local util = require "resty.openssl.util"
 local txtnid2nid = require("resty.openssl.objects").txtnid2nid
 local format_error = require("resty.openssl.err").format_error
-
-local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
-local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
+local version = require("resty.openssl.version")
+local OPENSSL_10 = version.OPENSSL_10
+local OPENSSL_11_OR_LATER = version.OPENSSL_11_OR_LATER
+local BORINGSSL_110 = version.BORINGSSL_110 -- used in boringssl-fips-20190808
 
 local accessors = {}
 
 accessors.set_issuer_name = C.X509_CRL_set_issuer_name
 accessors.set_version = C.X509_CRL_set_version
 
-if OPENSSL_11_OR_LATER then
+
+if OPENSSL_11_OR_LATER and not BORINGSSL_110 then
   accessors.get_last_update = C.X509_CRL_get0_lastUpdate
   accessors.set_last_update = C.X509_CRL_set1_lastUpdate
   accessors.get_next_update = C.X509_CRL_get0_nextUpdate
@@ -30,7 +32,8 @@ if OPENSSL_11_OR_LATER then
   accessors.get_version = C.X509_CRL_get_version
   accessors.get_issuer_name = C.X509_CRL_get_issuer -- returns internal ptr
   accessors.get_signature_nid = C.X509_CRL_get_signature_nid
-elseif OPENSSL_10 then
+  -- BORINGSSL_110 exports X509_CRL_get_signature_nid, but just ignored for simplicity
+elseif OPENSSL_10 or BORINGSSL_110 then
   accessors.get_last_update = function(crl)
     if crl == nil or crl.crl == nil then
       return nil

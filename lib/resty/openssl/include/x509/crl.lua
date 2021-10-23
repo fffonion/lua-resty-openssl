@@ -10,6 +10,7 @@ local asn1_macro = require "resty.openssl.include.asn1"
 
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
+local BORINGSSL_110 = require("resty.openssl.version").BORINGSSL_110
 
 asn1_macro.declare_asn1_functions("X509_CRL")
 
@@ -43,7 +44,8 @@ if OPENSSL_11_OR_LATER then
 
     int X509_CRL_get_signature_nid(const X509_CRL *crl);
   ]]
-elseif OPENSSL_10 then
+end
+if OPENSSL_10 or BORINGSSL_110 then
   -- in openssl 1.0.x some getters are direct accessor to struct members (defiend by macros)
   ffi.cdef [[
     typedef struct X509_crl_info_st {

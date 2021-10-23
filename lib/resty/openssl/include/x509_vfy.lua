@@ -5,6 +5,7 @@ require "resty.openssl.include.ossl_typ"
 require "resty.openssl.include.stack"
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
+local BORINGSSL_110 = require("resty.openssl.version").BORINGSSL_110
 
 ffi.cdef [[
   X509_STORE *X509_STORE_new(void);
@@ -34,7 +35,7 @@ ffi.cdef [[
 
 local _M = {}
 
-if OPENSSL_10 then
+if OPENSSL_10 or BORINGSSL_110 then
   ffi.cdef [[
     // STACK_OF(X509)
     OPENSSL_STACK *X509_STORE_CTX_get_chain(X509_STORE_CTX *ctx);
