@@ -250,7 +250,7 @@ jobs:
           cp t/fixtures/openssl_fips.cnf $OPENSSL_PREFIX/openssl-fips.cnf
 
           pushd openssl-${{ matrix.openssl }}/;
-          mkdir $OPENSSL_PREFIX/ssl
+          mkdir -p $OPENSSL_PREFIX/ssl
           sudo make PATH=$PATH install_fips > build.log 2>&1 || (cat build.log && exit 1);
           # LD_LIBRARY_PATH=$OPENSSL_LIB $OPENSSL_PREFIX/bin/openssl fipsinstall -out $OPENSSL_PREFIX/fipsmodule.cnf -module $OPENSSL_LIB/ossl-modules/fips.so
           # don't activate by default
@@ -282,7 +282,6 @@ jobs:
 
           TEST_NGINX_FIPS=1 TEST_NGINX_TIMEOUT=10 prove -j$JOBS -r t/ 2>&1
 
-          stdbuf -o 0 -e 0 TEST_NGINX_FIPS=1 prove -j$JOBS -r t/ 2>&1 | grep -v "Connection refused" | grep -v "Retry connecting after" | tee output.log
-          if grep -q 'insert_a_suppression_name_here' output.log; then echo "Valgrind found problems"; exit 1; fi
+          TEST_NGINX_TIMEOUT=20 prove -j$JOBS -r t/ 2>&1
         fi
         
