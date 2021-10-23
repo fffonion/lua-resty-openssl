@@ -115,3 +115,25 @@ __DATA__
 "
 --- no_error_log
 [error]
+
+=== TEST 6: Returns provider
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            if not require("resty.openssl.version").OPENSSL_30 then
+                ngx.say("default")
+                ngx.exit(0)
+            end
+
+            local digest = require("resty.openssl.digest")
+            local d = myassert(digest.new("sha256"))
+            ngx.say(myassert(d:get_provider_name()))
+        }
+    }
+--- request
+    GET /t
+--- response_body
+default
+--- no_error_log
+[error]

@@ -460,6 +460,17 @@ function _M:get_key_type()
   return objects_lib.nid2table(self.key_type)
 end
 
+function _M:get_provider_name()
+  if not OPENSSL_30 then
+    return false, "pkey:get_provider_name is not supported"
+  end
+  local p = C.EVP_PKEY_get0_provider(self.ctx)
+  if p == nil then
+    return nil
+  end
+  return ffi_str(C.OSSL_PROVIDER_get0_name(p))
+end
+
 local get_pkey_key
 if OPENSSL_11_OR_LATER then
   get_pkey_key = {
@@ -648,7 +659,11 @@ local function sign_verify_prepare(self, fint, md_alg, padding, opts)
 
   local dtyp
   if md_alg then
-    dtyp = C.EVP_get_digestbyname(md_alg)
+    if OPENSSL_30 then
+      dtyp = C.EVP_MD_fetch(nil, md_alg, nil)
+    else
+      dtyp = C.EVP_get_digestbyname(md_alg)
+    end
     if dtyp == nil then
       return nil, string.format("pkey:sign_verify_prepare: invalid digest type \"%s\"", md_alg)
     end
