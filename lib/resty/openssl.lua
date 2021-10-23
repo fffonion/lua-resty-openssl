@@ -4,9 +4,9 @@ local ffi_cast = ffi.cast
 local ffi_str = ffi.string
 
 require "resty.openssl.include.crypto"
-require "resty.openssl.include.evp"
 require "resty.openssl.include.objects"
 local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
+local BORINGSSL = require("resty.openssl.version").BORINGSSL
 local format_error = require("resty.openssl.err").format_error
 
 
@@ -196,20 +196,70 @@ function _M.luaossl_compat()
   end
 end
 
-function _M.set_fips_mode(enable)
-  if not not enable == _M.get_fips_mode() then
+if OPENSSL_30 then
+  require "resty.openssl.include.evp"
+  local provider = require "resty.openssl.provider"
+  local fips_provider_ctx
+
+  function _M.set_fips_mode(enable, self_test)
+    if not not enable == _M.get_fips_mode() then
+      return true
+    end
+
+    if enable then
+      local p, err = provider.load("fips")
+      if not p then
+        return false, err
+      end
+      fips_provider_ctx = p
+      if self_test then
+        local ok, err = p:self_test()
+        if not ok then
+          return false, err
+        end
+      end
+
+    elseif fips_provider_ctx then -- disable
+      local p = fips_provider_ctx
+      fips_provider_ctx = nil
+      return p:unload()
+    end
+
+    -- set algorithm in fips mode in default ctx
+    -- this deny/allow non-FIPS compliant algorithms to be used from EVP interface
+    -- and redirect/remove redirect implementation to fips provider
+    if C.EVP_default_properties_enable_fips(nil, enable and 1 or 0) == 0 then
+      return false, format_error("openssl.set_fips_mode: EVP_default_properties_enable_fips")
+    end
+
     return true
   end
 
-  if C.FIPS_mode_set(enable and 1 or 0) == 0 then
-    return false, format_error("openssl.set_fips_mode")
+  function _M.get_fips_mode()
+    local pok = provider.is_available("fips")
+    if not pok then
+      return false
+    end
+
+    return C.EVP_default_properties_is_fips_enabled(nil) == 1
   end
 
-  return true
-end
+else
+  function _M.set_fips_mode(enable)
+    if not not enable == _M.get_fips_mode() then
+      return true
+    end
 
-function _M.get_fips_mode()
-  return C.FIPS_mode() == 1
+    if C.FIPS_mode_set(enable and 1 or 0) == 0 then
+      return false, format_error("openssl.set_fips_mode")
+    end
+
+    return true
+  end
+
+  function _M.get_fips_mode()
+    return C.FIPS_mode() == 1
+  end
 end
 
 local function get_list_func(cf, l)
