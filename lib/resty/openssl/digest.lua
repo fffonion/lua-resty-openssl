@@ -15,7 +15,7 @@ local mt = {__index = _M}
 
 local md_ctx_ptr_ct = ffi.typeof('EVP_MD_CTX*')
 
-function _M.new(typ)
+function _M.new(typ, properties)
   local ctx
   if OPENSSL_11_OR_LATER then
     ctx = C.EVP_MD_CTX_new()
@@ -28,19 +28,25 @@ function _M.new(typ)
     return nil, "digest.new: failed to create EVP_MD_CTX"
   end
 
+  local err_new = string.format("digest.new: invalid digest type \"%s\"", typ)
+
   local dtyp
   if typ == "null" then
     dtyp = C.EVP_md_null()
   else
-    dtyp = C.EVP_get_digestbyname(typ or 'sha1')
+    if OPENSSL_30 then
+      dtyp = C.EVP_MD_fetch(nil, typ or 'sha1', properties)
+    else
+      dtyp = C.EVP_get_digestbyname(typ or 'sha1')
+    end
     if dtyp == nil then
-      return nil, string.format("digest.new: invalid digest type \"%s\"", typ)
+      return nil, format_error(err_new)
     end
   end
 
   local code = C.EVP_DigestInit_ex(ctx, dtyp, nil)
   if code ~= 1 then
-    return nil, format_error("digest.new")
+    return nil, format_error(err_new)
   end
 
   return setmetatable({
@@ -52,6 +58,17 @@ end
 
 function _M.istype(l)
   return l and l.ctx and ffi.istype(md_ctx_ptr_ct, l.ctx)
+end
+
+function _M:get_provider_name()
+  if not OPENSSL_30 then
+    return false, "digest:get_provider_name is not supported"
+  end
+  local p = C.EVP_MD_get0_provider(self.dtyp)
+  if p == nil then
+    return nil
+  end
+  return ffi_str(C.OSSL_PROVIDER_get0_name(p))
 end
 
 function _M:update(...)

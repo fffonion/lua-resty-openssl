@@ -109,6 +109,7 @@ return setmetatable({
     OPENSSL_111_OR_LATER = version_num >= 0x10101000 and version_num < 0x30100000,
     OPENSSL_10 = version_num < 0x10100000 and version_num > 0x10000000,
     BORINGSSL = BORINGSSL,
+    BORINGSSL_110 = BORINGSSL and version_num >= 0x10100000 and version_num < 0x10101000
   }, {
     __index = types_table,
 })

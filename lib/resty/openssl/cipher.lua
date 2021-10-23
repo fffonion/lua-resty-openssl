@@ -21,7 +21,7 @@ local mt = {__index = _M}
 
 local cipher_ctx_ptr_ct = ffi.typeof('EVP_CIPHER_CTX*')
 
-function _M.new(typ)
+function _M.new(typ, properties)
   if not typ then
     return nil, "cipher.new: expect type to be defined"
   end
@@ -39,19 +39,25 @@ function _M.new(typ)
     return nil, "cipher.new: failed to create EVP_CIPHER_CTX"
   end
 
-  local dtyp = C.EVP_get_cipherbyname(typ)
-  if dtyp == nil then
-    return nil, string.format("cipher.new: invalid cipher type \"%s\"", typ)
+  local ctyp
+  if OPENSSL_30 then
+    ctyp = C.EVP_CIPHER_fetch(nil, typ, properties)
+  else
+    ctyp = C.EVP_get_cipherbyname(typ)
+  end
+  local err_new = string.format("cipher.new: invalid cipher type \"%s\"", typ)
+  if ctyp == nil then
+    return nil, format_error(err_new)
   end
 
-  local code = C.EVP_CipherInit_ex(ctx, dtyp, nil, "", nil, -1)
+  local code = C.EVP_CipherInit_ex(ctx, ctyp, nil, "", nil, -1)
   if code ~= 1 then
-    return nil, format_error("cipher.new")
+    return nil, format_error(err_new)
   end
 
   return setmetatable({
     ctx = ctx,
-    cipher_type = dtyp,
+    cipher_type = ctyp,
     initialized = false,
     block_size = tonumber(OPENSSL_30 and C.EVP_CIPHER_CTX_get_block_size(ctx)
                                     or C.EVP_CIPHER_CTX_block_size(ctx)),
@@ -64,6 +70,17 @@ end
 
 function _M.istype(l)
   return l and l.ctx and ffi.istype(cipher_ctx_ptr_ct, l.ctx)
+end
+
+function _M:get_provider_name()
+  if not OPENSSL_30 then
+    return false, "cipher:get_provider_name is not supported"
+  end
+  local p = C.EVP_CIPHER_get0_provider(self.cipher_type)
+  if p == nil then
+    return nil
+  end
+  return ffi_str(C.OSSL_PROVIDER_get0_name(p))
 end
 
 function _M:init(key, iv, opts)
@@ -221,7 +238,7 @@ function _M:final(s)
   return (ret or "") .. ffi_str(outm, outl[0])
 end
 
-function _M:derive(key, salt, count, md)
+function _M:derive(key, salt, count, md, md_properties)
   if type(key) ~= "string" then
     return nil, nil, "cipher:derive: expect a string at #1"
   elseif salt and type(salt) ~= "string" then
@@ -245,7 +262,12 @@ function _M:derive(key, salt, count, md)
     end
   end
 
-  local mdt = C.EVP_get_digestbyname(md or 'sha1')
+  local mdt
+  if OPENSSL_30 then
+    mdt = C.EVP_MD_fetch(nil, md or 'sha1', md_properties)
+  else
+    mdt = C.EVP_get_digestbyname(md or 'sha1')
+  end
   if mdt == nil then
     return nil, nil, string.format("cipher:derive: invalid digest type \"%s\"", md)
   end

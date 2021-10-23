@@ -48,6 +48,7 @@ declare_asn1_functions("ASN1_ENUMERATED")
 
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
+local BORINGSSL_110 = require("resty.openssl.version").BORINGSSL_110
 
 local ASN1_STRING_get0_data
 if OPENSSL_11_OR_LATER then

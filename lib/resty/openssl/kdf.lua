@@ -167,7 +167,11 @@ function _M.derive(options)
   end
 
   local md
-  md = C.EVP_get_digestbyname(options.md or "sha1")
+  if OPENSSL_30 and false then
+    md = C.EVP_MD_fetch(nil, options.md or 'sha1', options.properties)
+  else
+    md = C.EVP_get_digestbyname(options.md or 'sha1')
+  end
   if md == nil then
     return nil, string.format("kdf.derive: invalid digest type \"%s\"", md)
   end

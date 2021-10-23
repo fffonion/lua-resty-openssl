@@ -313,7 +313,7 @@ function _M:get_crl_url(return_all)
   end
 end
 
-local function digest(self, cfunc, typ)
+local function digest(self, cfunc, typ, properties)
   -- TODO: dedup the following with resty.openssl.digest
   local ctx
   if OPENSSL_11_OR_LATER then
@@ -327,7 +327,12 @@ local function digest(self, cfunc, typ)
     return nil, "x509:digest: failed to create EVP_MD_CTX"
   end
 
-  local dtyp = C.EVP_get_digestbyname(typ or 'sha1')
+  local dtyp
+  if OPENSSL_30 then
+    dtyp = C.EVP_MD_fetch(nil, typ or 'sha1', properties)
+  else
+    dtyp = C.EVP_get_digestbyname(typ or 'sha1')
+  end
   if dtyp == nil then
     return nil, string.format("x509:digest: invalid digest type \"%s\"", typ)
   end
@@ -343,12 +348,12 @@ local function digest(self, cfunc, typ)
   return ffi_str(buf, length[0])
 end
 
-function _M:digest(typ)
-  return digest(self, C.X509_digest, typ)
+function _M:digest(typ, properties)
+  return digest(self, C.X509_digest, typ, properties)
 end
 
-function _M:pubkey_digest(typ)
-  return digest(self, C.X509_pubkey_digest, typ)
+function _M:pubkey_digest(typ, properties)
+  return digest(self, C.X509_pubkey_digest, typ, properties)
 end
 
 function _M:check_private_key(key)

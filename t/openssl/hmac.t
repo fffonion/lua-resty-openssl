@@ -87,8 +87,8 @@ __DATA__
     }
 --- request
     GET /t
---- response_body eval
-"hmac.new: invalid digest type \"sha257\""
+--- response_body_like eval
+"hmac.new:.+(?:invalid|unsupported).*"
 --- no_error_log
 [error]
 

@@ -1123,9 +1123,31 @@ true
     GET /t
 --- response_body_like eval
 "errored out with too many callbacks
-pkey.new.+(?:bad decrypt|failed|BAD_DECRYPT|no start line|DECODER routines::unsupported)
+pkey.new.+(?:bad decrypt|failed|BAD_DECRYPT|no start line|NO_START_LINE|DECODER routines::unsupported)
 ok
 ok
 "
+--- no_error_log
+[error]
+
+=== TEST 34: Returns provider
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            if not require("resty.openssl.version").OPENSSL_30 then
+                ngx.say("default")
+                ngx.exit(0)
+            end
+
+            local pkey = require("resty.openssl.pkey")
+            local p = myassert(pkey.new({ type = "EC" }))
+            ngx.say(myassert(p:get_provider_name()))
+        }
+    }
+--- request
+    GET /t
+--- response_body
+default
 --- no_error_log
 [error]
