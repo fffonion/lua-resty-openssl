@@ -18,6 +18,7 @@ Table of Contents
     + [openssl.luaossl_compat](#opensslluaossl_compat)
     + [openssl.resty_hmac_compat](#opensslresty_hmac_compat)
     + [openssl.get_fips_mode](#opensslget_fips_mode)
+    + [openssl.set_fips_mode](#opensslset_fips_mode)
     + [openssl.list_cipher_algorithms](#openssllist_cipher_algorithms)
     + [openssl.list_digest_algorithms](#openssllist_digest_algorithms)
   * [resty.openssl.version](#restyopensslversion)
@@ -40,6 +41,7 @@ Table of Contents
     + [pkey.new](#pkeynew)
     + [pkey.istype](#pkeyistype)
     + [pkey.paramgen](#pkeyparamgen)
+    + [pkey:get_provider_name](#pkeyget_provider_name)
     + [pkey:get_parameters](#pkeyget_parameters)
     + [pkey:set_parameters](#pkeyset_parameters)
     + [pkey:is_private](#pkeyis_private)
@@ -72,6 +74,7 @@ Table of Contents
   * [resty.openssl.cipher](#restyopensslcipher)
     + [cipher.new](#ciphernew)
     + [cipher.istype](#cipheristype)
+    + [cipher:get_provider_name](#cipherget_provider_name)
     + [cipher:encrypt](#cipherencrypt)
     + [cipher:decrypt](#cipherdecrypt)
     + [cipher:init](#cipherinit)
@@ -84,6 +87,7 @@ Table of Contents
   * [resty.openssl.digest](#restyopenssldigest)
     + [digest.new](#digestnew)
     + [digest.istype](#digestistype)
+    + [digest:get_provider_name](#digestget_provider_name)
     + [digest:update](#digestupdate)
     + [digest:final](#digestfinal)
     + [digest:reset](#digestreset)
@@ -93,6 +97,11 @@ Table of Contents
     + [hmac:update](#hmacupdate)
     + [hmac:final](#hmacfinal)
     + [hmac:reset](#hmacreset)
+  * [resty.openssl.mac](#restyopensslmac)
+    + [mac.new](#macnew)
+    + [mac.istype](#macistype)
+    + [mac:update](#macupdate)
+    + [mac:final](#macfinal)
   * [resty.openssl.kdf](#restyopensslkdf)
     + [kdf.derive](#kdfderive)
   * [resty.openssl.objects](#restyopensslobjects)
@@ -339,6 +348,10 @@ Returns a boolean indicating if FIPS mode is enabled.
 **syntax**: *ok, err = openssl.set_fips_mode(enabled)*
 
 Toggle FIPS mode on or off.
+
+On OpenSSL 3.0, this function also turns on and off default properties for EVP
+functions. When turned on, all applications using EVP_* API will be redirected
+to FIPS-compliant implementations and have no access to non-FIPS-compliant algorithms.
 
 [Back to TOC](#table-of-contents)
 
@@ -678,6 +691,16 @@ local pem, err = pkey.paramgen({
 
 [Back to TOC](#table-of-contents)
 
+### pkey:get_provider_name
+
+**syntax**: *name = pkey:get_provider_name()*
+
+Returns the provider name of pkey.
+
+This function is available since OpenSSL 3.0.
+
+[Back to TOC](#table-of-contents)
+
 ### pkey:get_parameters
 
 **syntax**: *parameters, err = pk:get_parameters()*
@@ -795,7 +818,8 @@ This mode only supports RSA and EC keys.
 When passing a string as first parameter, `md_alg` parameter will specify the name
 to use when signing. When `md_alg` is undefined, for RSA and EC keys, this function does SHA256
 by default. For Ed25519 or Ed448 keys, this function does a PureEdDSA signing,
-no message digest should be specified and will not be used.
+no message digest should be specified and will not be used. BoringSSL doesn't have default
+digest thus `md_alg` must be specified.
 
 `opts` is a table that accepts additional parameters.
 
@@ -829,7 +853,8 @@ This mode only supports RSA and EC keys.
 When passing a string as second parameter, `md_alg` parameter will specify the name
 to use when verifying. When `md_alg` is undefined, for RSA and EC keys, this function does SHA256
 by default. For Ed25519 or Ed448 keys, this function does a PureEdDSA verification,
-no message digest should be specified and will not be used.
+no message digest should be specified and will not be used. BoringSSL doesn't have default
+digest thus `md_alg` must be specified.
 
 `opts` is a table that accepts additional parameters.
 
@@ -1277,10 +1302,13 @@ Module to interact with symmetric cryptography (EVP_CIPHER).
 
 ### cipher.new
 
-**syntax**: *d, err = cipher.new(cipher_name)*
+**syntax**: *d, err = cipher.new(cipher_name, properties?)*
 
 Creates a cipher instance. `cipher_name` is a case-insensitive string of cipher algorithm name.
 To view a list of cipher algorithms implemented, use `openssl list -cipher-algorithms`.
+
+Staring from OpenSSL 3.0, this functions accepts an optional `properties` parameter
+to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
 
@@ -1289,6 +1317,16 @@ To view a list of cipher algorithms implemented, use `openssl list -cipher-algor
 **syntax**: *ok = cipher.istype(table)*
 
 Returns `true` if table is an instance of `cipher`. Returns `false` otherwise.
+
+[Back to TOC](#table-of-contents)
+
+### cipher:get_provider_name
+
+**syntax**: *name = cipher:get_provider_name()*
+
+Returns the provider name of cipher.
+
+This function is available since OpenSSL 3.0.
 
 [Back to TOC](#table-of-contents)
 
@@ -1470,13 +1508,16 @@ Module to interact with message digest (EVP_MD_CTX).
 
 ### digest.new
 
-**syntax**: *d, err = digest.new(digest_name?)*
+**syntax**: *d, err = digest.new(digest_name?, properties?)*
 
 Creates a digest instance. `digest_name` is a case-insensitive string of digest algorithm name.
 To view a list of digest algorithms implemented, use `openssl list -digest-algorithms`.
 
 If `digest_name` is omitted, it's default to `sha1`. Specially, the digest_name `"null"`
 represents a "null" message digest that does nothing: i.e. the hash it returns is of zero length.
+
+Staring from OpenSSL 3.0, this functions accepts an optional `properties` parameter
+to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
 
@@ -1485,6 +1526,16 @@ represents a "null" message digest that does nothing: i.e. the hash it returns i
 **syntax**: *ok = digest.istype(table)*
 
 Returns `true` if table is an instance of `digest`. Returns `false` otherwise.
+
+[Back to TOC](#table-of-contents)
+
+### digest:get_provider_name
+
+**syntax**: *name = digest:get_provider_name()*
+
+Returns the provider name of digest.
+
+This function is available since OpenSSL 3.0.
 
 [Back to TOC](#table-of-contents)
 
@@ -1530,6 +1581,9 @@ the hood.
 ## resty.openssl.hmac
 
 Module to interact with hash-based message authentication code (HMAC_CTX).
+
+Use of this module is deprecated since OpenSSL 3.0, please use [resty.openssl.mac](#restyopensslmac)
+instead.
 
 [Back to TOC](#table-of-contents)
 
@@ -1591,6 +1645,63 @@ the hood.
 
 [Back to TOC](#table-of-contents)
 
+## resty.openssl.mac
+
+Module to interact with message authentication code (EVP_MAC).
+
+[Back to TOC](#table-of-contents)
+
+### mac.new
+
+**syntax**: *h, err = mac.new(key, mac, cipher?, digest?, properties?)*
+
+Creates a mac instance. `mac` is a case-insensitive string of digest algorithm name.
+To view a list of digest algorithms implemented, use `openssl list -mac-algorithms`.
+`cipher` is a case-insensitive string of digest algorithm name.
+To view a list of digest algorithms implemented, use `openssl list -cipher-algorithms`.
+`digest` is a case-insensitive string of digest algorithm name.
+To view a list of digest algorithms implemented, use `openssl list -digest-algorithms`.
+`properties` parameter can be used to explictly select provider to fetch algorithms.
+
+[Back to TOC](#table-of-contents)
+
+### mac.istype
+
+**syntax**: *ok = mac.istype(table)*
+
+Returns `true` if table is an instance of `mac`. Returns `false` otherwise.
+
+[Back to TOC](#table-of-contents)
+
+### mac:update
+
+**syntax**: *ok, err = mac:update(partial, ...)*
+
+Updates the MAC with one or more strings.
+
+[Back to TOC](#table-of-contents)
+
+### mac:final
+
+**syntax**: *str, err = mac:final(partial?)*
+
+Returns the MAC in raw binary string, optionally accept one string to digest.
+
+```lua
+local d, err = require("resty.openssl.mac").new("goose", "HMAC", nil, "sha256")
+d:update("🦢")
+local mac, err = d:final()
+ngx.say(ngx.encode_base64(mac))
+-- outputs "k2UcrRp25tj1Spff89mJF3fAVQ0lodq/tJT53EYXp0c="
+-- OR:
+local d, err = require("resty.openssl.mac").new("goose", "HMAC", nil, "sha256")
+local hmac, err = d:final("🦢")
+ngx.say(ngx.encode_base64(mac))
+-- outputs "k2UcrRp25tj1Spff89mJF3fAVQ0lodq/tJT53EYXp0c="
+```
+
+[Back to TOC](#table-of-contents)
+
 ## resty.openssl.kdf
 
 Module to interact with KDF (key derivation function).
@@ -1616,6 +1727,8 @@ Derive a key from given material. Various KDFs are supported based on OpenSSL ve
 | pass    | string | Initial key material to derive from | (empty string) |
 | salt    | string | Add some salt | (empty string) |
 | md    | string | Message digest method name to use, not effective for `scrypt` type | `"sha1"` |
+| properties | string | Staring from OpenSSL 3.0, this functions accepts an optional `properties` parameter
+to explictly select provider to fetch algorithms. | |
 | pbkdf2_iter     | number | PBKDF2 iteration count. RFC 2898 suggests an iteration count of at least 1000. Any value less than 1 is treated as a single iteration.  | `1` |
 | hkdf_key     | string | HKDF key  | **required** |
 | hkdf_mode     | number | HKDF mode to use, one of `kdf.HKDEF_MODE_EXTRACT_AND_EXPAND`, `kdf.HKDEF_MODE_EXTRACT_ONLY` or `kdf.HKDEF_MODE_EXPAND_ONLY`. This is only effective with OpenSSL >= 1.1.1. To learn about mode, please refer to [EVP_PKEY_CTX_set1_hkdf_key(3)](https://www.openssl.org/docs/manmaster/man3/EVP_PKEY_CTX_set1_hkdf_key.html). Note with `kdf.HKDEF_MODE_EXTRACT_ONLY`, `outlen` is ignored and the output will be fixed size of `HMAC-<md>`.  | `kdf.HKDEF_MODE_EXTRACT_AND_EXPAND`|
@@ -1795,7 +1908,7 @@ Returns `true` if table is an instance of `x509`. Returns `false` otherwise.
 
 ### x509:digest
 
-**syntax**: *d, err = x509:digest(digest_name?)*
+**syntax**: *d, err = x509:digest(digest_name?, properties?)*
 
 Returns a digest of the DER representation of the X509 certificate object in raw binary text.
 
@@ -1804,11 +1917,14 @@ To view a list of digest algorithms implemented, use `openssl list -digest-algor
 
 If `digest_name` is omitted, it's default to `sha1`.
 
+Staring from OpenSSL 3.0, this functions accepts an optional `properties` parameter
+to explictly select provider to fetch algorithms.
+
 [Back to TOC](#table-of-contents)
 
 ### x509:pubkey_digest
 
-**syntax**: *d, err = x509:pubkey_digest(digest_name?)*
+**syntax**: *d, err = x509:pubkey_digest(digest_name?, properties?)*
 
 Returns a digest of the DER representation of the pubkey in the X509 object in raw binary text.
 
@@ -1816,6 +1932,9 @@ Returns a digest of the DER representation of the pubkey in the X509 object in r
 To view a list of digest algorithms implemented, use `openssl list -digest-algorithms`.
 
 If `digest_name` is omitted, it's default to `sha1`.
+
+Staring from OpenSSL 3.0, this functions accepts an optional `properties` parameter
+to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
 
