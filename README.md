@@ -349,9 +349,41 @@ Returns a boolean indicating if FIPS mode is enabled.
 
 Toggle FIPS mode on or off.
 
-On OpenSSL 3.0, this function also turns on and off default properties for EVP
-functions. When turned on, all applications using EVP_* API will be redirected
-to FIPS-compliant implementations and have no access to non-FIPS-compliant algorithms.
+lua-resty-openssl supports following modes:
+
+**OpenSSL 1.0.2 series with fips 2.0 module**
+
+Compile the module per [security policy](https://www.openssl.org/docs/fips/SecurityPolicy-2.0.2.pdf),
+
+**OpenSSL 3.0.0 fips provider (haven't certified)**
+
+Refer to https://wiki.openssl.org/index.php/OpenSSL_3.0 Section 7
+Compile the provider per guide, install the fipsmodule.cnf that
+matches hash of FIPS provider fips.so.
+
+On OpenSSL 3.0, this function also turns on and off default
+properties for EVP functions. When turned on, all applications using
+EVP_* API will be redirected to FIPS-compliant implementations and
+have no access to non-FIPS-compliant algorithms.
+
+If fips provider is loaded but default is not set, use following
+to explictly fetch FIPS implementation.
+This is not necessary if `openssl.set_fips_mode(true)` is called
+```lua
+local provider = require "resty.openssl.provider"
+assert(provider.load("fips"))
+local cipher = require "resty.openssl.cipher"
+local c = assert(cipher.new("aes256"))
+print(c:get_provider_name()) -- prints "default"
+local c = assert(cipher.new("aes256", "fips=yes"))
+print(c:get_provider_name()) -- prints "fips"
+```
+
+**Broingssl fips-20190808 and fips-20210429 (later haven't been certified)**
+Compile the module per [security policy](https://csrc.nist.gov/CSRC/media/projects/cryptographic-module-validation-program/documents/security-policies/140sp3678.pdf)
+
+Check if FIPS is acticated by running `assert(openssl.set_fips_mode(true))`.
+BoringSSL doesn't support "turn FIPS mode off" once it's compiled.
 
 [Back to TOC](#table-of-contents)
 
