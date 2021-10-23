@@ -272,6 +272,11 @@ local function get_list_func(cf, l)
 end
 
 function _M.list_cipher_algorithms()
+  if BORINGSSL then
+    return nil, "openssl.list_cipher_algorithms is not supported on BoringSSL"
+  end
+
+  require "resty.openssl.include.evp.cipher"
   local ret = {}
   local fn = ffi_cast("fake_openssl_cipher_list_fn*",
                       get_list_func(
@@ -286,6 +291,11 @@ function _M.list_cipher_algorithms()
 end
 
 function _M.list_digest_algorithms()
+  if BORINGSSL then
+    return nil, "openssl.list_digest_algorithms is not supported on BoringSSL"
+  end
+
+  require "resty.openssl.include.evp.md"
   local ret = {}
   local fn = ffi_cast("fake_openssl_md_list_fn*",
                       get_list_func(

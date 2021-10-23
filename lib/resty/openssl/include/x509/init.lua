@@ -8,6 +8,7 @@ local asn1_macro = require "resty.openssl.include.asn1"
 
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
+local BORINGSSL_110 = require("resty.openssl.version").BORINGSSL_110
 
 asn1_macro.declare_asn1_functions("X509")
 
@@ -82,6 +83,13 @@ if OPENSSL_11_OR_LATER then
     X509_EXTENSION *X509_delete_ext(X509 *x, int loc);
   ]]
 elseif OPENSSL_10 then
+  ffi.cdef [[
+    // STACK_OF(X509_EXTENSION)
+    X509_EXTENSION *X509v3_delete_ext(OPENSSL_STACK *x, int loc);
+  ]]
+end
+
+if OPENSSL_10 or BORINGSSL_110 then
   -- in openssl 1.0.x some getters are direct accessor to struct members (defiend by macros)
   ffi.cdef [[
     // crypto/x509/x509.h
@@ -119,8 +127,12 @@ elseif OPENSSL_10 then
     int X509_set_notBefore(X509 *x, const ASN1_TIME *tm);
     int X509_set_notAfter(X509 *x, const ASN1_TIME *tm);
     ASN1_INTEGER *X509_get_serialNumber(X509 *x);
+  ]]
+end
 
-    // STACK_OF(X509_EXTENSION)
-    X509_EXTENSION *X509v3_delete_ext(OPENSSL_STACK *x, int loc);
+if BORINGSSL_110 then
+  ffi.cdef [[
+    ASN1_TIME *X509_get_notBefore(const X509 *x);
+    ASN1_TIME *X509_get_notAfter(const X509 *x);
   ]]
 end

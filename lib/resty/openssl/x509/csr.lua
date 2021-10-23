@@ -17,8 +17,10 @@ local util = require "resty.openssl.util"
 local ctypes = require "resty.openssl.auxiliary.ctypes"
 local txtnid2nid = require("resty.openssl.objects").txtnid2nid
 local format_error = require("resty.openssl.err").format_error
-local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
-local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
+local version = require("resty.openssl.version")
+local OPENSSL_10 = version.OPENSSL_10
+local OPENSSL_11_OR_LATER = version.OPENSSL_11_OR_LATER
+local BORINGSSL_110 = version.BORINGSSL_110 -- used in boringssl-fips-20190808
 
 local accessors = {}
 
@@ -27,11 +29,21 @@ accessors.get_pubkey = C.X509_REQ_get_pubkey
 accessors.set_pubkey = C.X509_REQ_set_pubkey
 accessors.set_version = C.X509_REQ_set_version
 
-if OPENSSL_11_OR_LATER then
-  accessors.get_subject_name = C.X509_REQ_get_subject_name -- returns internal ptr
-  accessors.get_version = C.X509_REQ_get_version
+if OPENSSL_11_OR_LATER or BORINGSSL_110 then
   accessors.get_signature_nid = C.X509_REQ_get_signature_nid
 elseif OPENSSL_10 then
+  accessors.get_signature_nid = function(csr)
+    if csr == nil or csr.sig_alg == nil then
+      return nil
+    end
+    return C.OBJ_obj2nid(csr.sig_alg.algorithm)
+  end
+end
+
+if OPENSSL_11_OR_LATER and not BORINGSSL_110 then
+  accessors.get_subject_name = C.X509_REQ_get_subject_name -- returns internal ptr
+  accessors.get_version = C.X509_REQ_get_version
+elseif OPENSSL_10 or BORINGSSL_110 then
   accessors.get_subject_name = function(csr)
     if csr == nil or csr.req_info == nil then
       return nil
@@ -43,12 +55,6 @@ elseif OPENSSL_10 then
       return nil
     end
     return C.ASN1_INTEGER_get(csr.req_info.version)
-  end
-  accessors.get_signature_nid = function(csr)
-    if csr == nil or csr.sig_alg == nil then
-      return nil
-    end
-    return C.OBJ_obj2nid(csr.sig_alg.algorithm)
   end
 end
 

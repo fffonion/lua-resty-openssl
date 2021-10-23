@@ -18,9 +18,11 @@ local util = require "resty.openssl.util"
 local txtnid2nid = require("resty.openssl.objects").txtnid2nid
 local ctypes = require "resty.openssl.auxiliary.ctypes"
 local format_error = require("resty.openssl.err").format_error
-local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
-local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
-local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
+local version = require("resty.openssl.version")
+local OPENSSL_10 = version.OPENSSL_10
+local OPENSSL_11_OR_LATER = version.OPENSSL_11_OR_LATER
+local OPENSSL_30 = version.OPENSSL_30
+local BORINGSSL_110 = version.BORINGSSL_110 -- used in boringssl-fips-20190808
 
 -- accessors provides an openssl version neutral interface to lua layer
 -- it doesn't handle any error, expect that to be implemented in
@@ -37,13 +39,26 @@ accessors.get_issuer_name = C.X509_get_issuer_name -- returns internal ptr, we d
 accessors.set_issuer_name = C.X509_set_issuer_name
 accessors.get_signature_nid = C.X509_get_signature_nid
 
-if OPENSSL_11_OR_LATER then
-  -- generally, use get1 if we return a lua table wrapped ctx which doesn't support dup.
-  -- in that case, a new struct is returned from C api, and we will handle gc.
-  -- openssl will increment the reference count for returned ptr, and won't free it when
-  -- parent struct is freed.
-  -- otherwise, use get0, which returns an internal pointer, we don't need to free it up.
-  -- it will be gone together with the parent struct.
+-- generally, use get1 if we return a lua table wrapped ctx which doesn't support dup.
+-- in that case, a new struct is returned from C api, and we will handle gc.
+-- openssl will increment the reference count for returned ptr, and won't free it when
+-- parent struct is freed.
+-- otherwise, use get0, which returns an internal pointer, we don't need to free it up.
+-- it will be gone together with the parent struct.
+
+if BORINGSSL_110 then
+  accessors.get_not_before = C.X509_get0_notBefore -- returns internal ptr, we convert to number
+  accessors.set_not_before = C.X509_set_notBefore
+  accessors.get_not_after = C.X509_get0_notAfter -- returns internal ptr, we convert to number
+  accessors.set_not_after = C.X509_set_notAfter
+  accessors.get_version = function(x509)
+    if x509 == nil or x509.cert_info == nil or x509.cert_info.validity == nil then
+      return nil
+    end
+    return C.ASN1_INTEGER_get(x509.cert_info.version)
+  end
+  accessors.get_serial_number = C.X509_get_serialNumber -- returns internal ptr, we convert to bn
+elseif OPENSSL_11_OR_LATER then
   accessors.get_not_before = C.X509_get0_notBefore -- returns internal ptr, we convert to number
   accessors.set_not_before = C.X509_set1_notBefore
   accessors.get_not_after = C.X509_get0_notAfter -- returns internal ptr, we convert to number

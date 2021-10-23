@@ -10,6 +10,7 @@ local asn1_macro = require "resty.openssl.include.asn1"
 
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
+local BORINGSSL_110 = require("resty.openssl.version").BORINGSSL_110
 
 asn1_macro.declare_asn1_functions("X509_REQ")
 
@@ -55,7 +56,8 @@ if OPENSSL_11_OR_LATER then
 
     int X509_REQ_get_signature_nid(const X509_REQ *crl);
   ]]
-elseif OPENSSL_10 then
+end
+if OPENSSL_10 or BORINGSSL_110 then
   ffi.cdef [[
     typedef struct X509_req_info_st {
       ASN1_ENCODING enc;

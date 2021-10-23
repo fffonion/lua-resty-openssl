@@ -72,7 +72,7 @@ true"
         content_by_lua_block {
             local pkey = require("resty.openssl.pkey")
             local p = myassert(pkey.new({
-                type = 'EC',
+                type = "EC",
                 curve = 'prime256v1',
             }))
             local pem = myassert(p:to_PEM('private'))
