@@ -40,6 +40,7 @@ function _M.load_modules()
 
   if OPENSSL_30 then
     _M.provider = require("resty.openssl.provider")
+    _M.mac = require("resty.openssl.mac")
   end
 
   _M.bignum = _M.bn
@@ -262,13 +263,58 @@ else
   end
 end
 
-local function get_list_func(cf, l)
-  return function(elem, from, to, arg)
-    if elem ~= nil then
-      local nid = cf(elem)
-      table.insert(l, ffi_str(C.OBJ_nid2sn(nid)))
-    end
+function _M.set_default_properties(props)
+  if not OPENSSL_30 then
+    return nil, "openssl.set_default_properties is only not supported from OpenSSL 3.0"
   end
+
+  if C.EVP_set_default_properties(props) == 0 then
+    return false, format_error("openssl.EVP_set_default_properties")
+  end
+
+  return true
+end
+
+local function list_legacy(typ, get_nid_cf)
+  local typ_lower = string.lower(typ:sub(5)) -- cut off EVP_
+  require ("resty.openssl.include.evp." .. typ_lower)
+
+  local ret = {}
+  local fn = ffi_cast("fake_openssl_" .. typ_lower .. "_list_fn*",
+              function(elem, from, to, arg)
+                if elem ~= nil then
+                  local nid = get_nid_cf(elem)
+                  table.insert(ret, ffi_str(C.OBJ_nid2sn(nid)))
+                end
+                -- from/to (renamings) are ignored
+              end)
+  C[typ .. "_do_all_sorted"](fn, nil)
+  fn:free()
+
+  return ret
+end
+
+local function list_provided(typ)
+  local typ_lower = string.lower(typ:sub(5)) -- cut off EVP_
+  local typ_ptr = typ .. "*"
+  require ("resty.openssl.include.evp." .. typ_lower)
+
+  local ret = {}
+
+  local fn = ffi_cast("fake_openssl_" .. typ_lower .. "_provided_list_fn*",
+              function(elem, _)
+                elem = ffi_cast(typ_ptr, elem)
+                local name = ffi_str(C[typ .. "_get0_name"](elem))
+                -- alternate names are ignored, retrieve use TYPE_names_do_all
+                local prov = ffi_str(C.OSSL_PROVIDER_get0_name(C[typ .. "_get0_provider"](elem)))
+                table.insert(ret, name .. " @ " .. prov)
+              end)
+
+  C[typ .. "_do_all_provided"](nil, fn, nil)
+  fn:free()
+
+  table.sort(ret)
+  return ret
 end
 
 function _M.list_cipher_algorithms()
@@ -277,15 +323,15 @@ function _M.list_cipher_algorithms()
   end
 
   require "resty.openssl.include.evp.cipher"
-  local ret = {}
-  local fn = ffi_cast("fake_openssl_cipher_list_fn*",
-                      get_list_func(
-                        OPENSSL_30 and C.EVP_CIPHER_get_nid or C.EVP_CIPHER_nid,
-                        ret))
+  local ret = list_legacy("EVP_CIPHER",
+              OPENSSL_30 and C.EVP_CIPHER_get_nid or C.EVP_CIPHER_nid)
 
-  C.EVP_CIPHER_do_all_sorted(fn, nil)
-
-  fn:free()
+  if OPENSSL_30 then
+    local ret_provided = list_provided("EVP_CIPHER")
+    for _, r in ipairs(ret_provided) do
+      table.insert(ret, r)
+    end
+  end
 
   return ret
 end
@@ -296,17 +342,33 @@ function _M.list_digest_algorithms()
   end
 
   require "resty.openssl.include.evp.md"
-  local ret = {}
-  local fn = ffi_cast("fake_openssl_md_list_fn*",
-                      get_list_func(
-                        OPENSSL_30 and C.EVP_MD_get_type or C.EVP_MD_type,
-                        ret))
+  local ret = list_legacy("EVP_MD",
+              OPENSSL_30 and C.EVP_MD_get_type or C.EVP_MD_type)
 
-  C.EVP_MD_do_all_sorted(fn, nil)
-
-  fn:free()
+  if OPENSSL_30 then
+    local ret_provided = list_provided("EVP_MD")
+    for _, r in ipairs(ret_provided) do
+      table.insert(ret, r)
+    end
+  end
 
   return ret
+end
+
+function _M.list_mac_algorithms()
+  if not OPENSSL_30 then
+    return nil, "openssl.list_mac_algorithms is only supported from OpenSSL 3.0"
+  end
+
+  return list_provided("EVP_MAC")
+end
+
+function _M.list_kdf_algorithms()
+  if not OPENSSL_30 then
+    return nil, "openssl.list_kdf_algorithms is only supported from OpenSSL 3.0"
+  end
+
+  return list_provided("EVP_KDF")
 end
 
 return _M

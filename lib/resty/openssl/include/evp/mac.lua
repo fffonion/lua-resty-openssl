@@ -21,4 +21,13 @@ ffi.cdef [[
                     unsigned char *out, size_t *outl, size_t outsize);
 
   size_t EVP_MAC_CTX_get_mac_size(EVP_MAC_CTX *ctx);
+
+  typedef void* fake_openssl_mac_provided_list_fn(EVP_MAC *mac, void *arg);
+  void EVP_MAC_do_all_provided(OSSL_LIB_CTX *libctx,
+                              fake_openssl_mac_provided_list_fn*,
+                              void *arg);
+  int EVP_MAC_up_ref(EVP_MAC *mac);
+  void EVP_MAC_free(EVP_MAC *mac);
+
+  const char *EVP_MAC_get0_name(const EVP_MAC *mac);
 ]]

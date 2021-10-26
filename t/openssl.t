@@ -69,11 +69,18 @@ false
 --- config
     location =/t {
         content_by_lua_block {
-            if require("resty.openssl.version").BORINGSSL then
+            local version = require("resty.openssl.version")
+            if version.BORINGSSL then
                 ngx.say("[\"AES\"]")
+                ngx.say("[\"AES-256-GCM @ default\"]")
                 ngx.exit(0)
             end
             local openssl = require("resty.openssl")
+            ngx.say(require("cjson").encode(openssl.list_cipher_algorithms()))
+            if not version.OPENSSL_30 then
+                ngx.say("[\"AES-256-GCM @ default\"]")
+                ngx.exit(0)
+            end
             ngx.say(require("cjson").encode(openssl.list_cipher_algorithms()))
         }
     }
@@ -81,6 +88,7 @@ false
     GET /t
 --- response_body_like
 \[.+AES.+\]
+\[.+AES-256-GCM @ default.+\]
 --- no_error_log
 [error]
 
@@ -89,11 +97,18 @@ false
 --- config
     location =/t {
         content_by_lua_block {
-            if require("resty.openssl.version").BORINGSSL then
+            local version = require("resty.openssl.version")
+            if version.BORINGSSL then
                 ngx.say("[\"SHA\"]")
+                ngx.say("[\"SHA2-256 @ default\"]")
                 ngx.exit(0)
             end
             local openssl = require("resty.openssl")
+            ngx.say(require("cjson").encode(openssl.list_digest_algorithms()))
+            if not version.OPENSSL_30 then
+                ngx.say("[\"SHA2-256 @ default\"]")
+                ngx.exit(0)
+            end
             ngx.say(require("cjson").encode(openssl.list_digest_algorithms()))
         }
     }
@@ -101,6 +116,48 @@ false
     GET /t
 --- response_body_like
 \[.+SHA.+\]
+\[.+SHA2-256 @ default.+\]
 --- no_error_log
 [error]
 
+=== TEST 5: List mac algorithms
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local version = require("resty.openssl.version")
+            if not version.OPENSSL_30 then
+                ngx.say("[\"HMAC @ default\"]")
+                ngx.exit(0)
+            end
+            local openssl = require("resty.openssl")
+            ngx.say(require("cjson").encode(openssl.list_mac_algorithms()))
+        }
+    }
+--- request
+    GET /t
+--- response_body_like
+\[.+HMAC @ default.+\]
+--- no_error_log
+[error]
+
+=== TEST 6: List kdf algorithms
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local version = require("resty.openssl.version")
+            if not version.OPENSSL_30 then
+                ngx.say("[\"HKDF @ default\"]")
+                ngx.exit(0)
+            end
+            local openssl = require("resty.openssl")
+            ngx.say(require("cjson").encode(openssl.list_kdf_algorithms()))
+        }
+    }
+--- request
+    GET /t
+--- response_body_like
+\[.+HKDF @ default.+\]
+--- no_error_log
+[error]

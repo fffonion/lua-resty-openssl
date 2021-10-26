@@ -19,8 +19,11 @@ Table of Contents
     + [openssl.resty_hmac_compat](#opensslresty_hmac_compat)
     + [openssl.get_fips_mode](#opensslget_fips_mode)
     + [openssl.set_fips_mode](#opensslset_fips_mode)
+    + [openssl.set_default_properties](#opensslset_default_properties)
     + [openssl.list_cipher_algorithms](#openssllist_cipher_algorithms)
     + [openssl.list_digest_algorithms](#openssllist_digest_algorithms)
+    + [openssl.list_mac_algorithms](#openssllist_mac_algorithms)
+    + [openssl.list_kdf_algorithms](#openssllist_kdf_algorithms)
   * [resty.openssl.version](#restyopensslversion)
     + [version_num](#version_num)
     + [version_text](#version_text)
@@ -366,9 +369,11 @@ properties for EVP functions. When turned on, all applications using
 EVP_* API will be redirected to FIPS-compliant implementations and
 have no access to non-FIPS-compliant algorithms.
 
-If fips provider is loaded but default is not set, use following
+Calling this function is equivalent of loading `fips` provider and
+call [openssl.set_default_properties("fips=yes")](#opensslset_default_properties).
+
+If fips provider is loaded but default properties are not set, use following
 to explictly fetch FIPS implementation.
-This is not necessary if `openssl.set_fips_mode(true)` is called
 ```lua
 local provider = require "resty.openssl.provider"
 assert(provider.load("fips"))
@@ -379,7 +384,8 @@ local c = assert(cipher.new("aes256", "fips=yes"))
 print(c:get_provider_name()) -- prints "fips"
 ```
 
-**Broingssl fips-20190808 and fips-20210429 (later haven't been certified)**
+**BroingSSL fips-20190808 and fips-20210429 (later haven't been certified)**
+
 Compile the module per [security policy](https://csrc.nist.gov/CSRC/media/projects/cryptographic-module-validation-program/documents/security-policies/140sp3678.pdf)
 
 Check if FIPS is acticated by running `assert(openssl.set_fips_mode(true))`.
@@ -387,9 +393,17 @@ BoringSSL doesn't support "turn FIPS mode off" once it's compiled.
 
 [Back to TOC](#table-of-contents)
 
+### openssl.set_default_properties
+
+**syntax**: *ok, err = openssl.set_default_properties(props)*
+
+Sets the default properties for all future EVP algorithm fetches, implicit as well as explicit. See "ALGORITHM FETCHING" in crypto(7) for information about implicit and explicit fetching.
+
+[Back to TOC](#table-of-contents)
+
 ### openssl.list_cipher_algorithms
 
-**syntax**: *ret = openssl.list_cipher_algorithms(enabled)*
+**syntax**: *ret = openssl.list_cipher_algorithms()*
 
 Return available cipher algorithms in an array.
 
@@ -397,9 +411,23 @@ Return available cipher algorithms in an array.
 
 ### openssl.list_digest_algorithms
 
-**syntax**: *ret = openssl.list_digest_algorithms(enabled)*
+**syntax**: *ret = openssl.list_digest_algorithms()*
 
 Return available digest algorithms in an array.
+
+[Back to TOC](#table-of-contents)
+
+### openssl.list_mac_algorithms
+
+**syntax**: *ret = openssl.list_mac_algorithms()*
+
+Return available MAC algorithms in an array.
+
+[Back to TOC](#table-of-contents)
+
+**syntax**: *ret = openssl.list_kdf_algorithms()*
+
+Return available KDF algorithms in an array.
 
 [Back to TOC](#table-of-contents)
 
@@ -1337,7 +1365,9 @@ Module to interact with symmetric cryptography (EVP_CIPHER).
 **syntax**: *d, err = cipher.new(cipher_name, properties?)*
 
 Creates a cipher instance. `cipher_name` is a case-insensitive string of cipher algorithm name.
-To view a list of cipher algorithms implemented, use `openssl list -cipher-algorithms`.
+To view a list of cipher algorithms implemented, use
+[openssl.list_cipher_algorithms](#openssllist_cipher_algorithms)
+or `openssl list -cipher-algorithms`
 
 Staring from OpenSSL 3.0, this functions accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms.
@@ -1543,7 +1573,9 @@ Module to interact with message digest (EVP_MD_CTX).
 **syntax**: *d, err = digest.new(digest_name?, properties?)*
 
 Creates a digest instance. `digest_name` is a case-insensitive string of digest algorithm name.
-To view a list of digest algorithms implemented, use `openssl list -digest-algorithms`.
+To view a list of digest algorithms implemented, use 
+[openssl.list_digest_algorithms](#openssllist_digest_algorithms) or
+`openssl list -digest-algorithms`.
 
 If `digest_name` is omitted, it's default to `sha1`. Specially, the digest_name `"null"`
 represents a "null" message digest that does nothing: i.e. the hash it returns is of zero length.
@@ -1624,7 +1656,9 @@ instead.
 **syntax**: *h, err = hmac.new(key, digest_name?)*
 
 Creates a hmac instance. `digest_name` is a case-insensitive string of digest algorithm name.
-To view a list of digest algorithms implemented, use `openssl list -digest-algorithms`.
+To view a list of digest algorithms implemented, use
+[openssl.list_digest_algorithms](#openssllist_digest_algorithms) or
+`openssl list -digest-algorithms`.
 
 If `digest_name` is omitted, it's default to `sha1`.
 
@@ -1688,11 +1722,17 @@ Module to interact with message authentication code (EVP_MAC).
 **syntax**: *h, err = mac.new(key, mac, cipher?, digest?, properties?)*
 
 Creates a mac instance. `mac` is a case-insensitive string of digest algorithm name.
-To view a list of digest algorithms implemented, use `openssl list -mac-algorithms`.
+To view a list of digest algorithms implemented, use
+[openssl.list_mac_algorithms](#openssllist_mac_algorithms) or
+`openssl list -mac-algorithms`.
 `cipher` is a case-insensitive string of digest algorithm name.
-To view a list of digest algorithms implemented, use `openssl list -cipher-algorithms`.
+To view a list of digest algorithms implemented, use
+[openssl.list_cipher_algorithms](#openssllist_cipher_algorithms) or
+`openssl list -cipher-algorithms`.
 `digest` is a case-insensitive string of digest algorithm name.
-To view a list of digest algorithms implemented, use `openssl list -digest-algorithms`.
+To view a list of digest algorithms implemented, use
+[openssl.list_digest_algorithms](#openssllist_digest_algorithms) or
+`openssl list -digest-algorithms`.
 `properties` parameter can be used to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
@@ -1945,7 +1985,9 @@ Returns `true` if table is an instance of `x509`. Returns `false` otherwise.
 Returns a digest of the DER representation of the X509 certificate object in raw binary text.
 
 `digest_name` is a case-insensitive string of digest algorithm name.
-To view a list of digest algorithms implemented, use `openssl list -digest-algorithms`.
+To view a list of digest algorithms implemented, use
+[openssl.list_digest_algorithms](#openssllist_digest_algorithms) or
+`openssl list -digest-algorithms`.
 
 If `digest_name` is omitted, it's default to `sha1`.
 
@@ -1961,7 +2003,9 @@ to explictly select provider to fetch algorithms.
 Returns a digest of the DER representation of the pubkey in the X509 object in raw binary text.
 
 `digest_name` is a case-insensitive string of digest algorithm name.
-To view a list of digest algorithms implemented, use `openssl list -digest-algorithms`.
+To view a list of digest algorithms implemented, use
+[openssl.list_digest_algorithms](#openssllist_digest_algorithms) or
+`openssl list -digest-algorithms`.
 
 If `digest_name` is omitted, it's default to `sha1`.
 
