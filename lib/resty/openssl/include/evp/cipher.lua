@@ -37,8 +37,11 @@ ffi.cdef [[
 
   // list functions
   typedef void* fake_openssl_cipher_list_fn(const EVP_CIPHER *ciph, const char *from,
-    const char *to, void *x);
-  void EVP_CIPHER_do_all_sorted(fake_openssl_cipher_list_fn*, void *arg);
+                                            const char *to, void *x);
+  //void EVP_CIPHER_do_all_sorted(fake_openssl_cipher_list_fn*, void *arg);
+  void EVP_CIPHER_do_all_sorted(void (*fn)
+                               (const EVP_CIPHER *ciph, const char *from,
+                                const char *to, void *x), void *arg);
   int EVP_CIPHER_nid(const EVP_CIPHER *cipher);
 ]]
 
@@ -55,6 +58,15 @@ if OPENSSL_30 then
     const OSSL_PROVIDER *EVP_CIPHER_get0_provider(const EVP_CIPHER *cipher);
     EVP_CIPHER *EVP_CIPHER_fetch(OSSL_LIB_CTX *ctx, const char *algorithm,
                                   const char *properties);
+
+    typedef void* fake_openssl_cipher_provided_list_fn(EVP_CIPHER *cipher, void *arg);
+    void EVP_CIPHER_do_all_provided(OSSL_LIB_CTX *libctx,
+                                    fake_openssl_cipher_provided_list_fn*,
+                                    void *arg);
+    int EVP_CIPHER_up_ref(EVP_CIPHER *cipher);
+    void EVP_CIPHER_free(EVP_CIPHER *cipher);
+
+    const char *EVP_CIPHER_get0_name(const EVP_CIPHER *cipher);
   ]]
 end
 

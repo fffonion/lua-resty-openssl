@@ -26,8 +26,6 @@ if OPENSSL_30 then
     int EVP_default_properties_enable_fips(OSSL_LIB_CTX *libctx, int enable);
     int EVP_default_properties_is_fips_enabled(OSSL_LIB_CTX *libctx);
 
-    const OSSL_PROVIDER *EVP_KDF_get0_provider(const EVP_KDF *kdf);
-
     // const OSSL_PROVIDER *EVP_RAND_get0_provider(const EVP_RAND *rand);
     // EVP_RAND *EVP_RAND_fetch(OSSL_LIB_CTX *libctx, const char *algorithm,
     //                     const char *properties);

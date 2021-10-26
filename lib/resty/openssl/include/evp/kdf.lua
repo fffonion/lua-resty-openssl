@@ -17,6 +17,23 @@ local _M = {
   EVP_PKEY_HKDEF_MODE_EXPAND_ONLY        = 2,
 }
 
+if OPENSSL_30 then
+  require "resty.openssl.include.provider"
+
+  ffi.cdef [[
+    const OSSL_PROVIDER *EVP_KDF_get0_provider(const EVP_KDF *kdf);
+
+    typedef void* fake_openssl_kdf_provided_list_fn(EVP_KDF *kdf, void *arg);
+    void EVP_KDF_do_all_provided(OSSL_LIB_CTX *libctx,
+                                fake_openssl_kdf_provided_list_fn*,
+                                void *arg);
+    int EVP_KDF_up_ref(EVP_KDF *kdf);
+    void EVP_KDF_free(EVP_KDF *kdf);
+
+    const char *EVP_KDF_get0_name(const EVP_KDF *kdf);
+  ]]
+end
+
 if OPENSSL_30 or BORINGSSL then
   ffi.cdef [[
     int EVP_PKEY_CTX_set_tls1_prf_md(EVP_PKEY_CTX *ctx, const EVP_MD *md);

@@ -1,6 +1,18 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Bug Fixes
+- ***:** move EVP_* definition into seperate files
+- **auxiliary/nginx:** set off_t to 64bit per nginx config ([#32](https://github.com/fffonion/lua-resty-openssl/issues/32))
+- **x509:** compatibility for BoringSSL 1.1.0 (fips-20190808)
+
+### Features
+- **mac:** add EVP_MAC
+- **openssl:** add function list mac and kdf algorithms and set properties for EVP algorithm fetches
+- **openssl:** support FIPS in OpenSSL 3.0
+- **param:** add new function to use OSSL_PARAM
+- **provider:** cipher, digest, kdf, pkey and x509 can now fetch by provider and has new get_provider_name function
+
 
 <a name="0.7.5"></a>
 ## [0.7.5] - 2021-09-18

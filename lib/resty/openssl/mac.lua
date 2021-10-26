@@ -84,9 +84,7 @@ function _M:final(s)
   end
 
   local length = ctypes.ptr_of_size_t()
-  -- no return value of EVP_DigestFinal_ex
-  C.EVP_MAC_final(self.ctx, self.buf, length, self.buf_size)
-  if length[0] == nil or length[0] <= 0 then
+  if C.EVP_MAC_final(self.ctx, self.buf, length, self.buf_size) ~= 1 then
     return nil, format_error("digest:final: EVP_MAC_final")
   end
   return ffi_str(self.buf, length[0])

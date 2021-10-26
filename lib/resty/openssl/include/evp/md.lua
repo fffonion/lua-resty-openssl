@@ -24,7 +24,7 @@ ffi.cdef [[
   int EVP_MD_type(const EVP_MD *md);
 
   typedef void* fake_openssl_md_list_fn(const EVP_MD *ciph, const char *from,
-                                              const char *to, void *x);
+                                        const char *to, void *x);
   void EVP_MD_do_all_sorted(fake_openssl_md_list_fn*, void *arg);
 
   const EVP_MD *EVP_get_digestbyname(const char *name);
@@ -40,6 +40,15 @@ if OPENSSL_30 then
 
     EVP_MD *EVP_MD_fetch(OSSL_LIB_CTX *ctx, const char *algorithm,
                           const char *properties);
+
+    typedef void* fake_openssl_md_provided_list_fn(EVP_MD *md, void *arg);
+    void EVP_MD_do_all_provided(OSSL_LIB_CTX *libctx,
+                                fake_openssl_md_provided_list_fn*,
+                                void *arg);
+    int EVP_MD_up_ref(EVP_MD *md);
+    void EVP_MD_free(EVP_MD *md);
+
+    const char *EVP_MD_get0_name(const EVP_MD *md);
   ]]
 end
 
