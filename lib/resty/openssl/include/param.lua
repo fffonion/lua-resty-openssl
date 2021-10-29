@@ -1,7 +1,4 @@
 local ffi = require "ffi"
-local C = ffi.C
-local ffi_new = ffi.new
-local ffi_str = ffi.string
 
 require "resty.openssl.include.ossl_typ"
 
@@ -15,8 +12,10 @@ ffi.cdef [[
   } OSSL_PARAM;
 
   OSSL_PARAM OSSL_PARAM_construct_int(const char *key, int *buf);
+  OSSL_PARAM OSSL_PARAM_construct_uint(const char *key, unsigned int *buf);
   OSSL_PARAM OSSL_PARAM_construct_BN(const char *key, unsigned char *buf,
                                     size_t bsize);
+  OSSL_PARAM OSSL_PARAM_construct_double(const char *key, double *buf);
   OSSL_PARAM OSSL_PARAM_construct_utf8_string(const char *key, char *buf,
                                               size_t bsize);
   OSSL_PARAM OSSL_PARAM_construct_octet_string(const char *key, void *buf,
@@ -26,68 +25,47 @@ ffi.cdef [[
   OSSL_PARAM OSSL_PARAM_construct_octet_ptr(const char *key, void **buf,
                                             size_t bsize);
   OSSL_PARAM OSSL_PARAM_construct_end(void);
+
+  int OSSL_PARAM_get_int32(const OSSL_PARAM *p, int32_t *val);
+  int OSSL_PARAM_get_uint32(const OSSL_PARAM *p, uint32_t *val);
+  int OSSL_PARAM_get_int64(const OSSL_PARAM *p, int64_t *val);
+  int OSSL_PARAM_get_uint64(const OSSL_PARAM *p, uint64_t *val);
+  // int OSSL_PARAM_get_size_t(const OSSL_PARAM *p, size_t *val);
+  // int OSSL_PARAM_get_time_t(const OSSL_PARAM *p, time_t *val);
+
+  int OSSL_PARAM_set_int(OSSL_PARAM *p, int val);
+  int OSSL_PARAM_set_uint(OSSL_PARAM *p, unsigned int val);
+  int OSSL_PARAM_set_long(OSSL_PARAM *p, long int val);
+  int OSSL_PARAM_set_ulong(OSSL_PARAM *p, unsigned long int val);
+  int OSSL_PARAM_set_int32(OSSL_PARAM *p, int32_t val);
+  int OSSL_PARAM_set_uint32(OSSL_PARAM *p, uint32_t val);
+  int OSSL_PARAM_set_int64(OSSL_PARAM *p, int64_t val);
+  int OSSL_PARAM_set_uint64(OSSL_PARAM *p, uint64_t val);
+  // int OSSL_PARAM_set_size_t(OSSL_PARAM *p, size_t val);
+  // int OSSL_PARAM_set_time_t(OSSL_PARAM *p, time_t val);
+
+  int OSSL_PARAM_get_double(const OSSL_PARAM *p, double *val);
+  int OSSL_PARAM_set_double(OSSL_PARAM *p, double val);
+
+  int OSSL_PARAM_get_BN(const OSSL_PARAM *p, BIGNUM **val);
+  int OSSL_PARAM_set_BN(OSSL_PARAM *p, const BIGNUM *val);
+
+  int OSSL_PARAM_get_utf8_string(const OSSL_PARAM *p, char **val, size_t max_len);
+  int OSSL_PARAM_set_utf8_string(OSSL_PARAM *p, const char *val);
+
+  int OSSL_PARAM_get_octet_string(const OSSL_PARAM *p, void **val, size_t max_len,
+                                  size_t *used_len);
+  int OSSL_PARAM_set_octet_string(OSSL_PARAM *p, const void *val, size_t len);
+
+  int OSSL_PARAM_get_utf8_ptr(const OSSL_PARAM *p, const char **val);
+  int OSSL_PARAM_set_utf8_ptr(OSSL_PARAM *p, const char *val);
+
+  int OSSL_PARAM_get_octet_ptr(const OSSL_PARAM *p, const void **val,
+                              size_t *used_len);
+  int OSSL_PARAM_set_octet_ptr(OSSL_PARAM *p, const void *val,
+                              size_t used_len);
+
+  int OSSL_PARAM_get_utf8_string_ptr(const OSSL_PARAM *p, const char **val);
+  int OSSL_PARAM_get_octet_string_ptr(const OSSL_PARAM *p, const void **val,
+                                      size_t *used_len);
 ]]
-
-local _M = {
-  OSSL_PARAM_INTEGER = 1,
-  OSSL_PARAM_UNSIGNED_INTEGER = 2,
-  OSSL_PARAM_REAL = 3,
-  OSSL_PARAM_UTF8_STRING = 4,
-  OSSL_PARAM_OCTET_STRING = 5,
-  OSSL_PARAM_UTF8_PTR = 6,
-  OSSL_PARAM_OCTET_PTR = 7,
-}
-
-function _M.construct(buf_t, length, types_map)
-  local params = ffi_new("OSSL_PARAM[?]", length + 1)
-
-  local i = 0
-  for key, value in pairs(buf_t) do
-    local typ = types_map[key]
-    if not typ then
-      return nil, "param:construct: unknown key type \"" .. key .. "\""
-    end
-    local param
-    if typ == _M.OSSL_PARAM_UTF8_PTR then -- out
-      local buf = ffi_new("char*[1]")
-      buf_t[key] = buf
-      param = C.OSSL_PARAM_construct_utf8_ptr(key, buf, 0)
-    elseif typ == _M.OSSL_PARAM_INTEGER then -- out (and in?)
-      local buf = ffi_new("int[1]")
-      buf_t[key] = buf
-      param = C.OSSL_PARAM_construct_int(key, buf)
-    elseif typ == _M.OSSL_PARAM_UTF8_STRING then -- in
-      local buf = ffi.cast("char *", buf_t[key])
-      param = C.OSSL_PARAM_construct_utf8_string(key, buf, #buf_t[key])
-    else
-      error("type " .. typ .. " is not yet implemented")
-    end
-    params[i] = param
-    i = i + 1
-  end
-
-  params[length] = C.OSSL_PARAM_construct_end()
-
-  return params
-end
-
-function _M.parse(buf_t, length, types_map)
-  for key, buf in pairs(buf_t) do
-    local typ = types_map[key]
-    if not typ then
-      return nil, "param:parse: unknown key type \"" .. key .. "\""
-    end
-    if typ == _M.OSSL_PARAM_UTF8_PTR then
-      buf_t[key] = ffi_str(buf[0])
-    elseif typ == _M.OSSL_PARAM_INTEGER then
-      buf_t[key] = tonumber(buf[0])
-    else
-      error("type " .. typ .. " is not yet implemented")
-    end
-    -- crypto_macro.OPENSSL_free(req[i-1].data)
-  end
-
-  return buf_t
-end
-
-return _M

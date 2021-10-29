@@ -30,4 +30,9 @@ ffi.cdef [[
   void EVP_MAC_free(EVP_MAC *mac);
 
   const char *EVP_MAC_get0_name(const EVP_MAC *mac);
+
+  int EVP_MAC_CTX_set_params(EVP_MAC_CTX *ctx, const OSSL_PARAM params[]);
+  const OSSL_PARAM *EVP_MAC_CTX_settable_params(EVP_MAC_CTX *ctx);
+  int EVP_MAC_CTX_get_params(EVP_MAC_CTX *ctx, OSSL_PARAM params[]);
+  const OSSL_PARAM *EVP_MAC_CTX_gettable_params(EVP_MAC_CTX *ctx);
 ]]

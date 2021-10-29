@@ -49,6 +49,11 @@ if OPENSSL_30 then
     void EVP_MD_free(EVP_MD *md);
 
     const char *EVP_MD_get0_name(const EVP_MD *md);
+
+    int EVP_MD_CTX_set_params(EVP_MD_CTX *ctx, const OSSL_PARAM params[]);
+    const OSSL_PARAM *EVP_MD_CTX_settable_params(EVP_MD_CTX *ctx);
+    int EVP_MD_CTX_get_params(EVP_MD_CTX *ctx, OSSL_PARAM params[]);
+    const OSSL_PARAM *EVP_MD_CTX_gettable_params(EVP_MD_CTX *ctx);
   ]]
 end
 

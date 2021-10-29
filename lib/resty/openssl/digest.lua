@@ -30,29 +30,29 @@ function _M.new(typ, properties)
 
   local err_new = string.format("digest.new: invalid digest type \"%s\"", typ)
 
-  local dtyp
+  local algo
   if typ == "null" then
-    dtyp = C.EVP_md_null()
+    algo = C.EVP_md_null()
   else
     if OPENSSL_30 then
-      dtyp = C.EVP_MD_fetch(nil, typ or 'sha1', properties)
+      algo = C.EVP_MD_fetch(nil, typ or 'sha1', properties)
     else
-      dtyp = C.EVP_get_digestbyname(typ or 'sha1')
+      algo = C.EVP_get_digestbyname(typ or 'sha1')
     end
-    if dtyp == nil then
+    if algo == nil then
       return nil, format_error(err_new)
     end
   end
 
-  local code = C.EVP_DigestInit_ex(ctx, dtyp, nil)
+  local code = C.EVP_DigestInit_ex(ctx, algo, nil)
   if code ~= 1 then
     return nil, format_error(err_new)
   end
 
   return setmetatable({
     ctx = ctx,
-    dtyp = dtyp,
-    buf = ctypes.uchar_array(OPENSSL_30 and C.EVP_MD_get_size(dtyp) or C.EVP_MD_size(dtyp)),
+    algo = algo,
+    buf = ctypes.uchar_array(OPENSSL_30 and C.EVP_MD_get_size(algo) or C.EVP_MD_size(algo)),
   }, mt), nil
 end
 
@@ -64,11 +64,16 @@ function _M:get_provider_name()
   if not OPENSSL_30 then
     return false, "digest:get_provider_name is not supported"
   end
-  local p = C.EVP_MD_get0_provider(self.dtyp)
+  local p = C.EVP_MD_get0_provider(self.algo)
   if p == nil then
     return nil
   end
   return ffi_str(C.OSSL_PROVIDER_get0_name(p))
+end
+
+if OPENSSL_30 then
+  local param_lib = require "resty.openssl.param"
+  _M.settable_params, _M.set_params, _M.gettable_params, _M.get_param = param_lib.get_params_func("EVP_MD_CTX")
 end
 
 function _M:update(...)
@@ -98,7 +103,7 @@ function _M:final(s)
 end
 
 function _M:reset()
-  local code = C.EVP_DigestInit_ex(self.ctx, self.dtyp, nil)
+  local code = C.EVP_DigestInit_ex(self.ctx, self.algo, nil)
   if code ~= 1 then
     return false, format_error("digest:reset")
   end

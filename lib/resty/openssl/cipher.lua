@@ -4,8 +4,8 @@ local ffi_gc = ffi.gc
 local ffi_str = ffi.string
 local ffi_cast = ffi.cast
 
-local evp_macro = require "resty.openssl.include.evp"
 require "resty.openssl.include.evp.cipher"
+local evp_macro = require "resty.openssl.include.evp"
 local ctypes = require "resty.openssl.auxiliary.ctypes"
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
@@ -57,7 +57,7 @@ function _M.new(typ, properties)
 
   return setmetatable({
     ctx = ctx,
-    cipher_type = ctyp,
+    algo = ctyp,
     initialized = false,
     block_size = tonumber(OPENSSL_30 and C.EVP_CIPHER_CTX_get_block_size(ctx)
                                     or C.EVP_CIPHER_CTX_block_size(ctx)),
@@ -76,11 +76,16 @@ function _M:get_provider_name()
   if not OPENSSL_30 then
     return false, "cipher:get_provider_name is not supported"
   end
-  local p = C.EVP_CIPHER_get0_provider(self.cipher_type)
+  local p = C.EVP_CIPHER_get0_provider(self.algo)
   if p == nil then
     return nil
   end
   return ffi_str(C.OSSL_PROVIDER_get0_name(p))
+end
+
+if OPENSSL_30 then
+  local param_lib = require "resty.openssl.param"
+  _M.settable_params, _M.set_params, _M.gettable_params, _M.get_param = param_lib.get_params_func("EVP_CIPHER_CTX")
 end
 
 function _M:init(key, iv, opts)
@@ -94,8 +99,8 @@ function _M:init(key, iv, opts)
 
   -- always passed in the `EVP_CIPHER` parameter to reinitialized the cipher
   -- it will have a same effect as EVP_CIPHER_CTX_cleanup/EVP_CIPHER_CTX_reset then Init_ex with
-  -- empty cipher_type
-  if C.EVP_CipherInit_ex(self.ctx, self.cipher_type, nil, key, iv, opts.is_encrypt and 1 or 0) == 0 then
+  -- empty algo
+  if C.EVP_CipherInit_ex(self.ctx, self.algo, nil, key, iv, opts.is_encrypt and 1 or 0) == 0 then
     return false, format_error("cipher:init EVP_CipherInit_ex")
   end
 

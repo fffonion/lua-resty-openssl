@@ -96,6 +96,11 @@ if OPENSSL_30 then
 
     const OSSL_PROVIDER *EVP_PKEY_get0_provider(const EVP_PKEY *key);
     const OSSL_PROVIDER *EVP_PKEY_CTX_get0_provider(const EVP_PKEY_CTX *ctx);
+
+    const OSSL_PARAM *EVP_PKEY_settable_params(const EVP_PKEY *pkey);
+    int EVP_PKEY_set_params(EVP_PKEY *pkey, OSSL_PARAM params[]);
+    int EVP_PKEY_get_params(EVP_PKEY *ctx, OSSL_PARAM params[]);
+    const OSSL_PARAM *EVP_PKEY_gettable_params(EVP_PKEY *ctx);
   ]]
 end
 

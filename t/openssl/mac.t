@@ -22,7 +22,7 @@ our $HttpConfig = qq{
 run_tests();
 
 __DATA__
-=== TEST 1: Calculate hmac correctly
+=== TEST 1: Calculate mac correctly
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -32,10 +32,10 @@ __DATA__
                 ngx.exit(0)
             end
 
-            local hmac = myassert(require("resty.openssl.mac").new("goose", "HMAC", nil, "sha256"))
+            local mac = myassert(require("resty.openssl.mac").new("goose", "HMAC", nil, "sha256"))
 
-            myassert(hmac:update("🦢🦢🦢🦢🦢🦢"))
-            ngx.print(ngx.encode_base64(myassert(hmac:final())))
+            myassert(mac:update("🦢🦢🦢🦢🦢🦢"))
+            ngx.print(ngx.encode_base64(myassert(mac:final())))
         }
     }
 --- request
@@ -55,10 +55,10 @@ __DATA__
                 ngx.exit(0)
             end
 
-            local hmac = myassert(require("resty.openssl.mac").new("goose", "HMAC", nil, "sha256"))
+            local mac = myassert(require("resty.openssl.mac").new("goose", "HMAC", nil, "sha256"))
 
-            hmac:update("🦢", "🦢🦢", "🦢🦢", "🦢")
-            ngx.print(ngx.encode_base64(hmac:final()))
+            mac:update("🦢", "🦢🦢", "🦢🦢", "🦢")
+            ngx.print(ngx.encode_base64(mac:final()))
         }
     }
 --- request
@@ -78,10 +78,10 @@ __DATA__
                 ngx.exit(0)
             end
 
-            local hmac = myassert(require("resty.openssl.mac").new("goose", "HMAC", nil, "sha256"))
+            local mac = myassert(require("resty.openssl.mac").new("goose", "HMAC", nil, "sha256"))
 
-            myassert(hmac:update("🦢", "🦢🦢", "🦢🦢"))
-            ngx.print(ngx.encode_base64(myassert(hmac:final("🦢"))))
+            myassert(mac:update("🦢", "🦢🦢", "🦢🦢"))
+            ngx.print(ngx.encode_base64(myassert(mac:final("🦢"))))
         }
     }
 --- request
@@ -100,7 +100,7 @@ __DATA__
                 ngx.say("mac.new: invalid cipher or digest type")
                 ngx.exit(0)
             end
-            local hmac, err = require("resty.openssl.mac").new("goose", "HMAC", nil, "sha257")
+            local mac, err = require("resty.openssl.mac").new("goose", "HMAC", nil, "sha257")
             ngx.print(err)
         }
     }
@@ -130,5 +130,59 @@ __DATA__
     GET /t
 --- response_body
 default
+--- no_error_log
+[error]
+
+=== TEST 6: Returns gettable, settable params
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            if not require("resty.openssl.version").OPENSSL_30 then
+                ngx.say("-size-\n-digest-")
+                ngx.exit(0)
+            end
+
+            local mac = require("resty.openssl.mac")
+            local m = myassert(mac.new("goose", "HMAC", nil, "sha256"))
+            ngx.say(require("cjson").encode(myassert(m:gettable_params())))
+            ngx.say(require("cjson").encode(myassert(m:settable_params())))
+        }
+    }
+--- request
+    GET /t
+--- response_body_like
+.+size.+
+.+digest.+
+--- no_error_log
+[error]
+
+=== TEST 7: Get params, set params
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            if not require("resty.openssl.version").OPENSSL_30 then
+                ngx.say("true\n32")
+                ngx.exit(0)
+            end
+
+            local mac = myassert(require("resty.openssl.mac").new("goose", "HMAC", nil, "sha256"))
+            local s1 = myassert(mac:final("🦢"))
+
+            local mac = myassert(require("resty.openssl.mac").new("notthiskey", "HMAC", nil, "sha256"))
+            myassert(mac:set_params({key = "goose"}))
+            local s2 = myassert(mac:final("🦢"))
+
+            ngx.say(s1 == s2)
+            ngx.say(myassert(mac:get_param("size")))
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"true
+32
+"
 --- no_error_log
 [error]
