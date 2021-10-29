@@ -5,7 +5,7 @@
 <a name="0.8.0"></a>
 ## [0.8.0] - 2021-10-29
 ### bug fixes
-- ***:** move EVP_* definition into seperate files [e0c3d61](https://github.com/fffonion/lua-resty-openssl/commit/e0c3d6178e8b0baab5c53d331dedf8ffb1b1b0c7)
+- **\*:** move EVP_* definition into seperate files [e0c3d61](https://github.com/fffonion/lua-resty-openssl/commit/e0c3d6178e8b0baab5c53d331dedf8ffb1b1b0c7)
 - **auxiliary/nginx:** set off_t to 64bit per nginx config ([#32](https://github.com/fffonion/lua-resty-openssl/issues/32)) [8c209fa](https://github.com/fffonion/lua-resty-openssl/commit/8c209fabbd4ba2f1d6f3a267059c758b4697a433)
 - **pkey:** allow sign/verify without md_alg for EdDSA on BoringSSL [ab83fd4](https://github.com/fffonion/lua-resty-openssl/commit/ab83fd4fc053f496699d5dcc77dbb551e2389e77)
 - **x509:** compatibility for BoringSSL 1.1.0 (fips-20190808) [84244af](https://github.com/fffonion/lua-resty-openssl/commit/84244af7d91e3421dfccdf1940beb70adbd66adb)
@@ -23,7 +23,7 @@
 <a name="0.7.5"></a>
 ## [0.7.5] - 2021-09-18
 ### bug fixes
-- ***:** rename some EVP_ API to use get in openssl3.0 [8fbdb39](https://github.com/fffonion/lua-resty-openssl/commit/8fbdb396d0a4988a24ff2e0404c1866a416d9cff)
+- **\*:** rename some EVP_ API to use get in openssl3.0 [8fbdb39](https://github.com/fffonion/lua-resty-openssl/commit/8fbdb396d0a4988a24ff2e0404c1866a416d9cff)
 - **aux/nginx:** add 1.19.9 [eb73691](https://github.com/fffonion/lua-resty-openssl/commit/eb73691c058c9d55a1b57405f889f5bc3ecd0420)
 
 
@@ -46,7 +46,7 @@
 <a name="0.7.2"></a>
 ## [0.7.2] - 2021-03-25
 ### bug fixes
-- ***:** redefine callback functions to a style FFI will not overflow [f91202c](https://github.com/fffonion/lua-resty-openssl/commit/f91202c57b826d935d831ec452d2b90fc33277fa)
+- **\*:** redefine callback functions to a style FFI will not overflow [f91202c](https://github.com/fffonion/lua-resty-openssl/commit/f91202c57b826d935d831ec452d2b90fc33277fa)
 
 
 <a name="0.7.1"></a>
@@ -65,7 +65,7 @@
 - **openssl:** BREAKING: not load sub modules by default [a402f05](https://github.com/fffonion/lua-resty-openssl/commit/a402f05f3ea4b85589c1de6b4347cdfc4c397ea7)
 
 ### features
-- ***:** support BoringSSL [9c4e5dc](https://github.com/fffonion/lua-resty-openssl/commit/9c4e5dccefb7fa2e08c489e2922ea05e043e28f2)
+- **\*:** support BoringSSL [9c4e5dc](https://github.com/fffonion/lua-resty-openssl/commit/9c4e5dccefb7fa2e08c489e2922ea05e043e28f2)
 - **bn:** add generate_prime [2cc77a4](https://github.com/fffonion/lua-resty-openssl/commit/2cc77a4513dad2f4d684535d1230484e8e91bfbd)
 - **openssl:** add function to list supported cipher and digest algorithms [5bdc2a4](https://github.com/fffonion/lua-resty-openssl/commit/5bdc2a406c974f471331636de670915df9386f82)
 - **openssl:** add function to get and set fips mode [f6de183](https://github.com/fffonion/lua-resty-openssl/commit/f6de183b19e57616ded39e73518acd198c730056)
@@ -96,14 +96,14 @@
 <a name="0.6.9"></a>
 ## [0.6.9] - 2020-11-09
 ### bug fixes
-- ***:** not mutating tables when doing pairs to avoid missing of iterration [836d5c9](https://github.com/fffonion/lua-resty-openssl/commit/836d5c915b27c0e63782c47effae16515ba71fed)
+- **\*:** not mutating tables when doing pairs to avoid missing of iterration [836d5c9](https://github.com/fffonion/lua-resty-openssl/commit/836d5c915b27c0e63782c47effae16515ba71fed)
 - **pkey:** fix typo in paramgen error message [d341246](https://github.com/fffonion/lua-resty-openssl/commit/d341246b5db5f912a3bcb06b7be1d08ffee093b3)
 - **tests:** openssl3.0 alpha7 [5caa0e6](https://github.com/fffonion/lua-resty-openssl/commit/5caa0e60193ea535d0c0f1fe8491bc6779c9e720)
 - **x509.altname:** organize GC handling better [f5a138c](https://github.com/fffonion/lua-resty-openssl/commit/f5a138c8b10dd285d9cacb6f2b3877b7831d0fba)
 
 ### features
 - **provider:** add the provider module [dff92af](https://github.com/fffonion/lua-resty-openssl/commit/dff92af37102b094f1187914a0c76b6635130626)
-- **x509.*:** add get_signature_nid and get_signature_name [a35ae0a](https://github.com/fffonion/lua-resty-openssl/commit/a35ae0af6ad98251d4226e0daceab07c2832fc17)
+- **x509.\*:** add get_signature_nid and get_signature_name [a35ae0a](https://github.com/fffonion/lua-resty-openssl/commit/a35ae0af6ad98251d4226e0daceab07c2832fc17)
 
 
 <a name="0.6.8"></a>
@@ -128,7 +128,7 @@
 <a name="0.6.6"></a>
 ## [0.6.6] - 2020-09-29
 ### bug fixes
-- ***:** export tostring for x509.name and x509.altname [6143659](https://github.com/fffonion/lua-resty-openssl/commit/6143659706ea5b8c42a418b7fac1eae4179a6280)
+- **\*:** export tostring for x509.name and x509.altname [6143659](https://github.com/fffonion/lua-resty-openssl/commit/6143659706ea5b8c42a418b7fac1eae4179a6280)
 - **kdf:** fix HKDF potential buffer overflow [da6f420](https://github.com/fffonion/lua-resty-openssl/commit/da6f42025c657f610f1ebee95f0489afd3628d9f)
 - **x509.name:** potential memory leak in x509.name:find() [ac51fb1](https://github.com/fffonion/lua-resty-openssl/commit/ac51fb10581ec31e639c1298c080a899466fd57d)
 - **x509.store:** return all error on load_file or add failure [a4ee237](https://github.com/fffonion/lua-resty-openssl/commit/a4ee2379802e41f5b5566ac11e59598d1f338ca5)
@@ -140,7 +140,7 @@
 <a name="0.6.5"></a>
 ## [0.6.5] - 2020-09-16
 ### bug fixes
-- ***:** x509.* set should return true on success [2a09575](https://github.com/fffonion/lua-resty-openssl/commit/2a09575425133e92c990513c7ea7445cf2ca47f4)
+- **\*:** x509.* set should return true on success [2a09575](https://github.com/fffonion/lua-resty-openssl/commit/2a09575425133e92c990513c7ea7445cf2ca47f4)
 
 
 <a name="0.6.4"></a>
@@ -153,17 +153,17 @@
 <a name="0.6.3"></a>
 ## [0.6.3] - 2020-08-10
 ### bug fixes
-- ***:** cleanup and centralize ffi.typeof [5cbc247](https://github.com/fffonion/lua-resty-openssl/commit/5cbc2475bc5926fb0e4aa1b3e5b592144518d013)
-- ***:** remove hack for openssl 3.0 around broken EVP_PKEY_base_id [33181c3](https://github.com/fffonion/lua-resty-openssl/commit/33181c34210fb16c4190e88e1892fb19952420b2)
+- **\*:** cleanup and centralize ffi.typeof [5cbc247](https://github.com/fffonion/lua-resty-openssl/commit/5cbc2475bc5926fb0e4aa1b3e5b592144518d013)
+- **\*:** remove hack for openssl 3.0 around broken EVP_PKEY_base_id [33181c3](https://github.com/fffonion/lua-resty-openssl/commit/33181c34210fb16c4190e88e1892fb19952420b2)
 - **cipher:** use CipherFinal_ex and make test more robust [61fa022](https://github.com/fffonion/lua-resty-openssl/commit/61fa0224fc8dca8a13f9c3ae6904e6cb71c00c6b)
 - **openssl:** correctly check error for getting version num ([#6](https://github.com/fffonion/lua-resty-openssl/issues/6)) [6a4b9e6](https://github.com/fffonion/lua-resty-openssl/commit/6a4b9e636714e81d405b934868ef347b3c803674)
 - **tests:** pin lua-nginx-module and lua-resty-core [010b37e](https://github.com/fffonion/lua-resty-openssl/commit/010b37eb273da7b96ef39f95a6990357ecf49e49)
 - **tests:** make pkey parameter test less flaky [d023edc](https://github.com/fffonion/lua-resty-openssl/commit/d023edcba56e5832b04e2ee0d84195c69a6258d4)
-- **x509.*:** pass correct digest parameter to sign [982ad48](https://github.com/fffonion/lua-resty-openssl/commit/982ad48594444994d5c5b98ba9ca3d139ce96f8c)
+- **x509.\*:** pass correct digest parameter to sign [982ad48](https://github.com/fffonion/lua-resty-openssl/commit/982ad48594444994d5c5b98ba9ca3d139ce96f8c)
 
 ### features
-- ***:** support reset for hmac and digest [37ba4b0](https://github.com/fffonion/lua-resty-openssl/commit/37ba4b0f63c60898ee25cfeeeab8b5651c62296e)
-- ***:** initial support for OpenSSL 3.0 [be5dc10](https://github.com/fffonion/lua-resty-openssl/commit/be5dc10c24aabb6697ecb9fe2bd75c8a11e2b2d7)
+- **\*:** support reset for hmac and digest [37ba4b0](https://github.com/fffonion/lua-resty-openssl/commit/37ba4b0f63c60898ee25cfeeeab8b5651c62296e)
+- **\*:** initial support for OpenSSL 3.0 [be5dc10](https://github.com/fffonion/lua-resty-openssl/commit/be5dc10c24aabb6697ecb9fe2bd75c8a11e2b2d7)
 - **x509.csr:** add get_extension and get_extensions function [638ca46](https://github.com/fffonion/lua-resty-openssl/commit/638ca46ecf1a4fdacac6e24abaea7d19db93c98b)
 - **x509.extensions:** finish the stack implementation [f4cf725](https://github.com/fffonion/lua-resty-openssl/commit/f4cf7256e9cce0a280fab46d356ca5fcf3a48b4f)
 - **x509.revoked:** add the x509.revoked module [58f0ce1](https://github.com/fffonion/lua-resty-openssl/commit/58f0ce11f2a39cdaabf1c9ba38ea7587adf8f25a)
@@ -172,7 +172,7 @@
 <a name="0.6.2"></a>
 ## [0.6.2] - 2020-05-13
 ### bug fixes
-- ***:** add prefix to all error messages [8f52c25](https://github.com/fffonion/lua-resty-openssl/commit/8f52c2583b87ae0e66e9546f5db03d8fe667cbd4)
+- **\*:** add prefix to all error messages [8f52c25](https://github.com/fffonion/lua-resty-openssl/commit/8f52c2583b87ae0e66e9546f5db03d8fe667cbd4)
 
 ### features
 - **cipher:** AEAD modes with authentication [fd7471e](https://github.com/fffonion/lua-resty-openssl/commit/fd7471e3a011519df0250681ee1bf82d61b1f154)
@@ -210,7 +210,7 @@
 ## [0.5.4] - 2020-02-27
 ### bug fixes
 - **store:** set X509_V_FLAG_CRL_CHECK flag if a crl is added [88574d5](https://github.com/fffonion/lua-resty-openssl/commit/88574d5ecef0f75a293cd7d23b764d629905e3df)
-- **x509.*:** returns soft error if extension is not found [a0a75aa](https://github.com/fffonion/lua-resty-openssl/commit/a0a75aa2644203e22461aa1dd09ef8672e2ba576)
+- **x509.\*:** returns soft error if extension is not found [a0a75aa](https://github.com/fffonion/lua-resty-openssl/commit/a0a75aa2644203e22461aa1dd09ef8672e2ba576)
 
 
 <a name="0.5.3"></a>
@@ -241,7 +241,7 @@
 <a name="0.5.0"></a>
 ## [0.5.0] - 2020-02-03
 ### bug fixes
-- ***:** add missing crl.dup function, organize store:add gc handler [6815e5d](https://github.com/fffonion/lua-resty-openssl/commit/6815e5df04fdb77c83b0345f166664759a573962)
+- **\*:** add missing crl.dup function, organize store:add gc handler [6815e5d](https://github.com/fffonion/lua-resty-openssl/commit/6815e5df04fdb77c83b0345f166664759a573962)
 - **asn1:** support GENERALIZEDTIME string format [8c7e2d6](https://github.com/fffonion/lua-resty-openssl/commit/8c7e2d67857cb6875cf52fadf43cadf05d8c5c40)
 - **error:** return latest error string not earliest in some cases [0b5955d](https://github.com/fffonion/lua-resty-openssl/commit/0b5955d4cb73f3c7d3321ed7384ae862640a6a7f)
 - **stack:** protective over first argument [bf455ff](https://github.com/fffonion/lua-resty-openssl/commit/bf455ff310b94b26a3bed513ffc9f308f65691ed)
@@ -249,7 +249,7 @@
 - **x509.store:** correctly save x509 instance references [d8d755f](https://github.com/fffonion/lua-resty-openssl/commit/d8d755f7a281ad09d896a1d78ad9e53f6c028bdc)
 
 ### features
-- ***:** add iterater and helpers for stack-like objects [46bb723](https://github.com/fffonion/lua-resty-openssl/commit/46bb7237028a16e67878d8310c25e908ceece009)
+- **\*:** add iterater and helpers for stack-like objects [46bb723](https://github.com/fffonion/lua-resty-openssl/commit/46bb7237028a16e67878d8310c25e908ceece009)
 - **autogen:** generate tests for x509, csr and crl [1392428](https://github.com/fffonion/lua-resty-openssl/commit/1392428352164d2a1a6e0c03075ff65b55aecdee)
 - **objects:** add helper function for ASN1_OBJECT [d037706](https://github.com/fffonion/lua-resty-openssl/commit/d037706c11d716afe3616bdaf4658afc1763081d)
 - **pkey:** asymmetric encryption and decryption [6d60451](https://github.com/fffonion/lua-resty-openssl/commit/6d60451157edbf9cefb634f888dfa3e6d9be302f)
@@ -298,11 +298,11 @@
 <a name="0.4.0"></a>
 ## [0.4.0] - 2019-12-20
 ### bug fixes
-- ***:** always return ok, err if there's no explict return value [3e68167](https://github.com/fffonion/lua-resty-openssl/commit/3e681676f85e26c8c7af6f72a2c4afcb98952cd6)
+- **\*:** always return ok, err if there's no explict return value [3e68167](https://github.com/fffonion/lua-resty-openssl/commit/3e681676f85e26c8c7af6f72a2c4afcb98952cd6)
 - **evp:** correct ptr naming [72f8765](https://github.com/fffonion/lua-resty-openssl/commit/72f8765250861d6504a767da81afe19c2d2896a4)
 
 ### features
-- ***:** add x509.digest and bn.to_hex [11ea9ae](https://github.com/fffonion/lua-resty-openssl/commit/11ea9aebca6bb5c354ad94525bd2e264debfebbd)
+- **\*:** add x509.digest and bn.to_hex [11ea9ae](https://github.com/fffonion/lua-resty-openssl/commit/11ea9aebca6bb5c354ad94525bd2e264debfebbd)
 - **version:** add function to print human readable version [7687573](https://github.com/fffonion/lua-resty-openssl/commit/76875731011e5641eef9881ace2becf1bf057cfd)
 - **x509:** add x509 stack (chain) support [72154fc](https://github.com/fffonion/lua-resty-openssl/commit/72154fcb7686ce5a754d4fe4f121f07507a1513e)
 - **x509.chain:** allow to duplicate a stack [3fa19b7](https://github.com/fffonion/lua-resty-openssl/commit/3fa19b79509c73cf5dce6e3445cbf90a9466d656)
@@ -313,8 +313,8 @@
 <a name="0.3.0"></a>
 ## [0.3.0] - 2019-12-12
 ### bug fixes
-- ***:** move cdef and macros to seperate file [28c3390](https://github.com/fffonion/lua-resty-openssl/commit/28c339085383bfbcb72e192701b96e08fb4344f0)
-- ***:** normalize error handling [ff18d54](https://github.com/fffonion/lua-resty-openssl/commit/ff18d54d2b4402de3bc02731f99c32a9953f8784)
+- **\*:** move cdef and macros to seperate file [28c3390](https://github.com/fffonion/lua-resty-openssl/commit/28c339085383bfbcb72e192701b96e08fb4344f0)
+- **\*:** normalize error handling [ff18d54](https://github.com/fffonion/lua-resty-openssl/commit/ff18d54d2b4402de3bc02731f99c32a9953f8784)
 
 ### features
 - **cipher:** add symmetric cryptography support [9b89e8d](https://github.com/fffonion/lua-resty-openssl/commit/9b89e8dcc1489832c893373150bfeef6a838da34)
@@ -330,13 +330,13 @@
 <a name="0.2.0"></a>
 ## 0.2.0 - 2019-10-18
 ### bug fixes
-- ***:** fix working and name test [f6db7ef](https://github.com/fffonion/lua-resty-openssl/commit/f6db7ef3c1ce5f9a75f01dc24f904fd8942c7897)
-- ***:** normalize naming, explictly control cdef for different openssl versions [c626b53](https://github.com/fffonion/lua-resty-openssl/commit/c626b538c2dc33272b130503ddd21f21bd9d995f)
-- ***:** cleanup cdef [3c02d02](https://github.com/fffonion/lua-resty-openssl/commit/3c02d020822a30fdf7dae0aa7c6aa47c4660aea8)
-- ***:** test cdata type before passing in ffi [de99069](https://github.com/fffonion/lua-resty-openssl/commit/de99069e40c075844a15b91720e2d5c9c9a68dd7)
+- **\*:** fix working and name test [f6db7ef](https://github.com/fffonion/lua-resty-openssl/commit/f6db7ef3c1ce5f9a75f01dc24f904fd8942c7897)
+- **\*:** normalize naming, explictly control cdef for different openssl versions [c626b53](https://github.com/fffonion/lua-resty-openssl/commit/c626b538c2dc33272b130503ddd21f21bd9d995f)
+- **\*:** cleanup cdef [3c02d02](https://github.com/fffonion/lua-resty-openssl/commit/3c02d020822a30fdf7dae0aa7c6aa47c4660aea8)
+- **\*:** test cdata type before passing in ffi [de99069](https://github.com/fffonion/lua-resty-openssl/commit/de99069e40c075844a15b91720e2d5c9c9a68dd7)
 
 ### features
-- ***:** add more x509 API, and rand bytes generator [6630fde](https://github.com/fffonion/lua-resty-openssl/commit/6630fde2e5e9f367e4652dc390678d4eeb57ad5d)
+- **\*:** add more x509 API, and rand bytes generator [6630fde](https://github.com/fffonion/lua-resty-openssl/commit/6630fde2e5e9f367e4652dc390678d4eeb57ad5d)
 - **error:** add ability to pull error description [d19ece9](https://github.com/fffonion/lua-resty-openssl/commit/d19ece993ac797fdf6708400cf83e3f4ed0bb9f4)
 - **x509:** generate certificate [9b4f59b](https://github.com/fffonion/lua-resty-openssl/commit/9b4f59bf94647aab37da6b8076ee99e155ba8023)
 - **x509:** export pubkey [ede4f81](https://github.com/fffonion/lua-resty-openssl/commit/ede4f817cb0fe092ad6f9ab5d6ecdcde864a9fd8)
