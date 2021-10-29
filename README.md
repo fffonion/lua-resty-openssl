@@ -337,7 +337,8 @@ Load all available sub modules into current module:
   ssl_ctx = require("resty.openssl.ssl_ctx"),
 ```
 
-Starting OpenSSL 3.0, [`provider`](#restyopensslprovider) is also available.
+Starting OpenSSL 3.0, [`provider`](#restyopensslprovider) and [`mac`](#restyopensslmac)
+is also available.
 
 [Back to TOC](#table-of-contents)
 

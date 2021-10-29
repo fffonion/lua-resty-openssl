@@ -1,17 +1,23 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
-### Bug Fixes
-- ***:** move EVP_* definition into seperate files
-- **auxiliary/nginx:** set off_t to 64bit per nginx config ([#32](https://github.com/fffonion/lua-resty-openssl/issues/32))
-- **x509:** compatibility for BoringSSL 1.1.0 (fips-20190808)
 
-### Features
-- **mac:** add EVP_MAC
-- **openssl:** add function list mac and kdf algorithms and set properties for EVP algorithm fetches
-- **openssl:** support FIPS in OpenSSL 3.0
-- **param:** add new function to use OSSL_PARAM
-- **provider:** cipher, digest, kdf, pkey and x509 can now fetch by provider and has new get_provider_name function
+<a name="0.8.0"></a>
+## [0.8.0] - 2021-10-29
+### bug fixes
+- ***:** move EVP_* definition into seperate files [e0c3d61](https://github.com/fffonion/lua-resty-openssl/commit/e0c3d6178e8b0baab5c53d331dedf8ffb1b1b0c7)
+- **auxiliary/nginx:** set off_t to 64bit per nginx config ([#32](https://github.com/fffonion/lua-resty-openssl/issues/32)) [8c209fa](https://github.com/fffonion/lua-resty-openssl/commit/8c209fabbd4ba2f1d6f3a267059c758b4697a433)
+- **pkey:** allow sign/verify without md_alg for EdDSA on BoringSSL [ab83fd4](https://github.com/fffonion/lua-resty-openssl/commit/ab83fd4fc053f496699d5dcc77dbb551e2389e77)
+- **x509:** compatibility for BoringSSL 1.1.0 (fips-20190808) [84244af](https://github.com/fffonion/lua-resty-openssl/commit/84244af7d91e3421dfccdf1940beb70adbd66adb)
+
+### features
+- **evp:** add geneirc function to get and set params [c724e1d](https://github.com/fffonion/lua-resty-openssl/commit/c724e1d41010fab7fb112ca3674eef1aab0b06be)
+- **kdf:** add new API with EVP_KDF interfaces [2336ae3](https://github.com/fffonion/lua-resty-openssl/commit/2336ae3b9a7a05473e251a10523a7357afb6f2f2)
+- **mac:** add EVP_MAC [0625be9](https://github.com/fffonion/lua-resty-openssl/commit/0625be92e0eaf6a9ee61b3499690d6079aaf933d)
+- **openssl:** add function list mac and kdf algorithms and set properties for EVP algorithm fetches [0ed8316](https://github.com/fffonion/lua-resty-openssl/commit/0ed83167dbb1b7d8171bcb59cb749187220572e2)
+- **openssl:** support FIPS in OpenSSL 3.0 [beb3ad3](https://github.com/fffonion/lua-resty-openssl/commit/beb3ad3ec8f162aeb11d3f89ea8211c2f3e38c1e)
+- **param:** add new function to use OSSL_PARAM [5ffbbcc](https://github.com/fffonion/lua-resty-openssl/commit/5ffbbcce386d98127c84b7f24bb019cff76c05e3)
+- **provider:** cipher, digest, kdf, pkey and x509 can now fetch by provider and has new get_provider_name function [52938ca](https://github.com/fffonion/lua-resty-openssl/commit/52938ca5b66f48186815975d685227836bd92cef)
 
 
 <a name="0.7.5"></a>
@@ -336,7 +342,8 @@
 - **x509:** export pubkey [ede4f81](https://github.com/fffonion/lua-resty-openssl/commit/ede4f817cb0fe092ad6f9ab5d6ecdcde864a9fd8)
 
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.7.5...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.0...HEAD
+[0.8.0]: https://github.com/fffonion/lua-resty-openssl/compare/0.7.5...0.8.0
 [0.7.5]: https://github.com/fffonion/lua-resty-openssl/compare/0.7.4...0.7.5
 [0.7.4]: https://github.com/fffonion/lua-resty-openssl/compare/0.7.3...0.7.4
 [0.7.3]: https://github.com/fffonion/lua-resty-openssl/compare/0.7.2...0.7.3
