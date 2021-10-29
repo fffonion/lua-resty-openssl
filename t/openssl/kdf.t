@@ -293,3 +293,176 @@ W/tSxFnNsHIYwXa13eybYhW9W3Y=
 "9giFtxace5sESmRb8qxuOw=="
 --- no_error_log
 [error]
+
+=== TEST 9: EVP_KDF API: new
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            if not require("resty.openssl.version").OPENSSL_30 then
+                ngx.say('mac.new: invalid mac type "UNKNOWNKDF": blah')
+                ngx.exit(0)
+            end
+            local kdf = require("resty.openssl.kdf")
+            myassert(kdf.new("PBKDF2"))
+            local ok, err = kdf.new("UNKNOWNKDF")
+
+            ngx.say(err)
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+".+invalid mac type \"UNKNOWNKDF\".+
+"
+--- no_error_log
+[error]
+
+=== TEST 10: EVP_KDF API: Returns provider
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            if not require("resty.openssl.version").OPENSSL_30 then
+                ngx.say("default")
+                ngx.exit(0)
+            end
+
+            local cipher = require("resty.openssl.kdf")
+            local c = myassert(cipher.new("hkdf"))
+            ngx.say(myassert(c:get_provider_name()))
+        }
+    }
+--- request
+    GET /t
+--- response_body
+default
+--- no_error_log
+[error]
+
+
+=== TEST 11: EVP_KDF API: derive
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            if not require("resty.openssl.version").OPENSSL_30 then
+                ngx.say("cDRFLQ7NWt+AP4i0TdBzog==")
+                ngx.exit(0)
+            end
+            local kdf = require("resty.openssl.kdf")
+            local k = myassert(kdf.new("PBKDF2"))
+            local key = myassert(k:derive(16, {
+                pass = "1234567",
+                iter = 1000,
+                digest = "md5",
+                salt = "",
+            }))
+            ngx.say(ngx.encode_base64(key))
+        }
+    }
+--- request
+    GET /t
+--- response_body
+cDRFLQ7NWt+AP4i0TdBzog==
+--- no_error_log
+[error]
+
+=== TEST 12: EVP_KDF API: Returns gettable, settable params
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            if not require("resty.openssl.version").OPENSSL_30 then
+                ngx.say("-size-\n-digest-")
+                ngx.exit(0)
+            end
+
+            local kdf = require("resty.openssl.kdf")
+            local k = myassert(kdf.new("PBKDF2"))
+            ngx.say(require("cjson").encode(myassert(k:gettable_params())))
+            ngx.say(require("cjson").encode(myassert(k:settable_params())))
+        }
+    }
+--- request
+    GET /t
+--- response_body_like
+.+size.+
+.+digest.+
+--- no_error_log
+[error]
+
+=== TEST 13: EVP_KDF API: Get params, set params
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            if not require("resty.openssl.version").OPENSSL_30 then
+                ngx.say("cDRFLQ7NWt+AP4i0TdBzog==\n18446744073709551615")
+                ngx.exit(0)
+            end
+            local kdf = require("resty.openssl.kdf")
+            local k = myassert(kdf.new("PBKDF2"))
+            myassert(k:set_params({
+                iter = 1000,
+                digest = "md5",
+                salt = "",
+
+            }))
+            local key = myassert(k:derive(16, {
+                pass = "1234567",
+            }))
+            ngx.say(ngx.encode_base64(key))
+            -- output SIZE_MAX since it's not fixed size, need to find a better test case
+            ngx.say(tostring(k:get_param("size", nil, "bn")))
+        }
+    }
+--- request
+    GET /t
+--- response_body
+cDRFLQ7NWt+AP4i0TdBzog==
+18446744073709551615
+--- no_error_log
+[error]
+
+=== TEST 14: EVP_KDF API: reset
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            if not require("resty.openssl.version").OPENSSL_30 then
+                ngx.say("-missing salt\ncDRFLQ7NWt+AP4i0TdBzog==")
+                ngx.exit(0)
+            end
+            local kdf = require("resty.openssl.kdf")
+            local k = myassert(kdf.new("PBKDF2"))
+            myassert(k:set_params({
+                iter = 1000,
+                digest = "md5",
+                salt = "",
+            }))
+            myassert(k:reset())
+            local ok, err = k:derive(16, {
+                pass = "1234567",
+            })
+            ngx.say(err)
+
+            myassert(k:set_params({
+                iter = 100,
+                digest = "md5",
+                salt = "",
+            }))
+            local key = myassert(k:derive(16, {
+                iter = 1000,
+                pass = "1234567",
+            }))
+             ngx.say(ngx.encode_base64(key))
+        }
+    }
+--- request
+    GET /t
+--- response_body_like
+.+missing salt
+cDRFLQ7NWt\+AP4i0TdBzog==
+--- no_error_log
+[error]
