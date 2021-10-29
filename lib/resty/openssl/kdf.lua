@@ -167,7 +167,7 @@ function _M.derive(options)
   end
 
   local md
-  if OPENSSL_30 and false then
+  if OPENSSL_30 then
     md = C.EVP_MD_fetch(nil, options.md or 'sha1', options.properties)
   else
     md = C.EVP_get_digestbyname(options.md or 'sha1')
@@ -282,6 +282,104 @@ function _M.derive(options)
   -- end EVP_PKEY_derive routines
 
   return ffi_str(buf, options.outlen)
+end
+
+if not OPENSSL_30 then
+  return _M
+end
+
+_M.derive_legacy = _M.derive
+_M.derive = nil
+
+-- OPENSSL 3.0 style API
+local param_lib = require "resty.openssl.param"
+local SIZE_MAX = ctypes.SIZE_MAX
+
+local mt = {__index = _M}
+
+local kdf_ctx_ptr_ct = ffi.typeof('EVP_KDF_CTX*')
+
+function _M.new(typ, properties)
+  local algo = C.EVP_KDF_fetch(nil, typ, properties)
+  if algo == nil then
+    return nil, format_error(string.format("mac.new: invalid mac type \"%s\"", typ))
+  end
+
+  local ctx = C.EVP_KDF_CTX_new(algo)
+  if ctx == nil then
+    return nil, "mac.new: failed to create EVP_MAC_CTX"
+  end
+  ffi_gc(ctx, C.EVP_KDF_CTX_free)
+
+  local buf
+  local buf_size = tonumber(C.EVP_KDF_CTX_get_kdf_size(ctx))
+  if buf_size == SIZE_MAX then -- no fixed size
+    buf_size = nil
+  else
+    buf = ctypes.uchar_array(buf_size)
+  end
+
+  return setmetatable({
+    ctx = ctx,
+    algo = algo,
+    buf = buf,
+    buf_size = buf_size,
+  }, mt), nil
+end
+
+function _M.istype(l)
+  return l and l.ctx and ffi.istype(kdf_ctx_ptr_ct, l.ctx)
+end
+
+function _M:get_provider_name()
+  local p = C.EVP_KDF_get0_provider(self.algo)
+  if p == nil then
+    return nil
+  end
+  return ffi_str(C.OSSL_PROVIDER_get0_name(p))
+end
+
+_M.settable_params, _M.set_params, _M.gettable_params, _M.get_param = param_lib.get_params_func("EVP_KDF_CTX")
+
+function _M:derive(outlen, options, options_count)
+  if not _M.istype(self) then
+    return _M.derive_legacy(self)
+  end
+
+  if self.buf_size and outlen then
+    return nil, string.format("kdf:derive: this KDF has fixed output size %d, ".. 
+                              "it can't be set manually", self.buf_size)
+  end
+
+  outlen = self.buf_size or outlen
+  local buf = self.buf or ctypes.uchar_array(outlen)
+
+  if options_count then
+    options_count = options_count - 1
+  else
+    options_count = 0
+    for k, v in pairs(options) do options_count = options_count + 1 end
+  end
+
+  local param, err
+  if options_count > 0 then
+    local schema = self:settable_params(true) -- raw schema
+    param, err = param_lib.construct(options, nil, schema)
+    if err then
+      return nil, "kdf:derive: " .. err
+    end
+  end
+
+  if C.EVP_KDF_derive(self.ctx, buf, outlen, param) ~= 1 then
+    return nil, format_error("kdf:derive")
+  end
+
+  return ffi_str(buf, outlen)
+end
+
+function _M:reset()
+  C.EVP_KDF_CTX_reset(self.ctx)
+  return true
 end
 
 return _M
