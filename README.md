@@ -2185,9 +2185,9 @@ Note this function also checks if k itself is indeed a private key or not.
 
 ### x509:get_\*, x509:set_\*
 
-**syntax**: *ok, err = x509:set_\**attribute**(instance)*
+**syntax**: *ok, err = x509:set_**attribute**(instance)*
 
-**syntax**: *instance, err = x509:get_\**attribute**()*
+**syntax**: *instance, err = x509:get_**attribute**()*
 
 Setters and getters for x509 attributes share the same syntax.
 
@@ -2453,9 +2453,9 @@ Note this function also checks if k itself is indeed a private key or not.
 
 ### csr:get_\*, csr:set_\*
 
-**syntax**: *ok, err = csr:set_\**attribute**(instance)*
+**syntax**: *ok, err = csr:set_**attribute**(instance)*
 
-**syntax**: *instance, err = csr:get_\**attribute**()*
+**syntax**: *instance, err = csr:get_**attribute**()*
 
 Setters and getters for x509 attributes share the same syntax.
 
@@ -2648,9 +2648,9 @@ Returns `true` if table is an instance of `crl`. Returns `false` otherwise.
 
 ### crl:get_\*, crl:set_\*
 
-**syntax**: *ok, err = crl:set_\**attribute**(instance)*
+**syntax**: *ok, err = crl:set_**attribute**(instance)*
 
-**syntax**: *instance, err = crl:get_\**attribute**()*
+**syntax**: *instance, err = crl:get_**attribute**()*
 
 Setters and getters for crl attributes share the same syntax.
 
