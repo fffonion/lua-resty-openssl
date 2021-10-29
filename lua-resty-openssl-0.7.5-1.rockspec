@@ -62,6 +62,7 @@ build = {
       ["resty.openssl.kdf"] = "lib/resty/openssl/kdf.lua",
       ["resty.openssl.mac"] = "lib/resty/openssl/mac.lua",
       ["resty.openssl.objects"] = "lib/resty/openssl/objects.lua",
+      ["resty.openssl.param"] = "lib/resty/openssl/param.lua",
       ["resty.openssl.pkcs12"] = "lib/resty/openssl/pkcs12.lua",
       ["resty.openssl.pkey"] = "lib/resty/openssl/pkey.lua",
       ["resty.openssl.provider"] = "lib/resty/openssl/provider.lua",

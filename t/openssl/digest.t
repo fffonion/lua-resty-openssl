@@ -137,3 +137,44 @@ __DATA__
 default
 --- no_error_log
 [error]
+
+=== TEST 7: Returns gettable, settable params
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            if not require("resty.openssl.version").OPENSSL_30 then
+                ngx.say("{}\n-ssl3-ms-")
+                ngx.exit(0)
+            end
+
+            local digest = require("resty.openssl.digest")
+            local d = myassert(digest.new("md5-sha1"))
+            ngx.say(require("cjson").encode(myassert(d:gettable_params())))
+            ngx.say(require("cjson").encode(myassert(d:settable_params())))
+        }
+    }
+--- request
+    GET /t
+--- response_body_like
+{}
+.+ssl3-ms.+
+--- no_error_log
+[error]
+
+=== TEST 8: Get params, set params
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            -- no good example to test
+            ngx.say("skipped")
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"skipped
+"
+--- no_error_log
+[error]

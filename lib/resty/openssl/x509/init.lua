@@ -327,21 +327,21 @@ local function digest(self, cfunc, typ, properties)
     return nil, "x509:digest: failed to create EVP_MD_CTX"
   end
 
-  local dtyp
+  local algo
   if OPENSSL_30 then
-    dtyp = C.EVP_MD_fetch(nil, typ or 'sha1', properties)
+    algo = C.EVP_MD_fetch(nil, typ or 'sha1', properties)
   else
-    dtyp = C.EVP_get_digestbyname(typ or 'sha1')
+    algo = C.EVP_get_digestbyname(typ or 'sha1')
   end
-  if dtyp == nil then
+  if algo == nil then
     return nil, string.format("x509:digest: invalid digest type \"%s\"", typ)
   end
 
-  local md_size = OPENSSL_30 and C.EVP_MD_get_size(dtyp) or C.EVP_MD_size(dtyp)
+  local md_size = OPENSSL_30 and C.EVP_MD_get_size(algo) or C.EVP_MD_size(algo)
   local buf = ctypes.uchar_array(md_size)
   local length = ctypes.ptr_of_uint()
 
-  if cfunc(self.ctx, dtyp, buf, length) ~= 1 then
+  if cfunc(self.ctx, algo, buf, length) ~= 1 then
     return nil, format_error("x509:digest")
   end
 
@@ -382,13 +382,13 @@ function _M:sign(pkey, digest)
   if digest then
     if not digest_lib.istype(digest) then
       return false, "x509:sign: expect a digest instance at #2"
-    elseif not digest.dtyp then
-      return false, "x509:sign: expect a digest instance to have dtyp member"
+    elseif not digest.algo then
+      return false, "x509:sign: expect a digest instance to have algo member"
     end
   end
 
   -- returns size of signature if success
-  if C.X509_sign(self.ctx, pkey.ctx, digest and digest.dtyp) == 0 then
+  if C.X509_sign(self.ctx, pkey.ctx, digest and digest.algo) == 0 then
     return false, format_error("x509:sign")
   end
 

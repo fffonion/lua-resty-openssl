@@ -471,6 +471,11 @@ function _M:get_provider_name()
   return ffi_str(C.OSSL_PROVIDER_get0_name(p))
 end
 
+if OPENSSL_30 then
+  local param_lib = require "resty.openssl.param"
+  _M.settable_params, _M.set_params, _M.gettable_params, _M.get_param = param_lib.get_params_func("EVP_PKEY", "key_type")
+end
+
 local get_pkey_key
 if OPENSSL_11_OR_LATER then
   get_pkey_key = {
@@ -657,21 +662,21 @@ local function sign_verify_prepare(self, fint, md_alg, padding, opts)
   end
   ffi_gc(md_ctx, C.EVP_MD_CTX_free)
 
-  local dtyp
+  local algo
   if md_alg then
     if OPENSSL_30 then
-      dtyp = C.EVP_MD_fetch(nil, md_alg, nil)
+      algo = C.EVP_MD_fetch(nil, md_alg, nil)
     else
-      dtyp = C.EVP_get_digestbyname(md_alg)
+      algo = C.EVP_get_digestbyname(md_alg)
     end
-    if dtyp == nil then
+    if algo == nil then
       return nil, string.format("pkey:sign_verify_prepare: invalid digest type \"%s\"", md_alg)
     end
   end
 
   local ppkey_ctx = evp_pkey_ctx_ptr_ptr_ct()
   ppkey_ctx[0] = pkey_ctx
-  if fint(md_ctx, ppkey_ctx, dtyp, nil, self.ctx) ~= 1 then
+  if fint(md_ctx, ppkey_ctx, algo, nil, self.ctx) ~= 1 then
     return nil, format_error("pkey:sign_verify_prepare: Init failed")
   end
 

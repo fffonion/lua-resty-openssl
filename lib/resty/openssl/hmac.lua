@@ -32,20 +32,20 @@ function _M.new(key, typ)
     return nil, "hmac.new: failed to create HMAC_CTX"
   end
 
-  local dtyp = C.EVP_get_digestbyname(typ or 'sha1')
-  if dtyp == nil then
+  local algo = C.EVP_get_digestbyname(typ or 'sha1')
+  if algo == nil then
     return nil, string.format("hmac.new: invalid digest type \"%s\"", typ)
   end
 
-  local code = C.HMAC_Init_ex(ctx, key, #key, dtyp, nil)
+  local code = C.HMAC_Init_ex(ctx, key, #key, algo, nil)
   if code ~= 1 then
     return nil, format_error("hmac.new")
   end
 
   return setmetatable({
     ctx = ctx,
-    dtyp = dtyp,
-    buf = ctypes.uchar_array(OPENSSL_30 and C.EVP_MD_get_size(dtyp) or C.EVP_MD_size(dtyp)),
+    algo = algo,
+    buf = ctypes.uchar_array(OPENSSL_30 and C.EVP_MD_get_size(algo) or C.EVP_MD_size(algo)),
   }, mt), nil
 end
 

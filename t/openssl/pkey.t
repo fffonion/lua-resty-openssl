@@ -1151,3 +1151,54 @@ ok
 default
 --- no_error_log
 [error]
+
+=== TEST 35: Returns gettable, settable params
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            if not require("resty.openssl.version").OPENSSL_30 then
+                ngx.say("-bits-\n-encoding-")
+                ngx.exit(0)
+            end
+
+            local pkey = require("resty.openssl.pkey")
+            local p = myassert(pkey.new({ type = "EC" }))
+            ngx.say(require("cjson").encode(myassert(p:gettable_params())))
+            ngx.say(require("cjson").encode(myassert(p:settable_params())))
+        }
+    }
+--- request
+    GET /t
+--- response_body_like
+.+bits.+
+.+encoding.+
+--- no_error_log
+[error]
+
+=== TEST 36: Get params, set params
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            if not require("resty.openssl.version").OPENSSL_30 then
+                ngx.say("true")
+                ngx.exit(0)
+            end
+
+            local pkey = require("resty.openssl.pkey")
+            local p = myassert(pkey.new({ type = "EC" }))
+            local priv = myassert(p:get_param("priv", nil, "bn"))
+            local priv2 = p:get_parameters().private
+            ngx.say(priv == priv2)
+
+            myassert(p:set_params({["point-format"] = "UNCOMPRESSED"}))
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"true
+"
+--- no_error_log
+[error]

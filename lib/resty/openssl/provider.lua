@@ -1,9 +1,8 @@
 local ffi = require "ffi"
 local C = ffi.C
-local ffi_str = ffi.string
 
 require "resty.openssl.include.provider"
-local param_macro = require "resty.openssl.include.param"
+local param_lib = require "resty.openssl.param"
 local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 local format_error = require("resty.openssl.err").format_error
 
@@ -64,16 +63,16 @@ end
 
 local params_well_known = {
   -- Well known parameter names that core passes to providers
-  ["openssl-version"] = param_macro.OSSL_PARAM_UTF8_PTR,
-  ["provider-name"]   = param_macro.OSSL_PARAM_UTF8_PTR,
-  ["module-filename"] = param_macro.OSSL_PARAM_UTF8_PTR,
+  ["openssl-version"] = param_lib.OSSL_PARAM_UTF8_PTR,
+  ["provider-name"]   = param_lib.OSSL_PARAM_UTF8_PTR,
+  ["module-filename"] = param_lib.OSSL_PARAM_UTF8_PTR,
 
   -- Well known parameter names that Providers can define
-  ["name"]                = param_macro.OSSL_PARAM_UTF8_PTR,
-  ["version"]             = param_macro.OSSL_PARAM_UTF8_PTR,
-  ["buildinfo"]           = param_macro.OSSL_PARAM_UTF8_PTR,
-  ["status"]              = param_macro.OSSL_PARAM_INTEGER,
-  ["security-checks"]     = param_macro.OSSL_PARAM_INTEGER,
+  ["name"]                = param_lib.OSSL_PARAM_UTF8_PTR,
+  ["version"]             = param_lib.OSSL_PARAM_UTF8_PTR,
+  ["buildinfo"]           = param_lib.OSSL_PARAM_UTF8_PTR,
+  ["status"]              = param_lib.OSSL_PARAM_INTEGER,
+  ["security-checks"]     = param_lib.OSSL_PARAM_INTEGER,
 }
 
 local function load_gettable_names(ctx)
@@ -82,19 +81,13 @@ local function load_gettable_names(ctx)
     schema[k] = v
   end
 
-  local params = C.OSSL_PROVIDER_gettable_params(ctx)
-  if params == nil then
-    return nil, format_error("OSSL_PROVIDER_gettable_params")
+  local err
+  schema, err = param_lib.parse_params_schema(
+    C.OSSL_PROVIDER_gettable_params(ctx), schema)
+  if err then
+    return nil, err
   end
 
-  while true do
-    if params.key == nil then
-      break
-    end
-    schema[ffi_str(params.key)] = tonumber(params.data_type)
-    -- pointer arithmetic
-    params = params + 1
-  end
   return schema
 end
 
@@ -117,7 +110,7 @@ function _M:get_params(...)
   for _, key in ipairs(keys) do
     buffers[key] = ngx.null
   end
-  local req, err = param_macro.construct(buffers, key_length, self.param_types)
+  local req, err = param_lib.construct(buffers, key_length, self.param_types)
   if not req then
     return nil, "provider:get_params: failed to construct params: " .. err
   end
@@ -126,7 +119,7 @@ function _M:get_params(...)
     return nil, format_error("provider:get_params")
   end
 
-  buffers, err = param_macro.parse(buffers, key_length, self.param_types)
+  buffers, err = param_lib.parse(buffers, key_length, self.param_types)
   if err then
     return nil, "provider:get_params: failed to parse params: " .. err
   end

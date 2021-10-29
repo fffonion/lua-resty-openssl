@@ -21,4 +21,6 @@ return {
     ptr_of_int = ffi.typeof("int[1]"),
 
     uchar_array = ffi.typeof("unsigned char[?]"),
+
+    SIZE_MAX = math.pow(2, 64), -- nginx set _FILE_OFFSET_BITS to 64
 }

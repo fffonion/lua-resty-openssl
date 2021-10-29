@@ -389,3 +389,76 @@ nil
 default
 --- no_error_log
 [error]
+
+=== TEST 14: Returns gettable, settable params
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            if not require("resty.openssl.version").OPENSSL_30 then
+                ngx.say("-ivlen-\n-padding-")
+                ngx.exit(0)
+            end
+
+            local cipher = require("resty.openssl.cipher")
+            local c = myassert(cipher.new("aes256"))
+            ngx.say(require("cjson").encode(myassert(c:gettable_params())))
+            ngx.say(require("cjson").encode(myassert(c:settable_params())))
+        }
+    }
+--- request
+    GET /t
+--- response_body_like
+.+ivlen.+
+.+padding.+
+--- no_error_log
+[error]
+
+=== TEST 15: Get params, set params
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            if not require("resty.openssl.version").OPENSSL_30 then
+                ngx.say("secret\nsecret\nnil")
+                ngx.exit(0)
+            end
+
+            local myassert = require("helper").myassert
+            local key = string.rep("0", 32)
+            local iv = string.rep("0", 12)
+            local aad = "an aad"
+            local cipher = require("resty.openssl.cipher")
+
+            local enc = myassert(cipher.new("aes-256-gcm"))
+            local d = myassert(enc:encrypt(key, iv, "secret", false, aad))
+            local tag = myassert(enc:get_param("tag", 16))
+
+            local dec = myassert(cipher.new("aes-256-gcm"))
+            local s = myassert(dec:decrypt(key, iv, d, false, aad, tag))
+            ngx.say(s)
+
+            local dec = myassert(cipher.new("aes-256-gcm"))
+            myassert(dec:init(key, iv))
+            myassert(dec:set_params({tag = tag}))
+            myassert(dec:update_aead_aad(aad))
+            local r, err = dec:final(d)
+            ngx.say(r)
+
+            local dec = myassert(cipher.new("aes-256-gcm"))
+            myassert(dec:init(key, iv))
+            myassert(dec:set_params({tag = "wrong tag"}))
+            myassert(dec:update_aead_aad(aad))
+            local r, err = dec:final(d)
+            ngx.say(r)
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"secret
+secret
+nil
+"
+--- no_error_log
+[error]

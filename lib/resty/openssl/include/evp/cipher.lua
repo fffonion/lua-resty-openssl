@@ -67,6 +67,11 @@ if OPENSSL_30 then
     void EVP_CIPHER_free(EVP_CIPHER *cipher);
 
     const char *EVP_CIPHER_get0_name(const EVP_CIPHER *cipher);
+
+    int EVP_CIPHER_CTX_set_params(EVP_CIPHER_CTX *ctx, const OSSL_PARAM params[]);
+    const OSSL_PARAM *EVP_CIPHER_CTX_settable_params(EVP_CIPHER_CTX *ctx);
+    int EVP_CIPHER_CTX_get_params(EVP_CIPHER_CTX *ctx, OSSL_PARAM params[]);
+    const OSSL_PARAM *EVP_CIPHER_CTX_gettable_params(EVP_CIPHER_CTX *ctx);
   ]]
 end
 
