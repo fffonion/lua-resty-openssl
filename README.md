@@ -45,6 +45,7 @@ Table of Contents
     + [pkey.istype](#pkeyistype)
     + [pkey.paramgen](#pkeyparamgen)
     + [pkey:get_provider_name](#pkeyget_provider_name)
+    + [pkey:gettable_params, pkey:settable_params, pkey:get_param, pkey:set_params](#pkeygettable_params-pkeysettable_params-pkeyget_param-pkeyset_params)
     + [pkey:get_parameters](#pkeyget_parameters)
     + [pkey:set_parameters](#pkeyset_parameters)
     + [pkey:is_private](#pkeyis_private)
@@ -78,6 +79,7 @@ Table of Contents
     + [cipher.new](#ciphernew)
     + [cipher.istype](#cipheristype)
     + [cipher:get_provider_name](#cipherget_provider_name)
+    + [cipher:gettable_params, cipher:settable_params, cipher:get_param, cipher:set_params](#ciphergettable_params-ciphersettable_params-cipherget_param-cipherset_params)
     + [cipher:encrypt](#cipherencrypt)
     + [cipher:decrypt](#cipherdecrypt)
     + [cipher:init](#cipherinit)
@@ -91,6 +93,7 @@ Table of Contents
     + [digest.new](#digestnew)
     + [digest.istype](#digestistype)
     + [digest:get_provider_name](#digestget_provider_name)
+    + [digest:gettable_params, digest:settable_params, digest:get_param, digest:set_params](#digestgettable_params-digestsettable_params-digestget_param-digestset_params)
     + [digest:update](#digestupdate)
     + [digest:final](#digestfinal)
     + [digest:reset](#digestreset)
@@ -103,10 +106,17 @@ Table of Contents
   * [resty.openssl.mac](#restyopensslmac)
     + [mac.new](#macnew)
     + [mac.istype](#macistype)
+    + [mac:get_provider_name](#macget_provider_name)
+    + [mac:gettable_params, mac:settable_params, mac:get_param, mac:set_params](#macgettable_params-macsettable_params-macget_param-macset_params)
     + [mac:update](#macupdate)
     + [mac:final](#macfinal)
   * [resty.openssl.kdf](#restyopensslkdf)
-    + [kdf.derive](#kdfderive)
+    + [kdf.derive (legacy)](#kdfderive-legacy)
+    + [kdf.new](#kdfnew)
+    + [kdf:get_provider_name](#kdfget_provider_name)
+    + [kdf:gettable_params, kdf:settable_params, kdf:get_param, kdf:set_params](#kdfgettable_params-kdfsettable_params-kdfget_param-kdfset_params)
+    + [kdf:derive](#kdfderive)
+    + [kdf:reset](#kdfreset)
   * [resty.openssl.objects](#restyopensslobjects)
     + [objects.obj2table](#objectsobj2table)
     + [objects.nid2table](#objectsnid2table)
@@ -123,7 +133,7 @@ Table of Contents
     + [x509:digest](#x509digest)
     + [x509:pubkey_digest](#x509pubkey_digest)
     + [x509:check_private_key](#x509check_private_key)
-    + [x509:get_*, x509:set_*](#x509get_-x509set_)
+    + [x509:get_\*, x509:set_\*](#x509get_-x509set_)
     + [x509:get_lifetime](#x509get_lifetime)
     + [x509:set_lifetime](#x509set_lifetime)
     + [x509:get_signature_name, x509:get_signature_nid](#x509get_signature_name-x509get_signature_nid)
@@ -142,7 +152,7 @@ Table of Contents
     + [csr.new](#csrnew)
     + [csr.istype](#csristype)
     + [csr:check_private_key](#csrcheck_private_key)
-    + [csr:get_*, csr:set_*](#csrget_-csrset_)
+    + [csr:get_\*, csr:set_\*](#csrget_-csrset_)
     + [csr:get_signature_name, csr:get_signature_nid](#csrget_signature_name-csrget_signature_nid)
     + [csr:get_extension](#csrget_extension)
     + [csr:add_extension](#csradd_extension)
@@ -156,7 +166,7 @@ Table of Contents
   * [resty.openssl.x509.crl](#restyopensslx509crl)
     + [crl.new](#crlnew)
     + [crl.istype](#crlistype)
-    + [crl:get_*, crl:set_*](#crlget_-crlset_)
+    + [crl:get_\*, crl:set_\*](#crlget_-crlset_)
     + [crl:get_signature_name, crl:get_signature_nid](#crlget_signature_name-crlget_signature_nid)
     + [crl:get_extension](#crlget_extension)
     + [crl:add_extension](#crladd_extension)
@@ -243,6 +253,11 @@ Table of Contents
     + [all](#all)
     + [count](#count)
     + [index](#index)
+  * [Generic EVP parameter getter/setter](#generic-evp-parameter-gettersetter)
+    + [gettable_params](#gettable_params)
+    + [settable_params](#settable_params)
+    + [get_param](#get_param)
+    + [set_params](#set_params)
 - [General rules on garbage collection](#general-rules-on-garbage-collection)
 - [Code generation](#code-generation)
 - [Compatibility](#compatibility)
@@ -424,6 +439,8 @@ Return available digest algorithms in an array.
 Return available MAC algorithms in an array.
 
 [Back to TOC](#table-of-contents)
+
+### openssl.list_kdf_algorithms
 
 **syntax**: *ret = openssl.list_kdf_algorithms()*
 
@@ -755,9 +772,16 @@ local pem, err = pkey.paramgen({
 
 **syntax**: *name = pkey:get_provider_name()*
 
-Returns the provider name of pkey.
+Returns the provider name of `pkey`.
 
 This function is available since OpenSSL 3.0.
+
+[Back to TOC](#table-of-contents)
+
+## pkey:gettable_params, pkey:settable_params, pkey:get_param, pkey:set_params
+
+Query settable or gettable params and set or get params.
+See [Generic EVP parameter getter/setter](#generic-evp-parameter-gettersetter).
 
 [Back to TOC](#table-of-contents)
 
@@ -1386,9 +1410,16 @@ Returns `true` if table is an instance of `cipher`. Returns `false` otherwise.
 
 **syntax**: *name = cipher:get_provider_name()*
 
-Returns the provider name of cipher.
+Returns the provider name of `cipher`.
 
 This function is available since OpenSSL 3.0.
+
+[Back to TOC](#table-of-contents)
+
+## cipher:gettable_params, cipher:settable_params, cipher:get_param, cipher:set_params
+
+Query settable or gettable params and set or get params.
+See [Generic EVP parameter getter/setter](#generic-evp-parameter-gettersetter).
 
 [Back to TOC](#table-of-contents)
 
@@ -1597,9 +1628,16 @@ Returns `true` if table is an instance of `digest`. Returns `false` otherwise.
 
 **syntax**: *name = digest:get_provider_name()*
 
-Returns the provider name of digest.
+Returns the provider name of `digest`.
 
 This function is available since OpenSSL 3.0.
+
+[Back to TOC](#table-of-contents)
+
+## digest:gettable_params, digest:settable_params, digest:get_param, digest:set_params
+
+Query settable or gettable params and set or get params.
+See [Generic EVP parameter getter/setter](#generic-evp-parameter-gettersetter).
 
 [Back to TOC](#table-of-contents)
 
@@ -1636,7 +1674,7 @@ ngx.say(ngx.encode_base64(digest))
 
 **syntax**: *ok, err = digest:reset()*
 
-Reset the internal state of `digest` instance as it's just created by [digest:new](#digestnew).
+Reset the internal state of `digest` instance as it's just created by [digest.new](#digestnew).
 It calls [EVP_DigestInit_ex](https://www.openssl.org/docs/manmaster/man3/EVP_DigestInit_ex.html) under
 the hood.
 
@@ -1705,7 +1743,7 @@ ngx.say(ngx.encode_base64(hmac))
 
 **syntax**: *ok, err = hmac:reset()*
 
-Reset the internal state of `hmac` instance as it's just created by [hmac:new](#hmacnew).
+Reset the internal state of `hmac` instance as it's just created by [hmac.new](#hmacnew).
 It calls [HMAC_Init_ex](https://www.openssl.org/docs/manmaster/man3/HMAC_Init_ex.html) under
 the hood.
 
@@ -1745,6 +1783,23 @@ Returns `true` if table is an instance of `mac`. Returns `false` otherwise.
 
 [Back to TOC](#table-of-contents)
 
+### mac:get_provider_name
+
+**syntax**: *name = mac:get_provider_name()*
+
+Returns the provider name of `mac`.
+
+This function is available since OpenSSL 3.0.
+
+[Back to TOC](#table-of-contents)
+
+## mac:gettable_params, mac:settable_params, mac:get_param, mac:set_params
+
+Query settable or gettable params and set or get params.
+See [Generic EVP parameter getter/setter](#generic-evp-parameter-gettersetter).
+
+[Back to TOC](#table-of-contents)
+
 ### mac:update
 
 **syntax**: *ok, err = mac:update(partial, ...)*
@@ -1780,9 +1835,12 @@ Module to interact with KDF (key derivation function).
 
 [Back to TOC](#table-of-contents)
 
-### kdf.derive
+### kdf.derive (legacy)
 
 **syntax**: *key, err = kdf.derive(options)*
+
+Use of this module is deprecated since OpenSSL 3.0, please use [kdf.new](#kdfnew)
+instead.
 
 Derive a key from given material. Various KDFs are supported based on OpenSSL version:
 
@@ -1835,6 +1893,104 @@ key, err = kdf.derive({
 ngx.say(ngx.encode_base64(key))
 -- outputs "9giFtxace5sESmRb8qxuOw=="
 ```
+
+[Back to TOC](#table-of-contents)
+
+### kdf.new
+
+**syntax**: *k, err = kdf.new(kdf_name?, properties?)*
+
+Creates a kdf instance. `kdf_name` is a case-insensitive string of kdf algorithm name.
+To view a list of kdf algorithms implemented, use
+[openssl.list_kdf_algorithms](#openssllist_kdf_algorithms) or
+`openssl list -kdf-algorithms`.
+
+Staring from OpenSSL 3.0, this functions accepts an optional `properties` parameter
+to explictly select provider to fetch algorithms.
+
+[Back to TOC](#table-of-contents)
+
+### kdf.istype
+
+**syntax**: *ok = kdf.istype(table)*
+
+Returns `true` if table is an instance of `kdf`. Returns `false` otherwise.
+
+[Back to TOC](#table-of-contents)
+
+### kdf:get_provider_name
+
+**syntax**: *name = kdf:get_provider_name()*
+
+Returns the provider name of `kdf`.
+
+This function is available since OpenSSL 3.0.
+
+[Back to TOC](#table-of-contents)
+
+## kdf:gettable_params, kdf:settable_params, kdf:get_param, kdf:set_params
+
+Query settable or gettable params and set or get params.
+See [Generic EVP parameter getter/setter](#generic-evp-parameter-gettersetter).
+
+[Back to TOC](#table-of-contents)
+
+### kdf:derive
+
+**syntax**: *ok, err = kdf:derive(outlen, options?, options_count?)*
+
+Derive a key with length of `outlen` with `options`. Certain algorithms output fixed
+length of key where `outlen` should be unset.
+
+`options` is a table map holding parameters passing to `kdf`. To view the list of parameters
+acceptable by selecter algorithm and provider, use `kdf:settable_params`.
+
+Optionally, if length of `options` is known, user can provide its length through `options_count`
+to gain better performance where `options` table is relatively large.
+
+```lua
+local k = assert(kdf.new("PBKDF2"))
+key = assert(k:derive(16, {
+    pass = "1234567",
+    iter = 1000,
+    digest = "md5",
+    salt = "",
+}))
+ngx.say(ngx.encode_base64(key))
+-- outputs "cDRFLQ7NWt+AP4i0TdBzog=="
+assert(k:reset())
+-- kdf instance is reusable, user can set common parameters
+-- through set_params and don't need to repeat in derive()
+assert(k:set_params({
+    iter = 1000,
+    digest = "md5",
+    salt = "",
+}))
+key = assert(k:derive(16, {
+    pass = "1234567",
+}))
+ngx.say(ngx.encode_base64(key))
+-- outputs "cDRFLQ7NWt+AP4i0TdBzog=="
+
+local k = assert(kdf.new("HKDF"))
+key = assert(k:derive(16, {
+    digest = "md5",
+    key = "secret",
+    salt = "salt",
+    info = "some info",
+    mode = kdf.HKDEF_MODE_EXPAND_ONLY,
+    -- as HKDF also accepts mode as string, use the literal below also works
+    -- mode = "EXPAND_ONLY"
+}))
+```
+
+[Back to TOC](#table-of-contents)
+
+### kdf:reset
+
+**syntax**: *ok, err = kdf:reset()*
+
+Reset the internal state of `kdf` instance as it's just created by [kdf.new](#kdfnew).
 
 [Back to TOC](#table-of-contents)
 
@@ -2026,11 +2182,11 @@ Note this function also checks if k itself is indeed a private key or not.
 
 [Back to TOC](#table-of-contents)
 
-### x509:get_*, x509:set_*
+### x509:get_\*, x509:set_\*
 
-**syntax**: *ok, err = x509:set_**attribute**(instance)*
+**syntax**: *ok, err = x509:set_\**attribute**(instance)*
 
-**syntax**: *instance, err = x509:get_**attribute**()*
+**syntax**: *instance, err = x509:get_\**attribute**()*
 
 Setters and getters for x509 attributes share the same syntax.
 
@@ -2294,11 +2450,11 @@ Note this function also checks if k itself is indeed a private key or not.
 
 [Back to TOC](#table-of-contents)
 
-### csr:get_*, csr:set_*
+### csr:get_\*, csr:set_\*
 
-**syntax**: *ok, err = csr:set_**attribute**(instance)*
+**syntax**: *ok, err = csr:set_\**attribute**(instance)*
 
-**syntax**: *instance, err = csr:get_**attribute**()*
+**syntax**: *instance, err = csr:get_\**attribute**()*
 
 Setters and getters for x509 attributes share the same syntax.
 
@@ -2489,11 +2645,11 @@ Returns `true` if table is an instance of `crl`. Returns `false` otherwise.
 
 [Back to TOC](#table-of-contents)
 
-### crl:get_*, crl:set_*
+### crl:get_\*, crl:set_\*
 
-**syntax**: *ok, err = crl:set_**attribute**(instance)*
+**syntax**: *ok, err = crl:set_\**attribute**(instance)*
 
-**syntax**: *instance, err = crl:get_**attribute**()*
+**syntax**: *instance, err = crl:get_\**attribute**()*
 
 Setters and getters for crl attributes share the same syntax.
 
@@ -3594,6 +3750,105 @@ name:add("L", "Mars")
         gc of individual elements. (See x509.altname).
     - Shallow copy for stack is fine because in current design user can't modify the element in the
       stack directly. Each elemente is duplicated when added to stack and when returned.
+
+[Back to TOC](#table-of-contents)
+
+## Generic EVP parameter getter/setter
+
+Starting from OpenSSL 3.0, this library provides a genric interface to get and set abitrary parameters
+from underlying implementation. This works for [cipher](#resty.openssl.cipher),
+[pkey](#resty.openssl.pkey), [digest](#resty.openssl.digest), [mac](#resty.openssl.mac) and
+[kdf](#resty.openssl.kdf).
+
+Some can be used to provide equal results with existing functions, for example the following
+code produces same result.
+
+```lua
+local pkey = require("resty.openssl.pkey").new({ type = "EC" })
+pkey:get_param("priv", nil, "bn") == pkey:get_parameters().private
+
+local cipher = require("resty.openssl.cipher").new("aes-256-gcm")
+cipher:encrypt(string.rep("0", 32), string.rep("0", "12"), "secret", false, "aad")
+cipher:get_param("tag", 16) == cipher:get_aead_tag()
+```
+
+[Back to TOC](#table-of-contents)
+
+### gettable_params
+
+**syntax**: *schema, err = x:gettable_params(raw?)*
+
+Returns the readable schema as a Lua table for all gettable params.
+When `raw` is set to true, the function returns the raw schema instead.
+
+[Back to TOC](#table-of-contents)
+
+### settable_params
+
+**syntax**: *schema, err = x:settable_params(raw?)*
+
+Returns the readable schema as a Lua table for all settable params.
+When `raw` is set to true, the function returns the raw schema instead.
+
+```lua
+local c = require("resty.openssl.cipher").new("aes-256-gcm")
+print(cjson.encode(c:settable_params()))
+-- outputs [["ivlen","unsigned integer (max 8 bytes large)"],["tag","octet string (arbitrary size)"],["tlsaad","octet string (arbitrary size)"],["tlsivfixed","octet string (arbitrary size)"],["tlsivinv","octet string (arbitrary size)"]]
+print(cjson.encode(c:gettable_params()))
+-- outputs [["keylen","unsigned integer (max 8 bytes large)"],["ivlen","unsigned integer (max 8 bytes large)"],["taglen","unsigned integer (max 8 bytes large)"],["iv","octet string (arbitrary size)"],["updated-iv","octet string (arbitrary size)"],["tag","octet string (arbitrary size)"],["tlsaadpad","unsigned integer (max 8 bytes large)"],["tlsivgen","octet string (arbitrary size)"]]
+```
+
+[Back to TOC](#table-of-contents)
+
+### get_param
+
+**syntax**: *value, err = x:get_param(key, want_size?, want_type?)*
+
+Read the param `key` and return its value. The return value is a Lua number
+or a string.
+Certain params requires exact size to be set, in such case,
+`want_size` should be specified; if `want_size` is not specified and, the
+library use a buffer of 100 bytes to hold the return value.
+Certain params returns a special type, user should explictly set `want_type`
+as a string to correctly decode them. Currently `want_type` can only be
+`"bn"` or unset. Note it may also be necessary to increase temporary buffer
+size `want_size` when `want_type` is `"bn"`.
+
+```lua
+local c = require("resty.openssl.cipher").new("aes-256-gcm")
+print(c:get_param("taglen"))
+-- outputs 16
+print(c:get_param("tag"))
+-- returns error, tag must have a explict size
+print(c:get_param("tag", 16))
+-- outputs the tag
+local p = require("resty.openssl.pkey").new())
+print(p:get_param("d"):to_hex())
+-- returns error, d (private exponent) is a BIGNUM
+print(p:get_param("d", 256, "bn"):to_hex())
+-- returns d as resty.openssl.bn instance
+```
+
+[Back to TOC](#table-of-contents)
+
+### set_params
+
+**syntax**: *ok, err = x:set_params(params)*
+
+Set params passed in with Lua table `params`. The library does limited type check, user
+is responsible for validity of input.
+
+```lua
+local k = require("resty.openssl.kdf").new("HKDF")
+k:set_params({
+    digest = "md5",
+    salt = "salt",
+    info = "some info",
+    mode = kdf.HKDEF_MODE_EXPAND_ONLY,
+    -- as HKDF also accepts mode as string, use the literal below also works
+    -- mode = "EXPAND_ONLY"
+}))
+```
 
 [Back to TOC](#table-of-contents)
 
