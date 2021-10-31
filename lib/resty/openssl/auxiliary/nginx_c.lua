@@ -109,7 +109,7 @@ get_req_ssl_ctx = function()
     return nil, "cannot read r->connection->ssl->session_ctx"
   end
 
-  return ffi.cast(ssl_type, void_pp[0])
+  return ffi.cast(ssl_ctx_type, void_pp[0])
 end
 
 get_socket_ssl = function(sock)
