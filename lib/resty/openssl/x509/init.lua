@@ -17,6 +17,7 @@ local pkey_lib = require("resty.openssl.pkey")
 local util = require "resty.openssl.util"
 local txtnid2nid = require("resty.openssl.objects").txtnid2nid
 local ctypes = require "resty.openssl.auxiliary.ctypes"
+local ctx_lib = require "resty.openssl.ctx"
 local format_error = require("resty.openssl.err").format_error
 local version = require("resty.openssl.version")
 local OPENSSL_10 = version.OPENSSL_10
@@ -329,7 +330,7 @@ local function digest(self, cfunc, typ, properties)
 
   local algo
   if OPENSSL_30 then
-    algo = C.EVP_MD_fetch(nil, typ or 'sha1', properties)
+    algo = C.EVP_MD_fetch(ctx_lib.get_libctx(), typ or 'sha1', properties)
   else
     algo = C.EVP_get_digestbyname(typ or 'sha1')
   end

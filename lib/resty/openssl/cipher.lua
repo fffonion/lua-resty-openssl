@@ -7,6 +7,7 @@ local ffi_cast = ffi.cast
 require "resty.openssl.include.evp.cipher"
 local evp_macro = require "resty.openssl.include.evp"
 local ctypes = require "resty.openssl.auxiliary.ctypes"
+local ctx_lib = require "resty.openssl.ctx"
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
@@ -41,7 +42,7 @@ function _M.new(typ, properties)
 
   local ctyp
   if OPENSSL_30 then
-    ctyp = C.EVP_CIPHER_fetch(nil, typ, properties)
+    ctyp = C.EVP_CIPHER_fetch(ctx_lib.get_libctx(), typ, properties)
   else
     ctyp = C.EVP_get_cipherbyname(typ)
   end
@@ -269,7 +270,7 @@ function _M:derive(key, salt, count, md, md_properties)
 
   local mdt
   if OPENSSL_30 then
-    mdt = C.EVP_MD_fetch(nil, md or 'sha1', md_properties)
+    mdt = C.EVP_MD_fetch(ctx_lib.get_libctx(), md or 'sha1', md_properties)
   else
     mdt = C.EVP_get_digestbyname(md or 'sha1')
   end

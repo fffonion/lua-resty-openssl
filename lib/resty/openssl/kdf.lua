@@ -8,6 +8,7 @@ require("resty.openssl.include.evp.md")
 -- used by legacy EVP_PKEY_derive interface
 require("resty.openssl.include.evp.pkey")
 local kdf_macro = require "resty.openssl.include.evp.kdf"
+local ctx_lib = require "resty.openssl.ctx"
 local format_error = require("resty.openssl.err").format_error
 local version_num = require("resty.openssl.version").version_num
 local version_text = require("resty.openssl.version").version_text
@@ -168,7 +169,7 @@ function _M.derive(options)
 
   local md
   if OPENSSL_30 then
-    md = C.EVP_MD_fetch(nil, options.md or 'sha1', options.properties)
+    md = C.EVP_MD_fetch(ctx_lib.get_libctx(), options.md or 'sha1', options.properties)
   else
     md = C.EVP_get_digestbyname(options.md or 'sha1')
   end
@@ -300,7 +301,7 @@ local mt = {__index = _M}
 local kdf_ctx_ptr_ct = ffi.typeof('EVP_KDF_CTX*')
 
 function _M.new(typ, properties)
-  local algo = C.EVP_KDF_fetch(nil, typ, properties)
+  local algo = C.EVP_KDF_fetch(ctx_lib.get_libctx(), typ, properties)
   if algo == nil then
     return nil, format_error(string.format("mac.new: invalid mac type \"%s\"", typ))
   end

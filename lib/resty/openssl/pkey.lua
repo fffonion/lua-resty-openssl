@@ -5,7 +5,6 @@ local ffi_new = ffi.new
 local ffi_str = ffi.string
 local ffi_cast = ffi.cast
 local ffi_copy = ffi.copy
-local null = ngx.null
 
 local rsa_macro = require "resty.openssl.include.rsa"
 local dh_macro = require "resty.openssl.include.dh"
@@ -23,6 +22,7 @@ local ec_lib = require "resty.openssl.ec"
 local ecx_lib = require "resty.openssl.ecx"
 local objects_lib = require "resty.openssl.objects"
 local jwk_lib = require "resty.openssl.auxiliary.jwk"
+local ctx_lib = require "resty.openssl.ctx"
 local ctypes = require "resty.openssl.auxiliary.ctypes"
 local format_error = require("resty.openssl.err").format_error
 
@@ -34,6 +34,7 @@ local BORINGSSL = require("resty.openssl.version").BORINGSSL
 local ptr_of_uint = ctypes.ptr_of_uint
 local ptr_of_size_t = ctypes.ptr_of_size_t
 
+local null = ctypes.null
 local load_pem_args = { null, null, null }
 local load_der_args = { null }
 
@@ -665,7 +666,7 @@ local function sign_verify_prepare(self, fint, md_alg, padding, opts)
   local algo
   if md_alg then
     if OPENSSL_30 then
-      algo = C.EVP_MD_fetch(nil, md_alg, nil)
+      algo = C.EVP_MD_fetch(ctx_lib.get_libctx(), md_alg, nil)
     else
       algo = C.EVP_get_digestbyname(md_alg)
     end
