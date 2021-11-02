@@ -5,6 +5,7 @@ local ffi_str = ffi.string
 
 require "resty.openssl.include.evp.mac"
 local param_lib = require "resty.openssl.param"
+local ctx_lib = require "resty.openssl.ctx"
 local ctypes = require "resty.openssl.auxiliary.ctypes"
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
@@ -24,7 +25,7 @@ function _M.new(key, typ, cipher, digest, properties)
     return false, "EVP_MAC is only supported from OpenSSL 3.0"
   end
 
-  local algo = C.EVP_MAC_fetch(nil, typ, properties)
+  local algo = C.EVP_MAC_fetch(ctx_lib.get_libctx(), typ, properties)
   if algo == nil then
     return nil, format_error(string.format("mac.new: invalid mac type \"%s\"", typ))
   end

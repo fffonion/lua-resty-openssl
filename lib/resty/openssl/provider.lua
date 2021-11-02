@@ -3,6 +3,8 @@ local C = ffi.C
 
 require "resty.openssl.include.provider"
 local param_lib = require "resty.openssl.param"
+local ctx_lib = require "resty.openssl.ctx"
+local null = require("resty.openssl.auxiliary.ctypes").null
 local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 local format_error = require("resty.openssl.err").format_error
 
@@ -17,13 +19,14 @@ local ossl_provider_ctx_ct = ffi.typeof('OSSL_PROVIDER*')
 
 function _M.load(name, try)
   local ctx
+  local libctx = ctx_lib.get_libctx()
   if try then
-    ctx = C.OSSL_PROVIDER_try_load(nil, name)
+    ctx = C.OSSL_PROVIDER_try_load(libctx, name)
     if ctx == nil then
       return nil, format_error("provider.try_load")
     end
   else
-    ctx = C.OSSL_PROVIDER_load(nil, name)
+    ctx = C.OSSL_PROVIDER_load(libctx, name)
     if ctx == nil then
       return nil, format_error("provider.load")
     end
@@ -36,11 +39,11 @@ function _M.load(name, try)
 end
 
 function _M.set_default_search_path(path)
-  C.OSSL_PROVIDER_set_default_search_path(nil, path)
+  C.OSSL_PROVIDER_set_default_search_path(ctx_lib.get_libctx(), path)
 end
 
 function _M.is_available(name)
-  return C.OSSL_PROVIDER_available(nil, name) == 1
+  return C.OSSL_PROVIDER_available(ctx_lib.get_libctx(), name) == 1
 end
 
 function _M.istype(l)
@@ -108,7 +111,7 @@ function _M:get_params(...)
 
   local buffers = {}
   for _, key in ipairs(keys) do
-    buffers[key] = ngx.null
+    buffers[key] = null
   end
   local req, err = param_lib.construct(buffers, key_length, self.param_types)
   if not req then

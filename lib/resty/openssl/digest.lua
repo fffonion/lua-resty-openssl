@@ -5,6 +5,7 @@ local ffi_str = ffi.string
 
 require "resty.openssl.include.evp.md"
 local ctypes = require "resty.openssl.auxiliary.ctypes"
+local ctx_lib = require "resty.openssl.ctx"
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
@@ -35,7 +36,7 @@ function _M.new(typ, properties)
     algo = C.EVP_md_null()
   else
     if OPENSSL_30 then
-      algo = C.EVP_MD_fetch(nil, typ or 'sha1', properties)
+      algo = C.EVP_MD_fetch(ctx_lib.get_libctx(), typ or 'sha1', properties)
     else
       algo = C.EVP_get_digestbyname(typ or 'sha1')
     end

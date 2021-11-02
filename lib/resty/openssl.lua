@@ -200,6 +200,7 @@ end
 if OPENSSL_30 then
   require "resty.openssl.include.evp"
   local provider = require "resty.openssl.provider"
+  local ctx_lib = require "resty.openssl.ctx"
   local fips_provider_ctx
 
   function _M.set_fips_mode(enable, self_test)
@@ -229,7 +230,7 @@ if OPENSSL_30 then
     -- set algorithm in fips mode in default ctx
     -- this deny/allow non-FIPS compliant algorithms to be used from EVP interface
     -- and redirect/remove redirect implementation to fips provider
-    if C.EVP_default_properties_enable_fips(nil, enable and 1 or 0) == 0 then
+    if C.EVP_default_properties_enable_fips(ctx_lib.get_libctx(), enable and 1 or 0) == 0 then
       return false, format_error("openssl.set_fips_mode: EVP_default_properties_enable_fips")
     end
 
@@ -242,7 +243,7 @@ if OPENSSL_30 then
       return false
     end
 
-    return C.EVP_default_properties_is_fips_enabled(nil) == 1
+    return C.EVP_default_properties_is_fips_enabled(ctx_lib.get_libctx()) == 1
   end
 
 else
@@ -268,7 +269,9 @@ function _M.set_default_properties(props)
     return nil, "openssl.set_default_properties is only not supported from OpenSSL 3.0"
   end
 
-  if C.EVP_set_default_properties(props) == 0 then
+  local ctx_lib = require "resty.openssl.ctx"
+
+  if C.EVP_set_default_properties(ctx_lib.get_libctx(), props) == 0 then
     return false, format_error("openssl.EVP_set_default_properties")
   end
 
@@ -298,6 +301,7 @@ local function list_provided(typ)
   local typ_lower = string.lower(typ:sub(5)) -- cut off EVP_
   local typ_ptr = typ .. "*"
   require ("resty.openssl.include.evp." .. typ_lower)
+  local ctx_lib = require "resty.openssl.ctx"
 
   local ret = {}
 
@@ -310,7 +314,7 @@ local function list_provided(typ)
                 table.insert(ret, name .. " @ " .. prov)
               end)
 
-  C[typ .. "_do_all_provided"](nil, fn, nil)
+  C[typ .. "_do_all_provided"](ctx_lib.get_libctx(), fn, nil)
   fn:free()
 
   table.sort(ret)
