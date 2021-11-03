@@ -14,6 +14,7 @@ Table of Contents
 - [Status](#status)
 - [Synopsis](#synopsis)
   * [resty.openssl](#restyopenssl)
+    + [openssl.load_library](#opensslload_library)
     + [openssl.load_modules](#opensslload_modules)
     + [openssl.luaossl_compat](#opensslluaossl_compat)
     + [openssl.resty_hmac_compat](#opensslresty_hmac_compat)
@@ -24,6 +25,9 @@ Table of Contents
     + [openssl.list_digest_algorithms](#openssllist_digest_algorithms)
     + [openssl.list_mac_algorithms](#openssllist_mac_algorithms)
     + [openssl.list_kdf_algorithms](#openssllist_kdf_algorithms)
+  * [resty.openssl.ctx](#restyopensslctx)
+    + [ctx.new](#ctxnew)
+    + [ctx.free](#ctxfree)
   * [resty.openssl.version](#restyopensslversion)
     + [version_num](#version_num)
     + [version_text](#version_text)
@@ -308,6 +312,19 @@ This meta module provides a version sanity check against linked OpenSSL library.
 
 [Back to TOC](#table-of-contents)
 
+### openssl.load_library
+
+**syntax**: *name, err = openssl.load_library()*
+
+Try to load OpenSSL shared libraries. This function tries couple of known patterns
+the library could be named and return the name of `crypto` library if it's being
+successfully loaded and error if any.
+
+When running inside `resty` CLI or OpenResty with SSL enabled, calling this function
+is not necessary.
+
+[Back to TOC](#table-of-contents)
+
 ### openssl.load_modules
 
 **syntax**: *openssl.load_modules()*
@@ -338,6 +355,7 @@ Load all available sub modules into current module:
 ```
 
 Starting OpenSSL 3.0, [`provider`](#restyopensslprovider) and [`mac`](#restyopensslmac)
+[`ctx`](#restyopensslctx)
 is also available.
 
 [Back to TOC](#table-of-contents)
@@ -446,6 +464,44 @@ Return available MAC algorithms in an array.
 **syntax**: *ret = openssl.list_kdf_algorithms()*
 
 Return available KDF algorithms in an array.
+
+[Back to TOC](#table-of-contents)
+
+## resty.openssl.ctx
+
+A module to provide OSSL_LIB_CTX context switches.
+
+  OSSL_LIB_CTX is an internal OpenSSL library context type. Applications may allocate their own, but may also use NULL to use a default context with functions that take an OSSL_LIB_CTX argument.
+
+See [OSSL_LIB_CTX.3](#https://www.openssl.org/docs/manmaster/man3/OSSL_LIB_CTX.html) for deeper
+reading. It can be used to replace `ENGINE` in prior 3.0 world.
+
+The context is currently effective in [cipher](#resty.openssl.cipher),
+[pkey](#resty.openssl.pkey), [digest](#resty.openssl.digest), [mac](#resty.openssl.mac),
+[kdf](#resty.openssl.kdf) and [provider](#resty.openssl.provider).
+
+This module is only available on OpenSSL 3.0.
+ 
+[Back to TOC](#table-of-contents)
+
+### ctx.new
+
+**syntax**: *ok, err = ctx.new(request_context_only?, conf_file?)*
+
+Create a new context and use as default context for this module. When
+`request_context_only` is set to true, the context is only used inside current
+request's context. `conf_file` can optionally specify an OpenSSL conf file
+to create the context.
+
+The created context is automatically freed with its given lifecycle.
+
+[Back to TOC](#table-of-contents)
+
+### ctx.free
+
+**syntax**: *ctx.free(request_context_only?)*
+
+Free the context that was previously created by [ctx.new](#ctxnew).
 
 [Back to TOC](#table-of-contents)
 

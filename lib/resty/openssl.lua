@@ -3,16 +3,52 @@ local C = ffi.C
 local ffi_cast = ffi.cast
 local ffi_str = ffi.string
 
-require "resty.openssl.include.crypto"
-require "resty.openssl.include.objects"
-local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
-local BORINGSSL = require("resty.openssl.version").BORINGSSL
 local format_error = require("resty.openssl.err").format_error
+
+local OPENSSL_30, BORINGSSL
+
+local function try_require_modules()
+  package.loaded["resty.openssl.version"] = nil
+
+  local pok, lib = pcall(require, "resty.openssl.version")
+  if pok then
+    OPENSSL_30 = lib.OPENSSL_30
+    BORINGSSL = lib.BORINGSSL
+
+    require "resty.openssl.include.crypto"
+    require "resty.openssl.include.objects"
+  else
+    package.loaded["resty.openssl.version"] = nil
+  end
+end
+try_require_modules()
 
 
 local _M = {
   _VERSION = '0.8.0',
 }
+
+local libcrypto_name
+local lib_patterns = {
+  "%s", "%s.so.3", "%s.so.1.1", "%s.so.1.0"
+}
+
+function _M.load_library()
+  for _, pattern in ipairs(lib_patterns) do
+    -- true: load to global namespae
+    local pok, _ = pcall(ffi.load, string.format(pattern, "crypto"), true)
+    if pok then
+      libcrypto_name = string.format(pattern, "crypto")
+      ffi.load(string.format(pattern, "ssl"), true)
+
+      try_require_modules()
+
+      return libcrypto_name
+    end
+  end
+
+  return false, "unable to load crypto library"
+end
 
 function _M.load_modules()
   _M.bn = require("resty.openssl.bn")
@@ -41,6 +77,7 @@ function _M.load_modules()
   if OPENSSL_30 then
     _M.provider = require("resty.openssl.provider")
     _M.mac = require("resty.openssl.mac")
+    _M.ctx = require("resty.openssl.ctx")
   end
 
   _M.bignum = _M.bn
