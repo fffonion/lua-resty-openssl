@@ -3,6 +3,7 @@ local C = ffi.C
 local ffi_gc = ffi.gc
 
 local format_error = require("resty.openssl.err").format_error
+local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 
 ffi.cdef [[
   typedef struct ossl_lib_ctx_st OSSL_LIB_CTX;
@@ -12,29 +13,13 @@ ffi.cdef [[
   void OSSL_LIB_CTX_free(OSSL_LIB_CTX *ctx);
 ]]
 
-local libcrypto_name
 local ossl_lib_ctx
 
-local lib_patterns = {
-  "%s", "%s.so.3", "%s.so.1.1", "%s.so.1.0"
-}
-
-local function load_library()
-  for _, pattern in ipairs(lib_patterns) do
-    -- true: load to global namespae
-    local pok, _ = pcall(ffi.load, string.format(pattern, "crypto"), true)
-    if pok then
-      libcrypto_name = string.format(pattern, "crypto")
-      ffi.load(string.format(pattern, "ssl"), true)
-
-      return true
-    end
+local function new(request_context_only, conf_file)
+  if not OPENSSL_30 then
+    return false, "ctx is only supported from OpenSSL 3.0"
   end
 
-  return false, "unable to load crypto library"
-end
-
-local function new(context_only, conf_file)
   local ctx = C.OSSL_LIB_CTX_new()
   ffi_gc(ctx, C.OSSL_LIB_CTX_free)
 
@@ -42,25 +27,31 @@ local function new(context_only, conf_file)
     return false, format_error("ctx.new")
   end
 
-  if context_only then
+  if request_context_only then
     ngx.ctx.ossl_lib_ctx = ctx
   else
     ossl_lib_ctx = ctx
   end
+
+  return true
 end
 
-local function free(context_only)
-  if context_only then
+local function free(request_context_only)
+  if not OPENSSL_30 then
+    return false, "ctx is only supported from OpenSSL 3.0"
+  end
+
+  if request_context_only then
     ngx.ctx.ossl_lib_ctx = nil
   else
     ossl_lib_ctx = nil
   end
+
+  return true
 end
 
 return {
   new = new,
   free = free,
-  load_library = load_library,
-  get_library_name = function() return libcrypto_name end,
   get_libctx = function() return ngx.ctx.ossl_lib_ctx or ossl_lib_ctx end,
 }

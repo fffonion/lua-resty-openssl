@@ -57,7 +57,8 @@ end
 
 
 if not ok then
-  error(string.format("OpenSSL has encountered an error: %s", tostring(version_num)))
+  error(string.format("OpenSSL has encountered an error: %s; is OpenSSL library loaded?",
+        tostring(version_num)))
 elseif type(version_num) == 'number' and version_num < 0x10000000 then
   error(string.format("OpenSSL version %s is not supported", tostring(version_num or 0)))
 elseif not version_num then
