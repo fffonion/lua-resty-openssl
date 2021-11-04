@@ -2,6 +2,15 @@
 ## [Unreleased]
 
 
+<a name="0.8.1"></a>
+## [0.8.1] - 2021-11-05
+### bug fixes
+- **ssl_ctx:** fix typo when getting SSL_CTX from request [7b9e90f](https://github.com/fffonion/lua-resty-openssl/commit/7b9e90faef8337c759c281172be8c1f599be704d)
+
+### features
+- **ctx:** add ctx module to provide OSSL_LIB_CTX context [65750bf](https://github.com/fffonion/lua-resty-openssl/commit/65750bfd800b2eebeb9bf653a03518f3ad235fba)
+
+
 <a name="0.8.0"></a>
 ## [0.8.0] - 2021-10-29
 ### bug fixes
@@ -342,7 +351,8 @@
 - **x509:** export pubkey [ede4f81](https://github.com/fffonion/lua-resty-openssl/commit/ede4f817cb0fe092ad6f9ab5d6ecdcde864a9fd8)
 
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.0...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.1...HEAD
+[0.8.1]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.0...0.8.1
 [0.8.0]: https://github.com/fffonion/lua-resty-openssl/compare/0.7.5...0.8.0
 [0.7.5]: https://github.com/fffonion/lua-resty-openssl/compare/0.7.4...0.7.5
 [0.7.4]: https://github.com/fffonion/lua-resty-openssl/compare/0.7.3...0.7.4
