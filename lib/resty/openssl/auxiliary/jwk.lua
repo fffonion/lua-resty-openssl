@@ -56,7 +56,7 @@ end
 local ec_curves = {
   ["P-256"] = C.OBJ_ln2nid("prime256v1"),
   ["P-384"] = C.OBJ_ln2nid("secp384r1"),
-  ["P-512"] = C.OBJ_ln2nid("secp512r1"),
+  ["P-521"] = C.OBJ_ln2nid("secp521r1"),
 }
 
 local ec_curves_reverse = {}
