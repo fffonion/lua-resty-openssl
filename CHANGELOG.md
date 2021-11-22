@@ -2,6 +2,12 @@
 ## [Unreleased]
 
 
+<a name="0.8.2"></a>
+## [0.8.2] - 2021-11-22
+### bug fixes
+- **jwk:** fix typo of secp521r1 [81d2a64](https://github.com/fffonion/lua-resty-openssl/commit/81d2a646bde7a66ab87e127eace0d40aa714be58)
+
+
 <a name="0.8.1"></a>
 ## [0.8.1] - 2021-11-05
 ### bug fixes
@@ -351,7 +357,8 @@
 - **x509:** export pubkey [ede4f81](https://github.com/fffonion/lua-resty-openssl/commit/ede4f817cb0fe092ad6f9ab5d6ecdcde864a9fd8)
 
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.1...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.2...HEAD
+[0.8.2]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.1...0.8.2
 [0.8.1]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.0...0.8.1
 [0.8.0]: https://github.com/fffonion/lua-resty-openssl/compare/0.7.5...0.8.0
 [0.7.5]: https://github.com/fffonion/lua-resty-openssl/compare/0.7.4...0.7.5
