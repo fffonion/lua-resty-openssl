@@ -25,7 +25,7 @@ try_require_modules()
 
 
 local _M = {
-  _VERSION = '0.8.1',
+  _VERSION = '0.8.2',
 }
 
 local libcrypto_name
