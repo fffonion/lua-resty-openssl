@@ -4,6 +4,7 @@ local ffi_gc = ffi.gc
 local ffi_str = ffi.string
 
 require "resty.openssl.include.hmac"
+require "resty.openssl.include.evp.md"
 local ctypes = require "resty.openssl.auxiliary.ctypes"
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
