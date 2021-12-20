@@ -2442,7 +2442,7 @@ Sign the certificate using the private key specified by `pkey`, which must be a
 parameter to set digest method, whichmust be a [resty.openssl.digest](#restyopenssldigest) instance.
 Returns a boolean indicating if signing is successful and error if any.
 
-In BoringSSL, `digest` must be set as no default digest is set.
+In BoringSSL when `digest` is not set it's fallback to `SHA256`.
 
 [Back to TOC](#table-of-contents)
 
@@ -2646,7 +2646,7 @@ Sign the certificate request using the private key specified by `pkey`, which mu
 parameter to set digest method, whichmust be a [resty.openssl.digest](#restyopenssldigest) instance.
 Returns a boolean indicating if signing is successful and error if any.
 
-In BoringSSL, `digest` must be set as no default digest is set.
+In BoringSSL when `digest` is not set it's fallback to `SHA256`.
 
 [Back to TOC](#table-of-contents)
 
@@ -2835,7 +2835,7 @@ Sign the CRL using the private key specified by `pkey`, which must be a
 parameter to set digest method, whichmust be a [resty.openssl.digest](#restyopenssldigest) instance.
 Returns a boolean indicating if signing is successful and error if any.
 
-In BoringSSL, `digest` must be set as no default digest is set.
+In BoringSSL when `digest` is not set it's fallback to `SHA256`.
 
 [Back to TOC](#table-of-contents)
 
