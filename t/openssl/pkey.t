@@ -1202,3 +1202,26 @@ default
 "
 --- no_error_log
 [error]
+
+=== TEST 37: Get default digest type
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            if require("resty.openssl.version").BORINGSSL then
+                ngx.say('BROKEN sha256 BROKEN')
+                ngx.exit(0)
+            end
+
+            local pkey = require("resty.openssl.pkey")
+            local p = myassert(pkey.new({ type = "EC" }))
+            local algo = myassert(p:get_default_digest_type())
+            ngx.say(require("cjson").encode(algo))
+        }
+    }
+--- request
+    GET /t
+--- response_body_like
+.+sha256.+
+--- no_error_log
+[error]

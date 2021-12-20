@@ -33,6 +33,7 @@ local BORINGSSL = require("resty.openssl.version").BORINGSSL
 
 local ptr_of_uint = ctypes.ptr_of_uint
 local ptr_of_size_t = ctypes.ptr_of_size_t
+local ptr_of_int = ctypes.ptr_of_int
 
 local null = ctypes.null
 local load_pem_args = { null, null, null }
@@ -459,6 +460,24 @@ end
 
 function _M:get_key_type()
   return objects_lib.nid2table(self.key_type)
+end
+
+function _M:get_default_digest_type()
+  if BORINGSSL then
+    return nil, "BoringSSL doesn't have default digest for pkey"
+  end
+
+  local nid = ptr_of_int()
+  local code = C.EVP_PKEY_get_default_digest_nid(self.ctx, nid)
+  if code == -2 then
+    return nil, "operation is not supported by the public key algorithm"
+  elseif code <= 0 then
+    return nil, format_error("get_default_digest", code)
+  end
+
+  local ret = objects_lib.nid2table(nid[0])
+  ret.mandatory = code == 2
+  return ret
 end
 
 function _M:get_provider_name()
