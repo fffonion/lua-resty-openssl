@@ -54,6 +54,7 @@ Table of Contents
     + [pkey:set_parameters](#pkeyset_parameters)
     + [pkey:is_private](#pkeyis_private)
     + [pkey:get_key_type](#pkeyget_key_type)
+    + [pkey:get_default_digest_type](#pkeyget_default_digest_type)
     + [pkey:sign](#pkeysign)
     + [pkey:verify](#pkeyverify)
     + [pkey:encrypt](#pkeyencrypt)
@@ -942,6 +943,22 @@ local pkey, err = require("resty.openssl.pkey").new({type="X448"})
 
 ngx.say(require("cjson").encode(pkey:get_key_type()))
 -- outputs '{"ln":"X448","nid":1035,"sn":"X448","id":"1.3.101.111"}'
+```
+
+[Back to TOC](#table-of-contents)
+
+### pkey:get_default_digest_type
+
+**syntax**: *obj, err = pk:get_default_digest_type()*
+
+Returns a ASN1_OBJECT of key type of the private key as a table. An additional field `mandatory` is also
+returned in the table, if `mandatory` is true then other digests can not be used.
+
+```lua
+local pkey, err = require("resty.openssl.pkey").new()
+
+ngx.say(require("cjson").encode(pkey:get_default_digest_type()))
+-- outputs '{"ln":"sha256","nid":672,"id":"2.16.840.1.101.3.4.2.1","mandatory":false,"sn":"SHA256"}'
 ```
 
 [Back to TOC](#table-of-contents)
