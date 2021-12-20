@@ -54,7 +54,7 @@ end
 -- create a EC key
 local pkey, err = require("resty.openssl.pkey").new({
   type = 'EC',
-  curve = 'prime192v1',
+  curve = 'prime256v1',
 })
 if err then
   error(err)

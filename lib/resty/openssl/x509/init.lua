@@ -23,6 +23,7 @@ local version = require("resty.openssl.version")
 local OPENSSL_10 = version.OPENSSL_10
 local OPENSSL_11_OR_LATER = version.OPENSSL_11_OR_LATER
 local OPENSSL_30 = version.OPENSSL_30
+local BORINGSSL = version.BORINGSSL
 local BORINGSSL_110 = version.BORINGSSL_110 -- used in boringssl-fips-20190808
 
 -- accessors provides an openssl version neutral interface to lua layer
@@ -380,16 +381,20 @@ function _M:sign(pkey, digest)
     return false, "x509:sign: expect a pkey instance at #1"
   end
 
+  local digest_algo
   if digest then
     if not digest_lib.istype(digest) then
       return false, "x509:sign: expect a digest instance at #2"
     elseif not digest.algo then
       return false, "x509:sign: expect a digest instance to have algo member"
     end
+    digest_algo = digest.algo
+  elseif BORINGSSL then
+    digest_algo = C.EVP_get_digestbyname('sha256')
   end
 
   -- returns size of signature if success
-  if C.X509_sign(self.ctx, pkey.ctx, digest and digest.algo) == 0 then
+  if C.X509_sign(self.ctx, pkey.ctx, digest_algo) == 0 then
     return false, format_error("x509:sign")
   end
 

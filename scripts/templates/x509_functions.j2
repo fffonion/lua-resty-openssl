@@ -5,16 +5,20 @@ function _M:sign(pkey, digest)
     return false, "{{modname}}:sign: expect a pkey instance at #1"
   end
 
+  local digest_algo
   if digest then
     if not digest_lib.istype(digest) then
       return false, "{{modname}}:sign: expect a digest instance at #2"
-    elseif not digest.dtyp then
-      return false, "{{modname}}:sign: expect a digest instance to have dtyp member"
+    elseif not digest.algo then
+      return false, "{{modname}}:sign: expect a digest instance to have algo member"
     end
+    digest_algo = digest.algo
+  elseif BORINGSSL then
+    digest_algo = C.EVP_get_digestbyname('sha256')
   end
 
   -- returns size of signature if success
-  if C.{{ module.type }}_sign(self.ctx, pkey.ctx, digest and digest.dtyp) == 0 then
+  if C.{{ module.type }}_sign(self.ctx, pkey.ctx, digest_algo) == 0 then
     return false, format_error("{{ modname }}:sign")
   end
 
