@@ -2,6 +2,15 @@
 ## [Unreleased]
 
 
+<a name="0.8.4"></a>
+## [0.8.4] - 2021-12-20
+### bug fixes
+- **x509.\*:** use SHA256 as default sign digest in BoringSSL [355681a](https://github.com/fffonion/lua-resty-openssl/commit/355681a33d88d85de0faae3e8eb6685e0e3b9f34)
+
+### features
+- **pkey:** add pkey:get_default_digest_type [0572e57](https://github.com/fffonion/lua-resty-openssl/commit/0572e57e0ab418f2dd749dbc5042b0c680e346a7)
+
+
 <a name="0.8.3"></a>
 ## [0.8.3] - 2021-12-16
 ### bug fixes
@@ -363,7 +372,8 @@
 - **x509:** export pubkey [ede4f81](https://github.com/fffonion/lua-resty-openssl/commit/ede4f817cb0fe092ad6f9ab5d6ecdcde864a9fd8)
 
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.3...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.4...HEAD
+[0.8.4]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.3...0.8.4
 [0.8.3]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.2...0.8.3
 [0.8.2]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.1...0.8.2
 [0.8.1]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.0...0.8.1
