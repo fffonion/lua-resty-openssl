@@ -5,6 +5,7 @@ require "resty.openssl.include.ossl_typ"
 require "resty.openssl.include.stack"
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
+local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 local BORINGSSL_110 = require("resty.openssl.version").BORINGSSL_110
 
 ffi.cdef [[
@@ -47,6 +48,27 @@ elseif OPENSSL_11_OR_LATER then
     OPENSSL_STACK *X509_STORE_CTX_get0_chain(X509_STORE_CTX *ctx);
   ]];
   _M.X509_STORE_CTX_get0_chain = C.X509_STORE_CTX_get0_chain
+end
+
+if OPENSSL_30 then
+  ffi.cdef [[
+    X509_STORE_CTX *X509_STORE_CTX_new_ex(OSSL_LIB_CTX *libctx, const char *propq);
+
+    int X509_STORE_set_default_paths_ex(X509_STORE *ctx, OSSL_LIB_CTX *libctx,
+                                        const char *propq);
+    /* int X509_STORE_load_file_ex(X509_STORE *ctx, const char *file,
+                                OSSL_LIB_CTX *libctx, const char *propq);
+    int X509_STORE_load_store_ex(X509_STORE *ctx, const char *uri,
+                                OSSL_LIB_CTX *libctx, const char *propq); */
+    int X509_STORE_load_locations_ex(X509_STORE *ctx, const char *file,
+                                    const char *dir, OSSL_LIB_CTX *libctx,
+                                    const char *propq);
+  ]]
+  _M.X509_STORE_set_default_paths = function(...) return C.X509_STORE_set_default_paths_ex(...) end
+  _M.X509_STORE_load_locations = function(...) return C.X509_STORE_load_locations_ex(...) end
+else
+  _M.X509_STORE_set_default_paths = function(s) return C.X509_STORE_set_default_paths(s) end
+  _M.X509_STORE_load_locations = function(s, file, dir) return C.X509_STORE_load_locations(s, file, dir) end
 end
 
 return _M

@@ -12,7 +12,7 @@ local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
 local BORINGSSL_110 = require("resty.openssl.version").BORINGSSL_110
 
-asn1_macro.declare_asn1_functions("X509_CRL")
+asn1_macro.declare_asn1_functions("X509_CRL", asn1_macro.has_new_ex)
 
 ffi.cdef [[
   X509_NAME *X509_CRL_get_issuer(const X509_CRL *crl);

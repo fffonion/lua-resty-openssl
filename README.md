@@ -477,9 +477,17 @@ A module to provide OSSL_LIB_CTX context switches.
 See [OSSL_LIB_CTX.3](#https://www.openssl.org/docs/manmaster/man3/OSSL_LIB_CTX.html) for deeper
 reading. It can be used to replace `ENGINE` in prior 3.0 world.
 
-The context is currently effective in [cipher](#resty.openssl.cipher),
-[pkey](#resty.openssl.pkey), [digest](#resty.openssl.digest), [mac](#resty.openssl.mac),
-[kdf](#resty.openssl.kdf) and [provider](#resty.openssl.provider).
+The context is currently effective following modules:
+
+- [cipher](#resty.openssl.cipher)
+- [digest](#resty.openssl.digest)
+- [kdf](#resty.openssl.kdf)
+- [mac](#resty.openssl.mac)
+- [pkcs12.encode](#pkcs12encode)
+- [pkey](#resty.openssl.pkey)
+- [provider](#resty.openssl.provider)
+- [rand](#resty.openssl.rand)
+- [x509](#resty.openssl.x509), [x509.csr](#resty.openssl.x509.csr), [x509.crl](#resty.openssl.x509.crl) and some [x509.store](#resty.openssl.x509.store) functions
 
 This module is only available on OpenSSL 3.0.
  
@@ -2120,7 +2128,7 @@ Module to interact with PKCS#12 format.
 
 ### pkcs12.encode
 
-**syntax**: *der, err = pkcs12.encode(data, passphrase?)*
+**syntax**: *der, err = pkcs12.encode(data, passphrase?, properties?)*
 
 Encode data in `data` to a PKCS#12 text.
 
@@ -2132,12 +2140,15 @@ Encode data in `data` to a PKCS#12 text.
 | cert   | [x509](#restyopensslx509) | Certificate | **required** |
 | cacerts   | A list of [x509](#restyopensslx509) as Lua table | Additional certificates | `[]` |
 | friendly_name | string | The name used for the supplied certificate and key | `""` |
-| nid_key | number or string | The [NID] or text to specify algorithm to encrypt key | `"PBE-SHA1-RC2-4"` if compiled with RC2, otherwise `"PBE-SHA1-3DES"` |
-| nid_cert | number or string | The [NID] or text to specify algorithm to encrypt cert | `"PBE-SHA1-3DES"` |
+| nid_key | number or string | The [NID] or text to specify algorithm to encrypt key | `"PBE-SHA1-RC2-4"` if compiled with RC2, otherwise `"PBE-SHA1-3DES"`; on OpenSSL 3.0 and later `PBES2 with PBKDF2 and AES-256-CBC`. |
+| nid_cert | number or string | The [NID] or text to specify algorithm to encrypt cert | `"PBE-SHA1-3DES"`; on OpenSSL 3.0 and later `PBES2 with PBKDF2 and AES-256-CBC` |
 | iter | number | Key iterration count | `PKCS12_DEFAULT_ITER` (2048) |
 | mac_iter | number | MAC iterration count | 1 |
 
 `passphrase` is the string for encryption. If omitted, an empty string will be used.
+
+Staring from OpenSSL 3.0, this functions accepts an optional `properties` parameter
+to explictly select provider to fetch algorithms.
 
 Note in OpenSSL 3.0 `RC2` has been moved to **legacy** provider. In order to encode p12 data with RC2
 encryption, you need to [load the legacy provider](#providerload) first.
@@ -2173,9 +2184,13 @@ Module to interact with random number generator.
 
 ### rand.bytes
 
-**syntax**: *str, err = rand.bytes(length)*
+**syntax**: *str, err = rand.bytes(length, private?, strength?)*
 
-Generate random bytes with length of `length`. 
+Generate random bytes with length of `length`. If `private` is set to true, a
+private PRNG instance is used so that a compromise of the "public" PRNG instance
+will not affect the secrecy of these private values.
+
+The bytes generated will have a security strength of at least `strength` bits.
 
 [Back to TOC](#table-of-contents)
 
@@ -2187,12 +2202,15 @@ Module to interact with X.509 certificates.
 
 ### x509.new
 
-**syntax**: *crt, err = x509.new(txt?, fmt?)*
+**syntax**: *crt, err = x509.new(txt?, fmt?, properties?)*
 
 Creates a `x509` instance. `txt` can be **PEM** or **DER** formatted text;
 `fmt` is a choice of `PEM`, `DER` to load specific format, or `*` for auto detect.
 
 When `txt` is omitted, `new()` creates an empty `x509` instance.
+
+Staring from OpenSSL 3.0, this functions accepts an optional `properties` parameter
+to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
 
@@ -2501,12 +2519,15 @@ for an example to generate CSR.
 
 ### csr.new
 
-**syntax**: *csr, err = csr.new(txt?, fmt?)*
+**syntax**: *csr, err = csr.new(txt?, fmt?, properties?)*
 
 Create an empty `csr` instance. `txt` can be **PEM** or **DER** formatted text;
 `fmt` is a choice of `PEM`, `DER` to load specific format, or `*` for auto detect.
 
 When `txt` is omitted, `new()` creates an empty `csr` instance.
+
+Staring from OpenSSL 3.0, this functions accepts an optional `properties` parameter
+to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
 
@@ -2702,12 +2723,15 @@ Module to interact with X509_CRL(certificate revocation list).
 
 ### crl.new
 
-**syntax**: *crt, err = crl.new(txt?, fmt?)*
+**syntax**: *crt, err = crl.new(txt?, fmt?, properties?)*
 
 Creates a `crl` instance. `txt` can be **PEM** or **DER** formatted text;
 `fmt` is a choice of `PEM`, `DER` to load specific format, or `*` for auto detect.
 
 When `txt` is omitted, `new()` creates an empty `crl` instance.
+
+Staring from OpenSSL 3.0, this functions accepts an optional `properties` parameter
+to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
 
@@ -3567,9 +3591,12 @@ Module to interact with X.509 certificate store (X509_STORE).
 
 ### store.new
 
-**syntax**: *st, err = store.new()*
+**syntax**: *st, err = store.new(properties?)*
 
 Creates a new `store` instance.
+
+Staring from OpenSSL 3.0, this functions accepts an optional `properties` parameter
+to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
 
@@ -3583,12 +3610,15 @@ Returns `true` if table is an instance of `store`. Returns `false` otherwise.
 
 ### store:use_default
 
-**syntax**: *ok, err = store:use_default()*
+**syntax**: *ok, err = store:use_default(properties?)*
 
 Loads certificates into the X509_STORE from the hardcoded default paths.
 
 Note that to load "default" CAs correctly, usually you need to install a CA
 certificates bundle. For example, the package in Debian/Ubuntu is called `ca-certificates`.
+
+Staring from OpenSSL 3.0, this functions accepts an optional `properties` parameter
+to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
 
@@ -3604,25 +3634,31 @@ The argument must be a [resty.openssl.x509](#restyopensslx509) instance or a
 
 ### store:load_file
 
-**syntax**: *ok, err = store:load_file(path)*
+**syntax**: *ok, err = store:load_file(path, properties?)*
 
 Loads a X.509 certificate on file system into store.
+
+Staring from OpenSSL 3.0, this functions accepts an optional `properties` parameter
+to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
 
 ### store:load_directory
 
-**syntax**: *ok, err = store:load_directory(path)*
+**syntax**: *ok, err = store:load_directory(path, properties?)*
 
 Loads a directory of X.509 certificates on file system into store. The certificates in the directory
 must be in hashed form, as documented in
 [X509_LOOKUP_hash_dir(3)](https://www.openssl.org/docs/manmaster/man3/X509_LOOKUP_hash_dir.html).
 
+Staring from OpenSSL 3.0, this functions accepts an optional `properties` parameter
+to explictly select provider to fetch algorithms.
+
 [Back to TOC](#table-of-contents)
 
 ### store:verify
 
-**syntax**: *chain, err = store:verify(x509, chain?, return_chain?)*
+**syntax**: *chain, err = store:verify(x509, chain?, return_chain?, properties?)*
 
 Verifies a X.509 object with the store. The first argument must be
 [resty.openssl.x509](#restyopensslx509) instance. Optionally accept a validation chain as second
@@ -3631,6 +3667,9 @@ argument, which must be a [resty.openssl.x509.chain](#restyopensslx509chain) ins
 If verification succeed, and `return_chain` is set to true, returns the proof of validation as a 
 [resty.openssl.x509.chain](#restyopensslx509chain); otherwise
 returns `true` only. If verification failed, returns `nil` and error explaining the reason.
+
+Staring from OpenSSL 3.0, this functions accepts an optional `properties` parameter
+to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
 

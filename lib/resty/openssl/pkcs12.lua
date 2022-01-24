@@ -12,7 +12,9 @@ local x509_lib = require "resty.openssl.x509"
 local stack_macro = require "resty.openssl.include.stack"
 local stack_lib = require "resty.openssl.stack"
 local objects_lib = require "resty.openssl.objects"
+local ctx_lib = require "resty.openssl.ctx"
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
+local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 
 local stack_of_x509_new = stack_lib.new_of("X509")
 local stack_of_x509_add = stack_lib.add_of("X509")
@@ -73,7 +75,7 @@ local function decode(p12, passphrase)
   }
 end
 
-local function encode(opts, passphrase)
+local function encode(opts, passphrase, properties)
   if passphrase and type(passphrase) ~= "string" then
     return nil, "pkcs12.encode: expect passphrase to be a string"
   end
@@ -137,10 +139,19 @@ local function encode(opts, passphrase)
     end
   end
 
-  local p12 = C.PKCS12_create(passphrase or "", opts.friendly_name,
+  local p12
+  if OPENSSL_30 then
+    p12 = C.PKCS12_create_ex(passphrase or "", opts.friendly_name,
                               pkey.ctx, cert.ctx, x509stack,
                               nid_key or 0, nid_cert or 0,
-                              opts.iter or 0, opts.mac_iter or 0, 0)
+                              opts.iter or 0, opts.mac_iter or 0, 0,
+                              ctx_lib.get_libctx(), properties)
+  else
+    p12 = C.PKCS12_create(passphrase or "", opts.friendly_name,
+                            pkey.ctx, cert.ctx, x509stack,
+                            nid_key or 0, nid_cert or 0,
+                            opts.iter or 0, opts.mac_iter or 0, 0)
+  end
   if p12 == nil then
     return nil, format_error("pkcs12.encode: PKCS12_create")
   end

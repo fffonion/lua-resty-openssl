@@ -108,11 +108,15 @@ local mt = { __index = _M, __tostring = tostring }
 local x509_ptr_ct = ffi.typeof("X509*")
 
 -- only PEM format is supported for now
-function _M.new(cert, fmt)
+function _M.new(cert, fmt, properties)
   local ctx
   if not cert then
     -- routine for create a new cert
-    ctx = C.X509_new()
+    if OPENSSL_30 then
+      ctx = C.X509_new_ex(ctx_lib.get_libctx(), properties)
+    else
+      ctx = C.X509_new()
+    end
     if ctx == nil then
       return nil, format_error("x509.new")
     end

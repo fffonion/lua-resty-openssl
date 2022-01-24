@@ -10,7 +10,7 @@ local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
 local BORINGSSL_110 = require("resty.openssl.version").BORINGSSL_110
 
-asn1_macro.declare_asn1_functions("X509")
+asn1_macro.declare_asn1_functions("X509", asn1_macro.has_new_ex)
 
 ffi.cdef [[
   int i2d_X509_bio(BIO *bp, X509 *x509);
