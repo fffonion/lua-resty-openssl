@@ -10,6 +10,7 @@ local crypto_macro = require("resty.openssl.include.crypto")
 local ctypes = require "resty.openssl.auxiliary.ctypes"
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
+local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 
 local _M = {}
 local mt = {__index = _M}
@@ -400,7 +401,12 @@ function _M:is_prime(nchecks)
   end
   -- if nchecks is not defined, set to BN_prime_checks:
   -- select number of iterations based on the size of the number
-  local code = C.BN_is_prime_ex(self.ctx, nchecks or 0, bn_ctx_tmp, nil)
+  local code
+  if OPENSSL_30 then
+    code = C.BN_check_prime(self.ctx, bn_ctx_tmp, nil)
+  else
+    code = C.BN_is_prime_ex(self.ctx, nchecks or 0, bn_ctx_tmp, nil)
+  end
   if code == -1 then
     return nil, format_error("bn.is_prime")
   end
