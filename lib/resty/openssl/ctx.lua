@@ -2,12 +2,11 @@ local ffi = require "ffi"
 local C = ffi.C
 local ffi_gc = ffi.gc
 
+require "resty.openssl.include.ossl_typ"
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 
 ffi.cdef [[
-  typedef struct ossl_lib_ctx_st OSSL_LIB_CTX;
-
   OSSL_LIB_CTX *OSSL_LIB_CTX_new(void);
   int OSSL_LIB_CTX_load_config(OSSL_LIB_CTX *ctx, const char *config_file);
   void OSSL_LIB_CTX_free(OSSL_LIB_CTX *ctx);

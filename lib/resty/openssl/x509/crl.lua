@@ -11,11 +11,13 @@ local digest_lib = require("resty.openssl.digest")
 local extension_lib = require("resty.openssl.x509.extension")
 local pkey_lib = require("resty.openssl.pkey")
 local util = require "resty.openssl.util"
+local ctx_lib = require "resty.openssl.ctx"
 local txtnid2nid = require("resty.openssl.objects").txtnid2nid
 local format_error = require("resty.openssl.err").format_error
 local version = require("resty.openssl.version")
 local OPENSSL_10 = version.OPENSSL_10
 local OPENSSL_11_OR_LATER = version.OPENSSL_11_OR_LATER
+local OPENSSL_30 = version.OPENSSL_30
 local BORINGSSL = version.BORINGSSL
 local BORINGSSL_110 = version.BORINGSSL_110 -- used in boringssl-fips-20190808
 
@@ -84,10 +86,14 @@ local mt = { __index = _M, __tostring = tostring }
 
 local x509_crl_ptr_ct = ffi.typeof("X509_CRL*")
 
-function _M.new(crl, fmt)
+function _M.new(crl, fmt, properties)
   local ctx
   if not crl then
-    ctx = C.X509_CRL_new()
+    if OPENSSL_30 then
+      ctx = C.X509_CRL_new_ex(ctx_lib.get_libctx(), properties)
+    else
+      ctx = C.X509_CRL_new()
+    end
     if ctx == nil then
       return nil, "x509.crl.new: X509_CRL_new() failed"
     end

@@ -10,9 +10,10 @@ local asn1_macro = require "resty.openssl.include.asn1"
 
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
+local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 local BORINGSSL_110 = require("resty.openssl.version").BORINGSSL_110
 
-asn1_macro.declare_asn1_functions("X509_REQ")
+asn1_macro.declare_asn1_functions("X509_REQ", asn1_macro.has_new_ex)
 
 ffi.cdef [[
   int X509_REQ_set_subject_name(X509_REQ *req, X509_NAME *name);
@@ -76,5 +77,12 @@ if OPENSSL_10 or BORINGSSL_110 then
       //ASN1_BIT_STRING *signature;
       //int references;
     } X509_REQ;
+  ]]
+end
+
+if OPENSSL_30 then
+  ffi.cdef [[
+    int X509_REQ_verify_ex(X509_REQ *a, EVP_PKEY *pkey, OSSL_LIB_CTX *libctx,
+                          const char *propq);
   ]]
 end

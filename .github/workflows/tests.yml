@@ -145,7 +145,7 @@ jobs:
         if [ ! -e $OPENSSL_PREFIX/include ]; then sudo make PATH=$PATH install_sw > build.log 2>&1 || (cat build.log && exit 1); fi
         if [ -e $OPENSSL_LIB/libcrypto.so.3 ] && [ ! -e $OPENSSL_LIB/ossl-modules/fips.so ]; then mkdir -p $OPENSSL_PREFIX/ssl; sudo make PATH=$PATH install_fips > build.log 2>&1 || (cat build.log && exit 1); fi
         if [ ! -e $OPENSSL_PREFIX/lib64 ]; then sudo cp -r $OPENSSL_PREFIX/lib $OPENSSL_PREFIX/lib64; fi
-        mkdir -p $OPENSSL_PREFIX/certs/ && cp -r /etc/ssl/certs/* $OPENSSL_PREFIX/certs/
+        mkdir -p $OPENSSL_PREFIX/certs/ && sudo cp -r /etc/ssl/certs/* $OPENSSL_PREFIX/certs/
 
     - name: Build BoringSSL
       if: matrix.boringssl != ''
@@ -185,7 +185,7 @@ jobs:
           popd; rm -rf $OPENSSL_INC; cp -r include $OPENSSL_INC
           mkdir -p $OPENSSL_LIB; cp -r build/*/*.so $OPENSSL_LIB
         fi
-        mkdir -p $OPENSSL_PREFIX/certs/ && cp -r /etc/ssl/certs/* $OPENSSL_PREFIX/certs/
+        mkdir -p $OPENSSL_PREFIX/certs/ && sudo cp -r /etc/ssl/certs/* $OPENSSL_PREFIX/certs/
 
     - name: Build LuaJIT
       env:
