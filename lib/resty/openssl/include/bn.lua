@@ -1,6 +1,7 @@
 local ffi = require "ffi"
 
 require "resty.openssl.include.ossl_typ"
+local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 
 local BN_ULONG
 if ffi.abi('64bit') then
@@ -68,3 +69,9 @@ ffi.cdef(
                             const BIGNUM *rem, BN_GENCB *cb);
 ]]
 )
+
+if OPENSSL_30 then
+  ffi.cdef [[
+    int BN_check_prime(const BIGNUM *p, BN_CTX *ctx, BN_GENCB *cb);
+  ]]
+end
