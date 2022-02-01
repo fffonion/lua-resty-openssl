@@ -4,13 +4,24 @@ require "resty.openssl.include.ossl_typ"
 require "resty.openssl.include.evp"
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
+local BORINGSSL = require("resty.openssl.version").BORINGSSL
+
+if BORINGSSL then
+  ffi.cdef [[
+    int HMAC_Init_ex(HMAC_CTX *ctx, const void *key, size_t key_len,
+                    const EVP_MD *md, ENGINE *impl);
+  ]]
+else
+  ffi.cdef [[
+    int HMAC_Init_ex(HMAC_CTX *ctx, const void *key, int len,
+                    const EVP_MD *md, ENGINE *impl);
+  ]]
+end
 
 ffi.cdef [[
-  /*__owur*/ int HMAC_Init_ex(HMAC_CTX *ctx, const void *key, int len,
-  const EVP_MD *md, ENGINE *impl);
-  /*__owur*/ int HMAC_Update(HMAC_CTX *ctx, const unsigned char *data,
+  int HMAC_Update(HMAC_CTX *ctx, const unsigned char *data,
                             size_t len);
-  /*__owur*/ int HMAC_Final(HMAC_CTX *ctx, unsigned char *md,
+  int HMAC_Final(HMAC_CTX *ctx, unsigned char *md,
                             unsigned int *len);
 ]]
 

@@ -4,6 +4,7 @@ require "resty.openssl.include.ossl_typ"
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
 local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
+local BORINGSSL = require("resty.openssl.version").BORINGSSL
 
 ffi.cdef [[
   // openssl < 3.0
@@ -30,11 +31,6 @@ ffi.cdef [[
   int EVP_CipherFinal_ex(EVP_CIPHER_CTX *ctx, unsigned char *outm,
               int *outl);
 
-  int EVP_BytesToKey(const EVP_CIPHER *type, const EVP_MD *md,
-    const unsigned char *salt,
-    const unsigned char *data, int datal, int count,
-    unsigned char *key, unsigned char *iv);
-
   // list functions
   typedef void* fake_openssl_cipher_list_fn(const EVP_CIPHER *ciph, const char *from,
                                             const char *to, void *x);
@@ -44,6 +40,22 @@ ffi.cdef [[
                                 const char *to, void *x), void *arg);
   int EVP_CIPHER_nid(const EVP_CIPHER *cipher);
 ]]
+
+if BORINGSSL then
+  ffi.cdef [[
+    int EVP_BytesToKey(const EVP_CIPHER *type, const EVP_MD *md,
+                      const uint8_t *salt, const uint8_t *data,
+                      size_t data_len, unsigned count, uint8_t *key,
+                      uint8_t *iv);
+  ]]
+else
+  ffi.cdef [[
+    int EVP_BytesToKey(const EVP_CIPHER *type, const EVP_MD *md,
+                      const unsigned char *salt,
+                      const unsigned char *data, int datal, int count,
+                      unsigned char *key, unsigned char *iv);
+  ]]
+end
 
 if OPENSSL_30 then
   require "resty.openssl.include.provider"
