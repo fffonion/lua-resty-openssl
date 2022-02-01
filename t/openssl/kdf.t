@@ -7,7 +7,6 @@ use Cwd qw(cwd);
 my $pwd = cwd();
 
 my $use_luacov = $ENV{'TEST_NGINX_USE_LUACOV'} // '';
-my $on_github_actions = $ENV{'CI'} // '';
 
 our $HttpConfig = qq{
     lua_package_path "$pwd/t/openssl/?.lua;$pwd/lib/?.lua;$pwd/lib/?/init.lua;;";
@@ -17,7 +16,6 @@ our $HttpConfig = qq{
             jit.off()
         end
         _G.myassert = require("helper").myassert
-        _G.on_github_actions = "$on_github_actions" ~= ""
     }
 };
 
@@ -73,11 +71,7 @@ kdf.derive: unknown type 19823718236128632
 --- config
     location =/t {
         content_by_lua_block {
-            -- boringssl has pbkdf2 working, but not github actions, why?
-            if require("resty.openssl.version").BORINGSSL and _G.on_github_actions then
-                ngx.say("cDRFLQ7NWt+AP4i0TdBzog==")
-                ngx.exit(0)
-            end
+
             local kdf = require("resty.openssl.kdf")
             local key = myassert(kdf.derive({
                 type = kdf.PBKDF2,
@@ -103,11 +97,6 @@ kdf.derive: unknown type 19823718236128632
 --- config
     location =/t {
         content_by_lua_block {
-            -- boringssl has pbkdf2 working, but not github actions, why?
-            if require("resty.openssl.version").BORINGSSL and _G.on_github_actions then
-                ngx.say("HkN6HHnXW+YekRQdriCv/A==")
-                ngx.exit(0)
-            end
             local kdf = require("resty.openssl.kdf")
             local key = myassert(kdf.derive({
                 type = kdf.PBKDF2,
