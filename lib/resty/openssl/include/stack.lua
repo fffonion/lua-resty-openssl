@@ -56,28 +56,40 @@ elseif OPENSSL_10 or BORINGSSL then
     typedef struct stack_st OPENSSL_STACK;
 
     _STACK *sk_new_null(void);
-    int sk_push(_STACK *st, void *data);
     void sk_pop_free(_STACK *st, void (*func) (void *));
-    int sk_num(const _STACK *);
-    void *sk_value(const _STACK *, int);
     _STACK *sk_dup(_STACK *st);
     void sk_free(_STACK *st);
-    void *sk_delete(_STACK *st, int loc);
 
     _STACK *sk_deep_copy(_STACK *, void *(*)(void *), void (*)(void *));
   ]]
+
+  if BORINGSSL then -- indices are using size_t instead of int
+    ffi.cdef [[
+      size_t sk_push(_STACK *st, void *data);
+      size_t sk_num(const _STACK *);
+      void *sk_value(const _STACK *, size_t);
+      void *sk_delete(_STACK *st, size_t loc);
+    ]]
+  else -- normal OpenSSL 1.0
+    ffi.cdef [[
+      int sk_push(_STACK *st, void *data);
+      int sk_num(const _STACK *);
+      void *sk_value(const _STACK *, int);
+      void *sk_delete(_STACK *st, int loc);
+    ]]
+  end
+
   _M.OPENSSL_sk_pop_free = C.sk_pop_free
 
   _M.OPENSSL_sk_new_null = C.sk_new_null
-  _M.OPENSSL_sk_push = C.sk_push
+  _M.OPENSSL_sk_push = function(...) return tonumber(C.sk_push(...)) end
   _M.OPENSSL_sk_pop_free = C.sk_pop_free
-  _M.OPENSSL_sk_num = C.sk_num
+  _M.OPENSSL_sk_num = function(...) return tonumber(C.sk_num(...)) end
   _M.OPENSSL_sk_value = C.sk_value
   _M.OPENSSL_sk_delete = C.sk_delete
   _M.OPENSSL_sk_dup = C.sk_dup
   _M.OPENSSL_sk_free = C.sk_free
   _M.OPENSSL_sk_deep_copy = C.sk_deep_copy
 end
-
 
 return _M
