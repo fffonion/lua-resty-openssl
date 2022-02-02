@@ -2,6 +2,18 @@
 ## [Unreleased]
 
 
+<a name="0.8.5"></a>
+## [0.8.5] - 2022-02-02
+### bug fixes
+- **\*:** correct size type in cipher, hmac and rand in BoringSSL [54ce5f0](https://github.com/fffonion/lua-resty-openssl/commit/54ce5f0dd1861f2af15eacea154c805a237c03d8)
+- **bn:** use BN_check_prime in OpenSSL 3.0 [8c107e3](https://github.com/fffonion/lua-resty-openssl/commit/8c107e3dcf2006d6c453234278ab0a45109042d6)
+- **kdf:** correct FFI definition for BoringSSL [30ba7cf](https://github.com/fffonion/lua-resty-openssl/commit/30ba7cf9d90d8bc611cbccdca83e69c308739b60)
+- **stack:** correct indices to use size_t in BoringSSL [526ecb8](https://github.com/fffonion/lua-resty-openssl/commit/526ecb89c81b0e477b749a2424231329e468ce02)
+
+### features
+- **\*:** add more modules for OSSL_LIB_CTX support [35f4bcb](https://github.com/fffonion/lua-resty-openssl/commit/35f4bcb796bc2fbe4ab066b8f78047bf30118986)
+
+
 <a name="0.8.4"></a>
 ## [0.8.4] - 2021-12-20
 ### bug fixes
@@ -372,7 +384,8 @@
 - **x509:** export pubkey [ede4f81](https://github.com/fffonion/lua-resty-openssl/commit/ede4f817cb0fe092ad6f9ab5d6ecdcde864a9fd8)
 
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.4...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.5...HEAD
+[0.8.5]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.4...0.8.5
 [0.8.4]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.3...0.8.4
 [0.8.3]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.2...0.8.3
 [0.8.2]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.1...0.8.2
