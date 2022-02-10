@@ -90,6 +90,8 @@ local function load_pem_der(txt, opts, funcs)
         if opts.passphrase then
           local passphrase = opts.passphrase
           if type(passphrase) ~= "string" then
+            -- clear errors occur when trying
+            C.ERR_clear_error()
             return nil, "passphrase must be a string"
           end
           arg = { null, nil, passphrase }
