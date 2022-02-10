@@ -249,9 +249,20 @@ Table of Contents
     + [ssl.from_socket](#sslfrom_socket)
     + [ssl:get_peer_certificate](#sslget_peer_certificate)
     + [ssl:get_peer_cert_chain](#sslget_peer_cert_chain)
+    + [ssl:set_ciphersuites, ssl:set_cipher_list](#sslset_ciphersuites-sslset_cipher_list)
+    + [ssl:get_ciphers](#sslget_ciphers)
+    + [ssl:get_cipher_name](#sslget_cipher_name)
+    + [ssl:set_timeout](#sslset_timeout)
+    + [ssl:get_timeout](#sslget_timeout)
+    + [ssl:set_verify](#sslset_verify)
+    + [ssl:add_client_ca](#ssladd_client_ca)
+    + [ssl:set_options](#sslset_options)
+    + [ssl:get_options](#sslget_options)
+    + [ssl:clear_options](#sslclear_options)
   * [resty.openssl.ssl_ctx](#restyopensslssl_ctx)
     + [ssl_ctx.from_request](#ssl_ctxfrom_request)
     + [ssl_ctx.from_socket](#ssl_ctxfrom_socket)
+    + [ssl_ctx:set_alpns](#ssl_ctxset_alpns)
   * [Functions for stack-like objects](#functions-for-stack-like-objects)
     + [metamethods](#metamethods)
     + [each](#each)
@@ -3742,6 +3753,8 @@ Return the peer certificate as a [x509](#restyopensslx509) instance. Depending o
 of `ssl`, peer certificate means the server certificate on client side, or the client certificate
 on server side.
 
+This function should be called after SSL handshake.
+
 [Back to TOC](#table-of-contents)
 
 ### ssl:get_peer_cert_chain
@@ -3751,6 +3764,201 @@ on server side.
 Return the whole peer certificate chain as a [x509.chain](#restyopensslx509chain) instance.
 Depending on the type of `ssl`, peer certificate means the server certificate on client side,
 or the client certificate on server side.
+
+This function should be called after SSL handshake.
+
+[Back to TOC](#table-of-contents)
+
+### ssl:set_ciphersuites, ssl:set_cipher_list
+
+**syntax**: *ok, err = ssl:set_ciphersuites(cipher_suite)*
+**syntax**: *ok, err = ssl:set_cipher_list(cipher_list)*
+
+Set the cipher suites string used in handshake. Use `ssl:set_ciphersuites
+for TLSv1.3 and `ssl:set_cipher_list` for lower.
+
+This function should be called before SSL handshake; for server this means this function
+is only effective in `cert_by_lua` or `client_hello_by_lua` phases.
+
+[Back to TOC](#table-of-contents)
+
+### ssl:get_ciphers
+
+**syntax**: *ciphers, err = ssl:get_ciphers()*
+
+Get the cipher list string used in handshake as a string.
+
+[Back to TOC](#table-of-contents)
+
+### ssl:get_cipher_name
+
+**syntax**: *cipher_name, err = ssl:get_cipher_name()*
+
+Get the negotiated cipher name as a string.
+
+This function should be called after SSL handshake.
+
+[Back to TOC](#table-of-contents)
+
+### ssl:set_timeout
+
+**syntax**: *ok, err = ssl:set_timeout(tm)*
+
+Set the timeout value for current session in seconds `tm`.
+
+[Back to TOC](#table-of-contents)
+
+### ssl:get_timeout
+
+**syntax**: *tm, err = ssl:set_timeout(tm)*
+
+Get the timeout value for current session in seconds.
+
+[Back to TOC](#table-of-contents)
+
+### ssl:set_verify
+
+**syntax**: *ok, err = ssl:set_verify(mode)*
+
+Set the verify mode in current session. Avaiable modes are:
+
+```
+  ssl.SSL_VERIFY_NONE                 = 0x00,
+  ssl.SSL_VERIFY_PEER                 = 0x01,
+  ssl.SSL_VERIFY_FAIL_IF_NO_PEER_CERT = 0x02,
+  ssl.SSL_VERIFY_CLIENT_ONCE          = 0x04,
+  ssl.SSL_VERIFY_POST_HANDSHAKE       = 0x08,
+```
+
+This function should be called before SSL handshake; for server this means this function
+is only effective in `cert_by_lua` or `client_hello_by_lua` phases.
+
+[Back to TOC](#table-of-contents)
+
+### ssl:add_client_ca
+
+**syntax**: *ok, err = ssl:add_client_ca(x509)*
+
+Add the CA name extracted from `x509` to the list of CAs sent to the client
+when requesting a client certificate. `x509` is a [x509](#resty.openssl.x509)
+instance. This function doesn't affect the verification result of client certificate.
+
+This function should be called before SSL handshake; for server this means this function
+is only effective in `cert_by_lua` or `client_hello_by_lua` phases.
+
+[Back to TOC](#table-of-contents)
+
+### ssl:set_options
+
+**syntax**: *bitmask, err = ssl:set_options(option, ...)*
+
+Set one or more options in current session. Avaiable options are:
+
+<details>
+<summary>SSL options</summary>
+
+```
+  ssl.SSL_OP_NO_EXTENDED_MASTER_SECRET                = 0x00000001,
+  ssl.SSL_OP_CLEANSE_PLAINTEXT                        = 0x00000002,
+  ssl.SSL_OP_LEGACY_SERVER_CONNECT                    = 0x00000004,
+  ssl.SSL_OP_TLSEXT_PADDING                           = 0x00000010,
+  ssl.SSL_OP_SAFARI_ECDHE_ECDSA_BUG                   = 0x00000040,
+  ssl.SSL_OP_IGNORE_UNEXPECTED_EOF                    = 0x00000080,
+  ssl.SSL_OP_DISABLE_TLSEXT_CA_NAMES                  = 0x00000200,
+  ssl.SSL_OP_ALLOW_NO_DHE_KEX                         = 0x00000400,
+  ssl.SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS              = 0x00000800,
+  ssl.SSL_OP_NO_QUERY_MTU                             = 0x00001000,
+  ssl.SSL_OP_COOKIE_EXCHANGE                          = 0x00002000,
+  ssl.SSL_OP_NO_TICKET                                = 0x00004000,
+  ssl.SSL_OP_CISCO_ANYCONNECT                         = 0x00008000,
+  ssl.SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION   = 0x00010000,
+  ssl.SSL_OP_NO_COMPRESSION                           = 0x00020000,
+  ssl.SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION        = 0x00040000,
+  ssl.SSL_OP_NO_ENCRYPT_THEN_MAC                      = 0x00080000,
+  ssl.SSL_OP_ENABLE_MIDDLEBOX_COMPAT                  = 0x00100000,
+  ssl.SSL_OP_PRIORITIZE_CHACHA                        = 0x00200000,
+  ssl.SSL_OP_CIPHER_SERVER_PREFERENCE                 = 0x00400000,
+  ssl.SSL_OP_TLS_ROLLBACK_BUG                         = 0x00800000,
+  ssl.SSL_OP_NO_ANTI_REPLAY                           = 0x01000000,
+  ssl.SSL_OP_NO_SSLv3                                 = 0x02000000,
+  ssl.SSL_OP_NO_TLSv1                                 = 0x04000000,
+  ssl.SSL_OP_NO_TLSv1_2                               = 0x08000000,
+  ssl.SSL_OP_NO_TLSv1_1                               = 0x10000000,
+  ssl.SSL_OP_NO_TLSv1_3                               = 0x20000000,
+  ssl.SSL_OP_NO_DTLSv1                                = 0x04000000,
+  ssl.SSL_OP_NO_DTLSv1_2                              = 0x08000000,
+  ssl.SSL_OP_NO_RENEGOTIATION                         = 0x40000000,
+  ssl.SSL_OP_CRYPTOPRO_TLSEXT_BUG                     = 0x80000000,
+```
+</details>
+
+Multiple options can be passed in seperatedly, or in a bitwise or bitmask.
+
+```lua
+assert(ssl:set_options(bit.bor(ssl.SSL_OP_NO_TLSv1_1, ssl.SSL_OP_NO_TLSv1_2)))
+-- same as
+assert(ssl:set_options(ssl.SSL_OP_NO_TLSv1_1, ssl.SSL_OP_NO_TLSv1_2))
+```
+
+Returns the options of current session in bitmask.
+
+This function should be called before SSL handshake; for server this means this function
+is only effective in `client_hello_by_lua` phase.
+
+
+[Back to TOC](#table-of-contents)
+
+### ssl:get_options
+
+**syntax**: *bitmask, err = ssl:get_options(readable?)*
+
+Get the options for current session. If `readable` is not set or set to `false`, the function
+return the bit mask for all optinos; if `readable` is set to `true,` the function returns
+a sorted Lua table containing literals for all options.
+
+[Back to TOC](#table-of-contents)
+
+### ssl:clear_options
+
+**syntax**: *bitmask, err = ssl:clear_options(option, ...)*
+
+Clear one or more options in current session.
+Avaiable options are same as that in [ssl:set_options](#sslset_options).
+
+Multiple options can be passed in seperatedly, or in a bitwise or bitmask.
+
+```lua
+assert(ssl:clear_options(bit.bor(ssl.SSL_OP_NO_TLSv1_1, ssl.SSL_OP_NO_TLSv1_2)))
+-- same as
+assert(ssl:clear_options(ssl.SSL_OP_NO_TLSv1_1, ssl.SSL_OP_NO_TLSv1_2))
+```
+
+Returns the options of current session in bitmask.
+
+This function should be called before SSL handshake; for server this means this function
+is only effective in `client_hello_by_lua` phase.
+
+[Back to TOC](#table-of-contents)
+
+### ssl:set_protocols
+
+**syntax**: *bitmask, err = ssl:set_protocols(protocol, ...)*
+
+Set avaialable protocols for handshake, this is a convenient function that
+calls [ssl:set_options](#sslset_options) and [ssl:clear_options](#sslclear_options) to
+set appropriate options.
+
+Returns the options of current session in bitmask.
+
+This function should be called before SSL handshake; for server this means this function
+is only effective in `client_hello_by_lua` phase.
+
+```lua
+assert(ssl:set_protocols("TLSv1.1", "TLSv1.2"))
+-- same as
+assert(ssl:set_options(ssl.SSL_OP_NO_SSL_MASK))
+assert(ssl:clear_options(ssl.SSL_OP_NO_TLSv1_1, ssl.SSL_OP_NO_TLSv1_2))
+```
 
 [Back to TOC](#table-of-contents)
 
@@ -3778,6 +3986,15 @@ Wraps the `SSL_CTX*` instance from current downstream request.
 
 Wraps the `SSL_CTX*` instance from a TCP cosocket, the cosocket must have already
 been called `sslhandshake`.
+
+[Back to TOC](#table-of-contents)
+
+### ssl_ctx:set_alpns
+
+**syntax**: *ok, err = ssl_ctx:set_alpns(alpn, ...)*
+
+Set the ALPN list to be negotiated with peer. Each `alpn` is the plaintext
+literal for the protocol, like `"h2"`.
 
 [Back to TOC](#table-of-contents)
 

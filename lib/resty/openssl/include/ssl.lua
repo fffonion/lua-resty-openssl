@@ -2,6 +2,7 @@ local ffi = require "ffi"
 
 require "resty.openssl.include.ossl_typ"
 require "resty.openssl.include.stack"
+local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 
 ffi.cdef [[
@@ -66,5 +67,11 @@ if OPENSSL_30 then
 else
    ffi.cdef [[
     X509 *SSL_get_peer_certificate(const SSL *ssl);
+  ]]
+end
+
+if OPENSSL_10 then
+  ffi.cdef [[
+    long SSL_ctrl(SSL *ssl, int cmd, long larg, void *parg);
   ]]
 end

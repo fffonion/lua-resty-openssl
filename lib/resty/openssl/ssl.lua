@@ -10,6 +10,7 @@ local x509_lib = require("resty.openssl.x509")
 local chain_lib = require("resty.openssl.x509.chain")
 local stack_lib = require("resty.openssl.stack")
 local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
+local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local format_error = require("resty.openssl.err").format_error
 
 local _M = {
@@ -188,7 +189,7 @@ function _M:get_cipher_name()
 
   cipher = C.SSL_CIPHER_get_name(cipher)
   if cipher == nil then
-    return nil, format_error("ssl:get_current_cipher: SSL_CIPHER_get_name")
+    return nil, format_error("ssl:get_cipher_name: SSL_CIPHER_get_name")
   end
   return ffi_str(cipher)
 end
@@ -242,38 +243,6 @@ function _M:free_verify_cb()
   end
 end
 
-function _M:set_options(...)
-  local bitmask
-  for _, opt in ipairs({...}) do
-    bitmask = C.SSL_set_options(self.ctx, opt)
-  end
-  return tonumber(bitmask)
-end
-
-function _M:get_options(readable)
-  local bitmask = C.SSL_get_options(self.ctx)
-  if not readable then
-    return tonumber(bitmask)
-  end
-
-  local ret = {}
-  for k, v in pairs(ops) do
-    if bit.band(v, bitmask) > 0 then
-      table.insert(ret, k)
-    end
-  end
-
-  return ret
-end
-
-function _M:clear_options(...)
-  local bitmask
-  for _, opt in ipairs({...}) do
-    bitmask = C.SSL_clear_options(self.ctx, opt)
-  end
-  return tonumber(bitmask)
-end
-
 function _M:add_client_ca(x509)
   if not self._server then
     return false, "ssl:add_client_ca is only supported on server side"
@@ -288,6 +257,97 @@ function _M:add_client_ca(x509)
   end
 
   return true
+end
+
+function _M:set_options(...)
+  local bitmask = 0
+  for _, opt in ipairs({...}) do
+    bitmask = bit.bor(bitmask, opt)
+  end
+
+  if OPENSSL_10 then
+    bitmask = C.SSL_ctrl(self.ctx, 32, bitmask, nil) -- SSL_CTRL_OPTIONS
+  else
+    bitmask = C.SSL_set_options(self.ctx, bitmask)
+  end
+
+  return tonumber(bitmask)
+end
+
+function _M:get_options(readable)
+  local bitmask
+  if OPENSSL_10 then
+    bitmask = C.SSL_ctrl(self.ctx, 32, 0, nil) -- SSL_CTRL_OPTIONS
+  else
+    bitmask = C.SSL_get_options(self.ctx)
+  end
+
+  if not readable then
+    return tonumber(bitmask)
+  end
+
+  local ret = {}
+  for k, v in pairs(ops) do
+    if bit.band(v, bitmask) > 0 then
+      table.insert(ret, k)
+    end
+  end
+  table.sort(ret)
+
+  return ret
+end
+
+function _M:clear_options(...)
+  local bitmask = 0
+  for _, opt in ipairs({...}) do
+    bitmask = bit.bor(bitmask, opt)
+  end
+
+  if OPENSSL_10 then
+    bitmask = C.SSL_ctrl(self.ctx, 77, bitmask, nil) -- SSL_CTRL_CLEAR_OPTIONS
+  else
+    bitmask = C.SSL_clear_options(self.ctx, bitmask)
+  end
+
+  return tonumber(bitmask)
+end
+
+local valid_protocols = {
+  ["SSLv3"] = ops.SSL_OP_NO_SSLv3,
+  ["TLSv1"] = ops.SSL_OP_NO_TLSv1,
+  ["TLSv1.1"] = ops.SSL_OP_NO_TLSv1_1,
+  ["TLSv1.2"] = ops.SSL_OP_NO_TLSv1_2,
+  ["TLSv1.3"] = ops.SSL_OP_NO_TLSv1_3,
+}
+local any_tlsv1 = ops.SSL_OP_NO_TLSv1_1 + ops.SSL_OP_NO_TLSv1_2 + ops.SSL_OP_NO_TLSv1_3
+
+function _M:set_protocols(...)
+  local bitmask = 0
+  for _, prot in ipairs({...}) do
+    local b = valid_protocols[prot]
+    if not b then
+      return nil, "\"" .. prot .. "\" is not a valid protocol"
+    end
+    bitmask = bit.bor(bitmask, b)
+  end
+
+  if bit.band(bitmask, any_tlsv1) > 0 then
+    bitmask = bit.bor(bitmask, ops.SSL_OP_NO_TLSv1)
+  end
+
+  -- first disable all protocols
+  if OPENSSL_10 then
+    C.SSL_ctrl(self.ctx, 32, ops.SSL_OP_NO_SSL_MASK, nil) -- SSL_CTRL_OPTIONS
+  else
+    C.SSL_set_options(self.ctx, ops.SSL_OP_NO_SSL_MASK)
+  end
+  
+  -- then enable selected protocols
+  if OPENSSL_10 then
+    return tonumber(C.SSL_clear_options(self.ctx, bitmask))
+  else
+    return tonumber(C.SSL_ctrl(self.ctx, 77, bitmask, nil)) -- SSL_CTRL_CLEAR_OPTIONS)
+  end
 end
 
 return _M
