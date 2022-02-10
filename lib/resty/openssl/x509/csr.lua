@@ -109,8 +109,6 @@ function _M.new(csr, fmt, properties)
           if code ~= 1 then
               return nil, "x509.csr.new: BIO_ctrl() failed: " .. code
           end
-          -- clear errors occur when trying
-          C.ERR_clear_error()
         end
       end
       if fmt == "DER" or fmt == "*" then
@@ -122,6 +120,8 @@ function _M.new(csr, fmt, properties)
     if ctx == nil then
       return nil, format_error("x509.csr.new")
     end
+    -- clear errors occur when trying
+    C.ERR_clear_error()
   else
     return nil, "x509.csr.new: expect nil or a string at #1"
   end

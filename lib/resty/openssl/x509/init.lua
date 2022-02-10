@@ -144,8 +144,6 @@ function _M.new(cert, fmt, properties)
             C.BIO_free(bio)
             return nil, "x509.new: BIO_ctrl() failed: " .. code
           end
-          -- clear errors occur when trying
-          C.ERR_clear_error()
         end
       end
       if fmt == "DER" or fmt == "*" then
@@ -157,6 +155,8 @@ function _M.new(cert, fmt, properties)
     if ctx == nil then
       return nil, format_error("x509.new")
     end
+    -- clear errors occur when trying
+    C.ERR_clear_error()
     ffi_gc(ctx, C.X509_free)
   elseif type(cert) == 'cdata' then
     if ffi.istype(x509_ptr_ct, cert) then
