@@ -3778,7 +3778,7 @@ Set the cipher suites string used in handshake. Use `ssl:set_ciphersuites
 for TLSv1.3 and `ssl:set_cipher_list` for lower.
 
 This function should be called before SSL handshake; for server this means this function
-is only effective in `cert_by_lua` or `client_hello_by_lua` phases.
+is only effective in `ssl_certificate_by` or `ssl_client_hello_by` phases.
 
 [Back to TOC](#table-of-contents)
 
@@ -3820,7 +3820,7 @@ Get the timeout value for current session in seconds.
 
 **syntax**: *ok, err = ssl:set_verify(mode)*
 
-Set the verify mode in current session. Avaiable modes are:
+Set the verify mode in current session. Available modes are:
 
 ```
   ssl.SSL_VERIFY_NONE                 = 0x00,
@@ -3831,7 +3831,7 @@ Set the verify mode in current session. Avaiable modes are:
 ```
 
 This function should be called before SSL handshake; for server this means this function
-is only effective in `cert_by_lua` or `client_hello_by_lua` phases.
+is only effective in `ssl_certificate_by` or `ssl_client_hello_by` phases.
 
 [Back to TOC](#table-of-contents)
 
@@ -3844,7 +3844,7 @@ when requesting a client certificate. `x509` is a [x509](#resty.openssl.x509)
 instance. This function doesn't affect the verification result of client certificate.
 
 This function should be called before SSL handshake; for server this means this function
-is only effective in `cert_by_lua` or `client_hello_by_lua` phases.
+is only effective in `ssl_certificate_by` or `ssl_client_hello_by` phases.
 
 [Back to TOC](#table-of-contents)
 
@@ -3852,7 +3852,7 @@ is only effective in `cert_by_lua` or `client_hello_by_lua` phases.
 
 **syntax**: *bitmask, err = ssl:set_options(option, ...)*
 
-Set one or more options in current session. Avaiable options are:
+Set one or more options in current session. Available options are:
 
 <details>
 <summary>SSL options</summary>
@@ -3903,7 +3903,7 @@ assert(ssl:set_options(ssl.SSL_OP_NO_TLSv1_1, ssl.SSL_OP_NO_TLSv1_2))
 Returns the options of current session in bitmask.
 
 This function should be called before SSL handshake; for server this means this function
-is only effective in `client_hello_by_lua` phase.
+is only effective in `ssl_client_hello_by` phase.
 
 
 [Back to TOC](#table-of-contents)
@@ -3923,7 +3923,7 @@ a sorted Lua table containing literals for all options.
 **syntax**: *bitmask, err = ssl:clear_options(option, ...)*
 
 Clear one or more options in current session.
-Avaiable options are same as that in [ssl:set_options](#sslset_options).
+Available options are same as that in [ssl:set_options](#sslset_options).
 
 Multiple options can be passed in seperatedly, or in a bitwise or bitmask.
 
@@ -3936,7 +3936,7 @@ assert(ssl:clear_options(ssl.SSL_OP_NO_TLSv1_1, ssl.SSL_OP_NO_TLSv1_2))
 Returns the options of current session in bitmask.
 
 This function should be called before SSL handshake; for server this means this function
-is only effective in `client_hello_by_lua` phase.
+is only effective in `ssl_client_hello_by` phase.
 
 [Back to TOC](#table-of-contents)
 
@@ -3951,7 +3951,7 @@ set appropriate options.
 Returns the options of current session in bitmask.
 
 This function should be called before SSL handshake; for server this means this function
-is only effective in `client_hello_by_lua` phase.
+is only effective in `ssl_client_hello_by` phase.
 
 ```lua
 assert(ssl:set_protocols("TLSv1.1", "TLSv1.2"))
