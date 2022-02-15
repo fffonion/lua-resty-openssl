@@ -479,15 +479,15 @@ reading. It can be used to replace `ENGINE` in prior 3.0 world.
 
 The context is currently effective following modules:
 
-- [cipher](#resty.openssl.cipher)
-- [digest](#resty.openssl.digest)
-- [kdf](#resty.openssl.kdf)
-- [mac](#resty.openssl.mac)
+- [cipher](#restyopensslcipher)
+- [digest](#restyopenssldigest)
+- [kdf](#restyopensslkdf)
+- [mac](#restyopensslmac)
 - [pkcs12.encode](#pkcs12encode)
-- [pkey](#resty.openssl.pkey)
-- [provider](#resty.openssl.provider)
-- [rand](#resty.openssl.rand)
-- [x509](#resty.openssl.x509), [x509.csr](#resty.openssl.x509.csr), [x509.crl](#resty.openssl.x509.crl) and some [x509.store](#resty.openssl.x509.store) functions
+- [pkey](#restyopensslpkey)
+- [provider](#restyopensslprovider)
+- [rand](#restyopensslrand)
+- [x509](#restyopensslx509), [x509.csr](#restyopensslx509csr), [x509.crl](#restyopensslx509crl) and some [x509.store](#restyopensslx509store) functions
 
 This module is only available on OpenSSL 3.0.
  
@@ -503,6 +503,17 @@ request's context. `conf_file` can optionally specify an OpenSSL conf file
 to create the context.
 
 The created context is automatically freed with its given lifecycle.
+
+```lua
+-- initialize a AES cipher instance from given provider implementation only
+-- for current request, without interfering other part of code
+-- or future requests from using the same algorithm.
+assert(require("resty.openssl.ctx").new(true))
+local p = assert(require("resty.openssl.provider").load("myprovider"))
+local c = require("resty.openssl.cipher").new("aes256")
+print(c:encrypt(string.rep("0", 32), string.rep("0", 16), "🦢"))
+-- don't need to release provider and ctx, they are GC'ed automatically
+```
 
 [Back to TOC](#table-of-contents)
 
