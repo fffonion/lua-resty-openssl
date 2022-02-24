@@ -648,8 +648,10 @@ Load provider with `name`. If `try` is set to true, OpenSSL will not disable the
 fall-back providers if the provider cannot be loaded and initialized. If the provider
 loads successfully, however, the fall-back providers are disabled.
 
-For now this functions loads provider into the default context, meaning it will affect
-other applications in the same process using the default context as well.
+By default this functions loads provider into the default context, meaning it will affect
+other applications in the same process using the default context as well. If such behaviour
+is not desired, consider using [ctx](#restyopensslctx) to load
+provider only to limited scope.
 
 [Back to TOC](#table-of-contents)
 
