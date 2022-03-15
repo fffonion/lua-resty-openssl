@@ -412,4 +412,62 @@ function _M.list_kdf_algorithms()
   return list_provided("EVP_KDF")
 end
 
+local valid_ssl_protocols = {
+  ["SSLv3"]   = 0x0300,
+  ["TLSv1"]   = 0x0301,
+  ["TLSv1.1"] = 0x0302,
+  ["TLSv1.2"] = 0x0303,
+  ["TLSv1.3"] = 0x0304,
+}
+
+function _M.list_ssl_ciphers(cipher_list, ciphersuites, protocol)
+  local ssl_lib = require("resty.openssl.ssl")
+  local ssl_macro = require("resty.openssl.include.ssl")
+
+  if protocol then
+    if not valid_ssl_protocols[protocol] then
+      return nil, "unknown protocol \"" .. protocol .. "\""
+    end
+    protocol = valid_ssl_protocols[protocol]
+  end
+
+  local ssl_ctx = C.SSL_CTX_new(C.TLS_server_method())
+  if ssl_ctx == nil then
+    return nil, format_error("SSL_CTX_new")
+  end
+  ffi.gc(ssl_ctx, C.SSL_CTX_free)
+
+  local ssl = C.SSL_new(ssl_ctx)
+  if ssl == nil then
+    return nil, format_error("SSL_new")
+  end
+  ffi.gc(ssl, C.SSL_free)
+
+  if protocol then
+    if ssl_macro.SSL_set_min_proto_version(ssl, protocol) == 0 or
+    ssl_macro.SSL_set_max_proto_version(ssl, protocol) == 0 then
+        return nil, format_error("SSL_set_min/max_proto_version")
+    end
+  end
+
+  ssl = { ctx = ssl }
+
+  local ok, err
+  if cipher_list then
+    ok, err = ssl_lib.set_cipher_list(ssl, cipher_list)
+    if not ok then
+      return nil, err
+    end
+  end
+
+  if ciphersuites then
+    ok, err = ssl_lib.set_ciphersuites(ssl, ciphersuites)
+    if not ok then
+      return nil, err
+    end
+  end
+
+  return ssl_lib.get_ciphers(ssl)
+end
+
 return _M

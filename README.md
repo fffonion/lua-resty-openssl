@@ -25,6 +25,7 @@ Table of Contents
     + [openssl.list_digest_algorithms](#openssllist_digest_algorithms)
     + [openssl.list_mac_algorithms](#openssllist_mac_algorithms)
     + [openssl.list_kdf_algorithms](#openssllist_kdf_algorithms)
+    + [openssl.list_ssl_ciphers](#openssllist_ssl_ciphers)
   * [resty.openssl.ctx](#restyopensslctx)
     + [ctx.new](#ctxnew)
     + [ctx.free](#ctxfree)
@@ -476,6 +477,23 @@ Return available MAC algorithms in an array.
 **syntax**: *ret = openssl.list_kdf_algorithms()*
 
 Return available KDF algorithms in an array.
+
+[Back to TOC](#table-of-contents)
+
+### openssl.list_ssl_ciphers
+
+**syntax**: *cipher_string, err = openssl.list_ssl_ciphers(cipher_list?, ciphersuites?, protocol?)*
+
+Return default SSL ciphers as a string. `cipher_list` (prior TLSv1.3) and
+`ciphersuites` (TLSv1.3) can be used to expand the cipher settings matches
+`protocol`.
+
+```lua
+openssl.list_ssl_ciphers()
+openssl.list_ssl_ciphers("ECDHE-ECDSA-AES128-SHA")
+openssl.list_ssl_ciphers("ECDHE-ECDSA-AES128-SHA", nil, "TLSv1.2")
+openssl.list_ssl_ciphers("ECDHE-ECDSA-AES128-SHA", "TLS_CHACHA20_POLY1305_SHA256", "TLSv1.3")
+```
 
 [Back to TOC](#table-of-contents)
 
