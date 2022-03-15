@@ -5,6 +5,7 @@ local ffi_cast = ffi.cast
 
 require "resty.openssl.include.x509"
 require "resty.openssl.include.x509v3"
+require "resty.openssl.include.err"
 local altname_lib = require "resty.openssl.x509.altname"
 local stack_lib = require "resty.openssl.stack"
 
@@ -86,6 +87,8 @@ function _M:add(nid, typ, value)
   local asn1 = C.OBJ_txt2obj(nid, 0)
   if asn1 == nil then
     C.ACCESS_DESCRIPTION_free(ad)
+    -- clean up error occurs during OBJ_txt2*
+    C.ERR_clear_error()
     return nil, "invalid NID text " .. (nid or "nil")
   end
 

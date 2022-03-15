@@ -4,6 +4,7 @@ local ffi_gc = ffi.gc
 local ffi_str = ffi.string
 
 require "resty.openssl.include.x509.name"
+require "resty.openssl.include.err"
 local objects_lib = require "resty.openssl.objects"
 local asn1_macro = require "resty.openssl.include.asn1"
 
@@ -81,6 +82,8 @@ end
 function _M:add(nid, txt)
   local asn1 = C.OBJ_txt2obj(nid, 0)
   if asn1 == nil then
+    -- clean up error occurs during OBJ_txt2*
+    C.ERR_clear_error()
     return nil, "x509.name:add: invalid NID text " .. (nid or "nil")
   end
 
@@ -97,6 +100,8 @@ end
 function _M:find(nid, last_pos)
   local asn1 = C.OBJ_txt2obj(nid, 0)
   if asn1 == nil then
+    -- clean up error occurs during OBJ_txt2*
+    C.ERR_clear_error()
     return nil, nil, "x509.name:find: invalid NID text " .. (nid or "nil")
   end
   -- make 1-index array to 0-index
