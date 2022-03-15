@@ -2,6 +2,18 @@
 ## [Unreleased]
 
 
+<a name="0.8.6"></a>
+## [0.8.6] - 2022-03-16
+### bug fixes
+- **obj:** clean up stale error occured from OBJ_txt2* [219a2f0](https://github.com/fffonion/lua-resty-openssl/commit/219a2f0cace8480800394d6e88b188138f2650a1)
+- **pkey:** clear_error in passphrase type mismatch [8577422](https://github.com/fffonion/lua-resty-openssl/commit/857742273629d4e801a2d862644213fe5fdbf02a)
+- **x509.\*:** move clear_error to last when loading [369eea1](https://github.com/fffonion/lua-resty-openssl/commit/369eea1e4a1a185055296e07f272a3e470442916)
+
+### features
+- **openssl:** add function to list SSL ciphers [9861af1](https://github.com/fffonion/lua-resty-openssl/commit/9861af1a074f74f529e341049ada29cbf7d57a48)
+- **ssl:** refine various handshake controlling functions [30bf41e](https://github.com/fffonion/lua-resty-openssl/commit/30bf41e958775f60afff1976fe731978c816dd25)
+
+
 <a name="0.8.5"></a>
 ## [0.8.5] - 2022-02-02
 ### bug fixes
@@ -384,7 +396,8 @@
 - **x509:** export pubkey [ede4f81](https://github.com/fffonion/lua-resty-openssl/commit/ede4f817cb0fe092ad6f9ab5d6ecdcde864a9fd8)
 
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.5...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.6...HEAD
+[0.8.6]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.5...0.8.6
 [0.8.5]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.4...0.8.5
 [0.8.4]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.3...0.8.4
 [0.8.3]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.2...0.8.3
