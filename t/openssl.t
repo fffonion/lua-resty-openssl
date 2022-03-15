@@ -161,3 +161,34 @@ false
 \[.+HKDF @ default.+\]
 --- no_error_log
 [error]
+
+=== TEST 7: List SSL cipher
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local version = require("resty.openssl.version")
+            if version.OPENSSL_10 or (version.OPENSSL_11 and not version.OPENSSL_111) then
+                ngx.say("ECDHE-ECDSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA")
+                ngx.say("ECDHE-ECDSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA")
+                ngx.say("ECDHE-ECDSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA")
+                ngx.say("ECDHE-ECDSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA")
+                ngx.exit(0)
+            end
+            local version = require("resty.openssl.version")
+            local openssl = require("resty.openssl")
+            ngx.say(openssl.list_ssl_ciphers())
+            ngx.say(openssl.list_ssl_ciphers("ECDHE-ECDSA-AES128-SHA"))
+            ngx.say(openssl.list_ssl_ciphers("ECDHE-ECDSA-AES128-SHA", nil, "TLSv1.2"))
+            ngx.say(openssl.list_ssl_ciphers("ECDHE-ECDSA-AES128-SHA", nil, "TLSv1.3"))
+        }
+    }
+--- request
+    GET /t
+--- response_body_like
+.+:.+
+.*ECDHE-ECDSA-AES128-SHA
+.*ECDHE-ECDSA-AES128-SHA
+.*ECDHE-ECDSA-AES128-SHA
+--- no_error_log
+[error]

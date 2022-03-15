@@ -1,13 +1,16 @@
 local ffi = require "ffi"
+local C = ffi.C
 
 require "resty.openssl.include.ossl_typ"
 require "resty.openssl.include.stack"
-local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
+local BORINGSSL = require("resty.openssl.version").BORINGSSL
 
 ffi.cdef [[
   // SSL_METHOD
   typedef struct ssl_method_st SSL_METHOD;
+  const SSL_METHOD *TLS_method(void);
+  const SSL_METHOD *TLS_server_method(void);
 
   // SSL_CIPHER
   typedef struct ssl_cipher_st SSL_CIPHER;
@@ -58,6 +61,8 @@ ffi.cdef [[
                      int (*verify_callback)(int, X509_STORE_CTX *));
 
   int SSL_add_client_CA(SSL *ssl, X509 *cacert);
+
+  long SSL_ctrl(SSL *ssl, int cmd, long larg, void *parg);
 ]]
 
 if OPENSSL_30 then
@@ -65,13 +70,44 @@ if OPENSSL_30 then
     X509 *SSL_get1_peer_certificate(const SSL *ssl);
   ]]
 else
-   ffi.cdef [[
+  ffi.cdef [[
     X509 *SSL_get_peer_certificate(const SSL *ssl);
   ]]
 end
 
-if OPENSSL_10 then
+if BORINGSSL then
   ffi.cdef [[
-    long SSL_ctrl(SSL *ssl, int cmd, long larg, void *parg);
+    int SSL_set_min_proto_version(SSL *ssl, int version);
+    int SSL_set_max_proto_version(SSL *ssl, int version);
   ]]
 end
+
+local SSL_CTRL_SET_MIN_PROTO_VERSION = 123
+local SSL_CTRL_SET_MAX_PROTO_VERSION = 124
+
+local SSL_set_min_proto_version
+if BORINGSSL then
+  SSL_set_min_proto_version = function(ctx, version)
+    return C.SSL_set_min_proto_version(ctx, version)
+  end
+else
+  SSL_set_min_proto_version = function(ctx, version)
+    return C.SSL_ctrl(ctx, SSL_CTRL_SET_MIN_PROTO_VERSION, version, nil)
+  end
+end
+
+local SSL_set_max_proto_version
+if BORINGSSL then
+  SSL_set_max_proto_version = function(ctx, version)
+    return C.SSL_set_max_proto_version(ctx, version)
+  end
+else
+  SSL_set_max_proto_version = function(ctx, version)
+    return C.SSL_ctrl(ctx, SSL_CTRL_SET_MAX_PROTO_VERSION, version, nil)
+  end
+end
+
+return {
+  SSL_set_min_proto_version = SSL_set_min_proto_version,
+  SSL_set_max_proto_version = SSL_set_max_proto_version,
+}
