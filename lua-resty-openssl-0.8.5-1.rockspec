@@ -34,6 +34,7 @@ build = {
       ["resty.openssl.include.crypto"] = "lib/resty/openssl/include/crypto.lua",
       ["resty.openssl.include.dh"] = "lib/resty/openssl/include/dh.lua",
       ["resty.openssl.include.ec"] = "lib/resty/openssl/include/ec.lua",
+      ["resty.openssl.include.err"] = "lib/resty/openssl/include/err.lua",
       ["resty.openssl.include.evp"] = "lib/resty/openssl/include/evp.lua",
       ["resty.openssl.include.evp.cipher"] = "lib/resty/openssl/include/evp/cipher.lua",
       ["resty.openssl.include.evp.kdf"] = "lib/resty/openssl/include/evp/kdf.lua",

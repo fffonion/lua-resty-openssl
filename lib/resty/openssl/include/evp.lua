@@ -3,6 +3,7 @@ local C = ffi.C
 local bit = require("bit")
 
 require "resty.openssl.include.ossl_typ"
+require "resty.openssl.include.err"
 require "resty.openssl.include.objects"
 local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 local BORINGSSL = require("resty.openssl.version").BORINGSSL
@@ -94,6 +95,9 @@ local _M = {
   EVP_PKEY_CTRL_SCRYPT_P            = EVP_PKEY_ALG_CTRL + 12,
   EVP_PKEY_CTRL_SCRYPT_MAXMEM_BYTES = EVP_PKEY_ALG_CTRL + 13,
 }
+
+-- clean up error occurs during OBJ_txt2*
+C.ERR_clear_error()
 
 _M.ecx_curves = {
   Ed25519 = _M.EVP_PKEY_ED25519,
