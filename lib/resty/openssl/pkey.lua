@@ -375,7 +375,7 @@ local load_key_try_funcs = {} do
   end
 end
 
-local function tostring(self, is_priv, fmt)
+local function __tostring(self, is_priv, fmt)
   if fmt == "JWK" then
     return jwk_lib.dump_jwk(self, is_priv)
   end
@@ -396,7 +396,7 @@ local function tostring(self, is_priv, fmt)
 end
 
 local _M = {}
-local mt = { __index = _M, __tostring = tostring }
+local mt = { __index = _M, __tostring = __tostring }
 
 local empty_table = {}
 local evp_pkey_ptr_ct = ffi.typeof('EVP_PKEY*')
@@ -585,7 +585,7 @@ local function asymmetric_routine(self, s, op, padding)
     if padding then
       padding = tonumber(padding)
       if not padding then
-        return nil, "invalid padding: " .. tostring(padding)
+        return nil, "invalid padding: " .. __tostring(padding)
       end
     else
       padding = rsa_macro.paddings.RSA_PKCS1_PADDING
@@ -833,7 +833,7 @@ function _M:tostring(pub_or_priv, fmt)
   if err then
     return nil, "pkey:tostring: " .. err
   end
-  return tostring(self, is_priv, fmt)
+  return __tostring(self, is_priv, fmt)
 end
 
 function _M:to_PEM(pub_or_priv)

@@ -91,7 +91,7 @@ elseif OPENSSL_10 then
   accessors.get_serial_number = C.X509_get_serialNumber -- returns internal ptr, we convert to bn
 end
 
-local function tostring(self, fmt)
+local function __tostring(self, fmt)
   if not fmt or fmt == 'PEM' then
     return util.read_using_bio(C.PEM_write_bio_X509, self.ctx)
   elseif fmt == 'DER' then
@@ -102,7 +102,7 @@ local function tostring(self, fmt)
 end
 
 local _M = {}
-local mt = { __index = _M, __tostring = tostring }
+local mt = { __index = _M, __tostring = __tostring }
 
 
 local x509_ptr_ct = ffi.typeof("X509*")
@@ -199,11 +199,11 @@ function _M.dup(ctx)
 end
 
 function _M:tostring(fmt)
-  return tostring(self, fmt)
+  return __tostring(self, fmt)
 end
 
 function _M:to_PEM()
-  return tostring(self, "PEM")
+  return __tostring(self, "PEM")
 end
 
 function _M:set_lifetime(not_before, not_after)
