@@ -174,6 +174,7 @@ Table of Contents
     + [crl.istype](#crlistype)
     + [crl:get_\*, crl:set_\*](#crlget_-crlset_)
     + [crl:get_signature_name, crl:get_signature_nid](#crlget_signature_name-crlget_signature_nid)
+    + [crl:get_by_serial](#crlget_by_serial)
     + [crl:get_extension](#crlget_extension)
     + [crl:add_extension](#crladd_extension)
     + [crl:set_extension](#crlset_extension)
@@ -184,7 +185,6 @@ Table of Contents
     + [crl:verify](#crlverify)
     + [crl:tostring](#crltostring)
     + [crl:text](#crltext)
-    + [crl:get_by_serial](#crlget_by_serial)
     + [crl:to_PEM](#crlto_pem)
     + [crl:__metamethods](#crl__metamethods)
   * [resty.openssl.x509.name](#restyopensslx509name)
@@ -2850,6 +2850,25 @@ Return the [NID] or the short name (SN) of the signature of the CRL.
 
 [Back to TOC](#table-of-contents)
 
+### crl:get_by_serial
+
+**syntax**: *found_revoked, err = crl:get_by_serial(serial)*
+
+Find if given `serial` is in the CRL, `serial` can be [bn](#resty.openssl.bn) instance, or
+a hexadecimal string. Returns a table if found where:
+
+```
+{
+  serial_number: serial number of the revoked cert in hexadecimal string,
+  revoked_date: revoked date of the cert as unix timestamp
+}
+```
+
+Returns `false` if not found; specially if a serial number is removed from CRL, then
+`false, "not revoked (removeFromCRL)"` is returned.
+
+[Back to TOC](#table-of-contents)
+
 ### crl:get_extension
 
 **syntax**: *extension, pos, err = crl:get_extension(nid_or_txt, last_pos?)*
@@ -2949,25 +2968,6 @@ The first argument can be a choice of `PEM` or `DER`; when omitted, this functio
 **syntax**: *str, err = crl:text()*
 
 Outputs CRL in a human-readable format.
-
-[Back to TOC](#table-of-contents)
-
-### crl:get_by_serial
-
-**syntax**: *found_revoked, err = crl:get_by_serial(serial)*
-
-Find if given `serial` is in the CRL, `serial` can be [bn](#resty.openssl.bn) instance, or
-a hexadecimal string. Returns a table if found where:
-
-```
-{
-  serial_number: serial number of the revoked cert in hexadecimal string,
-  revoked_date: revoked date of the cert as unix timestamp
-}
-```
-
-Returns `false` if not found; specially if a serial number is removed from CRL, then
-`false, "not revoked (removeFromCRL)"` is returned.
 
 [Back to TOC](#table-of-contents)
 
