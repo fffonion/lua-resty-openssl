@@ -61,7 +61,7 @@ elseif OPENSSL_10 or BORINGSSL_110 then
   end
 end
 
-local function tostring(self, fmt)
+local function __tostring(self, fmt)
   if not fmt or fmt == 'PEM' then
     return util.read_using_bio(C.PEM_write_bio_X509_REQ, self.ctx)
   elseif fmt == 'DER' then
@@ -72,7 +72,7 @@ local function tostring(self, fmt)
 end
 
 local _M = {}
-local mt = { __index = _M, __tostring = tostring }
+local mt = { __index = _M, __tostring = __tostring }
 
 local x509_req_ptr_ct = ffi.typeof("X509_REQ*")
 
@@ -139,11 +139,11 @@ function _M.istype(l)
 end
 
 function _M:tostring(fmt)
-  return tostring(self, fmt)
+  return __tostring(self, fmt)
 end
 
 function _M:to_PEM()
-  return tostring(self, "PEM")
+  return __tostring(self, "PEM")
 end
 
 function _M:check_private_key(key)
