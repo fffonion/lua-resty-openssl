@@ -100,11 +100,8 @@ __DATA__
             local revoked =  myassert(require("resty.openssl.x509.revoked"))
             local c = myassert(require("resty.openssl.x509.crl").new(f))
             local toset = ngx.time()
-            local r, err = revoked.new(1234, toset, 1)
-            if err then
-              ngx.say(err)
-              return
-            end
+            local r = myassert(revoked.new(1234, toset, 1))
+ 
             if not revoked.istype(r) then
              ngx.say("it should be instance of revoked")
              return
@@ -161,7 +158,7 @@ __DATA__
             local revoked =  myassert(require("resty.openssl.x509.revoked"))
             local c = myassert(require("resty.openssl.x509.crl").new(f))
             local toset = ngx.time()
-            local r, err = revoked.new(1234, toset, 1)
+            local r = myassert(revoked.new(1234, toset, 1))
             c:add_revoked(r)
 
             local d = myassert(require("resty.openssl.digest").new("SHA256"))
@@ -180,10 +177,98 @@ __DATA__
 "ok"
 --- no_error_log
 [error]
+
+=== TEST 7: x509.crl:text
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/TrustAsiaEVTLSProCAG2.crl"):read("*a")
+            local c = myassert(require("resty.openssl.x509.crl").new(f))
+            ngx.say(myassert(c:text()))
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+"Certificate Revocation List.+Revoked Certificates.+"
+--- no_error_log
+[error]
+
+=== TEST 8: x509.crl metamethods
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            if require("resty.openssl.version").OPENSSL_10 then
+                ngx.say("09159859CAC0C90203BB34C5A012C2A3, 1577753344\n09159859CAC0C90203BB34C5A012C2A3, 1577753344\n2, 2")
+                ngx.say("09159859CAC0C90203BB34C5A012C2A3, 1577753344\n04D2, 1511122233")
+                ngx.exit(0)
+            end
+            local f = io.open("t/fixtures/TrustAsiaEVTLSProCAG2.crl"):read("*a")
+            local c = myassert(require("resty.openssl.x509.crl").new(f))
+            local s = myassert(c:index(1))
+            ngx.say(s.serial_number:upper(), ", ", s.revocation_date)
+            s = c[1]
+            ngx.say(s.serial_number:upper(), ", ", s.revocation_date)
+
+            local revoked =  myassert(require("resty.openssl.x509.revoked"))
+            local r = myassert(revoked.new(0x04D2, 1511122233, 1))
+            myassert(c:add_revoked(r))
+
+            ngx.say(#c, ", ", c:count())
+            for _, rr in ipairs(c) do
+                ngx.say(rr.serial_number:upper(), ", ", rr.revocation_date)
+            end
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+"09159859CAC0C90203BB34C5A012C2A3, 1577753344
+09159859CAC0C90203BB34C5A012C2A3, 1577753344
+2, 2
+09159859CAC0C90203BB34C5A012C2A3, 1577753344
+04D2, 1511122233
+"
+--- no_error_log
+[error]
+
+=== TEST 9: x509.crl get_by_serial
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            if require("resty.openssl.version").OPENSSL_10 then
+                ngx.say("09159859CAC0C90203BB34C5A012C2A3, 1577753344\n09159859CAC0C90203BB34C5A012C2A3, 1577753344\ntruetrue")
+                ngx.exit(0)
+            end
+
+            local f = io.open("t/fixtures/TrustAsiaEVTLSProCAG2.crl"):read("*a")
+            local c = myassert(require("resty.openssl.x509.crl").new(f))
+            local s = myassert(c:get_by_serial("09159859CAC0C90203BB34C5A012C2A3"))
+            ngx.say(s.serial_number:upper(), ", ", s.revocation_date)
+            s = myassert(c:get_by_serial(require("resty.openssl.bn").from_hex("09159859CAC0C90203BB34C5A012C2A3")))
+            ngx.say(s.serial_number:upper(), ", ", s.revocation_date)
+
+            local nos, err = c:get_by_serial("111111")
+            ngx.say(nos == nil, err == nil)
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+"09159859CAC0C90203BB34C5A012C2A3, 1577753344
+09159859CAC0C90203BB34C5A012C2A3, 1577753344
+truetrue
+"
+--- no_error_log
+[error]
+
 # START AUTO GENERATED CODE
 
 
-=== TEST 7: x509.crl:get_issuer_name (AUTOGEN)
+=== TEST 10: x509.crl:get_issuer_name (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -203,7 +288,7 @@ __DATA__
 --- no_error_log
 [error]
 
-=== TEST 8: x509.crl:set_issuer_name (AUTOGEN)
+=== TEST 11: x509.crl:set_issuer_name (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -231,7 +316,7 @@ __DATA__
 --- no_error_log
 [error]
 
-=== TEST 9: x509.crl:get_last_update (AUTOGEN)
+=== TEST 12: x509.crl:get_last_update (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -250,7 +335,7 @@ __DATA__
 --- no_error_log
 [error]
 
-=== TEST 10: x509.crl:set_last_update (AUTOGEN)
+=== TEST 13: x509.crl:set_last_update (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -276,7 +361,7 @@ __DATA__
 --- no_error_log
 [error]
 
-=== TEST 11: x509.crl:get_next_update (AUTOGEN)
+=== TEST 14: x509.crl:get_next_update (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -295,7 +380,7 @@ __DATA__
 --- no_error_log
 [error]
 
-=== TEST 12: x509.crl:set_next_update (AUTOGEN)
+=== TEST 15: x509.crl:set_next_update (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -321,7 +406,7 @@ __DATA__
 --- no_error_log
 [error]
 
-=== TEST 13: x509.crl:get_version (AUTOGEN)
+=== TEST 16: x509.crl:get_version (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -340,7 +425,7 @@ __DATA__
 --- no_error_log
 [error]
 
-=== TEST 14: x509.crl:set_version (AUTOGEN)
+=== TEST 17: x509.crl:set_version (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -366,7 +451,7 @@ __DATA__
 --- no_error_log
 [error]
 
-=== TEST 16: x509.crl:get_get_signature_name (AUTOGEN)
+=== TEST 19: x509.crl:get_get_signature_name (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {

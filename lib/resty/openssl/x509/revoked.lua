@@ -10,7 +10,7 @@ local format_error = require("resty.openssl.err").format_error
 local _M = {}
 local mt = { __index = _M }
 
-local revoked_ptr_ct = ffi.typeof('X509_REVOKED*')
+local x509_revoked_ptr_ct = ffi.typeof('X509_REVOKED*')
 
 local NID_crl_reason = C.OBJ_txt2nid("CRLReason")
 assert(NID_crl_reason > 0)
@@ -102,7 +102,7 @@ end
 -- @tparam table Instance of revoked module
 -- @treturn boolean true if instance is instance of revoked module false otherwise
 function _M.istype(l)
-  return l and l.ctx and ffi.istype(revoked_ptr_ct, l.ctx)
+  return l and l.ctx and ffi.istype(x509_revoked_ptr_ct, l.ctx)
 end
 
 return _M

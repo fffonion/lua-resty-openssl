@@ -183,6 +183,9 @@ function _M.luaossl_compat()
     return _M.pkcs12.encode(tbl, passphrase)
   end
 
+  _M.crl.add = _M.crl.add_revoked
+  _M.crl.lookupSerial = _M.crl.get_by_serial
+
   for mod, tbl in pairs(_M) do
     if type(tbl) == 'table' then
 

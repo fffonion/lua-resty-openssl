@@ -183,7 +183,10 @@ Table of Contents
     + [crl:sign](#crlsign)
     + [crl:verify](#crlverify)
     + [crl:tostring](#crltostring)
+    + [crl:text](#crltext)
+    + [crl:get_by_serial](#crlget_by_serial)
     + [crl:to_PEM](#crlto_pem)
+    + [crl:__metamethods](#crl__metamethods)
   * [resty.openssl.x509.name](#restyopensslx509name)
     + [name.new](#namenew)
     + [name.dup](#namedup)
@@ -2941,11 +2944,73 @@ The first argument can be a choice of `PEM` or `DER`; when omitted, this functio
 
 [Back to TOC](#table-of-contents)
 
+### crl:text
+
+**syntax**: *str, err = crl:text()*
+
+Outputs CRL in a human-readable format.
+
+[Back to TOC](#table-of-contents)
+
+### crl:get_by_serial
+
+**syntax**: *found_revoked, err = crl:get_by_serial(serial)*
+
+Find if given `serial` is in the CRL, `serial` can be [bn](#resty.openssl.bn) instance, or
+a hexadecimal string. Returns a table if found where:
+
+```
+{
+  serial_number: serial number of the revoked cert in hexadecimal string,
+  revoked_date: revoked date of the cert as unix timestamp
+}
+```
+
+Returns `false` if not found; specially if a serial number is removed from CRL, then
+`false, "not revoked (removeFromCRL)"` is returned.
+
+[Back to TOC](#table-of-contents)
+
 ### crl:to_PEM
 
 **syntax**: *pem, err = crl:to_PEM()*
 
 Outputs the CRL in PEM-formatted text.
+
+[Back to TOC](#table-of-contents)
+
+### crl:__metamethods
+
+**syntax**: *for i, revoked in ipairs(crl)*
+
+**syntax**: *len = #crl*
+
+**syntax**: *revoked = crl[i]*
+
+Access the revoked list as it's a Lua table. Make sure your LuaJIT compiled
+with `-DLUAJIT_ENABLE_LUA52COMPAT` flag; otherwise use `all`, `each`, `index` and `count`
+instead.
+
+See also [functions for stack-like objects](#functions-for-stack-like-objects).
+
+Each returned object is a table where:
+
+```
+{
+  serial_number: serial number of the revoked cert in hexadecimal string,
+  revoked_date: revoked date of the cert as unix timestamp
+}
+```
+
+```lua
+local f = io.open("t/fixtures/TrustAsiaEVTLSProCAG2.crl"):read("*a")
+local crl = assert(require("resty.openssl.x509.crl").new(f))
+
+for _, obj in ipairs(crl) do
+  ngx.say(require("cjson").encode(obj))
+end
+-- outputs '{"revocation_date":1577753344,"serial_number":"09159859CAC0C90203BB34C5A012C2A3"}'
+```
 
 [Back to TOC](#table-of-contents)
 
