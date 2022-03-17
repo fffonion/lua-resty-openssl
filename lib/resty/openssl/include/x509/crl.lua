@@ -30,6 +30,18 @@ ffi.cdef [[
   int i2d_X509_CRL_bio(BIO *bp, X509_CRL *crl);
   X509_CRL *d2i_X509_CRL_bio(BIO *bp, X509_CRL **crl);
   int X509_CRL_add0_revoked(X509_CRL *crl, X509_REVOKED *rev);
+
+  int X509_CRL_print(BIO *bio, X509_CRL *crl);
+
+  int X509_CRL_get0_by_serial(X509_CRL *crl,
+                            X509_REVOKED **ret, ASN1_INTEGER *serial);
+  int X509_CRL_get0_by_cert(X509_CRL *crl, X509_REVOKED **ret, X509 *x);
+
+  //STACK_OF(X509_REVOKED)
+  OPENSSL_STACK *X509_CRL_get_REVOKED(X509_CRL *crl);
+
+  int X509_CRL_get0_by_serial(X509_CRL *crl,
+                             X509_REVOKED **ret, ASN1_INTEGER *serial);
 ]]
 
 if OPENSSL_11_OR_LATER then

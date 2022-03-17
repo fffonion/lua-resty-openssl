@@ -24,6 +24,10 @@ local function leaps(year)
 end
 
 local function asn1_to_unix(asn1)
+  if asn1 == nil then
+    return nil, "except an ASN1 instance at #1, got nil"
+  end
+
   local s = asn1_macro.ASN1_STRING_get0_data(asn1)
   s = ffi_str(s)
   -- V_ASN1_UTCTIME           190303223958Z

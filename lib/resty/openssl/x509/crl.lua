@@ -6,12 +6,14 @@ require "resty.openssl.include.x509.crl"
 require "resty.openssl.include.pem"
 require "resty.openssl.include.x509v3"
 local asn1_lib = require("resty.openssl.asn1")
+local bn_lib = require("resty.openssl.bn")
 local revoked_lib = require("resty.openssl.x509.revoked")
 local digest_lib = require("resty.openssl.digest")
 local extension_lib = require("resty.openssl.x509.extension")
 local pkey_lib = require("resty.openssl.pkey")
 local util = require "resty.openssl.util"
 local ctx_lib = require "resty.openssl.ctx"
+local stack_lib = require "resty.openssl.stack"
 local txtnid2nid = require("resty.openssl.objects").txtnid2nid
 local format_error = require("resty.openssl.err").format_error
 local version = require("resty.openssl.version")
@@ -36,6 +38,7 @@ if OPENSSL_11_OR_LATER and not BORINGSSL_110 then
   accessors.get_issuer_name = C.X509_CRL_get_issuer -- returns internal ptr
   accessors.get_signature_nid = C.X509_CRL_get_signature_nid
   -- BORINGSSL_110 exports X509_CRL_get_signature_nid, but just ignored for simplicity
+  accessors.get_revoked = C.X509_CRL_get_REVOKED
 elseif OPENSSL_10 or BORINGSSL_110 then
   accessors.get_last_update = function(crl)
     if crl == nil or crl.crl == nil then
@@ -69,9 +72,12 @@ elseif OPENSSL_10 or BORINGSSL_110 then
     end
     return C.OBJ_obj2nid(crl.crl.sig_alg.algorithm)
   end
+  accessors.get_revoked = function(crl)
+    return crl.crl.revoked
+  end
 end
 
-local function tostring(self, fmt)
+local function __tostring(self, fmt)
   if not fmt or fmt == 'PEM' then
     return util.read_using_bio(C.PEM_write_bio_X509_CRL, self.ctx)
   elseif fmt == 'DER' then
@@ -82,7 +88,7 @@ local function tostring(self, fmt)
 end
 
 local _M = {}
-local mt = { __index = _M, __tostring = tostring }
+local mt = { __index = _M, __tostring = __tostring }
 
 local x509_crl_ptr_ct = ffi.typeof("X509_CRL*")
 
@@ -164,12 +170,88 @@ function _M.dup(ctx)
 end
 
 function _M:tostring(fmt)
-  return tostring(self, fmt)
+  return __tostring(self, fmt)
 end
 
 function _M:to_PEM()
-  return tostring(self, "PEM")
+  return __tostring(self, "PEM")
 end
+
+function _M:text()
+  return util.read_using_bio(C.X509_CRL_print, self.ctx)
+end
+
+local function revoked_decode(ctx)
+  if OPENSSL_10 then
+    error("x509.crl:revoked_decode: not supported on OpenSSL 1.0")
+  end
+
+  local ret = {}
+  local serial = C.X509_REVOKED_get0_serialNumber(ctx)
+  if serial ~= nil then
+    serial = C.ASN1_INTEGER_to_BN(serial, nil)
+    if serial == nil then
+      error("x509.crl:revoked_decode: ASN1_INTEGER_to_BN() failed")
+    end
+    ffi_gc(serial, C.BN_free)
+    ret["serial_number"] = bn_lib.to_hex({ctx = serial})
+  end
+
+  local date = C.X509_REVOKED_get0_revocationDate(ctx)
+  if date ~= nil then
+    date = asn1_lib.asn1_to_unix(date)
+    ret["revocation_date"] = date
+  end
+
+  return ret
+end
+
+local revoked_mt = stack_lib.mt_of("X509_REVOKED", revoked_decode, _M)
+
+local function revoked_iter(self)
+  local stack = accessors.get_revoked(self.ctx)
+  if stack == nil then
+    return
+  end
+
+  return revoked_mt.__ipairs({ctx = stack})
+end
+
+mt.__pairs = revoked_iter
+mt.__ipairs = revoked_iter
+mt.__index = function(self, k)
+  local stack = accessors.get_revoked(self.ctx)
+  if stack == nil then
+    return nil
+  end
+
+  return revoked_mt.__index({ctx = stack}, k)
+end
+mt.__len = function(self)
+  local stack = accessors.get_revoked(self.ctx)
+  if stack == nil then
+    return 0
+  end
+
+  return revoked_mt.__len({ctx = stack})
+end
+
+_M.all = function(self)
+  local ret = {}
+  local _next = mt.__pairs(self)
+  while true do
+    local k, v = _next()
+    if k then
+      ret[k] = v
+    else
+      break
+    end
+  end
+  return ret
+end
+_M.each = mt.__pairs
+_M.index = mt.__index
+_M.count = mt.__len
 
 --- Adds revoked item to stack of revoked certificates of crl
 -- @tparam table Instance of crl module
@@ -190,6 +272,38 @@ function _M:add_revoked(revoked)
   end
 
   return true
+end
+
+local ptr_ptr_of_x509_revoked = ffi.typeof("X509_REVOKED*[1]")
+function _M:get_by_serial(sn)
+  local bn, err
+  if bn_lib.istype(sn) then
+    bn = sn
+  elseif type(sn) == "string" then
+    bn, err = bn_lib.from_hex(sn)
+    if err then
+      return nil, "x509.crl:find: can't decode bn: " .. err
+    end
+  else
+    return nil, "x509.crl:find: expect a bn instance at #1"
+  end
+
+  local sn_asn1 = C.BN_to_ASN1_INTEGER(bn.ctx, nil)
+  if sn_asn1 == nil then
+    return nil, "x509.crl:find: BN_to_ASN1_INTEGER() failed"
+  end
+  ffi_gc(sn_asn1, C.ASN1_INTEGER_free)
+ 
+  local pp = ptr_ptr_of_x509_revoked()
+  local code = C.X509_CRL_get0_by_serial(self.ctx, pp, sn_asn1)
+  if code == 1 then
+    return revoked_decode(pp[0])
+  elseif code == 2 then
+    return nil, "not revoked (removeFromCRL)"
+  end
+
+  -- 0 or other
+  return nil
 end
 
 
