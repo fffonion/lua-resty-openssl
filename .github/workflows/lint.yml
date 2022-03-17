@@ -1,6 +1,12 @@
 name: Lint
 
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - lib/**.lua
+  pull_request:
+    paths:
+      - lib/**.lua
 
 jobs:
   tests:
