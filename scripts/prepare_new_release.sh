@@ -34,6 +34,6 @@ git commit -m "release: $new_v"
 git tag "$new_v"
 git-chglog --output CHANGELOG.md
 git add -u
-git tag "$new_v" -f
+git tag -d "$new_v"
 git commit -m "release: $new_v" --amend
 

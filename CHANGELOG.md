@@ -2,6 +2,12 @@
 ## [Unreleased]
 
 
+<a name="0.8.7"></a>
+## [0.8.7] - 2022-03-18
+### features
+- **x509.crl:** add functions to find and inspect revoked list in CRL [37c1661](https://github.com/fffonion/lua-resty-openssl/commit/37c1661fbebebad3b804f602f631e4ba65b80e07)
+
+
 <a name="0.8.6"></a>
 ## [0.8.6] - 2022-03-16
 ### bug fixes
@@ -396,7 +402,8 @@
 - **x509:** export pubkey [ede4f81](https://github.com/fffonion/lua-resty-openssl/commit/ede4f817cb0fe092ad6f9ab5d6ecdcde864a9fd8)
 
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.6...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.7...HEAD
+[0.8.7]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.6...0.8.7
 [0.8.6]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.5...0.8.6
 [0.8.5]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.4...0.8.5
 [0.8.4]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.3...0.8.4
