@@ -244,6 +244,8 @@ Table of Contents
     + [store:add](#storeadd)
     + [store:load_file](#storeload_file)
     + [store:load_directory](#storeload_directory)
+    + [store:set_purpose](#storeset_purpose)
+    + [store:set_depth](#storeset_depth)
     + [store:verify](#storeverify)
   * [resty.openssl.x509.revoked](#restyopensslx509revoked)
     + [revoked.new](#revokednew)
@@ -3763,9 +3765,41 @@ to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
 
+### store:set_purpose
+
+**syntax**: *ok, err = store:set_purpose(purpose)*
+
+Set the X509_STORE to match Key Usage and Extendend Key Usage when verifying the cert.
+Possible values are:
+
+```
+	sslclient 	SSL client
+	sslserver 	SSL server
+	nssslserver	Netscape SSL server
+	smimesign 	S/MIME signing
+	smimeencrypt	S/MIME encryption
+	crlsign   	CRL signing
+	any       	Any Purpose
+	ocsphelper	OCSP helper
+	timestampsign	Time Stamp signing
+```
+
+Normally user should use `verify_method` parameter of [store:verify](#storeverify) unless the purpose
+is not included in the default verify methods.
+
+[Back to TOC](#table-of-contents)
+
+### store:set_depth
+
+**syntax**: *ok, err = store:set_depth(depth)*
+
+Set the verify depth.
+
+[Back to TOC](#table-of-contents)
+
 ### store:verify
 
-**syntax**: *chain, err = store:verify(x509, chain?, return_chain?, properties?)*
+**syntax**: *chain, err = store:verify(x509, chain?, return_chain?, properties?, verify_method?)*
 
 Verifies a X.509 object with the store. The first argument must be
 [resty.openssl.x509](#restyopensslx509) instance. Optionally accept a validation chain as second
@@ -3777,6 +3811,11 @@ returns `true` only. If verification failed, returns `nil` and error explaining 
 
 Staring from OpenSSL 3.0, this functions accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms.
+
+`verify_method` can be set to use predefined verify parameters such as `"default"`, `"pkcs7"`,
+`"smime_sign"`, `"ssl_client"` and `"ssl_server"`. This set corresponding `purpose`, `trust` and
+couple of other defaults but **does not** override the parameters set from
+[store:set_purpose](#storeset_purpose).
 
 [Back to TOC](#table-of-contents)
 

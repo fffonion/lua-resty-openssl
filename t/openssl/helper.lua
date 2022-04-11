@@ -1,11 +1,12 @@
 local pkey = require "resty.openssl.pkey"
 local x509 = require "resty.openssl.x509"
 local name = require "resty.openssl.x509.name"
+local extension = require "resty.openssl.x509.extension"
 local bn = require "resty.openssl.bn"
 local digest = require "resty.openssl.digest"
 local BORINGSSL = require "resty.openssl.version".BORINGSSL
 
-local function create_self_signed(key_opts, names)
+local function create_self_signed(key_opts, names, is_ca, signing_key, issuing_name)
   local key = pkey.new(key_opts or {
     type = 'RSA',
     bits = 1024,
@@ -20,18 +21,30 @@ local function create_self_signed(key_opts, names)
   cert:set_not_after(now + 86400)
 
   local nm = name.new()
-  for k, v in ipairs(names or {}) do
+  for k, v in pairs(names or {}) do
     assert(nm:add(k, v))
   end
 
   assert(cert:set_subject_name(nm))
-  assert(cert:set_issuer_name(nm))
+  assert(cert:set_issuer_name(issuing_name or nm))
+
+  assert(cert:set_basic_constraints { CA = is_ca })
+  assert(cert:set_basic_constraints_critical(true))
+
+  if not is_ca then
+    assert(cert:add_extension(extension.new("extendedKeyUsage",
+                                                "serverAuth,clientAuth")))
+
+    assert(cert:add_extension(extension.new("subjectKeyIdentifier", "hash", {
+      subject = cert
+    })))
+  end
 
   local dgst
   if BORINGSSL then
     dgst = digest.new("SHA256")
   end
-  assert(cert:sign(key, dgst))
+  assert(cert:sign(signing_key or key, dgst))
 
   -- make sure the private key is not included
   cert = x509.new(cert:to_PEM())
@@ -122,10 +135,37 @@ local function encode_sorted_json(tbl)
   return sort_json(require("cjson").encode(tbl))
 end
 
+local function create_cert_chain(depth, key_opts)
+  local last_key, last_cn
+  local certs, keys = {}, {}
+  for i=1, depth do
+    local cn, issuer
+    if last_key then
+      cn = "lua-resty-openssl Test Cert leaf " .. i - 1
+      issuer = name.new()
+      assert(issuer:add("CN", last_cn))
+    else
+      cn = "lua-resty-openssl Test Cert Root CA"
+    end
+    last_cn = cn
+
+    local crt, key = create_self_signed(key_opts,
+                      { CN = cn }, i < depth, last_key, issuer)
+
+    certs[i] = crt
+    keys[i] = key
+   
+    last_key = key
+  end
+
+  return certs, keys
+end
+
 
 return {
   create_self_signed = create_self_signed,
   to_hex = to_hex,
   myassert = myassert,
   encode_sorted_json = encode_sorted_json,
+  create_cert_chain = create_cert_chain,
 }
