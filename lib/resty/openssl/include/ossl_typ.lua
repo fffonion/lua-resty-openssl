@@ -24,6 +24,7 @@ ffi.cdef(
   typedef struct X509_crl_st X509_CRL;
   typedef struct x509_store_st X509_STORE;
   typedef struct x509_store_ctx_st X509_STORE_CTX;
+  typedef struct x509_purpose_st X509_PURPOSE;
   typedef struct v3_ext_ctx X509V3_CTX;
   typedef struct asn1_string_st ASN1_INTEGER;
   typedef struct asn1_string_st ASN1_ENUMERATED;

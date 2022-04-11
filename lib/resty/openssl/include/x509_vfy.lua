@@ -22,6 +22,9 @@ ffi.cdef [[
   int X509_STORE_load_locations(X509_STORE *ctx,
                               const char *file, const char *dir);
   int X509_STORE_set_default_paths(X509_STORE *ctx);
+  int X509_STORE_set_flags(X509_STORE *ctx, unsigned long flags);
+  int X509_STORE_set_depth(X509_STORE *store, int depth);
+  int X509_STORE_set_purpose(X509_STORE *ctx, int purpose);
 
   X509_STORE_CTX *X509_STORE_CTX_new(void);
   void X509_STORE_CTX_free(X509_STORE_CTX *ctx);
@@ -31,7 +34,11 @@ ffi.cdef [[
 
   int X509_STORE_CTX_get_error(X509_STORE_CTX *ctx);
 
-  int X509_STORE_set_flags(X509_STORE *ctx, unsigned long flags);
+  int X509_STORE_CTX_set_default(X509_STORE_CTX *ctx, const char *name);
+
+  int X509_PURPOSE_get_by_sname(char *sname);
+  X509_PURPOSE *X509_PURPOSE_get0(int idx);
+  int X509_PURPOSE_get_id(const X509_PURPOSE *xp);
 ]]
 
 local _M = {}

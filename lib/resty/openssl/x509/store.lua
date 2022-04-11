@@ -116,7 +116,43 @@ function _M:load_directory(path, properties)
   return true
 end
 
-function _M:verify(x509, chain, return_chain, properties)
+function _M:set_depth(depth)
+  depth = depth and tonumber(depth)
+  if not depth then
+    return nil, "x509.store:set_depth: expect a number at #1"
+  end
+
+  if C.X509_STORE_set_depth(self.ctx, depth) ~= 1 then
+    return false, format_error("x509.store:set_depth")
+  end
+
+  return true
+end
+
+function _M:set_purpose(purpose)
+  if type(purpose) ~= "string" then
+    return nil, "x509.store:set_purpose: expect a string at #1"
+  end
+
+  local pchar = ffi.new("char[?]", #purpose, purpose)
+  local idx = C.X509_PURPOSE_get_by_sname(pchar)
+  idx = tonumber(idx)
+
+  if idx == -1 then
+    return false, "invalid purpose \"" .. purpose .. "\""
+  end
+
+  local purp = C.X509_PURPOSE_get0(idx)
+  local i = C.X509_PURPOSE_get_id(purp)
+
+  if C.X509_STORE_set_purpose(self.ctx, i) ~= 1 then
+    return false, format_error("x509.store:set_purpose: X509_STORE_set_purpose")
+  end
+
+  return true
+end
+
+function _M:verify(x509, chain, return_chain, properties, verify_method)
   if not x509_lib.istype(x509) then
     return nil, "x509.store:verify: expect a x509 instance at #1"
   elseif chain and not chain_lib.istype(chain) then
@@ -146,6 +182,10 @@ function _M:verify(x509, chain, return_chain, properties)
 
   if C.X509_STORE_CTX_init(ctx, self.ctx, x509.ctx, chain_dup_ctx) ~= 1 then
     return nil, format_error("x509.store:verify: X509_STORE_CTX_init")
+  end
+
+  if verify_method and C.X509_STORE_CTX_set_default(ctx, verify_method) ~= 1 then
+    return nil, "x509.store:verify: invalid verify_method \"" .. verify_method .. "\""
   end
 
   local code = C.X509_verify_cert(ctx)
