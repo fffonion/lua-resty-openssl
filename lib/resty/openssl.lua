@@ -244,7 +244,7 @@ if OPENSSL_30 then
   local fips_provider_ctx
 
   function _M.set_fips_mode(enable, self_test)
-    if not not enable == _M.get_fips_mode() then
+    if (not not enable) == _M.get_fips_mode() then
       return true
     end
 
@@ -288,7 +288,7 @@ if OPENSSL_30 then
 
 else
   function _M.set_fips_mode(enable)
-    if not not enable == _M.get_fips_mode() then
+    if (not not enable) == _M.get_fips_mode() then
       return true
     end
 
