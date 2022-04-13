@@ -49,8 +49,30 @@ local function free(request_context_only)
   return true
 end
 
+local test_request
+
+do
+
+  local ok, exdata = pcall(require, "thread.exdata")
+  if ok and exdata then
+    test_request = function()
+      local r = exdata()
+      if r ~= nil then
+          return not not r
+      end
+    end
+
+  else
+    local getfenv = getfenv
+
+    function test_request()
+      return not not getfenv(0).__ngx_req
+    end
+  end
+end
+
 return {
   new = new,
   free = free,
-  get_libctx = function() return ngx.ctx.ossl_lib_ctx or ossl_lib_ctx end,
+  get_libctx = function() return test_request() and ngx.ctx.ossl_lib_ctx or ossl_lib_ctx end,
 }
