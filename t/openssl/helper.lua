@@ -36,12 +36,9 @@ local function create_self_signed(key_opts, names, is_ca, signing_key, issuing_n
     assert(cert:add_extension(extension.new("extendedKeyUsage",
                                                 "serverAuth,clientAuth")))
 
-    -- XXX seems broken in OpenSSL 3.0.2 with a double free, disabling for now
-    if not OPENSSL_30 then
-      assert(cert:add_extension(assert(extension.new("subjectKeyIdentifier", "hash", {
-        subject = cert,
-      }))))
-    end
+    assert(cert:add_extension(assert(extension.new("subjectKeyIdentifier", "hash", {
+      subject = cert,
+    }))))
   end
 
   local dgst
