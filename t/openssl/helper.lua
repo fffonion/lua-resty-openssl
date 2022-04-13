@@ -5,6 +5,7 @@ local extension = require "resty.openssl.x509.extension"
 local bn = require "resty.openssl.bn"
 local digest = require "resty.openssl.digest"
 local BORINGSSL = require "resty.openssl.version".BORINGSSL
+local OPENSSL_30 = require "resty.openssl.version".OPENSSL_30
 
 local function create_self_signed(key_opts, names, is_ca, signing_key, issuing_name)
   local key = pkey.new(key_opts or {
@@ -35,9 +36,12 @@ local function create_self_signed(key_opts, names, is_ca, signing_key, issuing_n
     assert(cert:add_extension(extension.new("extendedKeyUsage",
                                                 "serverAuth,clientAuth")))
 
-    assert(cert:add_extension(extension.new("subjectKeyIdentifier", "hash", {
-      subject = cert
-    })))
+    -- XXX seems broken in OpenSSL 3.0.2 with a double free, disabling for now
+    if not OPENSSL_30 then
+      assert(cert:add_extension(assert(extension.new("subjectKeyIdentifier", "hash", {
+        subject = cert,
+      }))))
+    end
   end
 
   local dgst
@@ -45,9 +49,6 @@ local function create_self_signed(key_opts, names, is_ca, signing_key, issuing_n
     dgst = digest.new("SHA256")
   end
   assert(cert:sign(signing_key or key, dgst))
-
-  -- make sure the private key is not included
-  cert = x509.new(cert:to_PEM())
 
   return cert, key
 end
