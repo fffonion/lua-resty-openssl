@@ -3262,8 +3262,12 @@ data = {
   subject = resty.openssl.x509 instance,
   request = resty.openssl.x509.csr instance,
   crl = resty.openssl.x509.crl instance,
+  issuer_pkey = resty.openssl.pkey instance, -- >= OpenSSL 3.0
 }
 ```
+
+From OpenSSL 3.0, `issuer_pkey` can be specified as a fallback source for
+generating the authority key identifier extension when `issuer` is same as `subject`.
 
 When `data` is a string, it's the full nconf string. Using section lookup from `value` to
 `data` is also supported.

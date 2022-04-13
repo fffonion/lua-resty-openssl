@@ -170,12 +170,45 @@ CA Issuers - URI:http://cacerts.digicert.com/DigiCertHighAssuranceTLSHybridECCSH
         content_by_lua_block {
             local f = io.open("t/fixtures/Github.pem"):read("*a")
             local x509 = myassert(require("resty.openssl.x509").new(f))
+            f = io.open("t/fixtures/test.crt"):read("*a")
+            local ic = myassert(require("resty.openssl.x509").new(f))
+            f = io.open("t/fixtures/test.key"):read("*a")
+            local ik = myassert(require("resty.openssl.pkey").new(f))
 
             local extension = require("resty.openssl.x509.extension")
             local c = myassert(extension.new("subjectKeyIdentifier", "hash",
-                                        {
-                                            subject = x509,
-                                        }))
+                            {
+                                subject = x509,
+                            }))
+
+            ngx.say(tostring(c))
+
+            if require("resty.openssl.version").OPENSSL_30 then
+                c = myassert(extension.new("authorityKeyIdentifier", "keyid",
+                                {
+                                    subject = x509,
+                                    issuer = x509,
+                                }))
+
+                if tostring(c) ~= "0." then
+                    ngx.log(ngx.ERR, "authorityKeyIdentifier should be empty but got " .. tostring(c))
+                end
+
+                c = myassert(extension.new("authorityKeyIdentifier", "keyid",
+                                {
+                                    subject = x509,
+                                    issuer = x509,
+                                    issuer_pkey = ik,
+                                }))
+                -- when set with issuer_pkey, the X509V3_print doesn't include "keyid:" prefix
+                ngx.print("keyid:")
+            else
+                c = myassert(extension.new("authorityKeyIdentifier", "keyid",
+                                {
+                                    subject = x509,
+                                    issuer = ic,
+                                }))
+            end
 
             ngx.say(tostring(c))
         }
@@ -184,6 +217,7 @@ CA Issuers - URI:http://cacerts.digicert.com/DigiCertHighAssuranceTLSHybridECCSH
     GET /t
 --- response_body_like eval
 "27:B1:7E:9F:BB:26:99:50:D8:F3:C3:53:5B:FE:31:16:B0:BB:1E:72
+keyid:CF:03:F5:09:EB:83:D2:4F:10:DE:65:92:90:E9:93:3E:38:4C:E8:7C
 "
 --- no_error_log
 [error]

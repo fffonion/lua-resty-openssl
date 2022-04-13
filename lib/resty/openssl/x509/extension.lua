@@ -15,6 +15,7 @@ local objects_lib = require "resty.openssl.objects"
 local stack_lib = require("resty.openssl.stack")
 local util = require "resty.openssl.util"
 local format_error = require("resty.openssl.err").format_error
+local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 local BORINGSSL = require("resty.openssl.version").BORINGSSL
 
 local _M = {}
@@ -28,6 +29,10 @@ local extension_types = {
   request = "resty.openssl.x509.csr",
   crl     = "resty.openssl.x509.crl",
 }
+
+if OPENSSL_30 then
+  extension_types["issuer_pkey"] = "resty.openssl.pkey"
+end
 
 local nconf_load
 if BORINGSSL then
@@ -87,6 +92,13 @@ function _M.new(txtnid, value, data)
       end
     end
     C.X509V3_set_ctx(x509_ctx_ptr[0], args.issuer, args.subject, args.request, args.crl, 0)
+
+    if OPENSSL_30 and args.issuer_pkey then
+      if C.X509V3_set_issuer_pkey(x509_ctx_ptr[0], args.issuer_pkey) ~= 1 then
+        return nil, format_error("x509.extension.new: X509V3_set_issuer_pkey")
+      end
+    end
+
   elseif type(data) == 'string' then
     err = nconf_load(conf, data)
     if err then
