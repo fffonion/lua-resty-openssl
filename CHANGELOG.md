@@ -2,6 +2,17 @@
 ## [Unreleased]
 
 
+<a name="0.8.8"></a>
+## [0.8.8] - 2022-04-14
+### bug fixes
+- **ctx:** use global ctx where request is unavailable [e3590cf](https://github.com/fffonion/lua-resty-openssl/commit/e3590cfcbeb6f0d5f110c3c4e1b6cdc63b88e001)
+- **x509.extension:** correct X509V3_CTX size for OpenSSL 3.0 [0946c59](https://github.com/fffonion/lua-resty-openssl/commit/0946c5937fa9fa4bb41a70267a67fcc87307b6a6)
+
+### features
+- **x509.extension:** add X509V3_set_issuer_pkey in OpenSSL 3.0 [dbd3f74](https://github.com/fffonion/lua-resty-openssl/commit/dbd3f7418a665ae797e6ffc71ba1d7f0660c95f0)
+- **x509.store:** add set_purpose and verify_method parameter [b7500fe](https://github.com/fffonion/lua-resty-openssl/commit/b7500fe7212c26070363afeab4a8acfe44c3cfc8)
+
+
 <a name="0.8.7"></a>
 ## [0.8.7] - 2022-03-18
 ### features
@@ -402,7 +413,8 @@
 - **x509:** export pubkey [ede4f81](https://github.com/fffonion/lua-resty-openssl/commit/ede4f817cb0fe092ad6f9ab5d6ecdcde864a9fd8)
 
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.7...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.8...HEAD
+[0.8.8]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.7...0.8.8
 [0.8.7]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.6...0.8.7
 [0.8.6]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.5...0.8.6
 [0.8.5]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.4...0.8.5
