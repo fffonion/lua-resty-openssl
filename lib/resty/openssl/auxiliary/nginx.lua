@@ -40,8 +40,9 @@ else
   ]]
 
   local ngx_version = ngx.config.nginx_version
-  if ngx_version == 1017008 or ngx_version == 1019003 or ngx_version == 1019009 then
-    -- 1.17.8, 1.19.3, 1.19.9
+  if ngx_version == 1017008 or ngx_version == 1019003 or ngx_version == 1019009 
+    or ngx_version == 1021004 then
+    -- 1.17.8, 1.19.3, 1.19.9, 1.21.4
     -- https://github.com/nginx/nginx/blob/master/src/core/ngx_connection.h
     ffi.cdef [[
     typedef struct {
@@ -212,7 +213,7 @@ else
         ngx.config.ngx_lua_version and
         ngx.config.ngx_lua_version
 
-  if ngx_lua_version >= 10019 and ngx_lua_version <= 10020 then
+  if ngx_lua_version >= 10019 and ngx_lua_version <= 10021 then
     -- https://github.com/openresty/lua-nginx-module/blob/master/src/ngx_http_lua_socket_tcp.h
     ffi.cdef[[
       typedef struct {
