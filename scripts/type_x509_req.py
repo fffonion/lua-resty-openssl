@@ -6,6 +6,7 @@ defines = {
     "sample": "test.csr",
     "sample_signature_nid": 65,
     "sample_signature_name": "RSA-SHA1",
+    "sample_signature_digest_name": "SHA1",
     "fields":
 [
 {

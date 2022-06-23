@@ -63,3 +63,19 @@ __DATA__
 '{"id":87,"ln":87,"sn":87}'
 --- no_error_log
 [error]
+
+=== TEST 3: Convert sigid to nid
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local o = require("resty.openssl.objects")
+            ngx.print(o.find_sigid_algs(795)) -- ecdsa-with-SHA384
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+673
+--- no_error_log
+[error]

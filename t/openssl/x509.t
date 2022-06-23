@@ -971,6 +971,10 @@ true
             local name = myassert(c:get_signature_name())
 
             ngx.say(name)
+
+            local name = myassert(c:get_signature_digest_name())
+
+            ngx.say(name)
         }
     }
 --- request
@@ -978,6 +982,7 @@ true
 --- response_body
 794
 ecdsa-with-SHA256
+SHA256
 --- no_error_log
 [error]
 # END AUTO GENERATED CODE

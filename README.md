@@ -142,7 +142,7 @@ Table of Contents
     + [x509:get_\*, x509:set_\*](#x509get_-x509set_)
     + [x509:get_lifetime](#x509get_lifetime)
     + [x509:set_lifetime](#x509set_lifetime)
-    + [x509:get_signature_name, x509:get_signature_nid](#x509get_signature_name-x509get_signature_nid)
+    + [x509:get_signature_name, x509:get_signature_nid, x509:get_signature_digest_name](#x509get_signature_name-x509get_signature_nid-x509get_signature_digest_name)
     + [x509:get_extension](#x509get_extension)
     + [x509:add_extension](#x509add_extension)
     + [x509:set_extension](#x509set_extension)
@@ -159,7 +159,7 @@ Table of Contents
     + [csr.istype](#csristype)
     + [csr:check_private_key](#csrcheck_private_key)
     + [csr:get_\*, csr:set_\*](#csrget_-csrset_)
-    + [csr:get_signature_name, csr:get_signature_nid](#csrget_signature_name-csrget_signature_nid)
+    + [csr:get_signature_name, csr:get_signature_nid, csr:get_signature_digest_name](#csrget_signature_name-csrget_signature_nid-csrget_signature_digest_name)
     + [csr:get_extension](#csrget_extension)
     + [csr:add_extension](#csradd_extension)
     + [csr:set_extension](#csrset_extension)
@@ -173,7 +173,7 @@ Table of Contents
     + [crl.new](#crlnew)
     + [crl.istype](#crlistype)
     + [crl:get_\*, crl:set_\*](#crlget_-crlset_)
-    + [crl:get_signature_name, crl:get_signature_nid](#crlget_signature_name-crlget_signature_nid)
+    + [crl:get_signature_name, crl:get_signature_nid, crl:get_signature_digest_name](#crlget_signature_name-crlget_signature_nid-crlget_signature_digest_name)
     + [crl:get_by_serial](#crlget_by_serial)
     + [crl:get_extension](#crlget_extension)
     + [crl:add_extension](#crladd_extension)
@@ -2413,13 +2413,18 @@ plus `x509:set_not_after`.
 
 [Back to TOC](#table-of-contents)
 
-### x509:get_signature_name, x509:get_signature_nid
+### x509:get_signature_name, x509:get_signature_nid, x509:get_signature_digest_name
 
 **syntax**: *sn, err = x509:get_signature_name()*
 
 **syntax**: *nid, err = x509:get_signature_nid()*
 
+**syntax**: *sn, err = x509:get_signature_digest_name()*
+
 Return the [NID] or the short name (SN) of the signature of the certificate.
+
+`x509:get_signature_digest_name` returns the short name of the digest algorithm
+used to sign the certificate.
 
 [Back to TOC](#table-of-contents)
 
@@ -2649,13 +2654,18 @@ with naming convension with other functions.
 
 [Back to TOC](#table-of-contents)
 
-### csr:get_signature_name, csr:get_signature_nid
+### csr:get_signature_name, csr:get_signature_nid, csr:get_signature_digest_name
 
 **syntax**: *sn, err = csr:get_signature_name()*
 
 **syntax**: *nid, err = csr:get_signature_nid()*
 
+**syntax**: *sn, err = csr:get_signature_digest_name()*
+
 Return the [NID] or the short name (SN) of the signature of the certificate request.
+
+`csr:get_signature_digest_name` returns the short name of the digest algorithm
+used to sign the certificate.
 
 [Back to TOC](#table-of-contents)
 
@@ -2842,13 +2852,18 @@ and thus used by [crl:get_extension](#crlget_extension) and [crl:set_extension](
 
 [Back to TOC](#table-of-contents)
 
-### crl:get_signature_name, crl:get_signature_nid
+### crl:get_signature_name, crl:get_signature_nid, crl:get_signature_digest_name
 
 **syntax**: *sn, err = crl:get_signature_name()*
 
 **syntax**: *nid, err = crl:get_signature_nid()*
 
+**syntax**: *sn, err = crl:get_signature_digest_name()*
+
 Return the [NID] or the short name (SN) of the signature of the CRL.
+
+`crl:get_signature_digest_name` returns the short name of the digest algorithm
+used to sign the certificate.
 
 [Back to TOC](#table-of-contents)
 

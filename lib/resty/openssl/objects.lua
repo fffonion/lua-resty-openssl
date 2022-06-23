@@ -56,10 +56,19 @@ local function txtnid2nid(txt_nid)
   return nid
 end
 
+local function find_sigid_algs(nid)
+  local out = ffi.new("int[0]")
+  if C.OBJ_find_sigid_algs(nid, out, nil) == 0 then
+    return 0, "objects.find_sigid_algs: invalid sigid " .. nid
+  end
+  return tonumber(out[0])
+end
+
 return {
   obj2table = obj2table,
   nid2table = nid2table,
   txt2nid = txt2nid,
   txtnid2nid = txtnid2nid,
+  find_sigid_algs = find_sigid_algs,
   create = C.OBJ_create,
 }
