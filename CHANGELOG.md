@@ -2,6 +2,12 @@
 ## [Unreleased]
 
 
+<a name="0.8.9"></a>
+## [0.8.9] - 2022-06-23
+### bug fixes
+- **aux/nginx:** add nginx 1.21.4 and ngx_lua 0.10.21 to support matrix [028da56](https://github.com/fffonion/lua-resty-openssl/commit/028da56d7de606d4b4b323fb3686ad4d93f69c7d)
+
+
 <a name="0.8.8"></a>
 ## [0.8.8] - 2022-04-14
 ### bug fixes
@@ -413,7 +419,8 @@
 - **x509:** export pubkey [ede4f81](https://github.com/fffonion/lua-resty-openssl/commit/ede4f817cb0fe092ad6f9ab5d6ecdcde864a9fd8)
 
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.8...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.9...HEAD
+[0.8.9]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.8...0.8.9
 [0.8.8]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.7...0.8.8
 [0.8.7]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.6...0.8.7
 [0.8.6]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.5...0.8.6
