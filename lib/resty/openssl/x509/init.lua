@@ -16,6 +16,7 @@ local extension_lib = require("resty.openssl.x509.extension")
 local pkey_lib = require("resty.openssl.pkey")
 local util = require "resty.openssl.util"
 local txtnid2nid = require("resty.openssl.objects").txtnid2nid
+local find_sigid_algs = require("resty.openssl.objects").find_sigid_algs
 local ctypes = require "resty.openssl.auxiliary.ctypes"
 local ctx_lib = require "resty.openssl.ctx"
 local format_error = require("resty.openssl.err").format_error
@@ -1048,6 +1049,18 @@ function _M:get_signature_name()
   if nid <= 0 then
     return nil, format_error("x509:get_signature_name")
   end
+
+  return ffi.string(C.OBJ_nid2sn(nid))
+end
+
+-- AUTO GENERATED
+function _M:get_signature_digest_name()
+  local nid = accessors.get_signature_nid(self.ctx)
+  if nid <= 0 then
+    return nil, format_error("x509:get_signature_digest_name")
+  end
+
+  local nid = find_sigid_algs(nid)
 
   return ffi.string(C.OBJ_nid2sn(nid))
 end

@@ -275,3 +275,15 @@ function _M:get_signature_name()
 
   return ffi.string(C.OBJ_nid2sn(nid))
 end
+
+-- AUTO GENERATED
+function _M:get_signature_digest_name()
+  local nid = accessors.get_signature_nid(self.ctx)
+  if nid <= 0 then
+    return nil, format_error("{{ modname }}:get_signature_digest_name")
+  end
+
+  local nid = find_sigid_algs(nid)
+
+  return ffi.string(C.OBJ_nid2sn(nid))
+end

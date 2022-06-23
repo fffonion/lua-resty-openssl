@@ -466,6 +466,10 @@ truetrue
             local name = myassert(c:get_signature_name())
 
             ngx.say(name)
+
+            local name = myassert(c:get_signature_digest_name())
+
+            ngx.say(name)
         }
     }
 --- request
@@ -473,6 +477,7 @@ truetrue
 --- response_body
 668
 RSA-SHA256
+SHA256
 --- no_error_log
 [error]
 # END AUTO GENERATED CODE

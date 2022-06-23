@@ -8,6 +8,7 @@ defines = {
     "sample": "TrustAsiaEVTLSProCAG2.crl",
     "sample_signature_nid": 668,
     "sample_signature_name": "RSA-SHA256",
+    "sample_signature_digest_name": "SHA256",
     "fields":
 [
 {

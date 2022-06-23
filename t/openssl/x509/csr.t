@@ -606,6 +606,10 @@ true
             local name = myassert(c:get_signature_name())
 
             ngx.say(name)
+
+            local name = myassert(c:get_signature_digest_name())
+
+            ngx.say(name)
         }
     }
 --- request
@@ -613,6 +617,7 @@ true
 --- response_body
 65
 RSA-SHA1
+SHA1
 --- no_error_log
 [error]
 # END AUTO GENERATED CODE

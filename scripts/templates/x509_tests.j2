@@ -105,6 +105,10 @@ true
             local name = myassert(c:get_signature_name())
 
             ngx.say(name)
+
+            local name = myassert(c:get_signature_digest_name())
+
+            ngx.say(name)
         }
     }
 --- request
@@ -112,5 +116,6 @@ true
 --- response_body
 {{ module.sample_signature_nid }}
 {{ module.sample_signature_name }}
+{{ module.sample_signature_digest_name }}
 --- no_error_log
 [error]

@@ -10,6 +10,7 @@ defines = {
     "sample": "Github.pem",
     "sample_signature_nid": 794,
     "sample_signature_name": "ecdsa-with-SHA256",
+    "sample_signature_digest_name": "SHA256",
     "fields":
 [
 {
