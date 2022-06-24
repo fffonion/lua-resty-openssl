@@ -2,6 +2,12 @@
 ## [Unreleased]
 
 
+<a name="0.8.10"></a>
+## [0.8.10] - 2022-06-24
+### features
+- **x509:** add get_signature_digest_name [d54b5d6](https://github.com/fffonion/lua-resty-openssl/commit/d54b5d61bc14813121f4a6bda2e1d7eab215094a)
+
+
 <a name="0.8.9"></a>
 ## [0.8.9] - 2022-06-23
 ### bug fixes
@@ -419,7 +425,8 @@
 - **x509:** export pubkey [ede4f81](https://github.com/fffonion/lua-resty-openssl/commit/ede4f817cb0fe092ad6f9ab5d6ecdcde864a9fd8)
 
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.9...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.10...HEAD
+[0.8.10]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.9...0.8.10
 [0.8.9]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.8...0.8.9
 [0.8.8]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.7...0.8.8
 [0.8.7]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.6...0.8.7
