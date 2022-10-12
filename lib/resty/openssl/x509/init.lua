@@ -320,6 +320,8 @@ function _M:get_crl_url(return_all)
   end
 end
 
+local digest_length = ctypes.ptr_of_uint()
+local digest_buf, digest_buf_size
 local function digest(self, cfunc, typ, properties)
   -- TODO: dedup the following with resty.openssl.digest
   local ctx
@@ -345,14 +347,16 @@ local function digest(self, cfunc, typ, properties)
   end
 
   local md_size = OPENSSL_30 and C.EVP_MD_get_size(algo) or C.EVP_MD_size(algo)
-  local buf = ctypes.uchar_array(md_size)
-  local length = ctypes.ptr_of_uint()
+  if not digest_buf or digest_buf_size < md_size then
+    digest_buf = ctypes.uchar_array(md_size)
+    digest_buf_size = md_size
+  end
 
-  if cfunc(self.ctx, algo, buf, length) ~= 1 then
+  if cfunc(self.ctx, algo, digest_buf, digest_length) ~= 1 then
     return nil, format_error("x509:digest")
   end
 
-  return ffi_str(buf, length[0])
+  return ffi_str(digest_buf, digest_length[0])
 end
 
 function _M:digest(typ, properties)

@@ -462,3 +462,56 @@ nil
 "
 --- no_error_log
 [error]
+
+
+=== TEST 16: Update with segements larger than 1024
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+
+            local cipher = myassert(require("resty.openssl.cipher").new("aes-256-cbc"))
+
+            local ok = myassert(cipher:init(string.rep("0", 32), string.rep("0", 16), {
+                is_encrypt = true,
+            }))
+
+            local count = 3
+            for i=1,count,1 do
+                local s = myassert(cipher:update(string.rep(tostring(i), 1024)))
+
+                if s ~= "" then
+                    ngx.say(ngx.encode_base64(string.sub(s, -16)))
+                else
+                    ngx.say("nothing")
+                end
+            end
+            local s = myassert(cipher:final(string.rep("a", 1024)))
+
+            ngx.say("final")
+            ngx.say(ngx.encode_base64(string.sub(s, -16)))
+
+            local ok = myassert(cipher:init(string.rep("0", 32), string.rep("0", 16), {
+                is_encrypt = true,
+            }))
+            local s = myassert(cipher:final(string.rep("1", 1024) ..
+                                            string.rep("2", 1024) ..
+                                            string.rep("3", 1024) ..
+                                            string.rep("a", 1024)))
+
+            ngx.say(ngx.encode_base64(string.sub(s, -16))) -- should be same as above
+
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"XZElJKMyKzuvbYNf4Y0hAw==
+59Cw1+C6hHpfqsOn7PZ2Gw==
+t6oGLYvnjihoi+7tPfyK/A==
+final
+QcpC0TXDxiOln2ENZ0aGDA==
+QcpC0TXDxiOln2ENZ0aGDA==
+"
+--- no_error_log
+[error]

@@ -22,6 +22,7 @@ return {
     null = ffi.new("void *"), -- hack wher ngx.null is not available
 
     uchar_array = ffi.typeof("unsigned char[?]"),
+    uchar_ptr = ffi.typeof("unsigned char*"),
 
     SIZE_MAX = math.pow(2, 64), -- nginx set _FILE_OFFSET_BITS to 64
 }

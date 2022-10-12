@@ -86,22 +86,23 @@ function _M:update(...)
   return true, nil
 end
 
+local result_length = ctypes.ptr_of_uint()
+
 function _M:final(s)
   if s then
-    local _, err = self:update(s)
-    if err then
-      return nil, err
+    if C.EVP_DigestUpdate(self.ctx, s, #s) ~= 1 then
+      return false, format_error("digest:final")
     end
   end
 
-  local length = ctypes.ptr_of_uint()
   -- no return value of EVP_DigestFinal_ex
-  C.EVP_DigestFinal_ex(self.ctx, self.buf, length)
-  if length[0] == nil or length[0] <= 0 then
+  C.EVP_DigestFinal_ex(self.ctx, self.buf, result_length)
+  if result_length[0] == nil or result_length[0] <= 0 then
     return nil, format_error("digest:final: EVP_DigestFinal_ex")
   end
-  return ffi_str(self.buf, length[0])
+  return ffi_str(self.buf, result_length[0])
 end
+
 
 function _M:reset()
   local code = C.EVP_DigestInit_ex(self.ctx, self.algo, nil)
