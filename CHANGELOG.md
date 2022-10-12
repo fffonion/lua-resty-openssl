@@ -2,6 +2,12 @@
 ## [Unreleased]
 
 
+<a name="0.8.11"></a>
+## [0.8.11] - 2022-10-12
+### performance improvements
+- **\*:** reuse cdata to improve performance [fc9cecd](https://github.com/fffonion/lua-resty-openssl/commit/fc9cecd785fc0193290cc3398d1ebbe7ae66fe15)
+
+
 <a name="0.8.10"></a>
 ## [0.8.10] - 2022-06-24
 ### features
@@ -425,7 +431,8 @@
 - **x509:** export pubkey [ede4f81](https://github.com/fffonion/lua-resty-openssl/commit/ede4f817cb0fe092ad6f9ab5d6ecdcde864a9fd8)
 
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.10...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.11...HEAD
+[0.8.11]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.10...0.8.11
 [0.8.10]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.9...0.8.10
 [0.8.9]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.8...0.8.9
 [0.8.8]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.7...0.8.8
