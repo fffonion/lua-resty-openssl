@@ -10,6 +10,7 @@ options:
        Type:
          - feat
          - fix
+         - perf
          - refactor
   commit_groups:
      title_maps:
