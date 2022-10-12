@@ -16,11 +16,16 @@ local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 local uchar_array = ctypes.uchar_array
 local void_ptr = ctypes.void_ptr
 local ptr_of_int = ctypes.ptr_of_int
+local uchar_ptr = ctypes.uchar_ptr
 
 local _M = {}
 local mt = {__index = _M}
 
 local cipher_ctx_ptr_ct = ffi.typeof('EVP_CIPHER_CTX*')
+
+local out_length = ptr_of_int()
+-- EVP_MAX_BLOCK_LENGTH is 32, we give it a 64 to be future proof
+local out_buffer = ctypes.uchar_array(1024 + 64)
 
 function _M.new(typ, properties)
   if not typ then
@@ -161,8 +166,7 @@ function _M:update_aead_aad(aad)
     return nil, "cipher:update_aead_aad: cipher not initalized, call cipher:init first"
   end
 
-  local outl = ptr_of_int()
-  if C.EVP_CipherUpdate(self.ctx, nil, outl, aad, #aad) ~= 1 then
+  if C.EVP_CipherUpdate(self.ctx, nil, out_length, aad, #aad) ~= 1 then
     return false, format_error("cipher:update_aead_aad")
   end
   return true
@@ -177,12 +181,11 @@ function _M:get_aead_tag(size)
   if size > self.key_size then
     return nil, string.format("tag size %d is too large", size)
   end
-  local buf = uchar_array(size)
-  if C.EVP_CIPHER_CTX_ctrl(self.ctx, evp_macro.EVP_CTRL_AEAD_GET_TAG, size, buf) ~= 1 then
+  if C.EVP_CIPHER_CTX_ctrl(self.ctx, evp_macro.EVP_CTRL_AEAD_GET_TAG, size, out_buffer) ~= 1 then
     return nil, format_error("cipher:get_aead_tag")
   end
 
-  return ffi_str(buf, size)
+  return ffi_str(out_buffer, size)
 end
 
 function _M:set_aead_tag(tag)
@@ -207,23 +210,26 @@ function _M:update(...)
   end
 
   local ret = {}
-  local max_length = 0
-  for _, s in ipairs({...}) do
-    local len = #s
-    if len > max_length then
-      max_length = len
+  for i, s in ipairs({...}) do
+    local inl = #s
+    if inl > 1024 then
+      s = ffi_cast(uchar_ptr, s)
+      for i=0, inl-1, 1024 do
+        local chunk_size = 1024
+        if inl - i < 1024 then
+          chunk_size = inl - i
+        end
+        if C.EVP_CipherUpdate(self.ctx, out_buffer, out_length, s+i, chunk_size) ~= 1 then
+          return nil, format_error("cipher:update")
+        end
+        table.insert(ret, ffi_str(out_buffer, out_length[0]))
+      end
+    else
+      if C.EVP_CipherUpdate(self.ctx, out_buffer, out_length, s, inl) ~= 1 then
+        return nil, format_error("cipher:update")
+      end
+      table.insert(ret, ffi_str(out_buffer, out_length[0]))
     end
-  end
-  if max_length == 0 then
-    return nil
-  end
-  local out = uchar_array(max_length + self.block_size)
-  local outl = ptr_of_int()
-  for _, s in ipairs({...}) do
-    if C.EVP_CipherUpdate(self.ctx, out, outl, s, #s) ~= 1 then
-      return nil, format_error("cipher:update")
-    end
-    table.insert(ret, ffi_str(out, outl[0]))
   end
   return table.concat(ret, "")
 end
@@ -236,13 +242,13 @@ function _M:final(s)
       return nil, err
     end
   end
-  local outm = uchar_array(self.block_size)
-  local outl = ptr_of_int()
-  if C.EVP_CipherFinal_ex(self.ctx, outm, outl) ~= 1 then
+  if C.EVP_CipherFinal_ex(self.ctx, out_buffer, out_length) ~= 1 then
     return nil, format_error("cipher:final: EVP_CipherFinal_ex")
   end
-  return (ret or "") .. ffi_str(outm, outl[0])
+  local final_ret = ffi_str(out_buffer, out_length[0])
+  return ret and (ret .. final_ret) or final_ret
 end
+
 
 function _M:derive(key, salt, count, md, md_properties)
   if type(key) ~= "string" then

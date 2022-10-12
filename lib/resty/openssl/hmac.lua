@@ -63,19 +63,19 @@ function _M:update(...)
   return true, nil
 end
 
+local result_length = ctypes.ptr_of_uint()
+
 function _M:final(s)
   if s then
-    local _, err = self:update(s)
-    if err then
-      return nil, err
+    if C.HMAC_Update(self.ctx, s, #s) ~= 1 then
+      return false, format_error("hmac:final")
     end
   end
 
-  local length = ctypes.ptr_of_uint()
-  if C.HMAC_Final(self.ctx, self.buf, length) ~= 1 then
+  if C.HMAC_Final(self.ctx, self.buf, result_length) ~= 1 then
     return nil, format_error("hmac:final: HMAC_Final")
   end
-  return ffi_str(self.buf, length[0])
+  return ffi_str(self.buf, result_length[0])
 end
 
 function _M:reset()

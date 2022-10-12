@@ -8,6 +8,8 @@ local ctypes = require "resty.openssl.auxiliary.ctypes"
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 
+local buf
+local buf_size = 0
 local function bytes(length, private, strength)
   if type(length) ~= "number" then
     return nil, "rand.bytes: expect a number at #1"
@@ -16,7 +18,13 @@ local function bytes(length, private, strength)
   end
   -- generally we don't need manually reseed rng
   -- https://www.openssl.org/docs/man1.1.1/man3/RAND_seed.html
-  local buf = ctypes.uchar_array(length)
+
+  -- initialize or resize buffer
+  if not buf or buf_size < length then
+    buf = ctypes.uchar_array(length)
+    buf_size = length
+  end
+
   local code
   if OPENSSL_30 then
     if private then

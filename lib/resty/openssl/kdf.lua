@@ -130,6 +130,8 @@ local options_schema = {
   scrypt_p      = { TYPE_NUMBER, nil, NID_id_scrypt },
 }
 
+local outlen = ctypes.ptr_of_uint64()
+
 function _M.derive(options)
   local typ = options.type
   if not typ then
@@ -217,7 +219,7 @@ function _M.derive(options)
   -- end legacay low level routines
 
   -- begin EVP_PKEY_derive routines
-  local outlen = ctypes.ptr_of_uint64(options.outlen)
+  outlen[0] = options.outlen
 
   local ctx = C.EVP_PKEY_CTX_new_id(typ, nil)
   if ctx == nil then
