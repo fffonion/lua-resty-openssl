@@ -22,6 +22,25 @@ local dup = stack_lib.dup_of(STACK)
 
 local types = altname_macro.types
 
+local AF_INET = 2
+local AF_INET6 = 10
+if ffi.os == "OSX" then
+  AF_INET6 = 30
+elseif ffi.os == "BSD" then
+  AF_INET6 = 28
+elseif ffi.os == "Windows" then
+  AF_INET6 = 23
+end
+
+ffi.cdef [[
+  typedef int socklen_t;
+  int inet_pton(int af, const char *restrict src, void *restrict dst);
+  const char *inet_ntop(int af, const void *restrict src,
+                             char *restrict dst, socklen_t size);
+]]
+
+local ip_buffer = ffi.new("unsigned char [46]") -- 46 bytes enough for both string ipv6 and binary ipv6
+
 -- similar to GENERAL_NAME_print, but returns value instead of print
 local gn_decode = function(ctx)
   local typ = ctx.type
@@ -42,7 +61,13 @@ local gn_decode = function(ctx)
   elseif typ == types.URI then
     v = ffi_str(asn1_macro.ASN1_STRING_get0_data(ctx.d.uniformResourceIdentifier))
   elseif typ == types.IP then
-    v = "IP:<unsupported>"
+    v = asn1_macro.ASN1_STRING_get0_data(ctx.d.iPAddress)
+    local l = tonumber(C.ASN1_STRING_length(ctx.d.iPAddress))
+    if l ~= 4 and l ~= 16 then
+      error("Unknown IP address type")
+    end
+    v = C.inet_ntop(l == 4 and AF_INET or AF_INET6, v, ip_buffer, 46)
+    v = ffi_str(v)
   elseif typ == types.RID then
     v = "RID:<unsupported>"
   else
@@ -119,7 +144,16 @@ local function gn_set(gn, typ, value)
     return "x509.altname:gn_set: unknown type " .. typ
   end
 
-  if gn_type ~= types.Email and
+  if gn_type == types.IP then
+    if C.inet_pton(AF_INET, txt, ip_buffer) == 1 then
+      txt = ffi_str(ip_buffer, 4)
+    elseif C.inet_pton(AF_INET6, txt, ip_buffer) == 1 then
+      txt = ffi_str(ip_buffer, 16)
+    else
+      return "x509.altname:gn_set: invalid IP address " .. txt
+    end
+
+  elseif gn_type ~= types.Email and
       gn_type ~= types.URI and
       gn_type ~= types.DNS then
     return "x509.altname:gn_set: setting type " .. typ .. " is currently not supported"
