@@ -495,9 +495,7 @@ function _M:set_extension(extension, last_pos)
 
   local nid = extension:get_object().nid
   local pos = C.X509_get_ext_by_NID(self.ctx, nid, last_pos)
-  if pos == -1 then
-    return nil
-  end
+  -- pos may be -1, which means not found, it's fine, we will add new one instead of replace
 
   local removed = X509_delete_ext(self.ctx, pos)
   C.X509_EXTENSION_free(removed)
