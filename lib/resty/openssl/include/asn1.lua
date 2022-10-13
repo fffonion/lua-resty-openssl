@@ -26,6 +26,8 @@ ffi.cdef [[
   int ASN1_ENUMERATED_set(ASN1_ENUMERATED *a, long v);
 
   int ASN1_STRING_print(BIO *bp, const ASN1_STRING *v);
+
+  int ASN1_STRING_length(const ASN1_STRING *x);
 ]]
 
 local function declare_asn1_functions(typ, has_ex)

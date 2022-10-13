@@ -178,17 +178,18 @@ DNS example.com
     location =/t {
         content_by_lua_block {
             local x509 = require("resty.openssl.x509")
-            --[[
-               openssl req -x509 -nodes -newkey rsa:4096 -keyout x509_sans.key -out x509_sans.cer -days 36500 \
-                -subj '/OU=EFS File Encryption Certificate/L=EFS/CN=efs' \
-                -addext 'extendedKeyUsage=1.3.6.1.4.1.311.10.3.4.1' -addext 'basicConstraints=CA:FALSE' \
-                -addext 'subjectAltName=otherName:msUPN;UTF8:sb@sb.local,IP.1:1.2.3.4,DNS:example.com,email:test@test.com,RID:1.2.3.4'
-            ]]--
-            local x = myassert(x509.new(io.open("t/fixtures/x509_sans.crt"):read("*a")))
 
-            local c = myassert(x:get_subject_alt_name())
+            local extension = require "resty.openssl.x509.extension"
 
-            for k, v in pairs(c) do
+            local ext, err = myassert(extension.new("subjectAltName", "otherName:msUPN;UTF8:sb@sb.local,IP.1:255.255.255.255,IP.2:1111:1111:1111:1111:1111:1111:1111:1111,DNS:example.com,email:test@test.com,RID:1.2.3.4"))
+
+            local c = x509.new()
+
+            myassert(c:add_extension(ext))
+
+            local alts = myassert(c:get_subject_alt_name())
+
+            for k, v in pairs(alts) do
                 ngx.say(k, ":", v)
             end
         }
@@ -197,9 +198,41 @@ DNS example.com
     GET /t
 --- response_body
 OtherName:OtherName:<unsupported>
-IP:IP:<unsupported>
+IP:255.255.255.255
+IP:1111:1111:1111:1111:1111:1111:1111:1111
 DNS:example.com
 email:test@test.com
 RID:RID:<unsupported>
+--- no_error_log
+[error]
+
+=== TEST 8: IP addresses are validated and parsed
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local altname = require("resty.openssl.x509.altname")
+            local c = myassert(altname.new())
+
+            myassert(c:add("IP", "1.2.3.4"))
+            myassert(c:add("IPAddress", "100.100.100.100"))
+            myassert(c:add("IP", "255.255.255.255"))
+            myassert(c:add("IP", "::1"))
+            myassert(c:add("IP", "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"))
+            for _, v in ipairs({"1", ":::", "ffff:", "256.1.1.1"}) do
+                local _, err = c:add("IP", v)
+                if err == nil then
+                    ngx.say("should error on " .. v)
+                end
+            end
+
+            ngx.say(c:tostring())
+
+        }
+    }
+--- request
+    GET /t
+--- response_body
+IP=1.2.3.4/IP=100.100.100.100/IP=255.255.255.255/IP=::1/IP=ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff
 --- no_error_log
 [error]

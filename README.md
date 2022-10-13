@@ -3209,6 +3209,8 @@ Adds a name to altname stack, first argument is case-insensitive and can be one 
     URI
     DNSName
     DNS
+    IP
+    IPAddress
 
 This function can be called multiple times in a chained fashion.
 
