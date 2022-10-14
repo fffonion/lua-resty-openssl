@@ -41,7 +41,32 @@ ffi.cdef [[
   int X509_PURPOSE_get_id(const X509_PURPOSE *xp);
 ]]
 
-local _M = {}
+local _M = {
+  verify_flags = {
+    X509_V_FLAG_CB_ISSUER_CHECK              = 0x0,   -- Deprecated
+    X509_V_FLAG_USE_CHECK_TIME               = 0x2,
+    X509_V_FLAG_CRL_CHECK                    = 0x4,
+    X509_V_FLAG_CRL_CHECK_ALL                = 0x8,
+    X509_V_FLAG_IGNORE_CRITICAL              = 0x10,
+    X509_V_FLAG_X509_STRICT                  = 0x20,
+    X509_V_FLAG_ALLOW_PROXY_CERTS            = 0x40,
+    X509_V_FLAG_POLICY_CHECK                 = 0x80,
+    X509_V_FLAG_EXPLICIT_POLICY              = 0x100,
+    X509_V_FLAG_INHIBIT_ANY                  = 0x200,
+    X509_V_FLAG_INHIBIT_MAP                  = 0x400,
+    X509_V_FLAG_NOTIFY_POLICY                = 0x800,
+    X509_V_FLAG_EXTENDED_CRL_SUPPORT         = 0x1000,
+    X509_V_FLAG_USE_DELTAS                   = 0x2000,
+    X509_V_FLAG_CHECK_SS_SIGNATURE           = 0x4000,
+    X509_V_FLAG_TRUSTED_FIRST                = 0x8000,
+    X509_V_FLAG_SUITEB_128_LOS_ONLY          = 0x10000,
+    X509_V_FLAG_SUITEB_192_LOS               = 0x20000,
+    X509_V_FLAG_SUITEB_128_LOS               = 0x30000,
+    X509_V_FLAG_PARTIAL_CHAIN                = 0x80000,
+    X509_V_FLAG_NO_ALT_CHAINS                = 0x100000,
+    X509_V_FLAG_NO_CHECK_TIME                = 0x200000,
+  },
+}
 
 if OPENSSL_10 or BORINGSSL_110 then
   ffi.cdef [[
@@ -77,6 +102,7 @@ else
   _M.X509_STORE_set_default_paths = function(s) return C.X509_STORE_set_default_paths(s) end
   _M.X509_STORE_load_locations = function(s, file, dir) return C.X509_STORE_load_locations(s, file, dir) end
 end
+
 
 return _M
 
