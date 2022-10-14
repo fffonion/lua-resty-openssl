@@ -2,6 +2,7 @@ local ffi = require "ffi"
 local C = ffi.C
 local ffi_gc = ffi.gc
 local ffi_str = ffi.string
+local bor = bit.bor
 
 local x509_vfy_macro = require "resty.openssl.include.x509_vfy"
 local x509_lib = require "resty.openssl.x509"
@@ -14,6 +15,8 @@ local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 
 local _M = {}
 local mt = { __index = _M }
+
+_M.verify_flags = x509_vfy_macro.verify_flags
 
 local x509_store_ptr_ct = ffi.typeof('X509_STORE*')
 
@@ -72,7 +75,9 @@ function _M:add(item)
     -- enables CRL checking for the certificate chain leaf certificate.
     -- An error occurs if a suitable CRL cannot be found.
     -- Note: this does not check for certificates in the chain.
-    C.X509_STORE_set_flags(self.ctx, 0x4)
+    if C.X509_STORE_set_flags(self.ctx, 0x4) ~= 1 then
+      return false, format_error("x509.store:add: X509_STORE_set_flags")
+    end
     -- decrease the dup ctx ref count immediately to make leak test happy
     C.X509_CRL_free(dup)
   else
@@ -147,6 +152,19 @@ function _M:set_purpose(purpose)
 
   if C.X509_STORE_set_purpose(self.ctx, i) ~= 1 then
     return false, format_error("x509.store:set_purpose: X509_STORE_set_purpose")
+  end
+
+  return true
+end
+
+function _M:set_flags(...)
+  local flag = 0
+  for _, f in ipairs({...}) do
+    flag = bor(flag, f)
+  end
+
+  if C.X509_STORE_set_flags(self.ctx, flag) ~= 1 then
+    return false, format_error("x509.store:set_flags: X509_STORE_set_flags")
   end
 
   return true

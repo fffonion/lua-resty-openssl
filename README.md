@@ -246,6 +246,7 @@ Table of Contents
     + [store:load_directory](#storeload_directory)
     + [store:set_purpose](#storeset_purpose)
     + [store:set_depth](#storeset_depth)
+    + [store:set_flags](#storeset_flags)
     + [store:verify](#storeverify)
   * [resty.openssl.x509.revoked](#restyopensslx509revoked)
     + [revoked.new](#revokednew)
@@ -3260,7 +3261,10 @@ Only the following types are decoded, other types are decoded as `"TYPE:<unsuppo
 
 ## resty.openssl.x509.extension
 
-Module to interact with X.509 extensions.
+Module to interact with every X.509 extensions.
+
+This module is particular useful to create extensions not supported by
+`x509.*` modules or custom extensions.
 
 [Back to TOC](#table-of-contents)
 
@@ -3815,6 +3819,51 @@ is not included in the default verify methods.
 **syntax**: *ok, err = store:set_depth(depth)*
 
 Set the verify depth.
+
+### store:set_flags
+
+**syntax**: *ok, err = store:set_flags(flag1, flag2, ...)*
+
+Set the verify flags, available via `store.verify_flags` table:
+
+```
+    X509_V_FLAG_CB_ISSUER_CHECK              = 0x0,   -- Deprecated
+    X509_V_FLAG_USE_CHECK_TIME               = 0x2,
+    X509_V_FLAG_CRL_CHECK                    = 0x4,
+    X509_V_FLAG_CRL_CHECK_ALL                = 0x8,
+    X509_V_FLAG_IGNORE_CRITICAL              = 0x10,
+    X509_V_FLAG_X509_STRICT                  = 0x20,
+    X509_V_FLAG_ALLOW_PROXY_CERTS            = 0x40,
+    X509_V_FLAG_POLICY_CHECK                 = 0x80,
+    X509_V_FLAG_EXPLICIT_POLICY              = 0x100,
+    X509_V_FLAG_INHIBIT_ANY                  = 0x200,
+    X509_V_FLAG_INHIBIT_MAP                  = 0x400,
+    X509_V_FLAG_NOTIFY_POLICY                = 0x800,
+    X509_V_FLAG_EXTENDED_CRL_SUPPORT         = 0x1000,
+    X509_V_FLAG_USE_DELTAS                   = 0x2000,
+    X509_V_FLAG_CHECK_SS_SIGNATURE           = 0x4000,
+    X509_V_FLAG_TRUSTED_FIRST                = 0x8000,
+    X509_V_FLAG_SUITEB_128_LOS_ONLY          = 0x10000,
+    X509_V_FLAG_SUITEB_192_LOS               = 0x20000,
+    X509_V_FLAG_SUITEB_128_LOS               = 0x30000,
+    X509_V_FLAG_PARTIAL_CHAIN                = 0x80000,
+    X509_V_FLAG_NO_ALT_CHAINS                = 0x100000,
+    X509_V_FLAG_NO_CHECK_TIME                = 0x200000,
+```
+
+
+```lua
+store:set_flags(store.verify_flags.X509_V_FLAG_PARTIAL_CHAIN)
+
+store:set_flags(store.verify_flags.X509_V_FLAG_PARTIAL_CHAIN,
+                store.verify_flags.X509_V_FLAG_NO_CHECK_TIME)
+
+store:set_flags(store.verify_flags.X509_V_FLAG_PARTIAL_CHAIN +
+                store.verify_flags.X509_V_FLAG_NO_CHECK_TIME)
+```
+
+See [X509_VERIFY_PARAM_set_flags(3)](https://www.openssl.org/docs/manmaster/man3/X509_VERIFY_PARAM_set_flags.html)
+for explanation of each flag.
 
 [Back to TOC](#table-of-contents)
 
