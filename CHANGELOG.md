@@ -2,6 +2,12 @@
 ## [Unreleased]
 
 
+<a name="0.8.14"></a>
+## [0.8.14] - 2022-10-21
+### bug fixes
+- **x509.crl:** fix metamethods when revoked is empty ([#79](https://github.com/fffonion/lua-resty-openssl/issues/79)) [e65adc7](https://github.com/fffonion/lua-resty-openssl/commit/e65adc7f132628c97e4db69cb5c4b13ff9cf0abf)
+
+
 <a name="0.8.13"></a>
 ## [0.8.13] - 2022-10-14
 ### bug fixes
@@ -441,7 +447,8 @@
 - **x509:** export pubkey [ede4f81](https://github.com/fffonion/lua-resty-openssl/commit/ede4f817cb0fe092ad6f9ab5d6ecdcde864a9fd8)
 
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.13...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.14...HEAD
+[0.8.14]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.13...0.8.14
 [0.8.13]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.11...0.8.13
 [0.8.11]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.10...0.8.11
 [0.8.10]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.9...0.8.10
