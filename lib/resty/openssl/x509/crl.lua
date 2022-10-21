@@ -209,10 +209,11 @@ end
 
 local revoked_mt = stack_lib.mt_of("X509_REVOKED", revoked_decode, _M)
 
+local function nil_iter() return nil end
 local function revoked_iter(self)
   local stack = accessors.get_revoked(self.ctx)
   if stack == nil then
-    return
+    return nil_iter
   end
 
   return revoked_mt.__ipairs({ctx = stack})
@@ -221,12 +222,17 @@ end
 mt.__pairs = revoked_iter
 mt.__ipairs = revoked_iter
 mt.__index = function(self, k)
+  local i = tonumber(k)
+  if not i then
+    return _M[k]
+  end
+
   local stack = accessors.get_revoked(self.ctx)
   if stack == nil then
     return nil
   end
 
-  return revoked_mt.__index({ctx = stack}, k)
+  return revoked_mt.__index({ctx = stack}, i)
 end
 mt.__len = function(self)
   local stack = accessors.get_revoked(self.ctx)

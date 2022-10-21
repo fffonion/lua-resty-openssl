@@ -265,10 +265,34 @@ truetrue
 --- no_error_log
 [error]
 
+=== TEST 10: x509.crl doesn't error if revoked is empty (regression)
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local f = io.open("t/fixtures/no_revoked.crl"):read("*a")
+            local c = myassert(require("resty.openssl.x509.crl").new(f))
+
+            for k, v in pairs(c) do
+                ngx.say(tostring(k))
+            end
+            -- above should print nothing
+
+            ngx.say(c:get_last_update())
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+"1652832000
+"
+--- no_error_log
+[error]
+
 # START AUTO GENERATED CODE
 
 
-=== TEST 10: x509.crl:get_issuer_name (AUTOGEN)
+=== TEST 11: x509.crl:get_issuer_name (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -288,7 +312,7 @@ truetrue
 --- no_error_log
 [error]
 
-=== TEST 11: x509.crl:set_issuer_name (AUTOGEN)
+=== TEST 12: x509.crl:set_issuer_name (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -316,7 +340,7 @@ truetrue
 --- no_error_log
 [error]
 
-=== TEST 12: x509.crl:get_last_update (AUTOGEN)
+=== TEST 13: x509.crl:get_last_update (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -335,7 +359,7 @@ truetrue
 --- no_error_log
 [error]
 
-=== TEST 13: x509.crl:set_last_update (AUTOGEN)
+=== TEST 14: x509.crl:set_last_update (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -361,7 +385,7 @@ truetrue
 --- no_error_log
 [error]
 
-=== TEST 14: x509.crl:get_next_update (AUTOGEN)
+=== TEST 15: x509.crl:get_next_update (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -380,7 +404,7 @@ truetrue
 --- no_error_log
 [error]
 
-=== TEST 15: x509.crl:set_next_update (AUTOGEN)
+=== TEST 16: x509.crl:set_next_update (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -406,7 +430,7 @@ truetrue
 --- no_error_log
 [error]
 
-=== TEST 16: x509.crl:get_version (AUTOGEN)
+=== TEST 17: x509.crl:get_version (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -425,7 +449,7 @@ truetrue
 --- no_error_log
 [error]
 
-=== TEST 17: x509.crl:set_version (AUTOGEN)
+=== TEST 18: x509.crl:set_version (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -451,7 +475,7 @@ truetrue
 --- no_error_log
 [error]
 
-=== TEST 19: x509.crl:get_get_signature_name (AUTOGEN)
+=== TEST 20: x509.crl:get_get_signature_name (AUTOGEN)
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
