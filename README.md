@@ -1527,7 +1527,7 @@ To view a list of cipher algorithms implemented, use
 [openssl.list_cipher_algorithms](#openssllist_cipher_algorithms)
 or `openssl list -cipher-algorithms`
 
-Staring from OpenSSL 3.0, this functions accepts an optional `properties` parameter
+Staring from OpenSSL 3.0, this function accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
@@ -1745,7 +1745,7 @@ To view a list of digest algorithms implemented, use
 If `digest_name` is omitted, it's default to `sha1`. Specially, the digest_name `"null"`
 represents a "null" message digest that does nothing: i.e. the hash it returns is of zero length.
 
-Staring from OpenSSL 3.0, this functions accepts an optional `properties` parameter
+Staring from OpenSSL 3.0, this function accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
@@ -1991,7 +1991,7 @@ Derive a key from given material. Various KDFs are supported based on OpenSSL ve
 | pass    | string | Initial key material to derive from | (empty string) |
 | salt    | string | Add some salt | (empty string) |
 | md    | string | Message digest method name to use, not effective for `scrypt` type | `"sha1"` |
-| properties | string | Staring from OpenSSL 3.0, this functions accepts an optional `properties` parameter
+| properties | string | Staring from OpenSSL 3.0, this function accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms. | |
 | pbkdf2_iter     | number | PBKDF2 iteration count. RFC 2898 suggests an iteration count of at least 1000. Any value less than 1 is treated as a single iteration.  | `1` |
 | hkdf_key     | string | HKDF key  | **required** |
@@ -2039,7 +2039,9 @@ To view a list of kdf algorithms implemented, use
 [openssl.list_kdf_algorithms](#openssllist_kdf_algorithms) or
 `openssl list -kdf-algorithms`.
 
-Staring from OpenSSL 3.0, this functions accepts an optional `properties` parameter
+This function is available since OpenSSL 3.0.
+
+This function accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
@@ -2049,6 +2051,8 @@ to explictly select provider to fetch algorithms.
 **syntax**: *ok = kdf.istype(table)*
 
 Returns `true` if table is an instance of `kdf`. Returns `false` otherwise.
+
+This function is available since OpenSSL 3.0.
 
 [Back to TOC](#table-of-contents)
 
@@ -2066,6 +2070,8 @@ This function is available since OpenSSL 3.0.
 
 Query settable or gettable params and set or get params.
 See [Generic EVP parameter getter/setter](#generic-evp-parameter-gettersetter).
+
+This function is available since OpenSSL 3.0.
 
 [Back to TOC](#table-of-contents)
 
@@ -2117,6 +2123,8 @@ key = assert(k:derive(16, {
     -- mode = "EXPAND_ONLY"
 }))
 ```
+
+This function is available since OpenSSL 3.0.
 
 [Back to TOC](#table-of-contents)
 
@@ -2195,7 +2203,7 @@ Encode data in `data` to a PKCS#12 text.
 
 `passphrase` is the string for encryption. If omitted, an empty string will be used.
 
-Staring from OpenSSL 3.0, this functions accepts an optional `properties` parameter
+Staring from OpenSSL 3.0, this function accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms.
 
 Note in OpenSSL 3.0 `RC2` has been moved to **legacy** provider. In order to encode p12 data with RC2
@@ -2257,7 +2265,7 @@ Creates a `x509` instance. `txt` can be **PEM** or **DER** formatted text;
 
 When `txt` is omitted, `new()` creates an empty `x509` instance.
 
-Staring from OpenSSL 3.0, this functions accepts an optional `properties` parameter
+Staring from OpenSSL 3.0, this function accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
@@ -2291,7 +2299,7 @@ To view a list of digest algorithms implemented, use
 
 If `digest_name` is omitted, it's default to `sha1`.
 
-Staring from OpenSSL 3.0, this functions accepts an optional `properties` parameter
+Staring from OpenSSL 3.0, this function accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
@@ -2309,7 +2317,7 @@ To view a list of digest algorithms implemented, use
 
 If `digest_name` is omitted, it's default to `sha1`.
 
-Staring from OpenSSL 3.0, this functions accepts an optional `properties` parameter
+Staring from OpenSSL 3.0, this function accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
@@ -2579,7 +2587,7 @@ Create an empty `csr` instance. `txt` can be **PEM** or **DER** formatted text;
 
 When `txt` is omitted, `new()` creates an empty `csr` instance.
 
-Staring from OpenSSL 3.0, this functions accepts an optional `properties` parameter
+Staring from OpenSSL 3.0, this function accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
@@ -2788,7 +2796,7 @@ Creates a `crl` instance. `txt` can be **PEM** or **DER** formatted text;
 
 When `txt` is omitted, `new()` creates an empty `crl` instance.
 
-Staring from OpenSSL 3.0, this functions accepts an optional `properties` parameter
+Staring from OpenSSL 3.0, this function accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
@@ -3729,7 +3737,7 @@ Module to interact with X.509 certificate store (X509_STORE).
 
 Creates a new `store` instance.
 
-Staring from OpenSSL 3.0, this functions accepts an optional `properties` parameter
+Staring from OpenSSL 3.0, this function accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
@@ -3751,7 +3759,7 @@ Loads certificates into the X509_STORE from the hardcoded default paths.
 Note that to load "default" CAs correctly, usually you need to install a CA
 certificates bundle. For example, the package in Debian/Ubuntu is called `ca-certificates`.
 
-Staring from OpenSSL 3.0, this functions accepts an optional `properties` parameter
+Staring from OpenSSL 3.0, this function accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
@@ -3772,7 +3780,7 @@ The argument must be a [resty.openssl.x509](#restyopensslx509) instance or a
 
 Loads a X.509 certificate on file system into store.
 
-Staring from OpenSSL 3.0, this functions accepts an optional `properties` parameter
+Staring from OpenSSL 3.0, this function accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
@@ -3785,7 +3793,7 @@ Loads a directory of X.509 certificates on file system into store. The certifica
 must be in hashed form, as documented in
 [X509_LOOKUP_hash_dir(3)](https://www.openssl.org/docs/manmaster/man3/X509_LOOKUP_hash_dir.html).
 
-Staring from OpenSSL 3.0, this functions accepts an optional `properties` parameter
+Staring from OpenSSL 3.0, this function accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
@@ -3879,7 +3887,7 @@ If verification succeed, and `return_chain` is set to true, returns the proof of
 [resty.openssl.x509.chain](#restyopensslx509chain); otherwise
 returns `true` only. If verification failed, returns `nil` and error explaining the reason.
 
-Staring from OpenSSL 3.0, this functions accepts an optional `properties` parameter
+Staring from OpenSSL 3.0, this function accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms.
 
 `verify_method` can be set to use predefined verify parameters such as `"default"`, `"pkcs7"`,
