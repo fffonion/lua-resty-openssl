@@ -658,6 +658,11 @@ function _M:decrypt(s, padding)
 end
 
 function _M:sign_raw(s, padding)
+  -- TODO: temporary hack before OpenSSL has proper check for existence of private key
+  if self.key_type_is_ecx and not self:is_private() then
+    return nil, "pkey:sign_raw: missing private key"
+  end
+
   return asymmetric_routine(self, s, ASYMMETRIC_OP_SIGN_RAW, padding)
 end
 
@@ -719,6 +724,11 @@ local function sign_verify_prepare(self, fint, md_alg, padding, opts)
 end
 
 function _M:sign(digest, md_alg, padding, opts)
+  -- TODO: temporary hack before OpenSSL has proper check for existence of private key
+  if self.key_type_is_ecx and not self:is_private() then
+    return nil, "pkey:sign: missing private key"
+  end
+
   if digest_lib.istype(digest) then
     local length = ptr_of_uint()
     if C.EVP_SignFinal(digest.ctx, self.buf, length, self.ctx) ~= 1 then
