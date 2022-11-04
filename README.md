@@ -823,7 +823,7 @@ pkey.new(pem_or_der_text, {
 ```
 
   -  When loading JWK, make sure the encoded JSON text is passed in.
-  - Currently it's not supported to contraint
+  - Currently it's not supported to constraint
   `type` on JWK key, the parameters in provided JSON will decide if a private or public key is loaded.
   - Only JWK with key type of `RSA`, `P-256`, `P-384` and `P-512` `EC`,
   `Ed25519`, `X25519`, `Ed448` and `X448` `OKP` keys are supported.
