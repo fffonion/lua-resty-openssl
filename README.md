@@ -779,7 +779,7 @@ Function to generate a key pair, or load existing key in PEM or DER format.
 1. Pass a `config` table to create a new PKEY pair. Which defaults to:
   
 ```lua
-locak key, err = pkey.new({
+local key, err = pkey.new({
   type = 'RSA',
   bits = 2048,
   exp = 65537
