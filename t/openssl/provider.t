@@ -112,7 +112,7 @@ true
     GET /t
 --- response_body_like
 true
-.+init fail
+.+(?:init fail|common libcrypto routines::reason\(524325\))
 --- no_error_log
 [error]
 
