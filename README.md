@@ -760,6 +760,8 @@ X448 | Y | Y | | | Y (ECDH) |
 
 `Ed25519`, `X25519`, `Ed448` and `X448` keys are only supported since OpenSSL 1.1.0.
 
+Note BoringSSL doesn't support `Ed448` and `X448` keys.
+
 Direct support of encryption and decryption for EC and ECX does not exist, but
 processes like ECIES is possible with [pkey:derive](#pkeyderive),
 [kdf](#restyopensslkdf) and [cipher](#restyopensslcipher)
