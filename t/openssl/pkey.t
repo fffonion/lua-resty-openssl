@@ -1225,3 +1225,51 @@ default
 .+sha256.+
 --- no_error_log
 [error]
+
+=== TEST 38: Reads and write pkcs1 rsa key
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local pkey = require("resty.openssl.pkey")
+
+            local f = io.open("t/fixtures/test.key"):read("*a") -- pkcs8
+            local key = myassert(pkey.new(f))
+
+            -- read
+            for _, fp in ipairs({"rsa-pkcs1-priv.key", "rsa-pkcs1-pub.key"}) do
+                local f = io.open("t/fixtures/" .. fp):read("*a") -- pkcs8
+                myassert(pkey.new(f))
+            end
+
+            local p = myassert(pkey.new({ type = "EC", curve = 'prime256v1' }))
+            ngx.say(p:to_PEM(nil, true))
+            ngx.say(key:tostring(nil, "DER", true))
+
+            if require("resty.openssl.version").OPENSSL_30 then
+                ngx.say('BEGIN RSA PUBLIC KEY\ntrue')
+                ngx.say('BEGIN RSA PRIVATE KEY\ntrue')
+                ngx.exit(0)
+            end
+
+            -- write (and read back)
+            for _, kt in ipairs({"public", "private"}) do
+                local pkcs1_pem = key:to_PEM(kt, true)
+                ngx.say(pkcs1_pem:match("BEGIN RSA " .. kt:upper() .. " KEY"))
+
+                local key2 = myassert(pkey.new(pkcs1_pem))
+                ngx.say(key2:to_PEM(kt) == key:to_PEM(kt))
+            end
+        }
+    }
+--- request
+    GET /t
+--- response_body
+nilPKCS#1 format is only supported to encode RSA key in "PEM" format
+nilPKCS#1 format is only supported to encode RSA key in "PEM" format
+BEGIN RSA PUBLIC KEY
+true
+BEGIN RSA PRIVATE KEY
+true
+--- no_error_log
+[error]
