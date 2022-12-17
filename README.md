@@ -832,6 +832,8 @@ pkey.new(pem_or_der_text, {
   - Public key part for `OKP` keys
   (the `x` parameter) is always not honored and derived from private key part (the `d` parameter) if it's specified.
 
+  - When loading RSA, it can either be a PKCS#8 encoded `SubjectPublicKeyInfo`/`PrivateKeyInfo` or a PKCS#1 encoded `RSAPublicKey`/`RSAPrivateKey`.
+
 3. Pass `nil` to create a 2048 bits RSA key.
 4. Pass a `EVP_PKEY*` pointer, to return a wrapped `pkey` instance. Normally user won't use this
 approach. User shouldn't free the pointer on their own, since the pointer is not copied.
@@ -1211,20 +1213,25 @@ for an example on how key exchange works for X25519 keys with DH algorithm.
 
 ### pkey:tostring
 
-**syntax**: *txt, err = pk:tostring(private_or_public?, fmt?)*
+**syntax**: *txt, err = pk:tostring(private_or_public?, fmt?, is_pkcs1?)*
 
 Outputs private key or public key of pkey instance in PEM-formatted text.
 The first argument must be a choice of `public`, `PublicKey`, `private`, `PrivateKey` or nil.
+
 The second argument `fmt` can be `PEM`, `DER`, `JWK` or nil.
 If both arguments are omitted, this functions returns the `PEM` representation of public key.
+
+If `is_pkcs1` is set to true, the output is encoded using a PKCS#1 RSAPublicKey structure;
+`PKCS#1` encoding is currently supported for RSA key in PEM format. Writing out a PKCS#1
+encoded RSA key is currently not supported when using with OpenSSL 3.0.
 
 [Back to TOC](#table-of-contents)
 
 ### pkey:to_PEM
 
-**syntax**: *pem, err = pk:to_PEM(private_or_public?)*
+**syntax**: *pem, err = pk:to_PEM(private_or_public?, is_pkcs1?)*
 
-Equivalent to `pkey:tostring(private_or_public, "PEM")`.
+Equivalent to `pkey:tostring(private_or_public, "PEM", is_pkcs1)`.
 
 [Back to TOC](#table-of-contents)
 

@@ -39,6 +39,30 @@ local null = ctypes.null
 local load_pem_args = { null, null, null }
 local load_der_args = { null }
 
+local get_pkey_key
+if OPENSSL_11_OR_LATER then
+  get_pkey_key = {
+    [evp_macro.EVP_PKEY_RSA] = function(ctx) return C.EVP_PKEY_get0_RSA(ctx) end,
+    [evp_macro.EVP_PKEY_EC] = function(ctx) return C.EVP_PKEY_get0_EC_KEY(ctx) end,
+    [evp_macro.EVP_PKEY_DH]  = function(ctx) return C.EVP_PKEY_get0_DH(ctx) end
+  }
+else
+  get_pkey_key = {
+    [evp_macro.EVP_PKEY_RSA] = function(ctx) return ctx.pkey and ctx.pkey.rsa end,
+    [evp_macro.EVP_PKEY_EC] = function(ctx) return ctx.pkey and ctx.pkey.ec end,
+    [evp_macro.EVP_PKEY_DH]  = function(ctx) return ctx.pkey and ctx.pkey.dh end,
+  }
+end
+
+local load_rsa_key_funcs
+
+if not OPENSSL_30 then
+  load_rsa_key_funcs= {
+    ['PEM_read_bio_RSAPrivateKey'] = true,
+    ['PEM_read_bio_RSAPublicKey'] = true,
+  } -- those functions return RSA* instead of EVP_PKEY*
+end
+
 local function load_pem_der(txt, opts, funcs)
   local fmt = opts.format or '*'
   if fmt ~= 'PEM' and fmt ~= 'DER' and fmt ~= "JWK" and fmt ~= '*' then
@@ -115,6 +139,23 @@ local function load_pem_der(txt, opts, funcs)
 
     if ctx ~= nil then
       ngx.log(ngx.DEBUG, "pkey:load_pem_der: loaded pkey using function ", f)
+
+      -- pkcs1 functions create a rsa rather than evp_pkey
+      -- disable the checking in openssl 3.0 for sail safe
+      if not OPENSSL_30 and load_rsa_key_funcs[f] then
+        local rsa = ctx
+        ctx = C.EVP_PKEY_new()
+        if ctx == null then
+          return nil, format_error("pkey:load_pem_der: EVP_PKEY_new")
+        end
+
+        if C.EVP_PKEY_assign(ctx, evp_macro.EVP_PKEY_RSA, rsa) ~= 1 then
+          C.RSA_free(rsa)
+          C.EVP_PKEY_free(ctx)
+          return nil, "pkey:load_pem_der: EVP_PKEY_assign() failed"
+        end
+      end
+
       break
     end
   end
@@ -325,28 +366,27 @@ local function generate_key(config)
 end
 
 local load_key_try_funcs = {} do
+  -- TODO: pkcs1 load functions are not required in openssl 3.0
   local _load_key_try_funcs = {
     PEM = {
       -- Note: make sure we always try load priv key first
       pr = {
         ['PEM_read_bio_PrivateKey'] = load_pem_args,
+        -- disable in openssl3.0, PEM_read_bio_PrivateKey can read pkcs1 in 3.0
+        ['PEM_read_bio_RSAPrivateKey'] = not OPENSSL_30 and load_pem_args or nil,
       },
       pu = {
         ['PEM_read_bio_PUBKEY'] = load_pem_args,
+        -- disable in openssl3.0, PEM_read_bio_PrivateKey can read pkcs1 in 3.0
+        ['PEM_read_bio_RSAPublicKey'] = not OPENSSL_30 and load_pem_args or nil,
       },
     },
     DER = {
-      pr = {
-        ['d2i_PrivateKey_bio'] = load_der_args,
-      },
-      pu = {
-        ['d2i_PUBKEY_bio'] = load_der_args,
-      },
+      pr = { ['d2i_PrivateKey_bio'] = load_der_args, },
+      pu = { ['d2i_PUBKEY_bio'] = load_der_args, },
     },
     JWK = {
-      pr = {
-        ['load_jwk'] = {},
-      },
+      pr = { ['load_jwk'] = {}, },
     }
   }
   -- populate * funcs
@@ -375,13 +415,29 @@ local load_key_try_funcs = {} do
   end
 end
 
-local function __tostring(self, is_priv, fmt)
+local function __tostring(self, is_priv, fmt, is_pkcs1)
   if fmt == "JWK" then
     return jwk_lib.dump_jwk(self, is_priv)
+  elseif is_pkcs1 then
+    if fmt ~= "PEM" or self.key_type ~= evp_macro.EVP_PKEY_RSA then
+      return nil, "PKCS#1 format is only supported to encode RSA key in \"PEM\" format"
+    elseif OPENSSL_30 then -- maybe possible with OSSL_ENCODER_CTX_new_for_pkey though
+      return nil, "writing out RSA key in PKCS#1 format is not supported in OpenSSL 3.0"
+    end
   end
   if is_priv then
     if fmt == "DER" then
       return util.read_using_bio(C.i2d_PrivateKey_bio, self.ctx)
+    end
+    -- PEM
+    if is_pkcs1 then
+      local rsa = get_pkey_key[evp_macro.EVP_PKEY_RSA](self.ctx)
+      if rsa == nil then
+        return nil, "unable to read RSA key for writing"
+      end
+      return util.read_using_bio(C.PEM_write_bio_RSAPrivateKey,
+        rsa,
+        nil, nil, 0, nil, nil)
     end
     return util.read_using_bio(C.PEM_write_bio_PrivateKey,
       self.ctx,
@@ -389,6 +445,14 @@ local function __tostring(self, is_priv, fmt)
   else
     if fmt == "DER" then
       return util.read_using_bio(C.i2d_PUBKEY_bio, self.ctx)
+    end
+    -- PEM
+    if is_pkcs1 then
+      local rsa = get_pkey_key[evp_macro.EVP_PKEY_RSA](self.ctx)
+      if rsa == nil then
+        return nil, "unable to read RSA key for writing"
+      end
+      return util.read_using_bio(C.PEM_write_bio_RSAPublicKey, rsa)
     end
     return util.read_using_bio(C.PEM_write_bio_PUBKEY, self.ctx)
   end
@@ -496,21 +560,6 @@ end
 if OPENSSL_30 then
   local param_lib = require "resty.openssl.param"
   _M.settable_params, _M.set_params, _M.gettable_params, _M.get_param = param_lib.get_params_func("EVP_PKEY", "key_type")
-end
-
-local get_pkey_key
-if OPENSSL_11_OR_LATER then
-  get_pkey_key = {
-    [evp_macro.EVP_PKEY_RSA] = function(ctx) return C.EVP_PKEY_get0_RSA(ctx) end,
-    [evp_macro.EVP_PKEY_EC] = function(ctx) return C.EVP_PKEY_get0_EC_KEY(ctx) end,
-    [evp_macro.EVP_PKEY_DH]  = function(ctx) return C.EVP_PKEY_get0_DH(ctx) end
-  }
-else
-  get_pkey_key = {
-    [evp_macro.EVP_PKEY_RSA] = function(ctx) return ctx.pkey and ctx.pkey.rsa end,
-    [evp_macro.EVP_PKEY_EC] = function(ctx) return ctx.pkey and ctx.pkey.ec end,
-    [evp_macro.EVP_PKEY_DH]  = function(ctx) return ctx.pkey and ctx.pkey.dh end,
-  }
 end
 
 function _M:get_parameters()
@@ -838,16 +887,16 @@ local function pub_or_priv_is_pri(pub_or_priv)
   end
 end
 
-function _M:tostring(pub_or_priv, fmt)
+function _M:tostring(pub_or_priv, fmt, pkcs1)
   local is_priv, err = pub_or_priv_is_pri(pub_or_priv)
   if err then
     return nil, "pkey:tostring: " .. err
   end
-  return __tostring(self, is_priv, fmt)
+  return __tostring(self, is_priv, fmt, pkcs1)
 end
 
-function _M:to_PEM(pub_or_priv)
-  return self:tostring(pub_or_priv, "PEM")
+function _M:to_PEM(pub_or_priv, pkcs1)
+  return self:tostring(pub_or_priv, "PEM", pkcs1)
 end
 
 function _M.paramgen(config)

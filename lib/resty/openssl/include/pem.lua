@@ -16,8 +16,21 @@ ffi.cdef [[
   //  pem_password_cb *cb, void *u);
   int PEM_write_bio_PrivateKey(BIO *bp, EVP_PKEY *x, const EVP_CIPHER *enc,
     unsigned char *kstr, int klen,
-    pem_password_cb cb, void *u);
+    pem_password_cb *cb, void *u);
   int PEM_write_bio_PUBKEY(BIO *bp, EVP_PKEY *x);
+
+  RSA *PEM_read_bio_RSAPrivateKey(BIO *bp, RSA **x,
+  // the following signature has been modified to avoid ffi.cast
+    pem_password_cb cb, const char *u);
+  //  pem_password_cb *cb, void *u);
+  RSA *PEM_read_bio_RSAPublicKey(BIO *bp, RSA **x,
+  // the following signature has been modified to avoid ffi.cast
+    pem_password_cb cb, const char *u);
+  //  pem_password_cb *cb, void *u);
+  int PEM_write_bio_RSAPrivateKey(BIO *bp, RSA *x, const EVP_CIPHER *enc,
+    unsigned char *kstr, int klen,
+    pem_password_cb *cb, void *u);
+  int PEM_write_bio_RSAPublicKey(BIO *bp, RSA *x);
 
   X509_REQ *PEM_read_bio_X509_REQ(BIO *bp, X509_REQ **x, pem_password_cb cb, void *u);
   int PEM_write_bio_X509_REQ(BIO *bp, X509_REQ *x);
