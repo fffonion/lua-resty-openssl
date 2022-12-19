@@ -4,11 +4,11 @@ require "resty.openssl.include.ossl_typ"
 require "resty.openssl.include.x509v3"
 require "resty.openssl.include.x509"
 local asn1_macro = require "resty.openssl.include.asn1"
-local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
+local OPENSSL_3X = require("resty.openssl.version").OPENSSL_3X
 
 asn1_macro.declare_asn1_functions("X509_EXTENSION")
 
-if OPENSSL_30 then
+if OPENSSL_3X then
   ffi.cdef [[
     struct v3_ext_ctx {
       int flags;

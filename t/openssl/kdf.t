@@ -288,7 +288,7 @@ W/tSxFnNsHIYwXa13eybYhW9W3Y=
 --- config
     location =/t {
         content_by_lua_block {
-            if not require("resty.openssl.version").OPENSSL_30 then
+            if not require("resty.openssl.version").OPENSSL_3X then
                 ngx.say('mac.new: invalid mac type "UNKNOWNKDF": blah')
                 ngx.exit(0)
             end
@@ -312,7 +312,7 @@ W/tSxFnNsHIYwXa13eybYhW9W3Y=
 --- config
     location =/t {
         content_by_lua_block {
-            if not require("resty.openssl.version").OPENSSL_30 then
+            if not require("resty.openssl.version").OPENSSL_3X then
                 ngx.say("default")
                 ngx.exit(0)
             end
@@ -335,7 +335,7 @@ default
 --- config
     location =/t {
         content_by_lua_block {
-            if not require("resty.openssl.version").OPENSSL_30 then
+            if not require("resty.openssl.version").OPENSSL_3X then
                 ngx.say("cDRFLQ7NWt+AP4i0TdBzog==")
                 ngx.exit(0)
             end
@@ -362,7 +362,7 @@ cDRFLQ7NWt+AP4i0TdBzog==
 --- config
     location =/t {
         content_by_lua_block {
-            if not require("resty.openssl.version").OPENSSL_30 then
+            if not require("resty.openssl.version").OPENSSL_3X then
                 ngx.say("-size-\n-digest-")
                 ngx.exit(0)
             end
@@ -386,7 +386,7 @@ cDRFLQ7NWt+AP4i0TdBzog==
 --- config
     location =/t {
         content_by_lua_block {
-            if not require("resty.openssl.version").OPENSSL_30 then
+            if not require("resty.openssl.version").OPENSSL_3X then
                 ngx.say("cDRFLQ7NWt+AP4i0TdBzog==\n18446744073709551615")
                 ngx.exit(0)
             end
@@ -419,7 +419,7 @@ cDRFLQ7NWt+AP4i0TdBzog==
 --- config
     location =/t {
         content_by_lua_block {
-            if not require("resty.openssl.version").OPENSSL_30 then
+            if not require("resty.openssl.version").OPENSSL_3X then
                 ngx.say("-missing salt\ncDRFLQ7NWt+AP4i0TdBzog==")
                 ngx.exit(0)
             end

@@ -6,7 +6,7 @@ require "resty.openssl.include.rand"
 local ctx_lib = require "resty.openssl.ctx"
 local ctypes = require "resty.openssl.auxiliary.ctypes"
 local format_error = require("resty.openssl.err").format_error
-local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
+local OPENSSL_3X = require("resty.openssl.version").OPENSSL_3X
 
 local buf
 local buf_size = 0
@@ -26,7 +26,7 @@ local function bytes(length, private, strength)
   end
 
   local code
-  if OPENSSL_30 then
+  if OPENSSL_3X then
     if private then
       code = C.RAND_priv_bytes_ex(ctx_lib.get_libctx(), buf, length, strength or 0)
     else

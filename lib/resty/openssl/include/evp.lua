@@ -5,7 +5,7 @@ local bit = require("bit")
 require "resty.openssl.include.ossl_typ"
 require "resty.openssl.include.err"
 require "resty.openssl.include.objects"
-local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
+local OPENSSL_3X = require("resty.openssl.version").OPENSSL_3X
 local BORINGSSL = require("resty.openssl.version").BORINGSSL
 
 if BORINGSSL then
@@ -34,7 +34,7 @@ else
   ]]
 end
 
-if OPENSSL_30 then
+if OPENSSL_3X then
   require "resty.openssl.include.provider"
 
   ffi.cdef [[
@@ -63,7 +63,7 @@ local _M = {
   EVP_PKEY_OP_KEYGEN = bit.lshift(1, 2),
   EVP_PKEY_OP_SIGN = bit.lshift(1, 3),
   EVP_PKEY_OP_VERIFY = bit.lshift(1, 4),
-  EVP_PKEY_OP_DERIVE = OPENSSL_30 and bit.lshift(1, 12) or bit.lshift(1, 10),
+  EVP_PKEY_OP_DERIVE = OPENSSL_3X and bit.lshift(1, 12) or bit.lshift(1, 10),
 
   EVP_PKEY_ALG_CTRL = EVP_PKEY_ALG_CTRL,
 

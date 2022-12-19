@@ -9,7 +9,7 @@ local nginx_aux = require("resty.openssl.auxiliary.nginx")
 local x509_lib = require("resty.openssl.x509")
 local chain_lib = require("resty.openssl.x509.chain")
 local stack_lib = require("resty.openssl.stack")
-local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
+local OPENSSL_3X = require("resty.openssl.version").OPENSSL_3X
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local format_error = require("resty.openssl.err").format_error
 
@@ -110,7 +110,7 @@ end
 
 function _M:get_peer_certificate()
   local x509
-  if OPENSSL_30 then
+  if OPENSSL_3X then
     x509 = C.SSL_get1_peer_certificate(self.ctx)
   else
     x509 = C.SSL_get_peer_certificate(self.ctx)

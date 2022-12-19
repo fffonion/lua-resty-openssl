@@ -11,7 +11,7 @@ local ctx_lib = require "resty.openssl.ctx"
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
-local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
+local OPENSSL_3X = require("resty.openssl.version").OPENSSL_3X
 
 local uchar_array = ctypes.uchar_array
 local void_ptr = ctypes.void_ptr
@@ -46,7 +46,7 @@ function _M.new(typ, properties)
   end
 
   local ctyp
-  if OPENSSL_30 then
+  if OPENSSL_3X then
     ctyp = C.EVP_CIPHER_fetch(ctx_lib.get_libctx(), typ, properties)
   else
     ctyp = C.EVP_get_cipherbyname(typ)
@@ -65,11 +65,11 @@ function _M.new(typ, properties)
     ctx = ctx,
     algo = ctyp,
     initialized = false,
-    block_size = tonumber(OPENSSL_30 and C.EVP_CIPHER_CTX_get_block_size(ctx)
+    block_size = tonumber(OPENSSL_3X and C.EVP_CIPHER_CTX_get_block_size(ctx)
                                     or C.EVP_CIPHER_CTX_block_size(ctx)),
-    key_size = tonumber(OPENSSL_30 and C.EVP_CIPHER_CTX_get_key_length(ctx)
+    key_size = tonumber(OPENSSL_3X and C.EVP_CIPHER_CTX_get_key_length(ctx)
                                     or C.EVP_CIPHER_CTX_key_length(ctx)),
-    iv_size = tonumber(OPENSSL_30 and C.EVP_CIPHER_CTX_get_iv_length(ctx)
+    iv_size = tonumber(OPENSSL_3X and C.EVP_CIPHER_CTX_get_iv_length(ctx)
                                     or C.EVP_CIPHER_CTX_iv_length(ctx)),
   }, mt), nil
 end
@@ -79,7 +79,7 @@ function _M.istype(l)
 end
 
 function _M:get_provider_name()
-  if not OPENSSL_30 then
+  if not OPENSSL_3X then
     return false, "cipher:get_provider_name is not supported"
   end
   local p = C.EVP_CIPHER_get0_provider(self.algo)
@@ -89,7 +89,7 @@ function _M:get_provider_name()
   return ffi_str(C.OSSL_PROVIDER_get0_name(p))
 end
 
-if OPENSSL_30 then
+if OPENSSL_3X then
   local param_lib = require "resty.openssl.param"
   _M.settable_params, _M.set_params, _M.gettable_params, _M.get_param = param_lib.get_params_func("EVP_CIPHER_CTX")
 end
@@ -275,7 +275,7 @@ function _M:derive(key, salt, count, md, md_properties)
   end
 
   local mdt
-  if OPENSSL_30 then
+  if OPENSSL_3X then
     mdt = C.EVP_MD_fetch(ctx_lib.get_libctx(), md or 'sha1', md_properties)
   else
     mdt = C.EVP_get_digestbyname(md or 'sha1')

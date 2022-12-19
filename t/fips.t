@@ -64,7 +64,7 @@ false
 --- config
     location =/t {
         content_by_lua_block {
-            if not _G.fips or not require("resty.openssl.version").OPENSSL_30 then
+            if not _G.fips or not require("resty.openssl.version").OPENSSL_3X then
                 ngx.say("fips\nfips\nfips")
                 ngx.exit(200)
             end
@@ -99,7 +99,7 @@ fips
             end
 
             local ok, err
-            if require("resty.openssl.version").OPENSSL_30 then
+            if require("resty.openssl.version").OPENSSL_3X then
                 ok, err = require("resty.openssl.cipher").new("chacha20")
             else
                 ok, err = require("resty.openssl.cipher").new("seed")
@@ -111,7 +111,7 @@ fips
             local openssl = require("resty.openssl")
             myassert(openssl.set_fips_mode(true))
 
-            if require("resty.openssl.version").OPENSSL_30 then
+            if require("resty.openssl.version").OPENSSL_3X then
                 ok, err = require("resty.openssl.cipher").new("chacha20")
             else
                 ok, err = require("resty.openssl.cipher").new("seed")

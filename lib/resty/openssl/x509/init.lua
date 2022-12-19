@@ -23,7 +23,7 @@ local format_error = require("resty.openssl.err").format_error
 local version = require("resty.openssl.version")
 local OPENSSL_10 = version.OPENSSL_10
 local OPENSSL_11_OR_LATER = version.OPENSSL_11_OR_LATER
-local OPENSSL_30 = version.OPENSSL_30
+local OPENSSL_3X = version.OPENSSL_3X
 local BORINGSSL = version.BORINGSSL
 local BORINGSSL_110 = version.BORINGSSL_110 -- used in boringssl-fips-20190808
 
@@ -113,7 +113,7 @@ function _M.new(cert, fmt, properties)
   local ctx
   if not cert then
     -- routine for create a new cert
-    if OPENSSL_30 then
+    if OPENSSL_3X then
       ctx = C.X509_new_ex(ctx_lib.get_libctx(), properties)
     else
       ctx = C.X509_new()
@@ -337,7 +337,7 @@ local function digest(self, cfunc, typ, properties)
   end
 
   local algo
-  if OPENSSL_30 then
+  if OPENSSL_3X then
     algo = C.EVP_MD_fetch(ctx_lib.get_libctx(), typ or 'sha1', properties)
   else
     algo = C.EVP_get_digestbyname(typ or 'sha1')
@@ -346,7 +346,7 @@ local function digest(self, cfunc, typ, properties)
     return nil, string.format("x509:digest: invalid digest type \"%s\"", typ)
   end
 
-  local md_size = OPENSSL_30 and C.EVP_MD_get_size(algo) or C.EVP_MD_size(algo)
+  local md_size = OPENSSL_3X and C.EVP_MD_get_size(algo) or C.EVP_MD_size(algo)
   if not digest_buf or digest_buf_size < md_size then
     digest_buf = ctypes.uchar_array(md_size)
     digest_buf_size = md_size

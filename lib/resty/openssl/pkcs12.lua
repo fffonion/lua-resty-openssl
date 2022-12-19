@@ -14,7 +14,7 @@ local stack_lib = require "resty.openssl.stack"
 local objects_lib = require "resty.openssl.objects"
 local ctx_lib = require "resty.openssl.ctx"
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
-local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
+local OPENSSL_3X = require("resty.openssl.version").OPENSSL_3X
 
 local stack_of_x509_new = stack_lib.new_of("X509")
 local stack_of_x509_add = stack_lib.add_of("X509")
@@ -140,7 +140,7 @@ local function encode(opts, passphrase, properties)
   end
 
   local p12
-  if OPENSSL_30 then
+  if OPENSSL_3X then
     p12 = C.PKCS12_create_ex(passphrase or "", opts.friendly_name,
                               pkey.ctx, cert.ctx, x509stack,
                               nid_key or 0, nid_cert or 0,

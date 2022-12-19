@@ -5,7 +5,7 @@ require "resty.openssl.include.ossl_typ"
 require "resty.openssl.include.evp.md"
 local evp = require("resty.openssl.include.evp")
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
-local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
+local OPENSSL_3X = require("resty.openssl.version").OPENSSL_3X
 local BORINGSSL = require("resty.openssl.version").BORINGSSL
 
 ffi.cdef [[
@@ -85,7 +85,7 @@ ffi.cdef [[
   int EVP_PKEY_paramgen(EVP_PKEY_CTX *ctx, EVP_PKEY **ppkey);
 ]]
 
-if OPENSSL_30 then
+if OPENSSL_3X then
   require "resty.openssl.include.provider"
 
   ffi.cdef [[
@@ -141,7 +141,7 @@ end
 
 local _M = {}
 
-if OPENSSL_30 or BORINGSSL then
+if OPENSSL_3X or BORINGSSL then
   ffi.cdef [[
     int EVP_PKEY_CTX_set_ec_paramgen_curve_nid(EVP_PKEY_CTX *ctx, int nid);
     int EVP_PKEY_CTX_set_ec_param_enc(EVP_PKEY_CTX *ctx, int param_enc);

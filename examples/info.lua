@@ -21,7 +21,7 @@ end
 
 print(string.rep("-", 64))
 
-if version.OPENSSL_30 then
+if version.OPENSSL_3X then
 
   print("INFO:")
   local info_table = {
