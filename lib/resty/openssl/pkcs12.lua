@@ -5,7 +5,7 @@ local ffi_str = ffi.string
 
 require "resty.openssl.include.pkcs12"
 require "resty.openssl.include.bio"
-local util = require "resty.openssl.util"
+local bio_util = require "resty.openssl.auxiliary.bio"
 local format_error = require("resty.openssl.err").format_error
 local pkey_lib = require "resty.openssl.pkey"
 local x509_lib = require "resty.openssl.x509"
@@ -157,7 +157,7 @@ local function encode(opts, passphrase, properties)
   end
   ffi_gc(p12, C.PKCS12_free)
 
-  return util.read_using_bio(C.i2d_PKCS12_bio, p12)
+  return bio_util.read_wrap(C.i2d_PKCS12_bio, p12)
 end
 
 return {

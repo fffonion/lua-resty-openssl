@@ -14,7 +14,7 @@ require "resty.openssl.include.x509"
 require "resty.openssl.include.evp.pkey"
 local evp_macro = require "resty.openssl.include.evp"
 local pkey_macro = require "resty.openssl.include.evp.pkey"
-local util = require "resty.openssl.util"
+local bio_util = require "resty.openssl.auxiliary.bio"
 local digest_lib = require "resty.openssl.digest"
 local rsa_lib = require "resty.openssl.rsa"
 local dh_lib = require "resty.openssl.dh"
@@ -427,7 +427,7 @@ local function __tostring(self, is_priv, fmt, is_pkcs1)
   end
   if is_priv then
     if fmt == "DER" then
-      return util.read_using_bio(C.i2d_PrivateKey_bio, self.ctx)
+      return bio_util.read_wrap(C.i2d_PrivateKey_bio, self.ctx)
     end
     -- PEM
     if is_pkcs1 then
@@ -435,16 +435,16 @@ local function __tostring(self, is_priv, fmt, is_pkcs1)
       if rsa == nil then
         return nil, "unable to read RSA key for writing"
       end
-      return util.read_using_bio(C.PEM_write_bio_RSAPrivateKey,
+      return bio_util.read_wrap(C.PEM_write_bio_RSAPrivateKey,
         rsa,
         nil, nil, 0, nil, nil)
     end
-    return util.read_using_bio(C.PEM_write_bio_PrivateKey,
+    return bio_util.read_wrap(C.PEM_write_bio_PrivateKey,
       self.ctx,
       nil, nil, 0, nil, nil)
   else
     if fmt == "DER" then
-      return util.read_using_bio(C.i2d_PUBKEY_bio, self.ctx)
+      return bio_util.read_wrap(C.i2d_PUBKEY_bio, self.ctx)
     end
     -- PEM
     if is_pkcs1 then
@@ -452,9 +452,9 @@ local function __tostring(self, is_priv, fmt, is_pkcs1)
       if rsa == nil then
         return nil, "unable to read RSA key for writing"
       end
-      return util.read_using_bio(C.PEM_write_bio_RSAPublicKey, rsa)
+      return bio_util.read_wrap(C.PEM_write_bio_RSAPublicKey, rsa)
     end
-    return util.read_using_bio(C.PEM_write_bio_PUBKEY, self.ctx)
+    return bio_util.read_wrap(C.PEM_write_bio_PUBKEY, self.ctx)
   end
 
 end
@@ -936,7 +936,7 @@ function _M.paramgen(config)
     return nil, format_error("pkey.paramgen: EVP_PKEY_get0_{key}")
   end
 
-  return util.read_using_bio(write_func, ctx)
+  return bio_util.read_wrap(write_func, ctx)
 end
 
 return _M
