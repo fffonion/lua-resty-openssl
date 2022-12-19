@@ -3,7 +3,7 @@ local ffi = require "ffi"
 require "resty.openssl.include.ossl_typ"
 local OPENSSL_10 = require("resty.openssl.version").OPENSSL_10
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
-local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
+local OPENSSL_3X = require("resty.openssl.version").OPENSSL_3X
 local BORINGSSL = require("resty.openssl.version").BORINGSSL
 
 ffi.cdef [[
@@ -57,7 +57,7 @@ else
   ]]
 end
 
-if OPENSSL_30 then
+if OPENSSL_3X then
   require "resty.openssl.include.provider"
 
   ffi.cdef [[

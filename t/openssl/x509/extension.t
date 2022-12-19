@@ -183,7 +183,7 @@ CA Issuers - URI:http://cacerts.digicert.com/DigiCertHighAssuranceTLSHybridECCSH
 
             ngx.say(tostring(c))
 
-            if require("resty.openssl.version").OPENSSL_30 then
+            if require("resty.openssl.version").OPENSSL_3X then
                 c = myassert(extension.new("authorityKeyIdentifier", "keyid",
                                 {
                                     subject = x509,

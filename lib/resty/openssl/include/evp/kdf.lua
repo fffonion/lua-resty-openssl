@@ -6,7 +6,7 @@ require "resty.openssl.include.ossl_typ"
 require "resty.openssl.include.evp.md"
 local evp = require("resty.openssl.include.evp")
 local ctypes = require "resty.openssl.auxiliary.ctypes"
-local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
+local OPENSSL_3X = require("resty.openssl.version").OPENSSL_3X
 local BORINGSSL = require("resty.openssl.version").BORINGSSL
 
 local void_ptr = ctypes.void_ptr
@@ -17,7 +17,7 @@ local _M = {
   EVP_PKEY_HKDEF_MODE_EXPAND_ONLY        = 2,
 }
 
-if OPENSSL_30 then
+if OPENSSL_3X then
   require "resty.openssl.include.provider"
 
   ffi.cdef [[
@@ -49,7 +49,7 @@ if OPENSSL_30 then
   ]]
 end
 
-if OPENSSL_30 or BORINGSSL then
+if OPENSSL_3X or BORINGSSL then
   ffi.cdef [[
     int EVP_PKEY_CTX_set_tls1_prf_md(EVP_PKEY_CTX *ctx, const EVP_MD *md);
     int EVP_PKEY_CTX_set1_tls1_prf_secret(EVP_PKEY_CTX *pctx,

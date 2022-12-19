@@ -5,14 +5,14 @@ local ffi_str = ffi.string
 
 local format_error = require("resty.openssl.err").format_error
 
-local OPENSSL_30, BORINGSSL
+local OPENSSL_3X, BORINGSSL
 
 local function try_require_modules()
   package.loaded["resty.openssl.version"] = nil
 
   local pok, lib = pcall(require, "resty.openssl.version")
   if pok then
-    OPENSSL_30 = lib.OPENSSL_30
+    OPENSSL_3X = lib.OPENSSL_3X
     BORINGSSL = lib.BORINGSSL
 
     require "resty.openssl.include.crypto"
@@ -74,7 +74,7 @@ function _M.load_modules()
   _M.ssl = require("resty.openssl.ssl")
   _M.ssl_ctx = require("resty.openssl.ssl_ctx")
 
-  if OPENSSL_30 then
+  if OPENSSL_3X then
     _M.provider = require("resty.openssl.provider")
     _M.mac = require("resty.openssl.mac")
     _M.ctx = require("resty.openssl.ctx")
@@ -237,7 +237,7 @@ function _M.luaossl_compat()
   end
 end
 
-if OPENSSL_30 then
+if OPENSSL_3X then
   require "resty.openssl.include.evp"
   local provider = require "resty.openssl.provider"
   local ctx_lib = require "resty.openssl.ctx"
@@ -305,7 +305,7 @@ else
 end
 
 function _M.set_default_properties(props)
-  if not OPENSSL_30 then
+  if not OPENSSL_3X then
     return nil, "openssl.set_default_properties is only not supported from OpenSSL 3.0"
   end
 
@@ -368,9 +368,9 @@ function _M.list_cipher_algorithms()
 
   require "resty.openssl.include.evp.cipher"
   local ret = list_legacy("EVP_CIPHER",
-              OPENSSL_30 and C.EVP_CIPHER_get_nid or C.EVP_CIPHER_nid)
+              OPENSSL_3X and C.EVP_CIPHER_get_nid or C.EVP_CIPHER_nid)
 
-  if OPENSSL_30 then
+  if OPENSSL_3X then
     local ret_provided = list_provided("EVP_CIPHER")
     for _, r in ipairs(ret_provided) do
       table.insert(ret, r)
@@ -387,9 +387,9 @@ function _M.list_digest_algorithms()
 
   require "resty.openssl.include.evp.md"
   local ret = list_legacy("EVP_MD",
-              OPENSSL_30 and C.EVP_MD_get_type or C.EVP_MD_type)
+              OPENSSL_3X and C.EVP_MD_get_type or C.EVP_MD_type)
 
-  if OPENSSL_30 then
+  if OPENSSL_3X then
     local ret_provided = list_provided("EVP_MD")
     for _, r in ipairs(ret_provided) do
       table.insert(ret, r)
@@ -400,7 +400,7 @@ function _M.list_digest_algorithms()
 end
 
 function _M.list_mac_algorithms()
-  if not OPENSSL_30 then
+  if not OPENSSL_3X then
     return nil, "openssl.list_mac_algorithms is only supported from OpenSSL 3.0"
   end
 
@@ -408,7 +408,7 @@ function _M.list_mac_algorithms()
 end
 
 function _M.list_kdf_algorithms()
-  if not OPENSSL_30 then
+  if not OPENSSL_3X then
     return nil, "openssl.list_kdf_algorithms is only supported from OpenSSL 3.0"
   end
 

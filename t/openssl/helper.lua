@@ -5,7 +5,7 @@ local extension = require "resty.openssl.x509.extension"
 local bn = require "resty.openssl.bn"
 local digest = require "resty.openssl.digest"
 local BORINGSSL = require "resty.openssl.version".BORINGSSL
-local OPENSSL_30 = require "resty.openssl.version".OPENSSL_30
+local OPENSSL_3X = require "resty.openssl.version".OPENSSL_3X
 
 local function create_self_signed(key_opts, names, is_ca, signing_key, issuing_name)
   local key = pkey.new(key_opts or {

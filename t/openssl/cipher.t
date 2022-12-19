@@ -373,7 +373,7 @@ nil
 --- config
     location =/t {
         content_by_lua_block {
-            if not require("resty.openssl.version").OPENSSL_30 then
+            if not require("resty.openssl.version").OPENSSL_3X then
                 ngx.say("default")
                 ngx.exit(0)
             end
@@ -395,7 +395,7 @@ default
 --- config
     location =/t {
         content_by_lua_block {
-            if not require("resty.openssl.version").OPENSSL_30 then
+            if not require("resty.openssl.version").OPENSSL_3X then
                 ngx.say("-ivlen-\n-padding-")
                 ngx.exit(0)
             end
@@ -419,7 +419,7 @@ default
 --- config
     location =/t {
         content_by_lua_block {
-            if not require("resty.openssl.version").OPENSSL_30 then
+            if not require("resty.openssl.version").OPENSSL_3X then
                 ngx.say("secret\nsecret\nnil")
                 ngx.exit(0)
             end

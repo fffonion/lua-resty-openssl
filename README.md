@@ -1,6 +1,6 @@
 # lua-resty-openssl
 
-FFI-based OpenSSL binding for LuaJIT, supporting OpenSSL 3.0, 1.1 and 1.0.2 series.
+FFI-based OpenSSL binding for LuaJIT, supporting OpenSSL 3.1, 3.0, 1.1 and 1.0.2 series.
 
 BoringSSL is also supported.
 
@@ -34,7 +34,7 @@ Table of Contents
     + [version_text](#version_text)
     + [version.version](#versionversion)
     + [version.info](#versioninfo)
-    + [version.OPENSSL_30](#versionopenssl_30)
+    + [version.OPENSSL_3X](#versionOPENSSL_3X)
     + [version.OPENSSL_11](#versionopenssl_11)
     + [version.OPENSSL_10](#versionopenssl_10)
   * [resty.openssl.provider](#restyopensslprovider)
@@ -640,7 +640,15 @@ ngx.say(version.version(version.INFO_DSO_EXTENSION))
 
 [Back to TOC](#table-of-contents)
 
-### version.OPENSSL_30
+### version.OPENSSL_3X
+
+A boolean indicates whether the linked OpenSSL is 3.x series.
+
+[Back to TOC](#table-of-contents)
+
+### version.OPENSSL_3X
+
+Deprecated: use `version.OPENSSL_3X` is encouraged.
 
 A boolean indicates whether the linked OpenSSL is 3.0 series.
 

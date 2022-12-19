@@ -11,7 +11,7 @@ local crl_lib = require "resty.openssl.x509.crl"
 local ctx_lib = require "resty.openssl.ctx"
 local format_error = require("resty.openssl.err").format_all_error
 local format_all_error = require("resty.openssl.err").format_error
-local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
+local OPENSSL_3X = require("resty.openssl.version").OPENSSL_3X
 
 local _M = {}
 local mt = { __index = _M }
@@ -178,7 +178,7 @@ function _M:verify(x509, chain, return_chain, properties, verify_method)
   end
 
   local ctx
-  if OPENSSL_30 then
+  if OPENSSL_3X then
     ctx = C.X509_STORE_CTX_new_ex(ctx_lib.get_libctx(), properties)
   else
     ctx = C.X509_STORE_CTX_new()

@@ -27,7 +27,7 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            if not require("resty.openssl.version").OPENSSL_30 then
+            if not require("resty.openssl.version").OPENSSL_3X then
                 ngx.exit(0)
             end
             local ctx = require("resty.openssl.ctx")
@@ -45,7 +45,7 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            if not require("resty.openssl.version").OPENSSL_30 then
+            if not require("resty.openssl.version").OPENSSL_3X then
                 ngx.exit(0)
             end
             local ctx = require("resty.openssl.ctx")
@@ -63,7 +63,7 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            if not require("resty.openssl.version").OPENSSL_30 then
+            if not require("resty.openssl.version").OPENSSL_3X then
                 ngx.exit(0)
             end
             local ctx = require("resty.openssl.ctx")
@@ -82,7 +82,7 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            if not require("resty.openssl.version").OPENSSL_30 then
+            if not require("resty.openssl.version").OPENSSL_3X then
                 ngx.exit(0)
             end
             local ctx = require("resty.openssl.ctx")

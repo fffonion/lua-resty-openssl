@@ -28,7 +28,7 @@ local format_error = require("resty.openssl.err").format_error
 
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
 local OPENSSL_111_OR_LATER = require("resty.openssl.version").OPENSSL_111_OR_LATER
-local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
+local OPENSSL_3X = require("resty.openssl.version").OPENSSL_3X
 local BORINGSSL = require("resty.openssl.version").BORINGSSL
 
 local ptr_of_uint = ctypes.ptr_of_uint
@@ -56,7 +56,7 @@ end
 
 local load_rsa_key_funcs
 
-if not OPENSSL_30 then
+if not OPENSSL_3X then
   load_rsa_key_funcs= {
     ['PEM_read_bio_RSAPrivateKey'] = true,
     ['PEM_read_bio_RSAPublicKey'] = true,
@@ -142,7 +142,7 @@ local function load_pem_der(txt, opts, funcs)
 
       -- pkcs1 functions create a rsa rather than evp_pkey
       -- disable the checking in openssl 3.0 for sail safe
-      if not OPENSSL_30 and load_rsa_key_funcs[f] then
+      if not OPENSSL_3X and load_rsa_key_funcs[f] then
         local rsa = ctx
         ctx = C.EVP_PKEY_new()
         if ctx == null then
@@ -373,12 +373,12 @@ local load_key_try_funcs = {} do
       pr = {
         ['PEM_read_bio_PrivateKey'] = load_pem_args,
         -- disable in openssl3.0, PEM_read_bio_PrivateKey can read pkcs1 in 3.0
-        ['PEM_read_bio_RSAPrivateKey'] = not OPENSSL_30 and load_pem_args or nil,
+        ['PEM_read_bio_RSAPrivateKey'] = not OPENSSL_3X and load_pem_args or nil,
       },
       pu = {
         ['PEM_read_bio_PUBKEY'] = load_pem_args,
         -- disable in openssl3.0, PEM_read_bio_PrivateKey can read pkcs1 in 3.0
-        ['PEM_read_bio_RSAPublicKey'] = not OPENSSL_30 and load_pem_args or nil,
+        ['PEM_read_bio_RSAPublicKey'] = not OPENSSL_3X and load_pem_args or nil,
       },
     },
     DER = {
@@ -421,7 +421,7 @@ local function __tostring(self, is_priv, fmt, is_pkcs1)
   elseif is_pkcs1 then
     if fmt ~= "PEM" or self.key_type ~= evp_macro.EVP_PKEY_RSA then
       return nil, "PKCS#1 format is only supported to encode RSA key in \"PEM\" format"
-    elseif OPENSSL_30 then -- maybe possible with OSSL_ENCODER_CTX_new_for_pkey though
+    elseif OPENSSL_3X then -- maybe possible with OSSL_ENCODER_CTX_new_for_pkey though
       return nil, "writing out RSA key in PKCS#1 format is not supported in OpenSSL 3.0"
     end
   end
@@ -494,7 +494,7 @@ function _M.new(s, opts)
 
   ffi_gc(ctx, C.EVP_PKEY_free)
 
-  local key_type = OPENSSL_30 and C.EVP_PKEY_get_base_id(ctx) or C.EVP_PKEY_base_id(ctx)
+  local key_type = OPENSSL_3X and C.EVP_PKEY_get_base_id(ctx) or C.EVP_PKEY_base_id(ctx)
   if key_type == 0 then
     return nil, "pkey.new: cannot get key_type"
   end
@@ -505,7 +505,7 @@ function _M.new(s, opts)
 
   -- although OpenSSL discourages to use this size for digest/verify
   -- but this is good enough for now
-  local buf_size = OPENSSL_30 and C.EVP_PKEY_get_size(ctx) or C.EVP_PKEY_size(ctx)
+  local buf_size = OPENSSL_3X and C.EVP_PKEY_get_size(ctx) or C.EVP_PKEY_size(ctx)
 
   local self = setmetatable({
     ctx = ctx,
@@ -547,7 +547,7 @@ function _M:get_default_digest_type()
 end
 
 function _M:get_provider_name()
-  if not OPENSSL_30 then
+  if not OPENSSL_3X then
     return false, "pkey:get_provider_name is not supported"
   end
   local p = C.EVP_PKEY_get0_provider(self.ctx)
@@ -557,7 +557,7 @@ function _M:get_provider_name()
   return ffi_str(C.OSSL_PROVIDER_get0_name(p))
 end
 
-if OPENSSL_30 then
+if OPENSSL_3X then
   local param_lib = require "resty.openssl.param"
   _M.settable_params, _M.set_params, _M.gettable_params, _M.get_param = param_lib.get_params_func("EVP_PKEY", "key_type")
 end
@@ -740,7 +740,7 @@ local function sign_verify_prepare(self, fint, md_alg, padding, opts)
 
   local algo
   if md_alg then
-    if OPENSSL_30 then
+    if OPENSSL_3X then
       algo = C.EVP_MD_fetch(ctx_lib.get_libctx(), md_alg, nil)
     else
       algo = C.EVP_get_digestbyname(md_alg)
