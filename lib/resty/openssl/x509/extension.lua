@@ -13,7 +13,7 @@ require "resty.openssl.include.conf"
 local asn1_macro = require("resty.openssl.include.asn1")
 local objects_lib = require "resty.openssl.objects"
 local stack_lib = require("resty.openssl.stack")
-local util = require "resty.openssl.util"
+local bio_util = require "resty.openssl.auxiliary.bio"
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_30 = require("resty.openssl.version").OPENSSL_30
 local BORINGSSL = require("resty.openssl.version").BORINGSSL
@@ -258,13 +258,13 @@ function _M:set_critical(crit)
 end
 
 function _M:tostring()
-  local ret, err = util.read_using_bio(C.X509V3_EXT_print, self.ctx, 0, 0)
+  local ret, err = bio_util.read_wrap(C.X509V3_EXT_print, self.ctx, 0, 0)
   if not err then
     return ret
   end
   -- fallback to ASN.1 print
   local asn1 = C.X509_EXTENSION_get_data(self.ctx)
-  return util.read_using_bio(C.ASN1_STRING_print, asn1)
+  return bio_util.read_wrap(C.ASN1_STRING_print, asn1)
 end
 
 _M.text = _M.tostring

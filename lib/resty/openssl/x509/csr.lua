@@ -13,7 +13,7 @@ local pkey_lib = require "resty.openssl.pkey"
 local digest_lib = require("resty.openssl.digest")
 local extension_lib = require("resty.openssl.x509.extension")
 local extensions_lib = require("resty.openssl.x509.extensions")
-local util = require "resty.openssl.util"
+local bio_util = require "resty.openssl.auxiliary.bio"
 local ctypes = require "resty.openssl.auxiliary.ctypes"
 local ctx_lib = require "resty.openssl.ctx"
 local txtnid2nid = require("resty.openssl.objects").txtnid2nid
@@ -64,9 +64,9 @@ end
 
 local function __tostring(self, fmt)
   if not fmt or fmt == 'PEM' then
-    return util.read_using_bio(C.PEM_write_bio_X509_REQ, self.ctx)
+    return bio_util.read_wrap(C.PEM_write_bio_X509_REQ, self.ctx)
   elseif fmt == 'DER' then
-    return util.read_using_bio(C.i2d_X509_REQ_bio, self.ctx)
+    return bio_util.read_wrap(C.i2d_X509_REQ_bio, self.ctx)
   else
     return nil, "x509.csr:tostring: can only write PEM or DER format, not " .. fmt
   end
