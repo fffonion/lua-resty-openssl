@@ -52,6 +52,13 @@ jobs:
           lua_nginx_module: "v0.10.21"
           lua_resty_core: "v0.1.23"
           nginx_cc_opts: "-Wno-error"
+        - nginx: "1.21.4"
+          openssl: "3.1.0-alpha1"
+          valgrind: "valgrind"
+          openssl_opts: "enable-fips"
+          lua_nginx_module: "v0.10.21"
+          lua_resty_core: "v0.1.23"
+          nginx_cc_opts: "-Wno-error"
         # latest version with EOL 1.1.0
         - nginx: "1.21.4"
           openssl: "1.1.0l"
