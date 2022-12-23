@@ -1,12 +1,21 @@
 name: Tests
 
 on:
-  push:
-    paths-ignore:
-      - "*.md"
   pull_request:
     paths-ignore:
-      - "*.md"
+    - '*.md'
+  push:
+    branches:
+    - master
+    - release/*
+    paths-ignore:
+    - '*.md'
+
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 
 jobs:
   tests:
