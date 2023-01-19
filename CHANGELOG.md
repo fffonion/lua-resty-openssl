@@ -2,8 +2,12 @@
 ## [Unreleased]
 
 
-<a name="0.8.16"></a>
-## [0.8.16] - 2022-12-20
+<a name="0.8.17"></a>
+## [0.8.17] - 2023-01-20
+### bug fixes
+- **\*:** support OpenSSL 3.1 [dc932f3](https://github.com/fffonion/lua-resty-openssl/commit/dc932f394e5c2b94129b406480897535ec561355)
+- **pkey:** allow one shot sign/verify in BoringSSL [32e5df3](https://github.com/fffonion/lua-resty-openssl/commit/32e5df37ac1aaa060c2c1f9b599bd194247d5ecb)
+
 ### features
 - **pkey:** load PKCS[#1](https://github.com/fffonion/lua-resty-openssl/issues/1) PEM encoded RSAPublicKey and RSAPrivateKey [3246ec0](https://github.com/fffonion/lua-resty-openssl/commit/3246ec0e51252bfa2812d49f9c6385dcaf0af10b)
 
@@ -459,8 +463,8 @@
 - **x509:** export pubkey [ede4f81](https://github.com/fffonion/lua-resty-openssl/commit/ede4f817cb0fe092ad6f9ab5d6ecdcde864a9fd8)
 
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.16...HEAD
-[0.8.16]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.15...0.8.16
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.17...HEAD
+[0.8.17]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.15...0.8.17
 [0.8.15]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.14...0.8.15
 [0.8.14]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.13...0.8.14
 [0.8.13]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.11...0.8.13
