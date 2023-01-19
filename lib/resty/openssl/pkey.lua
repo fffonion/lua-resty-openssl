@@ -785,10 +785,10 @@ function _M:sign(digest, md_alg, padding, opts)
     end
     return ffi_str(self.buf, length[0]), nil
   elseif type(digest) == "string" then
-    if not OPENSSL_111_OR_LATER then
+    if not OPENSSL_111_OR_LATER and not BORINGSSL then
       -- we can still support earilier version with *Update and *Final
       -- but we choose to not relying on the legacy interface for simplicity
-      return nil, "pkey:sign: new-style sign only available in OpenSSL 1.1 or later"
+      return nil, "pkey:sign: new-style sign only available in OpenSSL 1.1.1 (or BoringSSL 1.1.0) or later"
     elseif BORINGSSL and not md_alg and not self.key_type_is_ecx then
       return nil, "pkey:sign: BoringSSL doesn't provide default digest, md_alg must be specified"
     end
@@ -817,10 +817,10 @@ function _M:verify(signature, digest, md_alg, padding, opts)
   if digest_lib.istype(digest) then
     code = C.EVP_VerifyFinal(digest.ctx, signature, #signature, self.ctx)
   elseif type(digest) == "string" then
-    if not OPENSSL_111_OR_LATER then
+    if not OPENSSL_111_OR_LATER and not BORINGSSL then
       -- we can still support earilier version with *Update and *Final
       -- but we choose to not relying on the legacy interface for simplicity
-      return nil, "pkey:verify: new-style verify only available in OpenSSL 1.1 or later"
+      return nil, "pkey:verify: new-style verify only available in OpenSSL 1.1.1 (or BoringSSL 1.1.0) or later"
     elseif BORINGSSL and not md_alg and not self.key_type_is_ecx then
       return nil, "pkey:verify: BoringSSL doesn't provide default digest, md_alg must be specified"
     end
