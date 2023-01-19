@@ -526,7 +526,7 @@ true
     location =/t {
         content_by_lua_block {
             local version = require("resty.openssl.version")
-            if not version.OPENSSL_111_OR_LATER or version.BORINGSSL then
+            if not version.OPENSSL_111_OR_LATER and not version.BORINGSSL then
                 ngx.say("64\ntrue\n256\ntrue")
                 ngx.exit(0)
             end
@@ -542,15 +542,20 @@ true
             local v = myassert(p:verify(s, digest))
             ngx.say(v)
 
+            local md
+            if version.BORINGSSL then
+                md = "SHA256"
+            end
+
             -- uses default md type
             local p = myassert(require("resty.openssl.pkey").new({
                 type = "RSA"
             }))
             local digest = "23333"
-            local s = myassert(p:sign(digest))
+            local s = myassert(p:sign(digest, md))
             ngx.say(#s)
 
-            local v = myassert(p:verify(s, digest))
+            local v = myassert(p:verify(s, digest, md))
             ngx.say(v)
         }
     }
