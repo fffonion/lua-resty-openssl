@@ -268,8 +268,8 @@ B1BC968BD4F49D622AA89A81F2150152A41D829C
     }
 --- request
     GET /t
---- response_body eval
-"nilunsupported certificate purpose
+--- response_body_like eval
+"nil(?:unsupported|unsuitable) certificate purpose
 truenil
 "
 --- no_error_log
@@ -342,10 +342,10 @@ nil(?:certificate chain too long|unable to get local issuer certificate)
     }
 --- request
     GET /t
---- response_body eval
-"nilunsupported certificate purpose
+--- response_body_like eval
+"nil(?:unsupported|unsuitable) certificate purpose
 truenil
-nilunsupported certificate purpose
+nil(?:unsupported|unsuitable) certificate purpose
 "
 --- no_error_log
 [error]
