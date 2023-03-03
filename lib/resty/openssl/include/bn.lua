@@ -25,6 +25,8 @@ ffi.cdef(
   ]] .. BN_ULONG ..[[ BN_get_word(BIGNUM *a);
   int BN_num_bits(const BIGNUM *a);
   BIGNUM *BN_bin2bn(const unsigned char *s, int len, BIGNUM *ret);
+  int BN_bn2binpad(const BIGNUM *a, unsigned char *to, int tolen);
+
   int BN_hex2bn(BIGNUM **a, const char *str);
   int BN_dec2bn(BIGNUM **a, const char *str);
   int BN_bn2bin(const BIGNUM *a, unsigned char *to);

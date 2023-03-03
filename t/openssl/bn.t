@@ -121,12 +121,23 @@ bn:to_binary failed
                 return
             end
             ngx.print(ngx.encode_base64(b))
+
+            if not require("resty.openssl.version").OPENSSL_11_OR_LATER then
+                ngx.print("AAAAAAAAAABbJQ=="); ngx.exit(0)
+            end
+
+            local b, err = bn:to_binary(10)
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.print(ngx.encode_base64(b))
         }
     }
 --- request
     GET /t
 --- response_body eval
-"WyU="
+"WyU=AAAAAAAAAABbJQ=="
 --- no_error_log
 [error]
 
