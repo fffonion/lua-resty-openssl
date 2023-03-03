@@ -24,6 +24,7 @@ local objects_lib = require "resty.openssl.objects"
 local jwk_lib = require "resty.openssl.auxiliary.jwk"
 local ctx_lib = require "resty.openssl.ctx"
 local ctypes = require "resty.openssl.auxiliary.ctypes"
+local ecdsa_util = require "resty.openssl.auxiliary.ecdsa"
 local format_error = require("resty.openssl.err").format_error
 
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
@@ -778,12 +779,14 @@ function _M:sign(digest, md_alg, padding, opts)
     return nil, "pkey:sign: missing private key"
   end
 
+  local ret, err
+
   if digest_lib.istype(digest) then
     local length = ptr_of_uint()
     if C.EVP_SignFinal(digest.ctx, self.buf, length, self.ctx) ~= 1 then
       return nil, format_error("pkey:sign: EVP_SignFinal")
     end
-    return ffi_str(self.buf, length[0]), nil
+    ret = ffi_str(self.buf, length[0])
   elseif type(digest) == "string" then
     if not OPENSSL_111_OR_LATER and not BORINGSSL then
       -- we can still support earilier version with *Update and *Final
@@ -802,15 +805,44 @@ function _M:sign(digest, md_alg, padding, opts)
     if C.EVP_DigestSign(md_ctx, self.buf, length, digest, #digest) ~= 1 then
       return nil, format_error("pkey:sign: EVP_DigestSign")
     end
-    return ffi_str(self.buf, length[0]), nil
+    ret = ffi_str(self.buf, length[0])
   else
     return nil, "pkey:sign: expect a digest instance or a string at #1"
   end
+
+  if self.key_type == evp_macro.EVP_PKEY_EC and opts and opts.ecdsa_use_raw then
+    if not OPENSSL_11_OR_LATER then
+      return nil, "pkey:sign: opts.ecdsa_use_raw is only supported on OpenSSL 1.1.0 or later"
+    end
+
+    local ec_key = get_pkey_key[evp_macro.EVP_PKEY_EC](self.ctx)
+
+    ret, err = ecdsa_util.sig_der2raw(ret, ec_key)
+    if err then
+      return nil, "pkey:sign: ecdsa.sig_der2raw: " .. err
+    end
+  end
+
+  return ret
 end
 
 function _M:verify(signature, digest, md_alg, padding, opts)
   if type(signature) ~= "string" then
     return nil, "pkey:verify: expect a string at #1"
+  end
+  local err
+
+  if self.key_type == evp_macro.EVP_PKEY_EC and opts and opts.ecdsa_use_raw then
+    if not OPENSSL_11_OR_LATER then
+      return nil, "pkey:sign: opts.ecdsa_use_raw is only supported on OpenSSL 1.1.0 or later"
+    end
+
+    local ec_key = get_pkey_key[evp_macro.EVP_PKEY_EC](self.ctx)
+
+    signature, err = ecdsa_util.sig_raw2der(signature, ec_key)
+    if err then
+      return nil, "pkey:sign: ecdsa.sig_raw2der: " .. err
+    end
   end
 
   local code

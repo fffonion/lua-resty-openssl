@@ -1061,7 +1061,11 @@ For EC key, this function does a ECDSA signing.
 Note that OpenSSL does not support EC digital signature (ECDSA) with the
 obsolete MD5 hash algorithm and will return error on this combination. See
 [EVP_DigestSign(3)](https://www.openssl.org/docs/manmaster/man3/EVP_DigestSign.html)
-for a list of algorithms and associated public key algorithms.
+for a list of algorithms and associated public key algorithms. Normally, the ECDSA signature
+is encoded in ASN.1 DER format. If the `opts` table contains a `ecdsa_use_raw` field with
+a true value, a binary with just the concatenation of binary representation `pr` and `ps` is returned.
+This is useful for example to send the signature as JWS. This feature
+is only supported on OpenSSL 1.1.0 or later.
 
 [Back to TOC](#table-of-contents)
 
@@ -1092,7 +1096,11 @@ For RSA key, it's also possible to specify `padding` scheme. The choice of value
 as those in [pkey:encrypt](#pkeyencrypt). When `padding` is `RSA_PKCS1_PSS_PADDING`, it's
 possible to specify PSS salt length by setting `opts.pss_saltlen`.
 
-For EC key, this function does a ECDSA verification.
+For EC key, this function does a ECDSA verification. Normally, the ECDSA signature
+should be encoded in ASN.1 DER format. If the `opts` table contains a `ecdsa_use_raw` field with
+a true value, this library treat `signature` as concatenation of binary representation `pr` and `ps`.
+This is useful for example to verify the signature as JWS. This feature
+is only supported on OpenSSL 1.1.0 or later.
 
 ```lua
 -- RSA and EC keys
