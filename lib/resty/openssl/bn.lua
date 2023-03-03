@@ -51,17 +51,36 @@ function _M.dup(ctx)
   return self
 end
 
-function _M:to_binary()
-  local length = (C.BN_num_bits(self.ctx)+7)/8
-  -- align to bytes
-  length = floor(length)
+function _M:to_binary(pad)
+  if pad then
+    if type(pad) ~= "number" then
+      return nil, "bn:to_binary: expect a number at #1"
+    elseif OPENSSL_10 then
+      return nil, "bn:to_binary: padding is only supported on OpenSSL 1.1.0 or later"
+    end
+  end
+
+  local length
+  if not pad then
+    length = (C.BN_num_bits(self.ctx)+7)/8
+    -- align to bytes
+    length = floor(length)
+  else
+    length = pad
+  end
+
   local buf = ctypes.uchar_array(length)
-  local sz = C.BN_bn2bin(self.ctx, buf)
-  if sz == 0 then
+  local sz
+  if not pad then
+    sz = C.BN_bn2bin(self.ctx, buf)
+  else
+    sz = C.BN_bn2binpad(self.ctx, buf, pad)
+  end
+
+  if sz <= 0 then
     return nil, format_error("bn:to_binary")
   end
-  buf = ffi_str(buf, length)
-  return buf
+  return ffi_str(buf, sz)
 end
 
 function _M.from_binary(s)

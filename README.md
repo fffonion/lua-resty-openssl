@@ -1279,11 +1279,15 @@ Returns `true` if table is an instance of `bn`. Returns `false` otherwise.
 
 **syntax**: *bn, err = bn.from_binary(bin)*
 
-**syntax**: *bin, err = bn:to_binary()*
+**syntax**: *bin, err = bn:to_binary(padto?)*
 
 Creates a `bn` instance from binary string.
 
 Exports the BIGNUM value in binary string.
+
+`bn:to_binary` accepts an optional number argument `padto` that can be
+used to pad leading zeros to the output to a specific length. This feature
+is only supported on OpenSSL 1.1.0 or later.
 
 ```lua
 local b, err = require("resty.openssl.bn").from_binary(ngx.decode_base64("WyU="))
