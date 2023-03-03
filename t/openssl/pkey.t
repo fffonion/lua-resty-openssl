@@ -269,7 +269,7 @@ ok
             local pem = p1:to_PEM('private')
             local der = myassert(p1:tostring('private', 'DER'))
             local p2 = myassert(pkey.new(der))
-    
+
             ngx.print(p2 and pem == p2:to_PEM('private'))
         }
     }
@@ -294,7 +294,7 @@ ok
 
             local t = myassert(p:tostring('private', "DER"))
             ngx.say(#t)
-    
+
             local t = myassert(p:tostring('private', "JWK"))
             ngx.say(t)
         }
@@ -499,7 +499,7 @@ A4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507FD6406CFF14266D31266FEA1E5C41564B
     location =/t {
         content_by_lua_block {
             local p = myassert(require("resty.openssl.pkey").new())
-            
+
             local digest = myassert(require("resty.openssl.digest").new("SHA256"))
 
             myassert(digest:update("🕶️", "+1s"))
@@ -607,7 +607,7 @@ pkey:verify: expect a string at #1
             local expected = { 32, 32, 56 }
             for i, t in ipairs({"EC", "X25519", "X448"}) do
                 if (version_num < 0x10101000 and i == 3) or
-                   (version_num < 0x10100000 and i == 2) or 
+                   (version_num < 0x10100000 and i == 2) or
                    (BORINGSSL and i > 2) then
                     ngx.say(expected[i])
                     goto next
@@ -1276,5 +1276,53 @@ BEGIN RSA PUBLIC KEY
 true
 BEGIN RSA PRIVATE KEY
 true
+--- no_error_log
+[error]
+
+=== TEST 39: Sign/verify with binary ecdsa sig
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            if not require("resty.openssl.version").OPENSSL_11_OR_LATER then
+                ngx.say("64\ntrue\ntrue\ntruenil\nfalsenil")
+                ngx.say("nilpkey:sign: ecdsa.sig_raw2der: invalid signature length, expect 64 but got 72")
+                ngx.exit(0)
+            end
+
+            local opts = { ecdsa_use_raw = true }
+            local p = myassert(require("resty.openssl.pkey").new({
+                type = "EC",
+                curve = "prime256v1",
+            }))
+
+            local digest = myassert(require("resty.openssl.digest").new("SHA256"))
+
+            myassert(digest:update("🕶️", "+1s"))
+
+            local s = myassert(p:sign(digest, nil, nil, opts))
+            ngx.say(#s)
+
+            local s2 = myassert(p:sign(digest))
+            ngx.say(#s2 > 64) -- normally 72
+
+            local v = myassert(p:verify(s, digest, nil, nil, opts))
+            ngx.say(v)
+
+            ngx.say(p:verify(s2, digest)) -- this is ok
+            ngx.say(p:verify(s, digest)) -- this should fail
+            ngx.say(p:verify(s2, digest, nil, nil, opts)) -- this should also fail
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+"64
+true
+true
+truenil
+false.+
+nilpkey:sign: ecdsa.sig_raw2der: invalid signature length, expect 64 but got \\d+
+"
 --- no_error_log
 [error]
