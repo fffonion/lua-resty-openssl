@@ -778,15 +778,56 @@ processes like ECIES is possible with [pkey:derive](#pkeyderive),
 
 ### pkey.new
 
-**syntax**: *pk, err = pkey.new(config)*
+#### Load existing key
 
 **syntax**: *pk, err = pkey.new(string, opts?)*
 
-**syntax**: *pk, err = pkey.new()*
+Supports loading a private or public key in PEM, DER or JWK format passed as first argument `string`.
 
-Function to generate a key pair, or load existing key in PEM or DER format.
-  
-1. Pass a `config` table to create a new PKEY pair. Which defaults to:
+The second parameter `opts` accepts an optional table to constraint the behaviour of key loading.
+
+- `opts.format`: set explictly to `"PEM"`, `"DER"`, `"JWK"` to load specific format or set to `"*"` for auto detect
+- `opts.type`: set explictly to `"pr"` for privatekey, `"pu"` for public key; set to `"*"` for auto detect
+
+When loading a PEM encoded RSA key, it can either be a PKCS#8 encoded
+`SubjectPublicKeyInfo`/`PrivateKeyInfo` or a PKCS#1 encoded `RSAPublicKey`/`RSAPrivateKey`.
+
+When loading a encrypted PEM encoded key, the `passphrase` to decrypt it can either be set
+in `opts.passphrase` or `opts.passphrase_cb`:
+
+```lua
+pkey.new(pem_or_der_text, {
+  format = "*", -- choice of "PEM", "DER", "JWK" or "*" for auto detect
+  type = "*", -- choice of "pr" for privatekey, "pu" for public key and "*" for auto detect
+  passphrase = "secret password", -- the PEM encryption passphrase
+  passphrase_cb = function()
+    return "secret password"
+  end, -- the PEM encryption passphrase callback function
+}
+
+```
+
+When loading JWK, there are couple of caveats:
+- Make sure the encoded JSON text is passed in, it must have been base64 decoded.
+- Constraint `type` on JWK key is not supported, the parameters
+in provided JSON will decide if a private or public key is loaded.
+- Only key type of `RSA`, `P-256`, `P-384` and `P-512` `EC`,
+`Ed25519`, `X25519`, `Ed448` and `X448` `OKP` keys are supported.
+- Public key part for `OKP` keys (the `x` parameter) is always not honored and derived
+from private key part (the `d` parameter) if it's specified.
+- Signatures and verification must use `ecdsa_use_raw` option to work with JWS standards
+for EC keys. See [pkey:sign](#pkeysign) and [pkey.verify](#pkeyverify) for detail.
+
+#### Key generation
+
+**syntax**: *pk, err = pkey.new(config?)*
+
+Generate a new public key or private key.
+
+
+To generate RSA key, `config` table can have `bits` and `exp` field to control key generation.
+When `config` is emitted, this function generates a 2048 bit RSA key with `exponent` of 65537,
+which is equivalent to:
   
 ```lua
 local key, err = pkey.new({
@@ -797,7 +838,16 @@ local key, err = pkey.new({
 ```
 
 To generate EC or DH key, please refer to [pkey.paramgen](#pkeyparamgen) for possible values of
-`config` table. It's also possible to load a PEM-encoded EC or DH parameters for key generation:
+`config` table. For example:
+
+```lua
+local key, err = pkey.new({
+  type = 'EC',
+  curve = 'prime256v1',
+})
+```
+
+It's also possible to pass a PEM-encoded EC or DH parameters to `config.param` for key generation:
 
 ```lua
 local dhparam = pkey.paramgen({
@@ -813,38 +863,6 @@ local key, err = pkey.new({
 }) 
 ```
 
-Other possible `type`s are `Ed25519`, `X25519`, `Ed448` and `X448`. No additional parameters
-can be set during key generation for those keys.
-
-2. Pass a `string` of private or public key in PEM, DER or JWK format text; optionally accpet a table
-`opts` to explictly load `format` and key `type`. When loading a key in PEM format,
-`passphrase` or `passphrase_cb` may be provided to decrypt the key.
-
-```lua
-pkey.new(pem_or_der_text, {
-  format = "*", -- choice of "PEM", "DER", "JWK" or "*" for auto detect
-  type = "*", -- choice of "pr" for privatekey, "pu" for public key and "*" for auto detect
-  passphrase = "secret password", -- the PEM encryption passphrase
-  passphrase_cb = function()
-    return "secret password"
-  end, -- the PEM encryption passphrase callback function
-}
-
-```
-
-  -  When loading JWK, make sure the encoded JSON text is passed in.
-  - Currently it's not supported to constraint
-  `type` on JWK key, the parameters in provided JSON will decide if a private or public key is loaded.
-  - Only JWK with key type of `RSA`, `P-256`, `P-384` and `P-512` `EC`,
-  `Ed25519`, `X25519`, `Ed448` and `X448` `OKP` keys are supported.
-  - Public key part for `OKP` keys
-  (the `x` parameter) is always not honored and derived from private key part (the `d` parameter) if it's specified.
-
-  - When loading RSA, it can either be a PKCS#8 encoded `SubjectPublicKeyInfo`/`PrivateKeyInfo` or a PKCS#1 encoded `RSAPublicKey`/`RSAPrivateKey`.
-
-3. Pass `nil` to create a 2048 bits RSA key.
-4. Pass a `EVP_PKEY*` pointer, to return a wrapped `pkey` instance. Normally user won't use this
-approach. User shouldn't free the pointer on their own, since the pointer is not copied.
 
 [Back to TOC](#table-of-contents)
 
