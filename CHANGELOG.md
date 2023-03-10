@@ -2,6 +2,12 @@
 ## [Unreleased]
 
 
+<a name="0.8.20"></a>
+## [0.8.20] - 2023-03-10
+### bug fixes
+- **pkey:** use group bits instead of ECDSA_sig to get parameter size in ECDSA signature ([#102](https://github.com/fffonion/lua-resty-openssl/issues/102)) [f12cbfc](https://github.com/fffonion/lua-resty-openssl/commit/f12cbfc123490c666e2cbd7bec90948910a02336)
+
+
 <a name="0.8.19"></a>
 ## [0.8.19] - 2023-03-10
 ### bug fixes
@@ -479,7 +485,8 @@
 - **x509:** export pubkey [ede4f81](https://github.com/fffonion/lua-resty-openssl/commit/ede4f817cb0fe092ad6f9ab5d6ecdcde864a9fd8)
 
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.19...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.20...HEAD
+[0.8.20]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.19...0.8.20
 [0.8.19]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.18...0.8.19
 [0.8.18]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.17...0.8.18
 [0.8.17]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.16...0.8.17
