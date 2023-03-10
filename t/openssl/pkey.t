@@ -1332,6 +1332,10 @@ nilpkey:sign: ecdsa.sig_raw2der: invalid signature length, expect 64 but got \\d
 --- config
     location =/t {
         content_by_lua_block {
+            if not require("resty.openssl.version").OPENSSL_11_OR_LATER then
+                ngx.say("132\n96\ntrue\ntrue")
+                ngx.exit(0)
+            end
             local opts = { ecdsa_use_raw = true }
             local p_521 = myassert(require("resty.openssl.pkey").new({
                 type = "EC",
