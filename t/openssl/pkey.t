@@ -1332,8 +1332,7 @@ nilpkey:sign: ecdsa.sig_raw2der: invalid signature length, expect 64 but got \\d
 --- config
     location =/t {
         content_by_lua_block {
-            if not require("resty.openssl.version").OPENSSL_11_OR_LATER or
-                   require("resty.openssl.version").OPENSSL_3X then
+            if not require("resty.openssl.version").OPENSSL_11_OR_LATER then
                 ngx.say("132\n96\ntrue\ntrue")
                 ngx.exit(0)
             end
@@ -1347,20 +1346,18 @@ nilpkey:sign: ecdsa.sig_raw2der: invalid signature length, expect 64 but got \\d
                 type = "EC",
                 curve = "secp384r1",
             }))
-            local digest_512 = myassert(require("resty.openssl.digest").new("SHA512"))
-            local digest_384 = myassert(require("resty.openssl.digest").new("SHA384"))
+            local digest = myassert(require("resty.openssl.digest").new("SHA256"))
 
-            myassert(digest_512:update("🕶️", "+1s"))
-            myassert(digest_384:update("🕶️", "+1s"))
+            myassert(digest:update("🕶️", "+1s"))
 
-            local s_512 = myassert(p_521:sign(digest_512, nil, nil, opts))
+            local s_512 = myassert(p_521:sign(digest, nil, nil, opts))
             ngx.say(#s_512)
-            local s_384 = myassert(p_384:sign(digest_384, nil, nil, opts))
+            local s_384 = myassert(p_384:sign(digest, nil, nil, opts))
             ngx.say(#s_384)
 
-            local v_512 = myassert(p_521:verify(s_512, digest_512, nil, nil, opts))
+            local v_512 = myassert(p_521:verify(s_512, digest, nil, nil, opts))
             ngx.say(v_512)
-            local v_384 = myassert(p_384:verify(s_384, digest_384, nil, nil, opts))
+            local v_384 = myassert(p_384:verify(s_384, digest, nil, nil, opts))
             ngx.say(v_384)
         }
     }
