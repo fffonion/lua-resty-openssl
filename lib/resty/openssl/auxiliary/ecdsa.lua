@@ -7,7 +7,7 @@ local C = ffi.C
 require "resty.openssl.include.ecdsa"
 local bn_lib = require "resty.openssl.bn"
 local format_error = require("resty.openssl.err").format_error
-local floor = math.floor
+local ceil = math.ceil
 
 local _M = {}
 
@@ -26,20 +26,25 @@ SEQUENCE {
   The binary form is typically 64 bytes.
 ]]
 
-local function sig_size(ec_key)
-  local sz = C.ECDSA_size(ec_key)
-  if sz <= 8 then
-    error("failed to get ECDSA signature size", 2)
+local function group_size(ec_key)
+  local group = C.EC_KEY_get0_group(ec_key)
+  if group == nil then
+    assert("failed to get EC group", 2)
   end
-  -- 2 bytes for ASN.1 DER header, 2 bytes for length, 2 bytes for each 2 integers, left 2 integers so /2
-  return (sz - 8) / 2
+
+  local sz = C.EC_GROUP_order_bits(group)
+  if sz <= 0 then
+    assert("failed to get EC group order bits", 2)
+  end
+
+  return ceil(sz / 8)
 end
 
 _M.sig_der2raw = function(der, ec_key)
   if ec_key == nil then
     error("ec_key is required", 2)
   end
-  local psize = sig_size(ec_key)
+  local psize = group_size(ec_key)
 
   local buf = ffi.new("const unsigned char*", der)
   local buf_ptr = ffi.new("const unsigned char*[1]", buf)
@@ -82,11 +87,8 @@ _M.sig_raw2der = function(bin, ec_key)
   if ec_key == nil then
     error("ec_key is required", 2)
   end
-  -- p521 private key x point is 65 bytes and y point is 66 bytes
-  -- 65+66+8 = 139
-  -- division by two results in a decimal and hence messes with
-  -- signature length calculation
-  local psize = floor(sig_size(ec_key))
+
+  local psize = group_size(ec_key)
 
   if #bin ~= psize * 2 then
     return nil, "invalid signature length, expect " .. (psize * 2) .. " but got " .. #bin

@@ -12,5 +12,5 @@ ffi.cdef [[
   int i2d_ECDSA_SIG(const ECDSA_SIG *sig, unsigned char **pp);
   ECDSA_SIG *d2i_ECDSA_SIG(ECDSA_SIG **sig, const unsigned char **pp, long len);
 
-  int ECDSA_size(const EC_KEY *eckey);
+  int EC_GROUP_order_bits(const EC_GROUP *group);
 ]]
