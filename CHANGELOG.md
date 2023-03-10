@@ -2,6 +2,12 @@
 ## [Unreleased]
 
 
+<a name="0.8.19"></a>
+## [0.8.19] - 2023-03-10
+### bug fixes
+- **pkey:** fix signature length for secp521r1 ecdsa signature length ([#100](https://github.com/fffonion/lua-resty-openssl/issues/100)) [b7303d4](https://github.com/fffonion/lua-resty-openssl/commit/b7303d49cf738fe134f3e5efbf6157c96ff85237)
+
+
 <a name="0.8.18"></a>
 ## [0.8.18] - 2023-03-04
 ### features
@@ -473,7 +479,8 @@
 - **x509:** export pubkey [ede4f81](https://github.com/fffonion/lua-resty-openssl/commit/ede4f817cb0fe092ad6f9ab5d6ecdcde864a9fd8)
 
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.18...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.19...HEAD
+[0.8.19]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.18...0.8.19
 [0.8.18]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.17...0.8.18
 [0.8.17]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.16...0.8.17
 [0.8.16]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.15...0.8.16
