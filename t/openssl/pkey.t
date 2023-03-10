@@ -1326,3 +1326,45 @@ nilpkey:sign: ecdsa.sig_raw2der: invalid signature length, expect 64 but got \\d
 "
 --- no_error_log
 [error]
+
+=== TEST 40: Sign/verify with binary ecdsa sig length
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local opts = { ecdsa_use_raw = true }
+            local p_521 = myassert(require("resty.openssl.pkey").new({
+                type = "EC",
+                curve = "secp521r1",
+            }))
+
+            local p_384 = myassert(require("resty.openssl.pkey").new({
+                type = "EC",
+                curve = "secp384r1",
+            }))
+            local digest_512 = myassert(require("resty.openssl.digest").new("SHA512"))
+            local digest_384 = myassert(require("resty.openssl.digest").new("SHA384"))
+
+            myassert(digest_512:update("🕶️", "+1s"))
+            myassert(digest_384:update("🕶️", "+1s"))
+
+            local s_512 = myassert(p_521:sign(digest_512, nil, nil, opts))
+            ngx.say(#s_512)
+            local s_384 = myassert(p_384:sign(digest_384, nil, nil, opts))
+            ngx.say(#s_384)
+
+            local v_512 = myassert(p_521:verify(s_512, digest_512, nil, nil, opts))
+            ngx.say(v_512)
+            local v_384 = myassert(p_384:verify(s_384, digest_384, nil, nil, opts))
+            ngx.say(v_384)
+        }
+    }
+--- request
+    GET /t
+--- response_body
+132
+96
+true
+true
+--- no_error_log
+[error]
