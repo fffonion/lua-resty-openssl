@@ -7,10 +7,11 @@ local C = ffi.C
 require "resty.openssl.include.ecdsa"
 local bn_lib = require "resty.openssl.bn"
 local format_error = require("resty.openssl.err").format_error
+local floor = math.floor
 
 local _M = {}
 
---[[ A DER formatted ECDSA signature looks like 
+--[[ A DER formatted ECDSA signature looks like
 SEQUENCE {
   INTEGER
     4B 5F CF E8 A7 BD 6A C2 1D 25 0D F8 DE 9C EF DC
@@ -81,7 +82,11 @@ _M.sig_raw2der = function(bin, ec_key)
   if ec_key == nil then
     error("ec_key is required", 2)
   end
-  local psize = sig_size(ec_key)
+  -- p521 private key x point is 65 bytes and y point is 66 bytes
+  -- 65+66+8 = 139
+  -- division by two results in a decimal and hence messes with
+  -- signature length calculation
+  local psize = floor(sig_size(ec_key))
 
   if #bin ~= psize * 2 then
     return nil, "invalid signature length, expect " .. (psize * 2) .. " but got " .. #bin
@@ -103,7 +108,7 @@ _M.sig_raw2der = function(bin, ec_key)
   if sig == nil then
     return nil, format_error("ECDSA_SIG_new")
   end
-  
+
   ffi_gc(sig, C.ECDSA_SIG_free)
 
   local bn_r0 = C.BN_dup(bn_r.ctx)
