@@ -1332,7 +1332,8 @@ nilpkey:sign: ecdsa.sig_raw2der: invalid signature length, expect 64 but got \\d
 --- config
     location =/t {
         content_by_lua_block {
-            if not require("resty.openssl.version").OPENSSL_11_OR_LATER then
+            if not require("resty.openssl.version").OPENSSL_11_OR_LATER or
+                   require("resty.openssl.version").OPENSSL_3X then
                 ngx.say("132\n96\ntrue\ntrue")
                 ngx.exit(0)
             end
