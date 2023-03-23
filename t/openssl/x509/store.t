@@ -381,3 +381,34 @@ truenil
 "
 --- no_error_log
 [error]
+
+=== TEST 13: Set verify time flags
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local helper = require "t.openssl.helper"
+            local store = require("resty.openssl.x509.store")
+            local chain = require("resty.openssl.x509.chain")
+
+            local certs, keys = helper.create_cert_chain(5, { type = 'EC', curve = "prime256v1" })
+            local s = myassert(store.new())
+            myassert(s:add(certs[2]))
+            local ch = chain.new()
+            for i=3, #certs-1 do
+                myassert(ch:add(certs[i]))
+            end
+            -- should not be ok, need root CA
+            ngx.say(s:verify(certs[#certs], ch))
+
+            ngx.say(s:verify(certs[#certs], ch, false, nil, nil, s.verify_flags.X509_V_FLAG_PARTIAL_CHAIN))
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+"nilunable to get issuer certificate
+truenil
+"
+--- no_error_log
+[error]

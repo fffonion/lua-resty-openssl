@@ -170,7 +170,7 @@ function _M:set_flags(...)
   return true
 end
 
-function _M:verify(x509, chain, return_chain, properties, verify_method)
+function _M:verify(x509, chain, return_chain, properties, verify_method, flags)
   if not x509_lib.istype(x509) then
     return nil, "x509.store:verify: expect a x509 instance at #1"
   elseif chain and not chain_lib.istype(chain) then
@@ -204,6 +204,10 @@ function _M:verify(x509, chain, return_chain, properties, verify_method)
 
   if verify_method and C.X509_STORE_CTX_set_default(ctx, verify_method) ~= 1 then
     return nil, "x509.store:verify: invalid verify_method \"" .. verify_method .. "\""
+  end
+
+  if flags then
+    C.X509_STORE_CTX_set_flags(ctx, flags)
   end
 
   local code = C.X509_verify_cert(ctx)
