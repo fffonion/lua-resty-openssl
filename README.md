@@ -3924,7 +3924,7 @@ for explanation of each flag.
 
 ### store:verify
 
-**syntax**: *chain, err = store:verify(x509, chain?, return_chain?, properties?, verify_method?)*
+**syntax**: *chain, err = store:verify(x509, chain?, return_chain?, properties?, verify_method?, verify_flags?)*
 
 Verifies a X.509 object with the store. The first argument must be
 [resty.openssl.x509](#restyopensslx509) instance. Optionally accept a validation chain as second
@@ -3941,6 +3941,9 @@ to explictly select provider to fetch algorithms.
 `"smime_sign"`, `"ssl_client"` and `"ssl_server"`. This set corresponding `purpose`, `trust` and
 couple of other defaults but **does not** override the parameters set from
 [store:set_purpose](#storeset_purpose).
+
+`verify_flags` paramter is the additional verify flags to be set. See [store:set_flags](#storeset_flags)
+for all available flags.
 
 [Back to TOC](#table-of-contents)
 

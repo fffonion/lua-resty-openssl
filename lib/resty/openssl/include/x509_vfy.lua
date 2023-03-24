@@ -36,6 +36,8 @@ ffi.cdef [[
 
   int X509_STORE_CTX_set_default(X509_STORE_CTX *ctx, const char *name);
 
+  void X509_STORE_CTX_set_flags(X509_STORE_CTX *ctx, unsigned long flags);
+
   int X509_PURPOSE_get_by_sname(char *sname);
   X509_PURPOSE *X509_PURPOSE_get0(int idx);
   int X509_PURPOSE_get_id(const X509_PURPOSE *xp);
