@@ -3942,7 +3942,7 @@ to explictly select provider to fetch algorithms.
 couple of other defaults but **does not** override the parameters set from
 [store:set_purpose](#storeset_purpose).
 
-`flags` paramter is the additional verify flags to be set. See [store:set_flags](#storeset_flags)
+`verify_flags` paramter is the additional verify flags to be set. See [store:set_flags](#storeset_flags)
 for all available flags.
 
 [Back to TOC](#table-of-contents)
