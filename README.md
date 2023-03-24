@@ -3924,7 +3924,7 @@ for explanation of each flag.
 
 ### store:verify
 
-**syntax**: *chain, err = store:verify(x509, chain?, return_chain?, properties?, verify_method?, flags?)*
+**syntax**: *chain, err = store:verify(x509, chain?, return_chain?, properties?, verify_method?, verify_flags?)*
 
 Verifies a X.509 object with the store. The first argument must be
 [resty.openssl.x509](#restyopensslx509) instance. Optionally accept a validation chain as second
