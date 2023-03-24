@@ -2,6 +2,12 @@
 ## [Unreleased]
 
 
+<a name="0.8.21"></a>
+## [0.8.21] - 2023-03-24
+### features
+- **x509.store:** extend verify to support setting flags ([#104](https://github.com/fffonion/lua-resty-openssl/issues/104)) [fa45b6c](https://github.com/fffonion/lua-resty-openssl/commit/fa45b6ce197dee7e2a55601bd4833f415c6cbaa2)
+
+
 <a name="0.8.20"></a>
 ## [0.8.20] - 2023-03-10
 ### bug fixes
@@ -485,7 +491,8 @@
 - **x509:** export pubkey [ede4f81](https://github.com/fffonion/lua-resty-openssl/commit/ede4f817cb0fe092ad6f9ab5d6ecdcde864a9fd8)
 
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.20...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.21...HEAD
+[0.8.21]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.20...0.8.21
 [0.8.20]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.19...0.8.20
 [0.8.19]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.18...0.8.19
 [0.8.18]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.17...0.8.18
