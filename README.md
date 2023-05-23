@@ -294,7 +294,7 @@ Description
 ===========
 
 `lua-resty-openssl` is a FFI-based OpenSSL binding library, currently
-supports OpenSSL `3.0.0`, `1.1.1`, `1.1.0` and `1.0.2` series.
+supports OpenSSL `3.1.x`, `3.0.x`, `1.1.1`, `1.1.0` and `1.0.2` series.
 
 **Note: when using with OpenSSL 1.0.2, it's recommanded to not use this library with other FFI-based OpenSSL binding libraries to avoid potential mismatch of `cdef`.**
 
@@ -411,13 +411,13 @@ lua-resty-openssl supports following modes:
 
 Compile the module per [security policy](https://www.openssl.org/docs/fips/SecurityPolicy-2.0.2.pdf),
 
-**OpenSSL 3.0.0 fips provider (haven't certified)**
+**OpenSSL 3.0.0 fips provider **
 
 Refer to https://wiki.openssl.org/index.php/OpenSSL_3.0 Section 7
 Compile the provider per guide, install the fipsmodule.cnf that
 matches hash of FIPS provider fips.so.
 
-On OpenSSL 3.0, this function also turns on and off default
+On OpenSSL 3.0 or later, this function also turns on and off default
 properties for EVP functions. When turned on, all applications using
 EVP_* API will be redirected to FIPS-compliant implementations and
 have no access to non-FIPS-compliant algorithms.
@@ -524,7 +524,7 @@ The context is currently effective following modules:
 - [rand](#restyopensslrand)
 - [x509](#restyopensslx509), [x509.csr](#restyopensslx509csr), [x509.crl](#restyopensslx509crl) and some [x509.store](#restyopensslx509store) functions
 
-This module is only available on OpenSSL 3.0.
+This module is only available on OpenSSL 3.0 or later.
  
 [Back to TOC](#table-of-contents)
 
@@ -646,7 +646,7 @@ A boolean indicates whether the linked OpenSSL is 3.x series.
 
 [Back to TOC](#table-of-contents)
 
-### version.OPENSSL_3X
+### version.OPENSSL_30
 
 Deprecated: use `version.OPENSSL_3X` is encouraged.
 
