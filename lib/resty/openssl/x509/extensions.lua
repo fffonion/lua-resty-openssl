@@ -46,6 +46,7 @@ function _M.dup(ctx)
   end
 
   return setmetatable({
+    stack_of = STACK,
     ctx = dup_ctx,
     -- don't let lua gc the original stack to keep its elements
     _dupped_from = ctx,
