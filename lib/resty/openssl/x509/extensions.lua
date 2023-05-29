@@ -17,7 +17,10 @@ local dup = stack_lib.dup_of(STACK)
 local mt = stack_lib.mt_of(STACK, extension_lib.dup, _M)
 
 function _M.new()
-  local raw = new()
+  local raw, err = new()
+  if raw == nil then
+    return nil, err
+  end
 
   local self = setmetatable({
     stack_of = STACK,
@@ -37,7 +40,10 @@ function _M.dup(ctx)
     return nil, "x509.extensions.dup: expect a stack ctx at #1, got " .. type(ctx)
   end
 
-  local dup_ctx = dup(ctx)
+  local dup_ctx, err = dup(ctx)
+  if dup_ctx == nil then
+    return nil, err
+  end
 
   return setmetatable({
     ctx = dup_ctx,
