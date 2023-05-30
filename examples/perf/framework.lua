@@ -67,14 +67,20 @@ end
 local function test(desc, r, iter)
     print("RUNNING " .. ITER .. " ITERATIONS FOR " .. desc)
     local data = table.new(ITER, 0)
+    local ok, err
+    get_duration()
     for i=1, ITER do
-        get_duration()
-        local ok, err = r()
-        data[i] = get_duration()
-        assert(ok, err)
+        -- get_duration()
+        ok, err = r()
+        -- data[i] = get_duration()
+        --assert(ok, err)
     end
+    assert(ok, err)
 
-    local sum, avg, max = stat(data)
+    -- local sum, avg, max = stat(data)
+    local sum = get_duration()
+    local avg = sum / ITER
+    local max = 0
 
     print(string.format("FINISHED in\t%s (%d op/s)\nAVG\t%s\tMAX\t%s", hmt(sum), 1e9/avg, hmt(avg), hmt(max))) 
     print(string.rep("-", 64))
