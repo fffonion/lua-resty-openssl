@@ -29,7 +29,8 @@ end
 
 for _, t in ipairs({"RSA", "EC", "Ed25519", "Ed448"}) do
     for _, op in ipairs({"sign", "verify"}) do
-        if (t == "Ed25519" and not version.OPENSSL_111_OR_LATER) or (t == "Ed448" and version.BORINGSSL_110) then
+        -- the fips version of boringssl we used seems don't have ed448
+        if (t == "Ed25519" and not version.OPENSSL_111_OR_LATER) or (t == "Ed448" and version.BORINGSSL) then
             goto continue
         end
 
