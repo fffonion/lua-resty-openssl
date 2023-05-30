@@ -77,7 +77,11 @@ if OPENSSL_3X then
   _M.settable_params, _M.set_params, _M.gettable_params, _M.get_param = param_lib.get_params_func("EVP_MD_CTX")
 end
 
-function _M:update(...)
+function _M:update(s, ...)
+  if C.EVP_DigestUpdate(self.ctx, s, #s) ~= 1 then
+    return false, format_error("digest:update")
+  end
+
   for _, s in ipairs({...}) do
     if C.EVP_DigestUpdate(self.ctx, s, #s) ~= 1 then
       return false, format_error("digest:update")

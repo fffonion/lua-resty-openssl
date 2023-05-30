@@ -204,34 +204,32 @@ function _M:set_aead_tag(tag)
   return true
 end
 
-function _M:update(...)
+function _M:update(s, ...)
   if not self.initialized then
     return nil, "cipher:update: cipher not initalized, call cipher:init first"
   end
+ 
+  local inl = #s
+  local out_buffer = ctypes.uchar_array(inl + 64)
 
-  local ret = {}
-  for i, s in ipairs({...}) do
-    local inl = #s
-    if inl > 1024 then
-      s = ffi_cast(uchar_ptr, s)
-      for i=0, inl-1, 1024 do
-        local chunk_size = 1024
-        if inl - i < 1024 then
-          chunk_size = inl - i
-        end
-        if C.EVP_CipherUpdate(self.ctx, out_buffer, out_length, s+i, chunk_size) ~= 1 then
-          return nil, format_error("cipher:update")
-        end
-        table.insert(ret, ffi_str(out_buffer, out_length[0]))
-      end
-    else
-      if C.EVP_CipherUpdate(self.ctx, out_buffer, out_length, s, inl) ~= 1 then
-        return nil, format_error("cipher:update")
-      end
-      table.insert(ret, ffi_str(out_buffer, out_length[0]))
-    end
+  if C.EVP_CipherUpdate(self.ctx, out_buffer, out_length, s, inl) ~= 1 then
+    return nil, format_error("cipher:update")
   end
-  return table.concat(ret, "")
+
+  local others = {...}
+  if #others > 0 then
+      local ret = {}
+      for i, chunk in ipairs(others) do
+          local r, err = self:update(chunk)
+          if err then
+              return nil, err
+          end
+          ret[i] = r
+      end
+      return table.concat(ret, "")
+  end
+
+  return ffi_str(out_buffer, out_length[0])
 end
 
 function _M:final(s)
