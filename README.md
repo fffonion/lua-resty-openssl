@@ -510,7 +510,7 @@ A module to provide OSSL_LIB_CTX context switches.
   OSSL_LIB_CTX is an internal OpenSSL library context type. Applications may allocate their own, but may also use NULL to use a default context with functions that take an OSSL_LIB_CTX argument.
 
 See [OSSL_LIB_CTX.3](#https://www.openssl.org/docs/manmaster/man3/OSSL_LIB_CTX.html) for deeper
-reading. It can be used to replace `ENGINE` in prior 3.0 world.
+reading.
 
 The context is currently effective following modules:
 
