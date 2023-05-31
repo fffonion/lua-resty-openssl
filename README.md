@@ -634,7 +634,7 @@ for explanation of each type.
 
 ```lua
 local version = require("resty.openssl.version")
-ngx.say(version.version(version.INFO_DSO_EXTENSION))
+ngx.say(version.info(version.INFO_DSO_EXTENSION))
 -- outputs ".so"
 ```
 
