@@ -187,6 +187,12 @@ Table of Contents
     + [crl:text](#crltext)
     + [crl:to_PEM](#crlto_pem)
     + [crl:__metamethods](#crl__metamethods)
+  * [resty.openssl.x509.crl_stack](#restyopensslx509crl_stack)
+    + [crl_stack.new](#crl_stacknew)
+    + [crl_stack.dup](#crl_stackdup)
+    + [crl_stack.istype](#crl_stackistype)
+    + [crl_stack:add](#crl_stackadd)
+    + [crl_stack:__metamethods](#crl_stack__metamethods)
   * [resty.openssl.x509.name](#restyopensslx509name)
     + [name.new](#namenew)
     + [name.dup](#namedup)
@@ -365,6 +371,7 @@ Load all available sub modules into current module:
   chain = require("resty.openssl.x509.chain"),
   csr = require("resty.openssl.x509.csr"),
   crl = require("resty.openssl.x509.crl"),
+  crl_stack = require("resty.openssl.x509.crl_stack"),
   extension = require("resty.openssl.x509.extension"),
   extensions = require("resty.openssl.x509.extensions"),
   name = require("resty.openssl.x509.name"),
@@ -522,7 +529,7 @@ The context is currently effective following modules:
 - [pkey](#restyopensslpkey)
 - [provider](#restyopensslprovider)
 - [rand](#restyopensslrand)
-- [x509](#restyopensslx509), [x509.csr](#restyopensslx509csr), [x509.crl](#restyopensslx509crl) and some [x509.store](#restyopensslx509store) functions
+- [x509](#restyopensslx509), [x509.csr](#restyopensslx509csr), [x509.crl](#restyopensslx509crl) [x509.crl_stack](#restyopensslx509crl_stack) and some [x509.store](#restyopensslx509store) functions
 
 This module is only available on OpenSSL 3.0 or later.
  
@@ -3084,6 +3091,62 @@ for _, obj in ipairs(crl) do
 end
 -- outputs '{"revocation_date":1577753344,"serial_number":"09159859CAC0C90203BB34C5A012C2A3"}'
 ```
+
+[Back to TOC](#table-of-contents)
+
+## resty.openssl.x509.crl_stack
+
+Module to interact with X.509 CRL stack.
+
+[Back to TOC](#table-of-contents)
+
+### crl_stack.new
+
+**syntax**: *cs, err = crl_stack.new()*
+
+Creates a new `crl_stack` instance.
+
+[Back to TOC](#table-of-contents)
+
+### crl_stack.dup
+
+**syntax**: *cs, err = extensions.dup(crl_stack_ptr_cdata)*
+
+Duplicates a `STACK_OF(X509_CRL)` to create a new `crl_stack` instance. The function creates a new
+stack but won't duplicates elements in the stack.
+
+[Back to TOC](#table-of-contents)
+
+### crl_stack.istype
+
+**syntax**: *ok = crl_stack.istype(table)*
+
+Returns `true` if table is an instance of `crl_stack`. Returns `false` otherwise.
+
+[Back to TOC](#table-of-contents)
+
+### crl_stack:add
+
+**syntax**: *ok, err = crl_stack:add(crl)*
+
+Add a `crl` object to the crl_stack. The first argument must be a
+[resty.openssl.x509.crl](#restyopensslx509crl) instance.
+
+[Back to TOC](#table-of-contents)
+
+### crl_stack:__metamethods
+
+**syntax**: *for i, obj in ipairs(crl_stack)*
+
+**syntax**: *len = #crl_stack*
+
+**syntax**: *obj = crl_stack[i]*
+
+Access the underlying objects as it's a Lua table. Make sure your LuaJIT compiled
+with `-DLUAJIT_ENABLE_LUA52COMPAT` flag; otherwise use `all`, `each`, `index` and `count`
+instead.
+
+See also [functions for stack-like objects](#functions-for-stack-like-objects).
 
 [Back to TOC](#table-of-contents)
 

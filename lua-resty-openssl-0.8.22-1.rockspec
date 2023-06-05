@@ -80,6 +80,7 @@ build = {
       ["resty.openssl.x509.altname"] = "lib/resty/openssl/x509/altname.lua",
       ["resty.openssl.x509.chain"] = "lib/resty/openssl/x509/chain.lua",
       ["resty.openssl.x509.crl"] = "lib/resty/openssl/x509/crl.lua",
+      ["resty.openssl.x509.crl_stack"] = "lib/resty/openssl/x509/crl_stack.lua",
       ["resty.openssl.x509.csr"] = "lib/resty/openssl/x509/csr.lua",
       ["resty.openssl.x509.extension"] = "lib/resty/openssl/x509/extension.lua",
       ["resty.openssl.x509.extension.dist_points"] = "lib/resty/openssl/x509/extension/dist_points.lua",
