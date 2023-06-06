@@ -38,6 +38,11 @@ ffi.cdef [[
 
   void X509_STORE_CTX_set_flags(X509_STORE_CTX *ctx, unsigned long flags);
 
+  int X509_STORE_CTX_set_purpose(X509_STORE_CTX *ctx, int purpose);
+
+  // STACK_OF(X509_CRL)
+  void X509_STORE_CTX_set0_crls(X509_STORE_CTX *c, OPENSSL_STACK *sk);
+
   int X509_PURPOSE_get_by_sname(char *sname);
   X509_PURPOSE *X509_PURPOSE_get0(int idx);
   int X509_PURPOSE_get_id(const X509_PURPOSE *xp);
@@ -80,8 +85,21 @@ elseif OPENSSL_11_OR_LATER then
   ffi.cdef [[
     // STACK_OF(X509)
     OPENSSL_STACK *X509_STORE_CTX_get0_chain(X509_STORE_CTX *ctx);
+    typedef int (*X509_STORE_CTX_check_revocation_fn)(X509_STORE_CTX *ctx);
+    // STACK_OF(X509)
+    void X509_STORE_CTX_set0_verified_chain(X509_STORE_CTX *ctx, OPENSSL_STACK *sk);
   ]];
   _M.X509_STORE_CTX_get0_chain = C.X509_STORE_CTX_get0_chain
+end
+
+if OPENSSL_3X then
+  ffi.cdef [[
+    X509_STORE_CTX_check_revocation_fn X509_STORE_CTX_get_check_revocation(const X509_STORE_CTX *ctx);
+  ]];
+elseif OPENSSL_11_OR_LATER then
+  ffi.cdef [[
+    X509_STORE_CTX_check_revocation_fn X509_STORE_CTX_get_check_revocation(X509_STORE_CTX *ctx);
+  ]];
 end
 
 if OPENSSL_3X then

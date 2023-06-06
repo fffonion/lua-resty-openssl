@@ -89,5 +89,6 @@ build = {
       ["resty.openssl.x509.name"] = "lib/resty/openssl/x509/name.lua",
       ["resty.openssl.x509.revoked"] = "lib/resty/openssl/x509/revoked.lua",
       ["resty.openssl.x509.store"] = "lib/resty/openssl/x509/store.lua"
+      ["resty.openssl.x509.store_ctx"] = "lib/resty/openssl/x509/store_ctx.lua"
    }
 }
