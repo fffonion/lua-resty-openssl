@@ -1,17 +1,15 @@
 local ffi = require "ffi"
 local C = ffi.C
 local ffi_gc = ffi.gc
-local ffi_str = ffi.string
 local bor = bit.bor
 
 local x509_vfy_macro = require "resty.openssl.include.x509_vfy"
 local x509_lib = require "resty.openssl.x509"
-local chain_lib = require "resty.openssl.x509.chain"
 local crl_lib = require "resty.openssl.x509.crl"
+local store_ctx_lib = require "resty.openssl.x509.store_ctx"
 local ctx_lib = require "resty.openssl.ctx"
 local format_error = require("resty.openssl.err").format_all_error
 local format_all_error = require("resty.openssl.err").format_error
-local OPENSSL_3X = require("resty.openssl.version").OPENSSL_3X
 
 local _M = {}
 local mt = { __index = _M }
@@ -171,61 +169,24 @@ function _M:set_flags(...)
 end
 
 function _M:verify(x509, chain, return_chain, properties, verify_method, flags)
-  if not x509_lib.istype(x509) then
-    return nil, "x509.store:verify: expect a x509 instance at #1"
-  elseif chain and not chain_lib.istype(chain) then
-    return nil, "x509.store:verify: expect a x509.chain instance at #1"
+  local ctx, err = store_ctx_lib.new(self, x509, chain, properties)
+
+  if not ctx then
+    return nil, err
   end
 
-  local ctx
-  if OPENSSL_3X then
-    ctx = C.X509_STORE_CTX_new_ex(ctx_lib.get_libctx(), properties)
-  else
-    ctx = C.X509_STORE_CTX_new()
-  end
-  if ctx == nil then
-    return nil, "x509.store:verify: X509_STORE_CTX_new() failed"
-  end
-
-  ffi_gc(ctx, C.X509_STORE_CTX_free)
-
-  local chain_dup_ctx
-  if chain then
-    local chain_dup, err = chain_lib.dup(chain.ctx)
-    if err then
+  if verify_method then
+    local ok, err = ctx:set_default(verify_method)
+    if not ok then
       return nil, err
     end
-    chain_dup_ctx = chain_dup.ctx
-  end
-
-  if C.X509_STORE_CTX_init(ctx, self.ctx, x509.ctx, chain_dup_ctx) ~= 1 then
-    return nil, format_error("x509.store:verify: X509_STORE_CTX_init")
-  end
-
-  if verify_method and C.X509_STORE_CTX_set_default(ctx, verify_method) ~= 1 then
-    return nil, "x509.store:verify: invalid verify_method \"" .. verify_method .. "\""
   end
 
   if flags then
-    C.X509_STORE_CTX_set_flags(ctx, flags)
+    ctx:set_flags(flags)
   end
 
-  local code = C.X509_verify_cert(ctx)
-  if code == 1 then -- verified
-    if not return_chain then
-      return true, nil
-    end
-    local ret_chain_ctx = x509_vfy_macro.X509_STORE_CTX_get0_chain(ctx)
-    return chain_lib.dup(ret_chain_ctx)
-  elseif code == 0 then -- unverified
-    local vfy_code = C.X509_STORE_CTX_get_error(ctx)
-
-    return nil, ffi_str(C.X509_verify_cert_error_string(vfy_code))
-  end
-
-  -- error
-  return nil, format_error("x509.store:verify: X509_verify_cert", code)
-
+  return ctx:verify(return_chain)
 end
 
 return _M

@@ -6,7 +6,6 @@ local bor = bit.bor
 
 local x509_vfy_macro = require "resty.openssl.include.x509_vfy"
 local x509_lib = require "resty.openssl.x509"
-local store_lib = require "resty.openssl.x509.store"
 local chain_lib = require "resty.openssl.x509.chain"
 local crl_stack_lib = require "resty.openssl.x509.crl_stack"
 local ctx_lib = require "resty.openssl.ctx"
@@ -18,16 +17,23 @@ local _M = {}
 local mt = { __index = _M }
 
 local store_ctx_ptr_ct = ffi.typeof('X509_STORE_CTX*')
+local x509_store_ptr_ct = ffi.typeof('X509_STORE*')
 local verify_flags = x509_vfy_macro.verify_flags
 local flag_partial_chain = verify_flags.X509_V_FLAG_PARTIAL_CHAIN
 local flag_crl_check = verify_flags.X509_V_FLAG_CRL_CHECK
 
 _M.verify_flags = verify_flags
 
+-- to avoid circular reference among x509.store and x509.store_ctx,
+-- we do this check by ourselves
+local function istype_store(l)
+  return l and l.ctx and ffi.istype(x509_store_ptr_ct, l.ctx)
+end
+
 function _M.new(store, x509, untrusted_chain, properties)
   local ctx
 
-  if not store_lib.istype(store) then
+  if not istype_store(store) then
     return nil, "x509.store_ctx:new: expect a store instance at #1"
   elseif not x509_lib.istype(x509) then
     return nil, "x509.store_ctx:new: expect a x509 instance at #2"
