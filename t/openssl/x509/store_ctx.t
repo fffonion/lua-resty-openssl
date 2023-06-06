@@ -332,8 +332,8 @@ nilx509.store_ctx:check_revocation: store_ctx isn't verified and verified_chain 
             myassert(crl_stack:add(crl))
             local c1 = myassert(lib.new(store, valid_cert))
             local c2 = myassert(lib.new(store, revoked_cert))
-            local c3 = myassert(lib.new(store, valid_cert))
-            local c4 = myassert(lib.new(store, revoked_cert))
+            local c3 = myassert(lib.new())
+            local c4 = myassert(lib.new())
 
             -- to get the verified_chain first
             local chain1 = myassert(c1:verify(true))

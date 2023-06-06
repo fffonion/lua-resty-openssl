@@ -33,9 +33,9 @@ end
 function _M.new(store, x509, untrusted_chain, properties)
   local ctx
 
-  if not istype_store(store) then
+  if store and not istype_store(store) then
     return nil, "x509.store_ctx:new: expect a store instance at #1"
-  elseif not x509_lib.istype(x509) then
+  elseif x509 and not x509_lib.istype(x509) then
     return nil, "x509.store_ctx:new: expect a x509 instance at #2"
   elseif untrusted_chain and not chain_lib.istype(untrusted_chain) then
     return nil, "x509.store_ctx:new: expect a x509.chain instance at #3"
@@ -61,7 +61,17 @@ function _M.new(store, x509, untrusted_chain, properties)
     chain_dup_ctx = chain_dup.ctx
   end
 
-  if C.X509_STORE_CTX_init(ctx, store.ctx, x509.ctx, chain_dup_ctx) ~= 1 then
+  local store_ctx
+  if store then
+    store_ctx = store.ctx
+  end
+
+  local x509_ctx
+  if x509 then
+    x509_ctx = x509.ctx
+  end
+
+  if C.X509_STORE_CTX_init(ctx, store_ctx, x509_ctx, chain_dup_ctx) ~= 1 then
     return nil, format_error("x509.store_ctx:init: X509_STORE_CTX_init")
   end
 
