@@ -56,8 +56,8 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            local ctx = myassert(require("resty.openssl.x509.store_ctx").new())
-            myassert(ctx:init(store, valid_cert))
+            local lib = myassert(require("resty.openssl.x509.store_ctx"))
+            myassert(lib.new(store, valid_cert))
         }
     }
 --- request
@@ -74,10 +74,8 @@ __DATA__
     location =/t {
         content_by_lua_block {
             local lib = myassert(require("resty.openssl.x509.store_ctx"))
-            local c1 = myassert(lib.new())
-            local c2 = myassert(lib.new())
-            myassert(c1:init(store, valid_cert))
-            myassert(c2:init(store, invalid_cert))
+            local c1 = myassert(lib.new(store, valid_cert))
+            local c2 = myassert(lib.new(store, invalid_cert))
 
             local ok, err = c1:verify()
             ngx.say(ok, err)
@@ -102,10 +100,8 @@ nil(?:self signed|self-signed) certificate
     location =/t {
         content_by_lua_block {
             local lib = myassert(require("resty.openssl.x509.store_ctx"))
-            local c1 = myassert(lib.new())
-            local c2 = myassert(lib.new())
-            myassert(c1:init(partial_store, valid_cert))
-            myassert(c2:init(partial_store, invalid_cert))
+            local c1 = myassert(lib.new(partial_store, valid_cert))
+            local c2 = myassert(lib.new(partial_store, invalid_cert))
 
             local ok, err = c1:verify()
             ngx.say(ok, err)
@@ -130,10 +126,8 @@ nil(?:self signed|self-signed) certificate
     location =/t {
         content_by_lua_block {
             local lib = myassert(require("resty.openssl.x509.store_ctx"))
-            local c1 = myassert(lib.new())
-            local c2 = myassert(lib.new())
-            myassert(c1:init(partial_store, valid_cert))
-            myassert(c2:init(partial_store, invalid_cert))
+            local c1 = myassert(lib.new(partial_store, valid_cert))
+            local c2 = myassert(lib.new(partial_store, invalid_cert))
             myassert(c1:set_flags(c1.verify_flags.X509_V_FLAG_PARTIAL_CHAIN))
             myassert(c2:set_flags(c2.verify_flags.X509_V_FLAG_PARTIAL_CHAIN))
 
@@ -160,12 +154,10 @@ nil(?:self signed|self-signed) certificate
     location =/t {
         content_by_lua_block {
             local lib = myassert(require("resty.openssl.x509.store_ctx"))
-            local c1 = myassert(lib.new())
-            local c2 = myassert(lib.new())
-            local c3 = myassert(lib.new())
-            myassert(c1:init(store, valid_cert))
-            myassert(c2:init(store, valid_cert))
-            myassert(c3:init(store, valid_cert))
+            local c1 = myassert(lib.new(store, valid_cert))
+            local c2 = myassert(lib.new(store, valid_cert))
+            local c3 = myassert(lib.new(store, valid_cert))
+
             myassert(c1:set_default("ssl_server"))
             myassert(c2:set_default("default"))
             myassert(c3:set_default("default"))
@@ -198,11 +190,9 @@ nil(?:unsupported|unsuitable) certificate purpose
     location =/t {
         content_by_lua_block {
             local lib = myassert(require("resty.openssl.x509.store_ctx"))
-            local c1 = myassert(lib.new())
-            local c2 = myassert(lib.new())
             myassert(store:add(crl))
-            myassert(c1:init(store, valid_cert))
-            myassert(c2:init(store, revoked_cert))
+            local c1 = myassert(lib.new(store, valid_cert))
+            local c2 = myassert(lib.new(store, revoked_cert))
 
             local ok, err = c1:verify()
             ngx.say(ok, err)
@@ -229,10 +219,8 @@ nilcertificate revoked
             local lib = myassert(require("resty.openssl.x509.store_ctx"))
             local crl_stack = myassert(require("resty.openssl.x509.crl_stack").new())
             myassert(crl_stack:add(crl))
-            local c1 = myassert(lib.new())
-            local c2 = myassert(lib.new())
-            myassert(c1:init(store, valid_cert))
-            myassert(c2:init(store, revoked_cert))
+            local c1 = myassert(lib.new(store, valid_cert))
+            local c2 = myassert(lib.new(store, revoked_cert))
             myassert(c1:set_crls(crl_stack))
             myassert(c2:set_crls(crl_stack))
 
@@ -259,10 +247,8 @@ nilcertificate revoked
     location =/t {
         content_by_lua_block {
             local lib = myassert(require("resty.openssl.x509.store_ctx"))
-            local c1 = myassert(lib.new())
-            local c2 = myassert(lib.new())
-            myassert(c1:init(store, valid_cert))
-            myassert(c2:init(store, invalid_cert))
+            local c1 = myassert(lib.new(store, valid_cert))
+            local c2 = myassert(lib.new(store, invalid_cert))
 
             local chain = myassert(c1:verify(true))
             for _, c in ipairs(chain) do
@@ -294,13 +280,9 @@ nil(?:self signed|self-signed) certificate
             local lib = myassert(require("resty.openssl.x509.store_ctx"))
             local crl_stack = myassert(require("resty.openssl.x509.crl_stack").new())
             myassert(crl_stack:add(crl))
-            local c1 = myassert(lib.new())
-            local c2 = myassert(lib.new())
-            local c3 = myassert(lib.new())
-
-            myassert(c1:init(store, valid_cert))
-            myassert(c2:init(store, revoked_cert))
-            myassert(c3:init(store, invalid_cert))
+            local c1 = myassert(lib.new(store, valid_cert))
+            local c2 = myassert(lib.new(store, revoked_cert))
+            local c3 = myassert(lib.new(store, invalid_cert))
 
             local ok, err = c1:verify()
             ngx.say(ok, err)
@@ -348,15 +330,10 @@ nilx509.store_ctx:check_revocation: store_ctx isn't verified and verified_chain 
             local lib = myassert(require("resty.openssl.x509.store_ctx"))
             local crl_stack = myassert(require("resty.openssl.x509.crl_stack").new())
             myassert(crl_stack:add(crl))
-            local c1 = myassert(lib.new())
-            local c2 = myassert(lib.new())
-            local c3 = myassert(lib.new())
-            local c4 = myassert(lib.new())
-
-            myassert(c1:init(store, valid_cert))
-            myassert(c2:init(store, revoked_cert))
-            myassert(c3:init(store, valid_cert))
-            myassert(c4:init(store, revoked_cert))
+            local c1 = myassert(lib.new(store, valid_cert))
+            local c2 = myassert(lib.new(store, revoked_cert))
+            local c3 = myassert(lib.new(store, valid_cert))
+            local c4 = myassert(lib.new(store, revoked_cert))
 
             -- to get the verified_chain first
             local chain1 = myassert(c1:verify(true))

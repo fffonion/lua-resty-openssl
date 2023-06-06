@@ -24,8 +24,16 @@ local flag_crl_check = verify_flags.X509_V_FLAG_CRL_CHECK
 
 _M.verify_flags = verify_flags
 
-function _M.new(properties)
+function _M.new(store, x509, untrusted_chain, properties)
   local ctx
+
+  if not store_lib.istype(store) then
+    return nil, "x509.store_ctx:new: expect a store instance at #1"
+  elseif not x509_lib.istype(x509) then
+    return nil, "x509.store_ctx:new: expect a x509 instance at #2"
+  elseif untrusted_chain and not chain_lib.istype(untrusted_chain) then
+    return nil, "x509.store_ctx:new: expect a x509.chain instance at #3"
+  end
 
   if OPENSSL_3X then
     ctx = C.X509_STORE_CTX_new_ex(ctx_lib.get_libctx(), properties)
@@ -38,26 +46,6 @@ function _M.new(properties)
 
   ffi_gc(ctx, C.X509_STORE_CTX_free)
 
-  return setmetatable({
-    ctx = ctx,
-    initialized = false,
-    verified = false,
-  }, mt), nil
-end
-
-function _M.istype(l)
-  return l and l.ctx and ffi.istype(store_ctx_ptr_ct, l.ctx)
-end
-
-function _M:init(store, x509, untrusted_chain)
-  if not store_lib.istype(store) then
-    return nil, "x509.store_ctx:init: expect a store instance at #1"
-  elseif not x509_lib.istype(x509) then
-    return nil, "x509.store_ctx:init: expect a x509 instance at #2"
-  elseif untrusted_chain and not chain_lib.istype(untrusted_chain) then
-    return nil, "x509.store_ctx:init: expect a x509.chain instance at #3"
-  end
-
   local chain_dup_ctx
   if untrusted_chain then
     local chain_dup, err = chain_lib.dup(untrusted_chain.ctx)
@@ -67,13 +55,18 @@ function _M:init(store, x509, untrusted_chain)
     chain_dup_ctx = chain_dup.ctx
   end
 
-  if C.X509_STORE_CTX_init(self.ctx, store.ctx, x509.ctx, chain_dup_ctx) ~= 1 then
+  if C.X509_STORE_CTX_init(ctx, store.ctx, x509.ctx, chain_dup_ctx) ~= 1 then
     return nil, format_error("x509.store_ctx:init: X509_STORE_CTX_init")
   end
 
-  self.initialized = true
+  return setmetatable({
+    ctx = ctx,
+    verified = false,
+  }, mt), nil
+end
 
-  return true
+function _M.istype(l)
+  return l and l.ctx and ffi.istype(store_ctx_ptr_ct, l.ctx)
 end
 
 function _M:set_default(verify_method)
@@ -132,10 +125,6 @@ function _M:set_crls(crls)
 end
 
 function _M:verify(return_chain)
-  if not self.initialized then
-    return nil, "x509.store_ctx:verify: store_ctx not initialized, call store_ctx:init first"
-  end
-
   local code = C.X509_verify_cert(self.ctx)
   if code == 1 then -- verified
     self.verified = true
