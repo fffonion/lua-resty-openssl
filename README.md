@@ -248,6 +248,15 @@ Table of Contents
     + [store:set_depth](#storeset_depth)
     + [store:set_flags](#storeset_flags)
     + [store:verify](#storeverify)
+  * [resty.openssl.x509.store_ctx](#restyopensslx509store_ctx)
+    + [store_ctx.new](#store_ctxnew)
+    + [store_ctx.istype](#store_ctxistype)
+    + [store_ctx:set_default](#store_ctxset_default)
+    + [store_ctx:set_purpose](#store_ctxset_purpose)
+    + [store_ctx:set_flags](#store_ctxset_flags)
+    + [store_ctx:set_crls](#store_ctxset_crls)
+    + [store_ctx:verify](#store_ctxverify)
+    + [store_ctx:check_revocation](#store_ctxcheck_revocation)
   * [resty.openssl.x509.revoked](#restyopensslx509revoked)
     + [revoked.new](#revokednew)
     + [revoked.istype](#revokedistype)
@@ -369,6 +378,7 @@ Load all available sub modules into current module:
   extensions = require("resty.openssl.x509.extensions"),
   name = require("resty.openssl.x509.name"),
   store = require("resty.openssl.x509.store"),
+  store_ctx = require("resty.openssl.x509.store_ctx"),
   ssl = require("resty.openssl.ssl"),
   ssl_ctx = require("resty.openssl.ssl_ctx"),
 ```
@@ -522,7 +532,7 @@ The context is currently effective following modules:
 - [pkey](#restyopensslpkey)
 - [provider](#restyopensslprovider)
 - [rand](#restyopensslrand)
-- [x509](#restyopensslx509), [x509.csr](#restyopensslx509csr), [x509.crl](#restyopensslx509crl) and some [x509.store](#restyopensslx509store) functions
+- [x509](#restyopensslx509), [x509.csr](#restyopensslx509csr), [x509.crl](#restyopensslx509crl) and some [x509.store](#restyopensslx509store) [x509.store_ctx](#restyopensslx509store_ctx) functions
 
 This module is only available on OpenSSL 3.0 or later.
  
@@ -3944,6 +3954,138 @@ couple of other defaults but **does not** override the parameters set from
 
 `verify_flags` paramter is the additional verify flags to be set. See [store:set_flags](#storeset_flags)
 for all available flags.
+
+[Back to TOC](#table-of-contents)
+
+## resty.openssl.x509.store_ctx
+
+Module to interact with X.509 certificate store ctx (X509_STORE_CTX).
+
+`X509_STORE_CTX` level settings have higher priority than `X509_STORE` level ones.
+
+[Back to TOC](#table-of-contents)
+
+### store_ctx.new
+
+**syntax**: *ctx, err = store_ctx.new(store?, x509?, chain?, properties?)*
+
+Creates a new `store_ctx` instance.
+
+Normally we need to set the first 2 arguments at least if you want to call the
+`store_ctx:verify` later. One exception is to call `store_ctx:check_revocation`
+directly with argument `verified_chain` passed.
+
+The first argument `store` is the trusted certificate store and must be a
+[resty.openssl.x509.store](#restyopensslx509store) instance.
+The second argument `x509` is the end entity certificate to be verified and
+must be a [resty.openssl.x509](#restyopensslx509) instance.
+The third optional argument `chain` is a set of additional untrusted certificates
+which may be used to build chain.
+
+Staring from OpenSSL 3.0, this function accepts an optional `properties` parameter
+to explictly select provider to fetch algorithms.
+
+[Back to TOC](#table-of-contents)
+
+### store_ctx.istype
+
+**syntax**: *ok = store_ctx.istype(table)*
+
+Returns `true` if table is an instance of `store_ctx`. Returns `false` otherwise.
+
+[Back to TOC](#table-of-contents)
+
+### store_ctx:set_default
+
+**syntax**: *ok, err = store_ctx:set_default(verify_method)*
+
+Sets the default verification method.
+
+`verify_method` can be set to use predefined verify parameters such as `"default"`, `"pkcs7"`,
+`"smime_sign"`, `"ssl_client"` and `"ssl_server"`. This set corresponding `purpose`, `trust` and
+couple of other defaults but **does not** override the parameters set from
+[store_ctx:set_purpose](#store_ctxset_purpose).
+
+[Back to TOC](#table-of-contents)
+
+### store_ctx:set_purpose
+
+**syntax**: *ok, err = store_ctx:set_purpose(purpose)*
+
+Set the X509_STORE_CTX to match Key Usage and Extendend Key Usage when verifying the cert.
+Possible values are:
+
+```
+	sslclient 	SSL client
+	sslserver 	SSL server
+	nssslserver	Netscape SSL server
+	smimesign 	S/MIME signing
+	smimeencrypt	S/MIME encryption
+	crlsign   	CRL signing
+	any       	Any Purpose
+	ocsphelper	OCSP helper
+	timestampsign	Time Stamp signing
+```
+
+Normally user should use [store_ctx:set_default](#store_ctxset_default) unless the purpose
+is not included in the default verify methods.
+
+[Back to TOC](#table-of-contents)
+
+### store_ctx:set_flags
+
+**syntax**: *ok, err = store_ctx:set_flags(flag1, flag2, ...)*
+
+Set the verify flags, available via `store_ctx.verify_flags` table
+
+See [store:set_flags](#storeset_flags) for all available flags.
+
+```lua
+store_ctx:set_flags(store_ctx.verify_flags.X509_V_FLAG_PARTIAL_CHAIN)
+
+store_ctx:set_flags(store_ctx.verify_flags.X509_V_FLAG_PARTIAL_CHAIN,
+                    store_ctx.verify_flags.X509_V_FLAG_NO_CHECK_TIME)
+
+store_ctx:set_flags(store_ctx.verify_flags.X509_V_FLAG_PARTIAL_CHAIN +
+                    store_ctx.verify_flags.X509_V_FLAG_NO_CHECK_TIME)
+```
+
+[Back to TOC](#table-of-contents)
+
+### store_ctx:set_crls
+
+**syntax**: *ok, err = store_ctx:set_crls(crl_stack)*
+
+Sets a set of CRLs to `store_ctx`, the argument `crl_stack` must be a
+[resty.openssl.x509.crl_stack](#restyopensslx509crl_stack) instance.
+
+[Back to TOC](#table-of-contents)
+
+### store_ctx:verify
+
+**syntax**: *chain, err = store_ctx:verify(return_chain?)*
+
+Does the certificate verification.
+
+If verification succeed, and `return_chain` is set to true, returns the verified chain as a
+[resty.openssl.x509.chain](#restyopensslx509chain); otherwise returns `true` only.
+If verification failed, returns `nil` and error explaining the reason.
+
+[Back to TOC](#table-of-contents)
+
+### store_ctx:check_revocation
+
+**syntax**: *ok, err = store:verify(verified_chain?)*
+
+Only does the revocation check. You need to have successfully called `store_ctx:verify`
+(the verified chain already been built internally) or you need to pass the `verified_chain` argument.
+
+`verified_chain` must be a [resty.openssl.x509.chain](#restyopensslx509chain) instance which
+can be returned from `store_ctx:verify` or be built by yourself. Note the first cert needs to
+be the end entity certificate you want to check and the second cert needs to be its issuer.
+
+Returns `true` when the certificate isn't revoked,
+otherwise returns `nil` and error explaining the reason.
 
 [Back to TOC](#table-of-contents)
 
