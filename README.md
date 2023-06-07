@@ -254,7 +254,7 @@ Table of Contents
     + [store_ctx:set_default](#store_ctxset_default)
     + [store_ctx:set_purpose](#store_ctxset_purpose)
     + [store_ctx:set_flags](#store_ctxset_flags)
-    + [store_ctx:set_crls](#store_ctxset_crls)
+    + [store_ctx:add_crl](#store_ctxadd_crl)
     + [store_ctx:verify](#store_ctxverify)
     + [store_ctx:check_revocation](#store_ctxcheck_revocation)
   * [resty.openssl.x509.revoked](#restyopensslx509revoked)
@@ -4052,12 +4052,12 @@ store_ctx:set_flags(store_ctx.verify_flags.X509_V_FLAG_PARTIAL_CHAIN +
 
 [Back to TOC](#table-of-contents)
 
-### store_ctx:set_crls
+### store_ctx:add_crl
 
-**syntax**: *ok, err = store_ctx:set_crls(crl_stack)*
+**syntax**: *ok, err = store_ctx:add_crl(crl)*
 
-Sets a set of CRLs to `store_ctx`, the argument `crl_stack` must be a
-[resty.openssl.x509.crl_stack](#restyopensslx509crl_stack) instance.
+Adds a CRL to `store_ctx`, the argument `crl` must be a
+[resty.openssl.x509.crl](#restyopensslx509crl) instance.
 
 [Back to TOC](#table-of-contents)
 

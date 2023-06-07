@@ -6,8 +6,9 @@ local bor = bit.bor
 
 local x509_vfy_macro = require "resty.openssl.include.x509_vfy"
 local x509_lib = require "resty.openssl.x509"
+local stack_lib = require "resty.openssl.stack"
 local chain_lib = require "resty.openssl.x509.chain"
-local crl_stack_lib = require "resty.openssl.x509.crl_stack"
+local crl_lib = require "resty.openssl.x509.crl"
 local ctx_lib = require "resty.openssl.ctx"
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_11_OR_LATER = require("resty.openssl.version").OPENSSL_11_OR_LATER
@@ -21,6 +22,12 @@ local x509_store_ptr_ct = ffi.typeof('X509_STORE*')
 local verify_flags = x509_vfy_macro.verify_flags
 local flag_partial_chain = verify_flags.X509_V_FLAG_PARTIAL_CHAIN
 local flag_crl_check = verify_flags.X509_V_FLAG_CRL_CHECK
+
+local crl_stack_M = {}
+local STACK = "X509_CRL"
+local crl_stack_new = stack_lib.new_of(STACK)
+local crl_stack_add = stack_lib.add_of(STACK)
+local crl_stack_mt = stack_lib.mt_of(STACK, crl_lib.dup, crl_stack_M)
 
 _M.verify_flags = verify_flags
 
@@ -127,20 +134,44 @@ function _M:set_flags(...)
   return true
 end
 
-function _M:set_crls(crls)
-  if not crl_stack_lib.istype(crls) then
-    return nil, "x509.store_ctx:set_crls: expect a x509.crl_stack instance at #3"
+function _M:add_crl(crl)
+  if not crl_lib.istype(crl) then
+    return nil, "x509.store_ctx:add_crl: expect a x509.crl instance at #3"
   end
 
-  -- auto-set the flag
-  self:set_flags(flag_crl_check)
+  if not self.crl_stack then
+    local raw, err = crl_stack_new()
+    if raw == nil then
+      return nil, err
+    end
 
-  C.X509_STORE_CTX_set0_crls(self.ctx, crls.ctx)
+    self.crl_stack = setmetatable({
+      ctx = raw,
+    }, crl_stack_mt)
+  end
+
+  local dup = C.X509_CRL_dup(crl.ctx)
+  if dup == nil then
+    return nil, format_error("x509.store_ctx:add_crl: X509_CRL_dup")
+  end
+
+  local ok, err = crl_stack_add(self.crl_stack.ctx, dup)
+  if not ok then
+    C.X509_CRL_free(dup)
+    return nil, err
+  end
 
   return true
 end
 
 function _M:verify(return_chain)
+  if self.crl_stack then
+    C.X509_STORE_CTX_set0_crls(self.ctx, self.crl_stack.ctx)
+
+    -- auto-set the flag
+    self:set_flags(flag_crl_check)
+  end
+
   local code = C.X509_verify_cert(self.ctx)
   if code == 1 then -- verified
     self.verified = true
@@ -175,6 +206,10 @@ function _M:check_revocation(verified_chain)
     if not self.verified then
       return nil, "x509.store_ctx:check_revocation: store_ctx isn't verified and verified_chain argument isn't passed"
     end
+  end
+
+  if self.crl_stack then
+    C.X509_STORE_CTX_set0_crls(self.ctx, self.crl_stack.ctx)
   end
 
   -- enables CRL checking for the certificate chain leaf certificate.

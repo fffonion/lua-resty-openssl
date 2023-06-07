@@ -217,12 +217,10 @@ nilcertificate revoked
     location =/t {
         content_by_lua_block {
             local lib = myassert(require("resty.openssl.x509.store_ctx"))
-            local crl_stack = myassert(require("resty.openssl.x509.crl_stack").new())
-            myassert(crl_stack:add(crl))
             local c1 = myassert(lib.new(store, valid_cert))
             local c2 = myassert(lib.new(store, revoked_cert))
-            myassert(c1:set_crls(crl_stack))
-            myassert(c2:set_crls(crl_stack))
+            myassert(c1:add_crl(crl))
+            myassert(c2:add_crl(crl))
 
             local ok, err = c1:verify()
             ngx.say(ok, err)
@@ -278,8 +276,6 @@ nil(?:self signed|self-signed) certificate
     location =/t {
         content_by_lua_block {
             local lib = myassert(require("resty.openssl.x509.store_ctx"))
-            local crl_stack = myassert(require("resty.openssl.x509.crl_stack").new())
-            myassert(crl_stack:add(crl))
             local c1 = myassert(lib.new(store, valid_cert))
             local c2 = myassert(lib.new(store, revoked_cert))
             local c3 = myassert(lib.new(store, invalid_cert))
@@ -287,21 +283,21 @@ nil(?:self signed|self-signed) certificate
             local ok, err = c1:verify()
             ngx.say(ok, err)
 
-            myassert(c1:set_crls(crl_stack))
+            myassert(c1:add_crl(crl))
             local ok, err = c1:check_revocation()
             ngx.say(ok, err)
 
             local ok, err = c2:verify()
             ngx.say(ok, err)
 
-            myassert(c2:set_crls(crl_stack))
+            myassert(c2:add_crl(crl))
             local ok, err = c2:check_revocation()
             ngx.say(ok, err)
 
             local ok, err = c3:verify()
             ngx.say(ok, err)
 
-            myassert(c3:set_crls(crl_stack))
+            myassert(c3:add_crl(crl))
             local ok, err = c3:check_revocation()
             ngx.say(ok, err)
         }
@@ -328,8 +324,6 @@ nilx509.store_ctx:check_revocation: store_ctx isn't verified and verified_chain 
     location =/t {
         content_by_lua_block {
             local lib = myassert(require("resty.openssl.x509.store_ctx"))
-            local crl_stack = myassert(require("resty.openssl.x509.crl_stack").new())
-            myassert(crl_stack:add(crl))
             local c1 = myassert(lib.new(store, valid_cert))
             local c2 = myassert(lib.new(store, revoked_cert))
             local c3 = myassert(lib.new())
@@ -339,14 +333,14 @@ nilx509.store_ctx:check_revocation: store_ctx isn't verified and verified_chain 
             local chain1 = myassert(c1:verify(true))
             local chain2 = myassert(c2:verify(true))
 
-            myassert(c3:set_crls(crl_stack))
+            myassert(c3:add_crl(crl))
             local ok, err = c3:check_revocation()
             ngx.say(ok, err)
 
             local ok, err = c3:check_revocation(chain1)
             ngx.say(ok, err)
 
-            myassert(c4:set_crls(crl_stack))
+            myassert(c4:add_crl(crl))
             local ok, err = c4:check_revocation()
             ngx.say(ok, err)
 
