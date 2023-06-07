@@ -9,8 +9,8 @@ local x509_lib = require "resty.openssl.x509"
 local chain_lib = require "resty.openssl.x509.chain"
 local crl_lib = require "resty.openssl.x509.crl"
 local ctx_lib = require "resty.openssl.ctx"
-local format_error = require("resty.openssl.err").format_all_error
-local format_all_error = require("resty.openssl.err").format_error
+local format_all_error = require("resty.openssl.err").format_all_error
+local format_error = require("resty.openssl.err").format_error
 local OPENSSL_3X = require("resty.openssl.version").OPENSSL_3X
 
 local _M = {}
