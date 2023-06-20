@@ -248,6 +248,7 @@ Table of Contents
     + [store:set_depth](#storeset_depth)
     + [store:set_flags](#storeset_flags)
     + [store:verify](#storeverify)
+    + [store:check_revocation](#storecheck_revocation)
   * [resty.openssl.x509.revoked](#restyopensslx509revoked)
     + [revoked.new](#revokednew)
     + [revoked.istype](#revokedistype)
@@ -3813,11 +3814,15 @@ to explictly select provider to fetch algorithms.
 
 ### store:add
 
-**syntax**: *ok, err = store:add(x509_or_crl)*
+**syntax**: *ok, err = store:add(x509_or_crl, skip_set_crl_check_flags?)*
 
 Adds a X.509 or a CRL object into store.
 The argument must be a [resty.openssl.x509](#restyopensslx509) instance or a
 [resty.openssl.x509.crl](#restyopensslx509crl) instance.
+
+By default, adding a CRL object will automatically set the flag to store
+`X509_V_FLAG_CRL_CHECK`. Setting the second optional argument to `true` will
+skip settting the flags.
 
 [Back to TOC](#table-of-contents)
 
@@ -3944,6 +3949,25 @@ couple of other defaults but **does not** override the parameters set from
 
 `verify_flags` paramter is the additional verify flags to be set. See [store:set_flags](#storeset_flags)
 for all available flags.
+
+[Back to TOC](#table-of-contents)
+
+### store:check_revocation
+
+**syntax**: *ok, err = store:check_revocation(verified_chain, properties?)*
+
+Only does the revocation check. The first argument `verified_chain` must be a
+[resty.openssl.x509.chain](#restyopensslx509chain) instance which could be returned from
+`store_ctx:verify` or be built by yourself. Note the first cert needs to be the end entity
+certificate you want to check and the second cert needs to be its issuer.
+
+Staring from OpenSSL 3.0, this function accepts an optional `properties` parameter
+to explictly select provider to fetch algorithms.
+
+Returns `true` when the certificate isn't revoked,
+otherwise returns `nil` and error explaining the reason.
+
+Note this function is supported from OpenSSL 1.1.0 and not supported in BoringSSL.
 
 [Back to TOC](#table-of-contents)
 
