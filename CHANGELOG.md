@@ -9,6 +9,7 @@
 
 ### features
 - **tests:** add performance test ([#112](https://github.com/fffonion/lua-resty-openssl/issues/112)) [100b4e4](https://github.com/fffonion/lua-resty-openssl/commit/100b4e43843a597327be6e5356c64b5ce621fa56)
+- **x509.store:** add store:check_revocation and add flag to skip check CRL for store:add ([#1](https://github.com/fffonion/lua-resty-openssl/issues/1)) [1a5a4c8](https://github.com/fffonion/lua-resty-openssl/commit/1a5a4c881128ffb65d6eaf47bb3961417ef23f0b)
 
 
 <a name="0.8.22"></a>
