@@ -2,6 +2,12 @@
 ## [Unreleased]
 
 
+<a name="0.8.24"></a>
+## [0.8.24] - 2023-08-07
+### bug fixes
+- **ssl:** support ngx_lua 10025 [abaa66e](https://github.com/fffonion/lua-resty-openssl/commit/abaa66ee07ce734580fd29ec6032157c998f6346)
+
+
 <a name="0.8.23"></a>
 ## [0.8.23] - 2023-06-20
 ### bug fixes
@@ -507,7 +513,8 @@
 - **x509:** export pubkey [ede4f81](https://github.com/fffonion/lua-resty-openssl/commit/ede4f817cb0fe092ad6f9ab5d6ecdcde864a9fd8)
 
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.23...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.24...HEAD
+[0.8.24]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.23...0.8.24
 [0.8.23]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.22...0.8.23
 [0.8.22]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.21...0.8.22
 [0.8.21]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.20...0.8.21
