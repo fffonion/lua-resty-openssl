@@ -2,6 +2,13 @@
 ## [Unreleased]
 
 
+<a name="0.8.26"></a>
+## [0.8.26] - 2023-10-30
+### bug fixes
+- **version:** add support for all 3.x versions [1516b4d](https://github.com/fffonion/lua-resty-openssl/commit/1516b4d94ac4621a1b243c14b5133ded81515d28)
+- **x509.csr:** remove extension before adding it [d6ed964](https://github.com/fffonion/lua-resty-openssl/commit/d6ed9648e39f46f7519413489baf021092ccbc49)
+
+
 <a name="0.8.25"></a>
 ## [0.8.25] - 2023-09-05
 ### bug fixes
@@ -519,7 +526,8 @@
 - **x509:** export pubkey [ede4f81](https://github.com/fffonion/lua-resty-openssl/commit/ede4f817cb0fe092ad6f9ab5d6ecdcde864a9fd8)
 
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.25...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.26...HEAD
+[0.8.26]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.25...0.8.26
 [0.8.25]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.24...0.8.25
 [0.8.24]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.23...0.8.24
 [0.8.23]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.22...0.8.23
