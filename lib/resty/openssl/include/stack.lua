@@ -20,7 +20,7 @@ ffi.cdef [[
   void *OPENSSL_sk_value(const OPENSSL_STACK *, int);
   OPENSSL_STACK *OPENSSL_sk_dup(const OPENSSL_STACK *st);
   void OPENSSL_sk_free(OPENSSL_STACK *);
-  void *OPENSSL_sk_delete(OPENSSL_STACK *st, int loc);
+  // void *OPENSSL_sk_delete(OPENSSL_STACK *st, int loc);
 
   typedef void (*OPENSSL_sk_freefunc)(void *);
   typedef void *(*OPENSSL_sk_copyfunc)(const void *);

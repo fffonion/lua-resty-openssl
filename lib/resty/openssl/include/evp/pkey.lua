@@ -26,8 +26,8 @@ ffi.cdef [[
                       int cmd, int p1, void *p2);
   // TODO replace EVP_PKEY_CTX_ctrl with EVP_PKEY_CTX_ctrl_str to reduce
   // some hardcoded macros
-  int EVP_PKEY_CTX_ctrl_str(EVP_PKEY_CTX *ctx, const char *type,
-                      const char *value);
+  // int EVP_PKEY_CTX_ctrl_str(EVP_PKEY_CTX *ctx, const char *type,
+  //                     const char *value);
   int EVP_PKEY_encrypt_init(EVP_PKEY_CTX *ctx);
   int EVP_PKEY_encrypt(EVP_PKEY_CTX *ctx,
                         unsigned char *out, size_t *outlen,
@@ -106,7 +106,7 @@ if OPENSSL_3X then
     int EVP_PKEY_CTX_set_dh_paramgen_prime_len(EVP_PKEY_CTX *ctx, int pbits);
 
     const OSSL_PROVIDER *EVP_PKEY_get0_provider(const EVP_PKEY *key);
-    const OSSL_PROVIDER *EVP_PKEY_CTX_get0_provider(const EVP_PKEY_CTX *ctx);
+    // const OSSL_PROVIDER *EVP_PKEY_CTX_get0_provider(const EVP_PKEY_CTX *ctx);
 
     const OSSL_PARAM *EVP_PKEY_settable_params(const EVP_PKEY *pkey);
     int EVP_PKEY_set_params(EVP_PKEY *pkey, OSSL_PARAM params[]);

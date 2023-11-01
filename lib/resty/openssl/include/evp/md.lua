@@ -43,7 +43,7 @@ if OPENSSL_3X then
     void EVP_MD_do_all_provided(OSSL_LIB_CTX *libctx,
                                 fake_openssl_md_provided_list_fn*,
                                 void *arg);
-    int EVP_MD_up_ref(EVP_MD *md);
+    // int EVP_MD_up_ref(EVP_MD *md);
     void EVP_MD_free(EVP_MD *md);
 
     const char *EVP_MD_get0_name(const EVP_MD *md);

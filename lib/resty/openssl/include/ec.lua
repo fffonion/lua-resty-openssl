@@ -23,9 +23,8 @@ ffi.cdef [[
   void EC_GROUP_set_asn1_flag(EC_GROUP *group, int flag);
   void EC_GROUP_set_point_conversion_form(EC_GROUP *group,
     point_conversion_form_t form);
-  void EC_GROUP_set_curve_name(EC_GROUP *group, int nid);
+  // void EC_GROUP_set_curve_name(EC_GROUP *group, int nid);
   int EC_GROUP_get_curve_name(const EC_GROUP *group);
-
 
   void EC_GROUP_free(EC_GROUP *group);
 

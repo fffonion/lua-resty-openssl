@@ -290,6 +290,7 @@ function _M.new(typ, properties)
   if algo == nil then
     return nil, format_error(string.format("mac.new: invalid mac type \"%s\"", typ))
   end
+  ffi_gc(algo, C.EVP_KDF_free)
 
   local ctx = C.EVP_KDF_CTX_new(algo)
   if ctx == nil then
