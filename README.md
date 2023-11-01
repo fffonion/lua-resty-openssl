@@ -20,6 +20,7 @@ Table of Contents
     + [openssl.resty_hmac_compat](#opensslresty_hmac_compat)
     + [openssl.get_fips_mode](#opensslget_fips_mode)
     + [openssl.set_fips_mode](#opensslset_fips_mode)
+    + [openssl.get_fips_version_text](#opensslget_fips_version_text)
     + [openssl.set_default_properties](#opensslset_default_properties)
     + [openssl.list_cipher_algorithms](#openssllist_cipher_algorithms)
     + [openssl.list_digest_algorithms](#openssllist_digest_algorithms)
@@ -436,6 +437,14 @@ print(c:get_provider_name()) -- prints "fips"
 Compile the module per [security policy](https://csrc.nist.gov/CSRC/media/projects/cryptographic-module-validation-program/documents/security-policies/140sp3678.pdf)
 
 Check if FIPS is acticated by running `assert(openssl.set_fips_mode(true))`.
+
+[Back to TOC](#table-of-contents)
+
+### openssl.get_fips_version_text
+
+**syntax**: *text, err = openssl.get_fips_version_text()*
+
+Returns the version text of the FIPS module, only available on OpenSSL 3.x.
 
 [Back to TOC](#table-of-contents)
 
