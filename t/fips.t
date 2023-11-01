@@ -121,3 +121,25 @@ true
 .*invalid digest type "md5".+(?:unsupported|disabled for fips).*
 --- no_error_log
 [error]
+
+=== TEST 4: Get FIPS version text
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            if not _G.fips then
+                ngx.say("3.0.8")
+                ngx.exit(200)
+            end
+
+            local openssl = require("resty.openssl")
+            myassert(openssl.set_fips_mode(true))
+            ngx.say(myassert(openssl.get_fips_version_text()))
+        }
+    }
+--- request
+    GET /t
+--- response_body_like
+3\.\d+\.\d+
+--- no_error_log
+[error]

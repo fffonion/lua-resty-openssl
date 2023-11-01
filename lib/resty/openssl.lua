@@ -285,6 +285,14 @@ if OPENSSL_3X then
     return C.EVP_default_properties_is_fips_enabled(ctx_lib.get_libctx()) == 1
   end
 
+  function _M.get_fips_version_text()
+    if not fips_provider_ctx then
+      return false, "FIPS mode is not enabled"
+    end
+
+    return fips_provider_ctx:get_params("version")
+  end
+
 else
   function _M.set_fips_mode(enable)
     if (not not enable) == _M.get_fips_mode() then
@@ -300,6 +308,10 @@ else
 
   function _M.get_fips_mode()
     return C.FIPS_mode() == 1
+  end
+
+  function _M.get_fips_version_text()
+    return nil, "openssl.get_fips_version_text not supported on OpenSSL 1.1.1"
   end
 end
 
