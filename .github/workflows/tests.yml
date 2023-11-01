@@ -232,10 +232,6 @@ jobs:
           export OPENSSL_CONF=$OPENSSL_PREFIX/openssl-fips.cnf
           popd
 
-          export TEST_NGINX_FIPS=1
-        fi
-
-        if [ "X$TEST_NGINX_FIPS" != "X" ]; then
           echo "Running FIPS tests"
 
           export LD_LIBRARY_PATH=$LUAJIT_LIB:$LD_LIBRARY_PATH
@@ -243,6 +239,7 @@ jobs:
 
           TEST_NGINX_FIPS=1 TEST_NGINX_TIMEOUT=10 prove -j$JOBS -r t/ 2>&1
 
-          TEST_NGINX_TIMEOUT=20 prove -j$JOBS -r t/ 2>&1
+        else
+          echo "FIPS tests are skipped"
         fi
         
