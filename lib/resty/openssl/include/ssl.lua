@@ -8,7 +8,7 @@ local OPENSSL_3X = require("resty.openssl.version").OPENSSL_3X
 ffi.cdef [[
   // SSL_METHOD
   typedef struct ssl_method_st SSL_METHOD;
-  const SSL_METHOD *TLS_method(void);
+  // const SSL_METHOD *TLS_method(void);
   const SSL_METHOD *TLS_server_method(void);
 
   // SSL_CIPHER
@@ -52,7 +52,7 @@ ffi.cdef [[
   long SSL_get_options(SSL *ssl);
 
   /*STACK_OF(SSL_CIPHER)*/ OPENSSL_STACK *SSL_get_ciphers(const SSL *ssl);
-  /*STACK_OF(SSL_CIPHER)*/ OPENSSL_STACK *SSL_CTX_get_ciphers(const SSL_CTX *ctx);
+  // /*STACK_OF(SSL_CIPHER)*/ OPENSSL_STACK *SSL_CTX_get_ciphers(const SSL_CTX *ctx);
   OPENSSL_STACK *SSL_get_peer_cert_chain(const SSL *ssl);
 
   typedef int (*verify_callback)(int preverify_ok, X509_STORE_CTX *x509_ctx);

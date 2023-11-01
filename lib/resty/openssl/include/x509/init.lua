@@ -61,7 +61,7 @@ ffi.cdef [[
   int X509_get_signature_nid(const X509 *x);
 
   unsigned char *X509_alias_get0(X509 *x, int *len);
-  unsigned char *X509_keyid_get0(X509 *x, int *len);
+  // unsigned char *X509_keyid_get0(X509 *x, int *len);
   int X509_check_private_key(X509 *x, EVP_PKEY *k);
 
   int X509_up_ref(X509 *a);

@@ -26,7 +26,7 @@ if OPENSSL_3X then
     void EVP_KDF_do_all_provided(OSSL_LIB_CTX *libctx,
                                 fake_openssl_kdf_provided_list_fn*,
                                 void *arg);
-    int EVP_KDF_up_ref(EVP_KDF *kdf);
+    // int EVP_KDF_up_ref(EVP_KDF *kdf);
     void EVP_KDF_free(EVP_KDF *kdf);
 
     const char *EVP_KDF_get0_name(const EVP_KDF *kdf);

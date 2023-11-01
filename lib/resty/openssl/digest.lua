@@ -29,6 +29,7 @@ function _M.new(typ, properties)
   else
     if OPENSSL_3X then
       algo = C.EVP_MD_fetch(ctx_lib.get_libctx(), typ or 'sha1', properties)
+      ffi_gc(algo, C.EVP_MD_free)
     else
       algo = C.EVP_get_digestbyname(typ or 'sha1')
     end

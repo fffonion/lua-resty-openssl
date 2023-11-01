@@ -5,7 +5,7 @@ local OPENSSL_3X = require("resty.openssl.version").OPENSSL_3X
 
 ffi.cdef [[
   EVP_CIPHER_CTX *EVP_CIPHER_CTX_new(void);
-  int EVP_CIPHER_CTX_reset(EVP_CIPHER_CTX *c);
+  // int EVP_CIPHER_CTX_reset(EVP_CIPHER_CTX *c);
   void EVP_CIPHER_CTX_free(EVP_CIPHER_CTX *c);
 
   int EVP_CIPHER_CTX_set_padding(EVP_CIPHER_CTX *c, int pad);
@@ -13,10 +13,10 @@ ffi.cdef [[
   const EVP_CIPHER *EVP_CIPHER_CTX_cipher(const EVP_CIPHER_CTX *ctx);
   const EVP_CIPHER *EVP_get_cipherbyname(const char *name);
   int EVP_CIPHER_CTX_ctrl(EVP_CIPHER_CTX *ctx, int type, int arg, void *ptr);
-  int EVP_EncryptUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out,
-          int *outl, const unsigned char *in, int inl);
-  int EVP_DecryptUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out,
-          int *outl, const unsigned char *in, int inl);
+  // int EVP_EncryptUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out,
+  //         int *outl, const unsigned char *in, int inl);
+  // int EVP_DecryptUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out,
+  //         int *outl, const unsigned char *in, int inl);
 
 
   int EVP_CipherInit_ex(EVP_CIPHER_CTX *ctx,
@@ -62,8 +62,8 @@ if OPENSSL_3X then
     void EVP_CIPHER_do_all_provided(OSSL_LIB_CTX *libctx,
                                     fake_openssl_cipher_provided_list_fn*,
                                     void *arg);
-    int EVP_CIPHER_up_ref(EVP_CIPHER *cipher);
-    void EVP_CIPHER_free(EVP_CIPHER *cipher);
+    // int EVP_CIPHER_up_ref(EVP_CIPHER *cipher);
+    // void EVP_CIPHER_free(EVP_CIPHER *cipher);
 
     const char *EVP_CIPHER_get0_name(const EVP_CIPHER *cipher);
 

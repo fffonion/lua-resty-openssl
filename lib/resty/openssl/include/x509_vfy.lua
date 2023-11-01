@@ -8,11 +8,11 @@ local OPENSSL_3X = require("resty.openssl.version").OPENSSL_3X
 ffi.cdef [[
   X509_STORE *X509_STORE_new(void);
   void X509_STORE_free(X509_STORE *v);
- /* int X509_STORE_lock(X509_STORE *ctx);
-  int X509_STORE_unlock(X509_STORE *ctx);
-  int X509_STORE_up_ref(X509_STORE *v);
+  // int X509_STORE_lock(X509_STORE *ctx);
+  // int X509_STORE_unlock(X509_STORE *ctx);
+  // int X509_STORE_up_ref(X509_STORE *v);
   // STACK_OF(X509_OBJECT)
-  OPENSSL_STACK *X509_STORE_get0_objects(X509_STORE *v);*/
+  // OPENSSL_STACK *X509_STORE_get0_objects(X509_STORE *v);
 
   int X509_STORE_add_cert(X509_STORE *ctx, X509 *x);
   int X509_STORE_add_crl(X509_STORE *ctx, X509_CRL *x);
@@ -35,10 +35,10 @@ ffi.cdef [[
 
   void X509_STORE_CTX_set_flags(X509_STORE_CTX *ctx, unsigned long flags);
 
-  int X509_STORE_CTX_set_purpose(X509_STORE_CTX *ctx, int purpose);
+  // int X509_STORE_CTX_set_purpose(X509_STORE_CTX *ctx, int purpose);
 
   // STACK_OF(X509_CRL)
-  void X509_STORE_CTX_set0_crls(X509_STORE_CTX *c, OPENSSL_STACK *sk);
+  // void X509_STORE_CTX_set0_crls(X509_STORE_CTX *c, OPENSSL_STACK *sk);
 
   int X509_PURPOSE_get_by_sname(char *sname);
   X509_PURPOSE *X509_PURPOSE_get0(int idx);
@@ -89,10 +89,10 @@ if OPENSSL_3X then
 
     int X509_STORE_set_default_paths_ex(X509_STORE *ctx, OSSL_LIB_CTX *libctx,
                                         const char *propq);
-    /* int X509_STORE_load_file_ex(X509_STORE *ctx, const char *file,
-                                OSSL_LIB_CTX *libctx, const char *propq);
-    int X509_STORE_load_store_ex(X509_STORE *ctx, const char *uri,
-                                OSSL_LIB_CTX *libctx, const char *propq); */
+    // int X509_STORE_load_file_ex(X509_STORE *ctx, const char *file,
+    //                             OSSL_LIB_CTX *libctx, const char *propq);
+    // int X509_STORE_load_store_ex(X509_STORE *ctx, const char *uri,
+    //                             OSSL_LIB_CTX *libctx, const char *propq);
     int X509_STORE_load_locations_ex(X509_STORE *ctx, const char *file,
                                     const char *dir, OSSL_LIB_CTX *libctx,
                                     const char *propq);
