@@ -2,6 +2,16 @@
 ## [Unreleased]
 
 
+<a name="1.0.0"></a>
+## [1.0.0] - 2023-11-03
+### code refactoring
+- **\*:** remove unused cdefs [84abc0a](https://github.com/fffonion/lua-resty-openssl/commit/84abc0ab99b3d649c7fe4575cf13867cf96a94ef)
+- **\*:** BREAKING: drop OpenSSL 1.0.2, 1.1.0 and BoringSSL support [99b493e](https://github.com/fffonion/lua-resty-openssl/commit/99b493e671886e68c07b1b9c9472075c22ce38e9)
+
+### features
+- **fips:** add get_fips_version_text [935227b](https://github.com/fffonion/lua-resty-openssl/commit/935227b348ba4416f2f4d671dd94f7910cbf9e61)
+
+
 <a name="0.8.26"></a>
 ## [0.8.26] - 2023-10-30
 ### bug fixes
@@ -437,8 +447,8 @@
 - **autogen:** generate tests for x509, csr and crl [1392428](https://github.com/fffonion/lua-resty-openssl/commit/1392428352164d2a1a6e0c03075ff65b55aecdee)
 - **objects:** add helper function for ASN1_OBJECT [d037706](https://github.com/fffonion/lua-resty-openssl/commit/d037706c11d716afe3616bdaf4658afc1763081d)
 - **pkey:** asymmetric encryption and decryption [6d60451](https://github.com/fffonion/lua-resty-openssl/commit/6d60451157edbf9cefb634f888dfa3e6d9be302f)
-- **x509:** add get_ocsp_url and get_crl_url [6141b6f](https://github.com/fffonion/lua-resty-openssl/commit/6141b6f5aed38706b477a71d8c4383bf55da7eee)
 - **x509:** getter/setters for extensions [243f40d](https://github.com/fffonion/lua-resty-openssl/commit/243f40d35562a516f404188a5c7eb8f5134d9b30)
+- **x509:** add get_ocsp_url and get_crl_url [6141b6f](https://github.com/fffonion/lua-resty-openssl/commit/6141b6f5aed38706b477a71d8c4383bf55da7eee)
 - **x509.altname:** support iterate and decode over the stack [083a201](https://github.com/fffonion/lua-resty-openssl/commit/083a201746e02d51f6c5c640ad9bf8c6730ebe0b)
 - **x509.crl:** add crl module [242f8cb](https://github.com/fffonion/lua-resty-openssl/commit/242f8cb45d6c2df5918f26540c92a430d42feb5d)
 - **x509.csr:** autogen some csr functions as well [9800e36](https://github.com/fffonion/lua-resty-openssl/commit/9800e36c2ff8a299b88f24091cc722940a8652bb)
@@ -526,7 +536,8 @@
 - **x509:** export pubkey [ede4f81](https://github.com/fffonion/lua-resty-openssl/commit/ede4f817cb0fe092ad6f9ab5d6ecdcde864a9fd8)
 
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.26...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/1.0.0...HEAD
+[1.0.0]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.26...1.0.0
 [0.8.26]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.25...0.8.26
 [0.8.25]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.24...0.8.25
 [0.8.24]: https://github.com/fffonion/lua-resty-openssl/compare/0.8.23...0.8.24
