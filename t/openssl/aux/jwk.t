@@ -226,3 +226,38 @@ true
 '
 --- no_error_log
 [error]
+
+=== TEST 4: Errors if tries to export privkey using pubkey
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local privkey, err = require("resty.openssl.pkey").new({ type = 'EC', curve = 'prime256v1'})
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+
+            local pem, err = privkey:tostring("public")
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+
+            local pubkey, err = require("resty.openssl.pkey").new(pem)
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+
+            local _, err = pubkey:tostring("private", "JWK")
+            ngx.say(err)
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+'jwk.dump_jwk: could not dump public key as private key
+'
+--- no_error_log
+[error]
