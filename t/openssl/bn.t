@@ -157,8 +157,8 @@ bn:to_binary failed
     }
 --- request
     GET /t
---- response_body_like eval
-"5[Bb]25"
+--- response_body eval
+"5B25"
 --- no_error_log
 [error]
 

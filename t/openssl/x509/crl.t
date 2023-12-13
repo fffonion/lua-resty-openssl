@@ -63,7 +63,7 @@ __DATA__
 --- request
     GET /t
 --- response_body_like eval
-"x509.crl.new.+(nested asn1 error|NESTED_ASN1_ERROR).+"
+"x509.crl.new.+nested asn1 error.+"
 --- no_error_log
 [error]
 
@@ -87,7 +87,7 @@ __DATA__
 --- request
     GET /t
 --- response_body_like eval
-"x509.crl.new.+(no start line|NO_START_LINE).+"
+"x509.crl.new.+no start line.+"
 --- no_error_log
 [error]
 
