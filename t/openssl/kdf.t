@@ -421,7 +421,7 @@ cDRFLQ7NWt+AP4i0TdBzog==
 --- request
     GET /t
 --- response_body_like
-.+missing salt
+.+missing salt.*
 cDRFLQ7NWt\+AP4i0TdBzog==
 --- no_error_log
 [error]

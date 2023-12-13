@@ -107,7 +107,7 @@ __DATA__
     GET /t
 --- response_body_like eval
 "expect nil or a string at #1
-x509.new: .*(not enough data|NOT_ENOUGH_DATA)
+x509.new: .*not enough data.*
 "
 --- no_error_log
 [error]
@@ -480,8 +480,8 @@ nil
 "true
 nil
 false
-.+(key type mismatch|KEY_TYPE_MISMATCH)
-.+(key values mismatch|KEY_VALUES_MISMATCH)
+.+key type mismatch.*
+.+key values mismatch.*
 "
 --- no_error_log
 [error]

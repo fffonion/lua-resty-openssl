@@ -78,9 +78,9 @@ __DATA__
     GET /t
 --- response_body_like eval
 'true
-pkcs12.decode.+(mac verify failure|INCORRECT_PASSWORD)
+pkcs12.decode.+mac verify failure.*
 true
-pkcs12.decode.+(mac verify failure|INCORRECT_PASSWORD)
+pkcs12.decode.+mac verify failure.*
 '
 --- no_error_log
 [error]
@@ -186,7 +186,7 @@ pkcs12.decode.+(mac verify failure|INCORRECT_PASSWORD)
 2
 myname
 true
-pkcs12.decode.+(mac verify failure|INCORRECT_PASSWORD)
+pkcs12.decode.+mac verify failure.*
 '
 --- no_error_log
 [error]
@@ -217,7 +217,7 @@ pkcs12.decode.+(mac verify failure|INCORRECT_PASSWORD)
 --- request
     GET /t
 --- response_body_like eval
-'true.+(key values mismatch|KEY_VALUES_MISMATCH)
+'true.+key values mismatch.*
 '
 --- no_error_log
 [error]

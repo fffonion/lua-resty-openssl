@@ -362,8 +362,8 @@ nil
 "true
 nil
 false
-.+(key type mismatch|KEY_TYPE_MISMATCH)
-.+(key values mismatch|KEY_VALUES_MISMATCH)
+.+key type mismatch.*
+.+key values mismatch.*
 "
 --- no_error_log
 [error]
