@@ -39,8 +39,8 @@ __DATA__
 
             local r = myassert(pkcs12.decode(pp, "badssl.com"))
 
-            ngx.say(r.key:get_parameters().d:to_hex():upper())
-            ngx.say(r.cert:get_serial_number():to_hex():upper())
+            ngx.say(r.key:get_parameters().d:to_hex())
+            ngx.say(r.cert:get_serial_number():to_hex())
         }
     }
 --- request
@@ -96,7 +96,7 @@ pkcs12.decode.+mac verify failure.*
             end
 
             local pkcs12 = require "resty.openssl.pkcs12"
-            local cert, key = require("helper").create_self_signed({ type = 'EC', curve = "prime256v1" })
+            local cert, key = require("helper").create_self_signed({ type = 'EC' })
             local x509 = require("resty.openssl.x509")
             local ca1 = myassert(x509.new(io.open("t/fixtures/GlobalSign.pem"):read("*a")))
             local ca2 = myassert(x509.new(io.open("t/fixtures/GlobalSign_sub.pem"):read("*a")))
@@ -152,7 +152,7 @@ pkcs12.decode.+mac verify failure.*
             end
     
             local pkcs12 = require "resty.openssl.pkcs12"
-            local cert, key = require("helper").create_self_signed({ type = 'EC', curve = "prime256v1" })
+            local cert, key = require("helper").create_self_signed({ type = 'EC' })
             local x509 = require("resty.openssl.x509")
             local ca1 = myassert(x509.new(io.open("t/fixtures/GlobalSign.pem"):read("*a")))
             local ca2 = myassert(x509.new(io.open("t/fixtures/GlobalSign_sub.pem"):read("*a")))
@@ -165,8 +165,8 @@ pkcs12.decode.+mac verify failure.*
             }))
 
             local r = myassert(pkcs12.decode(p12, nil))
-            ngx.say(#r.key:get_parameters().x:to_hex():upper())
-            ngx.say(r.cert:get_serial_number():to_hex():upper())
+            ngx.say(#r.key:get_parameters().x:to_hex())
+            ngx.say(r.cert:get_serial_number():to_hex())
             ngx.say(#r.cacerts)
             ngx.say(r.friendly_name)
             -- same as empty string
@@ -181,7 +181,7 @@ pkcs12.decode.+mac verify failure.*
 --- request
     GET /t
 --- response_body_like eval
-'6\d
+'4\d
 0
 2
 myname
@@ -202,8 +202,8 @@ pkcs12.decode.+mac verify failure.*
             end
 
             local pkcs12 = require "resty.openssl.pkcs12"
-            local cert, key = require("helper").create_self_signed({ type = 'EC', curve = "prime256v1" })
-            local key2 = require("resty.openssl.pkey").new({ type = 'EC', curve = "prime256v1" })
+            local cert, key = require("helper").create_self_signed({ type = 'EC' })
+            local key2 = require("resty.openssl.pkey").new({ type = 'EC' })
             
             local r, err = pkcs12.encode({
                 friendly_name = "myname",

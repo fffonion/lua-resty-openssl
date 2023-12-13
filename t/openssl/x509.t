@@ -63,7 +63,7 @@ __DATA__
 --- request
     GET /t
 --- response_body_like eval
-"x509.new.+(nested asn1 error|NESTED_ASN1_ERROR).+"
+"x509.new.+nested asn1 error.+"
 --- no_error_log
 [error]
 
@@ -87,7 +87,7 @@ __DATA__
 --- request
     GET /t
 --- response_body_like eval
-"x509.new.+(no start line|NO_START_LINE).+"
+"x509.new.+no start line.+"
 --- no_error_log
 [error]
 
@@ -121,7 +121,7 @@ x509.new: .*not enough data.*
             local c = myassert(require("resty.openssl.x509").new(f))
             local dd = myassert(c:digest())
 
-            local h = string.upper(myassert(require("helper").to_hex(dd)))
+            local h = myassert(require("helper").to_hex(dd))
             ngx.say(h)
         }
     }
@@ -142,7 +142,7 @@ x509.new: .*not enough data.*
             local c = myassert(require("resty.openssl.x509").new(f))
             local dd = myassert(c:pubkey_digest())
 
-            local h, err = string.upper(require("helper").to_hex(dd))
+            local h, err = require("helper").to_hex(dd)
             ngx.say(h)
         }
     }
@@ -454,7 +454,7 @@ nil
 --- config
     location =/t {
         content_by_lua_block {
-            local cert, key = require("helper").create_self_signed({ type = "EC", curve = "prime256v1" })
+            local cert, key = require("helper").create_self_signed({ type = "EC" })
             local ok, err = cert:check_private_key(key)
             ngx.say(ok)
             ngx.say(err)
@@ -467,7 +467,6 @@ nil
 
             local key2 = require("resty.openssl.pkey").new({
                 type = 'EC',
-                curve = "prime256v1",
             })
             local ok, err = cert:check_private_key(key2)
             ngx.say(ok)
@@ -498,7 +497,7 @@ false
             local c = myassert(require("resty.openssl.x509").new(f))
 
             local get = myassert(c:get_serial_number())
-            get = get:to_hex():upper()
+            get = get:to_hex()
             ngx.print(get)
         }
     }
@@ -520,8 +519,8 @@ false
             local ok = myassert(c:set_serial_number(toset))
 
             local get = myassert(c:get_serial_number())
-            get = get:to_hex():upper()
-            toset = toset:to_hex():upper()
+            get = get:to_hex()
+            toset = toset:to_hex()
             if get ~= toset then
               ngx.say(get)
               ngx.say(toset)
