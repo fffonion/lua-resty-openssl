@@ -406,7 +406,7 @@ lua-resty-openssl supports following modes:
 
 Compile the module per [security policy](https://www.openssl.org/docs/fips/SecurityPolicy-2.0.2.pdf),
 
-**OpenSSL 3.0.0 fips provider **
+**OpenSSL 3.0.0 fips provider**
 
 Refer to https://wiki.openssl.org/index.php/OpenSSL_3.0 Section 7
 Compile the provider per guide, install the fipsmodule.cnf that
@@ -431,12 +431,6 @@ print(c:get_provider_name()) -- prints "default"
 local c = assert(cipher.new("aes256", "fips=yes"))
 print(c:get_provider_name()) -- prints "fips"
 ```
-
-**BroingSSL fips-20190808 and fips-20210429 (later haven't been certified)**
-
-Compile the module per [security policy](https://csrc.nist.gov/CSRC/media/projects/cryptographic-module-validation-program/documents/security-policies/140sp3678.pdf)
-
-Check if FIPS is acticated by running `assert(openssl.set_fips_mode(true))`.
 
 [Back to TOC](#table-of-contents)
 
