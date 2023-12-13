@@ -206,7 +206,7 @@ pkey.new:load_key: .+
 --- request
     GET /t
 --- response_body_like eval
-"pkey.new.+(?:bad decrypt|failed|BAD_DECRYPT)
+"pkey.new.+(?:bad decrypt|failed).*
 ok
 "
 --- no_error_log
@@ -240,7 +240,7 @@ ok
 --- request
     GET /t
 --- response_body_like eval
-"pkey.new.+(?:bad decrypt|failed|BAD_DECRYPT)
+"pkey.new.+(?:bad decrypt|failed).*
 ok
 "
 --- no_error_log
@@ -1033,7 +1033,7 @@ true
     GET /t
 --- response_body_like eval
 "errored out with too many callbacks
-pkey.new.+(?:bad decrypt|failed|BAD_DECRYPT|no start line|NO_START_LINE|DECODER routines::unsupported)
+pkey.new.+(?:bad decrypt|failed|no start line|DECODER routines:OSSL_DECODER_from_bio:unsupported).*
 ok
 ok
 "

@@ -97,7 +97,7 @@ true
     location =/t {
         content_by_lua_block {
             if not require("resty.openssl.version").OPENSSL_3X then
-                ngx.say("true\ncommon libcrypto routines::init fail")
+                ngx.say("true\ncommon libcrypto routines:provider_init:")
                 ngx.exit(0)
             end
 
@@ -112,7 +112,7 @@ true
     GET /t
 --- response_body_like
 true
-.+(?:init fail|common libcrypto routines::reason\(\d+\))
+.*(?:init fail|common libcrypto routines:provider_init).*
 --- no_error_log
 [error]
 

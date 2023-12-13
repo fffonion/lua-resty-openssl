@@ -122,7 +122,7 @@ cipher:update: cipher not initalized, call cipher:init first
     GET /t
 --- response_body_like eval
 "nil
-.+(?:data not multiple of block length|wrong final block length|DATA_NOT_MULTIPLE_OF_BLOCK_LENGTH)
+.+(?:data not multiple of block length|wrong final block length).*
 VhGyRCcMvlAgUjTYrqiWpg=="
 --- no_error_log
 [error]
@@ -253,7 +253,7 @@ nothing
 hiabcdefghiabcde
 fghiabcdefghiabc
 nothing
-.+(wrong final block length|WRONG_FINAL_BLOCK_LENGTH)
+.+wrong final block length.*
 nil
 final
 defghi
@@ -409,8 +409,8 @@ default
 --- request
     GET /t
 --- response_body_like
-.+ivlen.+
-.+padding.+
+.+ivlen.*
+.+padding.*
 --- no_error_log
 [error]
 

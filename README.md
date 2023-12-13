@@ -30,6 +30,11 @@ Table of Contents
   * [resty.openssl.ctx](#restyopensslctx)
     + [ctx.new](#ctxnew)
     + [ctx.free](#ctxfree)
+  * [resty.openssl.err](#restyopensslerr)
+    + [err.format_error](#errformat_error)
+    + [err.get_last_error_code](#errget_last_error_code)
+    + [err.get_lib_error_string](#errget_lib_error_string)
+    + [err.get_reason_error_string](#errget_reason_error_string)
   * [resty.openssl.version](#restyopensslversion)
     + [version_num](#version_num)
     + [version_text](#version_text)
@@ -553,6 +558,70 @@ print(c:encrypt(string.rep("0", 32), string.rep("0", 16), "🦢"))
 **syntax**: *ctx.free(request_context_only?)*
 
 Free the context that was previously created by [ctx.new](#ctxnew).
+
+[Back to TOC](#table-of-contents)
+
+## resty.openssl.err
+
+A module to provide error messages.
+
+[Back to TOC](#table-of-contents)
+
+### err.format_error
+
+**syntax**: *msg = err.format_error(ctx_msg?, return_code?, all_errors?)*
+**syntax**: *msg = err.format_all_errors(ctx_msg?, return_code?)*
+
+Return the latest error message from the last error code. Errors are formatted as:
+
+    [ctx_msg]: code: [return_code]: error:[error code]:[library name]:[func name]:[reason string]:[file name]:[line number]:
+
+On OpenSSL prior to 3.x, errors are formatted as:
+
+    [ctx_msg]: code: [return_code]: [file name]:[line number]:error:[error code]:[library name]:[func name]:[reason string]:
+
+
+If `all_errors` is set to `true`, all errors no just the latest one will be returned in a single string. All errors thrown
+by this library internally only thrown the latest error.
+
+For example:
+
+```lua
+local f = io.open("t/fixtures/ec_key_encrypted.pem"):read("*a")
+local privkey, err = require("resty.openssl.pkey").new(f, {
+    format = "PEM",
+    type = "pr",
+    passphrase = "wrongpasswrod",
+})
+ngx.say(err)
+-- pkey.new:load_key: error:4800065:PEM routines:PEM_do_header:bad decrypt:crypto/pem/pem_lib.c:467:
+```
+
+[Back to TOC](#table-of-contents)
+
+### err.get_last_error_code
+
+**syntax**: *code = err.get_last_error_code()*
+
+Return the last error code.
+
+[Back to TOC](#table-of-contents)
+
+### err.get_lib_error_string
+
+**syntax**: *lib_error_message = err.get_lib_error_string(code?)*
+
+Return the library name of the last error code as string. If `code` is set, return the library name
+corresponding to provided error code instead.
+
+[Back to TOC](#table-of-contents)
+
+### err.get_reason_error_string
+
+**syntax**: *reason_error_message = err.get_reason_error_string(code?)*
+
+Return the reason of the last error code as string. If `code` is set, return the reason
+corresponding to provided error code instead.
 
 [Back to TOC](#table-of-contents)
 
