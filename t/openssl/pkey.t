@@ -1259,3 +1259,100 @@ true
 true
 --- no_error_log
 [error]
+
+=== TEST 41: Keygen and paramgen with ctrl str
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local p_384 = myassert(require("resty.openssl.pkey").new({
+                type = "EC",
+                "ec_paramgen_curve:secp384r1",
+            }))
+            ngx.say(myassert(p_384:get_parameters()).group)
+
+            local _, err = myassert(require("resty.openssl.pkey").paramgen({
+                type = "EC",
+                "ec_paramgen_curve:secp384r1",
+            }))
+            ngx.say(err)
+        }
+    }
+--- request
+    GET /t
+--- response_body
+715
+nil
+--- no_error_log
+[error]
+
+
+=== TEST 42: Encrypt and decrypt with ctrl str
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local privkey = myassert(require("resty.openssl.pkey").new())
+            if err then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            local pubkey = myassert(require("resty.openssl.pkey").new(assert(privkey:to_PEM("public"))))
+
+            local s = myassert(pubkey:encrypt("23333", privkey.PADDINGS.RSA_PKCS1_OAEP_PADDING, {
+                oaep_md = "sha256",
+            }))
+            ngx.say(#s)
+
+            local decrypted = myassert(privkey:decrypt(s, privkey.PADDINGS.RSA_PKCS1_OAEP_PADDING,{
+                "rsa_oaep_md:sha256",
+                "rsa_mgf1_md:sha256",
+            }))
+            ngx.say(decrypted)
+
+            local ok, err = privkey:decrypt(s, privkey.PADDINGS.RSA_PKCS1_OAEP_PADDING,{
+                "rsa_oaep_md:sha256",
+                "rsa_mgf1_md:sha384",
+            })
+            ngx.say(err)
+        }
+    }
+--- request
+    GET /t
+--- response_body_like eval
+"256
+23333
+.+oaep decoding error.*
+"
+--- no_error_log
+[error]
+
+
+=== TEST 43: Sign and verify with ctrl str
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local p = myassert(require("resty.openssl.pkey").new({
+                type = "RSA"
+            }))
+            local digest = "23333"
+            local s = myassert(p:sign(digest, nil, p.PADDINGS.RSA_PKCS1_PSS_PADDING, {
+                pss_saltlen = 64,
+            }))
+            ngx.say(#s)
+
+            local ok = myassert(p:verify(s, digest, nil, p.PADDINGS.RSA_PKCS1_PSS_PADDING, {
+                "rsa_pss_saltlen:64",
+            }))
+            ngx.say(ok)
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"256
+true
+"
+--- no_error_log
+[error]
