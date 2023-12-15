@@ -570,6 +570,7 @@ A module to provide error messages.
 ### err.format_error
 
 **syntax**: *msg = err.format_error(ctx_msg?, return_code?, all_errors?)*
+
 **syntax**: *msg = err.format_all_errors(ctx_msg?, return_code?)*
 
 Return the latest error message from the last error code. Errors are formatted as:
@@ -905,6 +906,26 @@ local key, err = pkey.new({
 }) 
 ```
 
+It's also possible to pass raw pkeyopt control strings in `config` table as used in the `genpkey` CLI program.
+See [openssl-genpkey(1)](https://www.openssl.org/docs/man3.0/man1/openssl-genpkey.html) for a list of options.
+
+For example:
+
+```lua
+pkey.new({
+  type = 'RSA',
+  bits = 2048,
+  exp = 65537,
+})
+-- is same as
+pkey.new({
+  type = 'RSA',
+  exp = 65537,
+  "rsa_keygen_bits:4096",
+})
+
+```
+
 
 [Back to TOC](#table-of-contents)
 
@@ -955,6 +976,9 @@ local pem, err = pkey.paramgen({
   group = 'ffdhe4096',
 })
 ```
+
+It's also possible to pass raw pkeyopt control strings in `config` table as used in the `genpkey` CLI program.
+See [openssl-genpkey(1)](https://www.openssl.org/docs/man3.0/man1/openssl-genpkey.html) for a list of options.
 
 [Back to TOC](#table-of-contents)
 
@@ -1110,10 +1134,20 @@ to use when signing. When `md_alg` is undefined, for RSA and EC keys, this funct
 by default. For Ed25519 or Ed448 keys, this function does a PureEdDSA signing,
 no message digest should be specified and will not be used.
 
-`opts` is a table that accepts additional parameters.
+For RSA key, it's also possible to specify `padding` scheme with following choices:
 
-For RSA key, it's also possible to specify `padding` scheme. The choice of values are same
-as those in [pkey:encrypt](#pkeyencrypt). When `padding` is `RSA_PKCS1_PSS_PADDING`, it's
+```lua
+  pkey.PADDINGS = {
+    RSA_PKCS1_PADDING       = 1,
+    RSA_SSLV23_PADDING      = 2,
+    RSA_NO_PADDING          = 3,
+    RSA_PKCS1_OAEP_PADDING  = 4,
+    RSA_X931_PADDING        = 5, -- sign only
+    RSA_PKCS1_PSS_PADDING   = 6, -- sign and verify only
+  }
+```
+
+When `padding` is `RSA_PKCS1_PSS_PADDING`, it's
 possible to specify PSS salt length by setting `opts.pss_saltlen`.
 
 For EC key, this function does a ECDSA signing.
@@ -1124,6 +1158,32 @@ for a list of algorithms and associated public key algorithms. Normally, the ECD
 is encoded in ASN.1 DER format. If the `opts` table contains a `ecdsa_use_raw` field with
 a true value, a binary with just the concatenation of binary representation `pr` and `ps` is returned.
 This is useful for example to send the signature as JWS.
+
+`opts` is a table that accepts additional parameters with following choices:
+
+```
+{
+  pss_saltlen, -- For PSS mode only this option specifies the salt length.
+  mgf1_md, -- For PSS and OAEP padding sets the MGF1 digest. If the MGF1 digest is not explicitly set in PSS mode then the signing digest is used.
+  oaep_md, -- The digest used for the OAEP hash function. If not explicitly set then SHA1 is used.
+}
+```
+
+It's also possible to pass raw pkeyopt control strings as used in the `pkeyutl` CLI program. This lets user pass in options that
+are not explictly supported as parameters above.
+See [openssl-pkeyutl(1)](https://www.openssl.org/docs/manmaster/man1/openssl-pkeyutl.html) for a list of options.
+
+```lua
+pk:sign(message, nil, pk.PADDINGS.RSA_PKCS1_OAEP_PADDING, {
+  oaep_md = "sha256",
+})
+-- is same as
+pk:sign(message, nil, nil, {
+  "rsa_padding_mode:oaep",
+  "rsa_oaep_md:sha256",
+})
+-- in pkeyutl CLI the above is equivalent to: `openssl pkeyutl -sign -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256
+```
 
 [Back to TOC](#table-of-contents)
 
@@ -1147,16 +1207,18 @@ to use when verifying. When `md_alg` is undefined, for RSA and EC keys, this fun
 by default. For Ed25519 or Ed448 keys, this function does a PureEdDSA verification,
 no message digest should be specified and will not be used.
 
-`opts` is a table that accepts additional parameters.
-
-For RSA key, it's also possible to specify `padding` scheme. The choice of values are same
-as those in [pkey:encrypt](#pkeyencrypt). When `padding` is `RSA_PKCS1_PSS_PADDING`, it's
+When key is a RSA key, the function accepts an optional argument `padding` which choices
+of values are same as those in [pkey:sign](#pkeysign). When `padding` is `RSA_PKCS1_PSS_PADDING`, it's
 possible to specify PSS salt length by setting `opts.pss_saltlen`.
 
 For EC key, this function does a ECDSA verification. Normally, the ECDSA signature
 should be encoded in ASN.1 DER format. If the `opts` table contains a `ecdsa_use_raw` field with
 a true value, this library treat `signature` as concatenation of binary representation `pr` and `ps`.
 This is useful for example to verify the signature as JWS.
+
+`opts` is a table that accepts additional parameters which choices
+of values are same as those in [pkey:sign](#pkeysign).
+
 
 ```lua
 -- RSA and EC keys
@@ -1193,34 +1255,28 @@ ngx.say(ngx.encode_base64(signature))
 
 ### pkey:encrypt
 
-**syntax**: *cipher_txt, err = pk:encrypt(txt, padding?)*
+**syntax**: *cipher_txt, err = pk:encrypt(txt, padding?, opts?)*
 
 Encrypts plain text `txt` with `pkey` instance, which must loaded a public key.
 
-When key is a RSA key, the function accepts an optional second argument `padding` which can be:
-
-```lua
-  pkey.PADDINGS = {
-    RSA_PKCS1_PADDING       = 1,
-    RSA_SSLV23_PADDING      = 2,
-    RSA_NO_PADDING          = 3,
-    RSA_PKCS1_OAEP_PADDING  = 4,
-    RSA_X931_PADDING        = 5,
-    RSA_PKCS1_PSS_PADDING   = 6,
-  }
-```
-
+The optional second argument `padding` has same meaning as in [pkey:sign](#pkeysign).
 If omitted, `padding` is default to `pkey.PADDINGS.RSA_PKCS1_PADDING`.
+
+The third optional argument `opts` has same meaning as in [pkey:sign](#pkeysign).
+
 
 [Back to TOC](#table-of-contents)
 
 ### pkey:decrypt
 
-**syntax**: *txt, err = pk:decrypt(cipher_txt, padding?)*
+**syntax**: *txt, err = pk:decrypt(cipher_txt, padding?, opts?)*
 
 Decrypts cipher text `cipher_txt` with pkey instance, which must loaded a private key.
 
-The optional second argument `padding` has same meaning in [pkey:encrypt](#pkeyencrypt).
+The optional second argument `padding` has same meaning as in [pkey:sign](#pkeysign).
+If omitted, `padding` is default to `pkey.PADDINGS.RSA_PKCS1_PADDING`.
+
+The third optional argument `opts` has same meaning as in [pkey:sign](#pkeysign).
 
 ```lua
 local pkey = require("resty.openssl.pkey")
@@ -1239,11 +1295,14 @@ ngx.say(decrypted)
 
 ### pkey:sign_raw
 
-**syntax**: *signature, err = pk:sign_raw(txt, padding?)*
+**syntax**: *signature, err = pk:sign_raw(txt, padding?, opts?)*
 
 Signs the cipher text `cipher_txt` with pkey instance, which must loaded a private key.
 
-The optional second argument `padding` has same meaning in [pkey:encrypt](#pkeyencrypt).
+The optional second argument `padding` has same meaning as in [pkey:sign](#pkeysign).
+If omitted, `padding` is default to `pkey.PADDINGS.RSA_PKCS1_PADDING`.
+
+The third optional argument `opts` has same meaning as in [pkey:sign](#pkeysign).
 
 This function may also be called "private encrypt" in some implementations like NodeJS or PHP.
 Do note as the function names suggested, this function is not secure to be regarded as an encryption.
@@ -1257,12 +1316,15 @@ for an example.
 
 ### pkey:verify_recover
 
-**syntax**: *txt, err = pk:verify_recover(signature, padding?)*
+**syntax**: *txt, err = pk:verify_recover(signature, padding?, opts?)*
 
 Verify the cipher text `signature` with pkey instance, which must loaded a public key, and also
 returns the original text being signed. This operation is only supported by RSA key.
 
-The optional second argument `padding` has same meaning in [pkey:encrypt](#pkeyencrypt).
+The optional second argument `padding` has same meaning as in [pkey:sign](#pkeysign).
+If omitted, `padding` is default to `pkey.PADDINGS.RSA_PKCS1_PADDING`.
+
+The third optional argument `opts` has same meaning as in [pkey:sign](#pkeysign).
 
 This function may also be called "public decrypt" in some implementations like NodeJS or PHP.
 
