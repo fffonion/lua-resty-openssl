@@ -24,6 +24,7 @@ our $HttpConfig = qq{
 run_tests();
 
 __DATA__
+
 === TEST 1: Load ffi openssl library
 --- http_config eval: $::HttpConfig
 --- config
@@ -40,6 +41,7 @@ __DATA__
 \d{6}[0-9a-f][0f]
 --- no_error_log
 [error]
+
 
 
 === TEST 2: Luaossl compat pattern
@@ -62,6 +64,7 @@ false
 .+pkey.new.+
 --- no_error_log
 [error]
+
 
 
 === TEST 3: List cipher algorithms
@@ -87,6 +90,8 @@ false
 --- no_error_log
 [error]
 
+
+
 === TEST 4: List digest algorithms
 --- http_config eval: $::HttpConfig
 --- config
@@ -110,6 +115,8 @@ false
 --- no_error_log
 [error]
 
+
+
 === TEST 5: List mac algorithms
 --- http_config eval: $::HttpConfig
 --- config
@@ -131,6 +138,8 @@ false
 --- no_error_log
 [error]
 
+
+
 === TEST 6: List kdf algorithms
 --- http_config eval: $::HttpConfig
 --- config
@@ -151,6 +160,8 @@ false
 \[.+HKDF @ default.+\]
 --- no_error_log
 [error]
+
+
 
 === TEST 7: List SSL cipher
 --- http_config eval: $::HttpConfig

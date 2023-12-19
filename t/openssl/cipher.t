@@ -22,6 +22,7 @@ our $HttpConfig = qq{
 run_tests();
 
 __DATA__
+
 === TEST 1: Creates cipher correctly
 --- http_config eval: $::HttpConfig
 --- config
@@ -44,6 +45,7 @@ __DATA__
 [error]
 
 
+
 === TEST 2: Rejects unknown cipher
 --- http_config eval: $::HttpConfig
 --- config
@@ -59,6 +61,8 @@ __DATA__
 "cipher.new: invalid cipher type \"aes257\".*"
 --- no_error_log
 [error]
+
+
 
 === TEST 3: Unintialized ctx throw errors
 --- http_config eval: $::HttpConfig
@@ -82,6 +86,8 @@ cipher:update: cipher not initalized, call cipher:init first
 --- no_error_log
 [error]
 
+
+
 === TEST 4: Encrypt
 --- http_config eval: $::HttpConfig
 --- config
@@ -100,6 +106,8 @@ cipher:update: cipher not initalized, call cipher:init first
 "VhGyRCcMvlAgUjTYrqiWpg=="
 --- no_error_log
 [error]
+
+
 
 === TEST 5: Encrypt no padding
 --- http_config eval: $::HttpConfig
@@ -127,6 +135,8 @@ VhGyRCcMvlAgUjTYrqiWpg=="
 --- no_error_log
 [error]
 
+
+
 === TEST 6: Decrypt
 --- http_config eval: $::HttpConfig
 --- config
@@ -147,6 +157,8 @@ VhGyRCcMvlAgUjTYrqiWpg=="
 --- no_error_log
 [error]
 
+
+
 === TEST 7: Decrypt no padding
 --- http_config eval: $::HttpConfig
 --- config
@@ -166,6 +178,8 @@ VhGyRCcMvlAgUjTYrqiWpg=="
 "1\x{0f}\x{0f}\x{0f}\x{0f}\x{0f}\x{0f}\x{0f}\x{0f}\x{0f}\x{0f}\x{0f}\x{0f}\x{0f}\x{0f}\x{0f}"
 --- no_error_log
 [error]
+
+
 
 === TEST 8: Encrypt streaming
 --- http_config eval: $::HttpConfig
@@ -208,6 +222,8 @@ dtpklHxY9IbgmSw84+2XMr0Vy/S1392+rvu0A3GW1Wo=
 "
 --- no_error_log
 [error]
+
+
 
 === TEST 9: Decrypt streaming
 --- http_config eval: $::HttpConfig
@@ -262,6 +278,7 @@ defghi
 [error]
 
 
+
 === TEST 10: Derive key and iv
 --- http_config eval: $::HttpConfig
 --- config
@@ -300,6 +317,8 @@ no iv
 --- no_error_log
 [error]
 
+
+
 === TEST 11: Derive key and iv: salt, count and md is optional
 --- http_config eval: $::HttpConfig
 --- config
@@ -328,6 +347,8 @@ no iv
 "
 --- no_error_log
 [error]
+
+
 
 === TEST 12: AEAD modes
 --- http_config eval: $::HttpConfig
@@ -368,6 +389,8 @@ nil
 --- no_error_log
 [error]
 
+
+
 === TEST 13: Returns provider
 --- http_config eval: $::HttpConfig
 --- config
@@ -389,6 +412,8 @@ nil
 default
 --- no_error_log
 [error]
+
+
 
 === TEST 14: Returns gettable, settable params
 --- http_config eval: $::HttpConfig
@@ -413,6 +438,8 @@ default
 .+padding.*
 --- no_error_log
 [error]
+
+
 
 === TEST 15: Get params, set params
 --- http_config eval: $::HttpConfig
@@ -462,6 +489,7 @@ nil
 "
 --- no_error_log
 [error]
+
 
 
 === TEST 16: Update with segements larger than 1024

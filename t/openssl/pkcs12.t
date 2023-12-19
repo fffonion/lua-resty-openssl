@@ -23,6 +23,7 @@ our $HttpConfig = qq{
 run_tests();
 
 __DATA__
+
 === TEST 1: Loads password protected pkcs12
 --- http_config eval: $::HttpConfig
 --- config
@@ -50,6 +51,8 @@ __DATA__
 2B936CE32D82CE8B01FD9A0595AC6366AA014C82
 --- no_error_log
 [error]
+
+
 
 === TEST 2: Errors on bad password
 --- http_config eval: $::HttpConfig
@@ -84,6 +87,8 @@ pkcs12.decode.+mac verify failure.*
 '
 --- no_error_log
 [error]
+
+
 
 === TEST 3: Creates pkcs12
 --- http_config eval: $::HttpConfig
@@ -141,6 +146,8 @@ pkcs12.decode.+mac verify failure.*
 --- no_error_log
 [error]
 
+
+
 === TEST 4: Uses empty string password when omitted
 --- http_config eval: $::HttpConfig
 --- config
@@ -191,6 +198,8 @@ pkcs12.decode.+mac verify failure.*
 --- no_error_log
 [error]
 
+
+
 === TEST 5: Check cert and key mismatch
 --- http_config eval: $::HttpConfig
 --- config
@@ -221,6 +230,8 @@ pkcs12.decode.+mac verify failure.*
 '
 --- no_error_log
 [error]
+
+
 
 === TEST 6: Creates pkcs12 with newer algorithm
 --- http_config eval: $::HttpConfig

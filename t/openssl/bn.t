@@ -22,6 +22,7 @@ our $HttpConfig = qq{
 run_tests();
 
 __DATA__
+
 === TEST 1: New BIGNUM instance correctly
 --- http_config eval: $::HttpConfig
 --- config
@@ -39,6 +40,8 @@ __DATA__
 --- error_log
 bn:to_binary failed
 
+
+
 === TEST 2: New BIGNUM instance from number
 --- http_config eval: $::HttpConfig
 --- config
@@ -55,6 +58,8 @@ bn:to_binary failed
 "WyU="
 --- no_error_log
 [error]
+
+
 
 === TEST 3: New BIGNUM instance from string
 --- http_config eval: $::HttpConfig
@@ -85,6 +90,8 @@ bn:to_binary failed
 --- no_error_log
 [error]
 
+
+
 === TEST 4: Duplicate the ctx
 --- http_config eval: $::HttpConfig
 --- config
@@ -106,7 +113,45 @@ bn:to_binary failed
 --- no_error_log
 [error]
 
-=== TEST 5: from_binary, to_binary
+
+
+=== TEST 5: set
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local data = {
+                ["23333"] = 10,
+                ["5b25"] = 16,
+                ["5B25"] = 16,
+                ["\x5b\x25"] = 2,
+                ["\x00\x00\x00\x02\x5b\x25"] = 0,
+            }
+            for k, v in pairs(data) do
+                local bn = myassert(require("resty.openssl.bn").new(0))
+                local new_bn = myassert(bn:set(k, v))
+                if bn:to_number() ~= 23333 then
+                    ngx.log(ngx.ERR, bn, " != 23333: ", k, " ", v)
+                    return
+                end
+                if tostring(bn.ctx) ~= tostring(new_bn.ctx) then
+                    ngx.log(ngx.ERR, tostring(bn.ctx), " != ", tostring(new_bn.ctx), " (ctx not properly reused)")
+                    return
+                end
+            end
+            ngx.print("ok")
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"ok"
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: from_binary, to_binary
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -127,7 +172,9 @@ bn:to_binary failed
 --- no_error_log
 [error]
 
-=== TEST 6: from_hex, to_hex
+
+
+=== TEST 7: from_hex, to_hex
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -144,7 +191,9 @@ bn:to_binary failed
 --- no_error_log
 [error]
 
-=== TEST 7: from_dec, to_dec
+
+
+=== TEST 8: from_dec, to_dec
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -161,7 +210,9 @@ bn:to_binary failed
 --- no_error_log
 [error]
 
-=== TEST 8: from_mpi, to_mpi
+
+
+=== TEST 9: from_mpi, to_mpi
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -180,7 +231,8 @@ bn:to_binary failed
 [error]
 
 
-=== TEST 9: to_number
+
+=== TEST 10: to_number
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -205,7 +257,9 @@ bn:to_binary failed
 --- no_error_log
 [error]
 
-=== TEST 10: unary minus
+
+
+=== TEST 11: unary minus
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -226,7 +280,9 @@ bn:to_binary failed
 --- no_error_log
 [error]
 
-=== TEST 11: metamethods checks arg
+
+
+=== TEST 12: metamethods checks arg
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -248,7 +304,9 @@ bn:to_binary failed
 --- no_error_log
 [error]
 
-=== TEST 12: add, sub, mul, div mod
+
+
+=== TEST 13: add, sub, mul, div mod
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -285,7 +343,9 @@ bn:to_binary failed
 --- no_error_log
 [error]
 
-=== TEST 13: sqr, exp
+
+
+=== TEST 14: sqr, exp
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -318,7 +378,9 @@ bn:to_binary failed
 --- no_error_log
 [error]
 
-=== TEST 14: gcd
+
+
+=== TEST 15: gcd
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -343,7 +405,9 @@ bn:to_binary failed
 --- no_error_log
 [error]
 
-=== TEST 15: lshift, rshift
+
+
+=== TEST 16: lshift, rshift
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -363,7 +427,9 @@ bn:to_binary failed
 --- no_error_log
 [error]
 
-=== TEST 16: comparasion
+
+
+=== TEST 17: comparasion
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -406,7 +472,9 @@ true
 --- no_error_log
 [error]
 
-=== TEST 17: is_one, is_zero, is_odd, is_word
+
+
+=== TEST 18: is_one, is_zero, is_odd, is_word
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -437,7 +505,9 @@ false
 --- no_error_log
 [error]
 
-=== TEST 18: is_prime
+
+
+=== TEST 19: is_prime
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -460,7 +530,9 @@ true
 --- no_error_log
 [error]
 
-=== TEST 19: mod_add, mod_sub, mod_mul, mul_exp, mul_sqr mod
+
+
+=== TEST 20: mod_add, mod_sub, mod_mul, mul_exp, mul_sqr mod
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -492,7 +564,9 @@ true
 --- no_error_log
 [error]
 
-=== TEST 20: generate_prime
+
+
+=== TEST 21: generate_prime
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -516,39 +590,5 @@ true
 --- response_body eval
 "ok
 "
---- no_error_log
-[error]
-
-=== TEST 21: set
---- http_config eval: $::HttpConfig
---- config
-    location =/t {
-        content_by_lua_block {
-            local data = {
-                ["23333"] = 10,
-                ["5b25"] = 16,
-                ["5B25"] = 16,
-                ["\x5b\x25"] = 2,
-                ["\x00\x00\x00\x02\x5b\x25"] = 0,
-            }
-            for k, v in pairs(data) do
-                local bn = myassert(require("resty.openssl.bn").new(0))
-                local new_bn = myassert(bn:set(k, v))
-                if bn:to_number() ~= 23333 then
-                    ngx.log(ngx.ERR, bn, " != 23333: ", k, " ", v)
-                    return
-                end
-                if tostring(bn.ctx) ~= tostring(new_bn.ctx) then
-                    ngx.log(ngx.ERR, tostring(bn.ctx), " != ", tostring(new_bn.ctx), " (ctx not properly reused)")
-                    return
-                end
-            end
-            ngx.print("ok")
-        }
-    }
---- request
-    GET /t
---- response_body eval
-"ok"
 --- no_error_log
 [error]
