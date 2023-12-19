@@ -21,6 +21,7 @@ our $HttpConfig = qq{
 run_tests();
 
 __DATA__
+
 === TEST 1: Prints version text properly
 --- http_config eval: $::HttpConfig
 --- config
@@ -36,6 +37,8 @@ __DATA__
 OpenSSL \d.\d.\d.+
 --- no_error_log
 [error]
+
+
 
 === TEST 2: Prints version text using version()
 --- http_config eval: $::HttpConfig

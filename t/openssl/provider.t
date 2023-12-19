@@ -23,6 +23,7 @@ our $HttpConfig = qq{
 run_tests();
 
 __DATA__
+
 === TEST 1: Loads default and legacy provider
 --- http_config eval: $::HttpConfig
 --- config
@@ -59,6 +60,8 @@ true
 --- no_error_log
 [error]
 
+
+
 === TEST 2: Self test default and legacy provider
 --- http_config eval: $::HttpConfig
 --- config
@@ -91,6 +94,8 @@ true
 --- no_error_log
 [error]
 
+
+
 === TEST 3: Set default search path
 --- http_config eval: $::HttpConfig
 --- config
@@ -116,6 +121,8 @@ true
 --- no_error_log
 [error]
 
+
+
 === TEST 4: Get parameters
 --- http_config eval: $::HttpConfig
 --- config
@@ -138,4 +145,3 @@ true
 {"buildinfo":"3.+","name":"OpenSSL Default Provider","status":1,"version":"3.+"}
 --- no_error_log
 [error]
-
