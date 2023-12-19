@@ -74,7 +74,9 @@ Table of Contents
     + [bn.new](#bnnew)
     + [bn.dup](#bndup)
     + [bn.istype](#bnistype)
+    + [bn:set](#bnset)
     + [bn.from_binary, bn:to_binary](#bnfrom_binary-bnto_binary)
+    + [bn.from_mpi, bn:to_mpi](#bnfrom_mpi-bnto_mpi)
     + [bn.from_hex, bn:to_hex](#bnfrom_hex-bnto_hex)
     + [bn.from_dec, bn:to_dec](#bnfrom_dec-bnto_dec)
     + [bn:to_number](#bnto_number)
@@ -1380,8 +1382,20 @@ Module to expose BIGNUM structure. Note bignum is a big integer, no float operat
 
 **syntax**: *b, err = bn.new(number?)*
 
-Creates a `bn` instance. The first argument can be a Lua number or `nil` to
-creates an empty instance.
+**syntax**: *b, err = bn.new(string?, base?)*
+
+Creates a `bn` instance. The first argument can be:
+
+- `nil` to creates an empty bn instance.
+- A Lua number to initialize the bn instance.
+- A string to initialize the bn instance. The second argument `base` specifies the base of the string,
+and can take value from (compatible with Ruby OpenSSL.BN API):
+  - `10` or omitted, for decimal string (`"23333"`)
+  - `16`, for hex encoded string (`"5b25"`)
+  - `2`, for binary string (`"\x5b\x25"`)
+  - `0`, for MPI formated string (`"\x00\x00\x00\x02\x5b\x25"`)
+
+MPI is a format that consists of the number's length in bytes represented as a 4-byte big-endian number, and the number itself in big-endian format, where the most significant bit signals a negative number (the representation of numbers with the MSB set is prefixed with null byte).
 
 [Back to TOC](#table-of-contents)
 
@@ -1401,6 +1415,17 @@ Returns `true` if table is an instance of `bn`. Returns `false` otherwise.
 
 [Back to TOC](#table-of-contents)
 
+### bn.set
+
+**syntax**: *b, err = bn:set(number)*
+
+**syntax**: *b, err = bn:set(string, base?)*
+
+Reuse the existing bn instance and reset its value with given number or string.
+Refer to [bn.new](#bnnew) for the type of arguments supported.
+
+[Back to TOC](#table-of-contents)
+
 ### bn.from_binary, bn:to_binary
 
 **syntax**: *bn, err = bn.from_binary(bin)*
@@ -1415,10 +1440,32 @@ Exports the BIGNUM value in binary string.
 used to pad leading zeros to the output to a specific length.
 
 ```lua
-local b, err = require("resty.openssl.bn").from_binary(ngx.decode_base64("WyU="))
+local to_hex = require "resty.string".to_hex
+local b, err = require("resty.openssl.bn").from_binary("\x5b\x25")
 local bin, err = b:to_binary()
-ngx.say(ngx.encode_base64(bin))
--- outputs "WyU="
+ngx.say(to_hex(bin))
+-- outputs "5b25
+```
+
+[Back to TOC](#table-of-contents)
+
+### bn.from_mpi, bn:to_mpi
+
+**syntax**: *bn, err = bn.from_mpi(bin)*
+
+**syntax**: *bin, err = bn:to_mpi()*
+
+Creates a `bn` instance from MPI formatted binary string.
+
+Exports the BIGNUM value in MPI formatted binary string.
+
+
+```lua
+local to_hex = require "resty.string".to_hex
+local b, err = require("resty.openssl.bn").from_mpi("\x00\x00\x00\x02\x5b\x25")
+local bin, err = b:to_mpi()
+ngx.say(to_hex(bin))
+-- outputs "000000025b25
 ```
 
 [Back to TOC](#table-of-contents)
