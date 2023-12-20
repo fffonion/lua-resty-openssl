@@ -64,20 +64,44 @@ local function stat(t)
     return v, v/#t, max 
 end
 
-local function test(desc, r, iter)
-    print("RUNNING " .. ITER .. " ITERATIONS FOR " .. desc)
-    local data = table.new(ITER, 0)
-    for i=1, ITER do
-        get_duration()
-        local ok, err = r()
-        data[i] = get_duration()
-        assert(ok, err)
-    end
+local write_seperator = function()
+    print(string.rep("-", 64))
+end
 
-    local sum, avg, max = stat(data)
+local no_count_iter = false
+
+local function test(desc, r, iter, expected)
+    print("RUNNING " .. ITER .. " ITERATIONS FOR " .. desc)
+    local sum, avg, max
+    local ok, err
+
+    if no_count_iter then
+        get_duration()
+        for i=1, ITER do
+            ok, err = r()
+        end
+        local duration = get_duration()
+        assert(ok, err)
+        sum, avg, max = duration, duration/ITER, 1/0
+    else
+        local data = table.new(ITER, 0)
+        for i=1, ITER do
+            get_duration()
+            ok, err = r()
+            data[i] = get_duration()
+            assert(ok, err)
+        end
+
+        sum, avg, max = stat(data)
+    end
 
     print(string.format("FINISHED in\t%s (%d op/s)\nAVG\t%s\tMAX\t%s", hmt(sum), 1e9/avg, hmt(avg), hmt(max))) 
     print(string.rep("-", 64))
+
+    if expected ~= nil then
+        assert(expected == ok, "expected " .. expected .. "(" .. (#expected or 0) .. " bytes)" ..
+                                 ", but got " .. ok .. "(" .. (#ok or 0) .. " bytes)")
+    end
 end
 
 local function set_iteration(i)
@@ -85,9 +109,14 @@ local function set_iteration(i)
 end
 
 print("LOADING TEST FROM " .. arg[0])
-print(string.rep("=", 64))
+
+write_seperator()
 
 return {
     test = test,
     set_iteration = set_iteration,
+    write_seperator = write_seperator,
+    set_no_count_iter = function(s)
+        no_count_iter = s
+    end,
 }
