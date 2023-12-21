@@ -91,6 +91,7 @@ Table of Contents
   * [resty.openssl.cipher](#restyopensslcipher)
     + [cipher.new](#ciphernew)
     + [cipher.istype](#cipheristype)
+    + [cipher.set_buffer_size](#cipherset_buffer_size)
     + [cipher:get_provider_name](#cipherget_provider_name)
     + [cipher:gettable_params, cipher:settable_params, cipher:get_param, cipher:set_params](#ciphergettable_params-ciphersettable_params-cipherget_param-cipherset_params)
     + [cipher:encrypt](#cipherencrypt)
@@ -1730,6 +1731,20 @@ to explictly select provider to fetch algorithms.
 **syntax**: *ok = cipher.istype(table)*
 
 Returns `true` if table is an instance of `cipher`. Returns `false` otherwise.
+
+[Back to TOC](#table-of-contents)
+
+### cipher.set_buffer_size
+
+**syntax**: *ok = cipher.set_buffer_size(sz)*
+
+Resize the internal buffer size used by all cipher instance. The default buffer size is 1024 bytes.
+
+If you are expecting to pass input text larger than 1024 bytes at one time to `update()`, `encrypt()`
+or `decrypt()`, setting the buffer to larger than the expected input size will improve performance
+by let more code to be JIT-able.
+
+Avoid call this function at hotpath, as this re-allocate the buffer every time it's called.
 
 [Back to TOC](#table-of-contents)
 

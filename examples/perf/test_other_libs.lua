@@ -95,6 +95,8 @@ for _, t in ipairs({"aes-256-cbc", "aes-256-gcm"}) do
     for _, op in ipairs({"encrypt", "decrypt"}) do 
 
         local c = assert(cipher.new(t))
+        cipher.set_buffer_size(#data + 64) -- add more room for decrypt
+
         local _iv = iv
         if t == "aes-256-gcm" then
             _iv = string.rep("0", 12)
