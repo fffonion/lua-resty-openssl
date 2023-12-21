@@ -102,7 +102,14 @@ local function test(desc, r, iter, expected)
         sum, avg, max = stat(data)
     end
 
-    print(string.format("FINISHED in\t%s (%d op/s)\nAVG\t%s\tMAX\t%s", hmt(sum), 1e9/avg, hmt(avg), hmt(max))) 
+    local bytes = string.match(desc, "(%d+) bytes")
+    if bytes then
+        bytes = tonumber(bytes)
+        bytes = bytes / 1000 * (1e9/avg)
+    else
+        bytes = 1/0
+    end
+    print(string.format("FINISHED in\t%s (%d op/s, %.2fk bytes/s)\nAVG\t%s\tMAX\t%s", hmt(sum), 1e9/avg, bytes, hmt(avg), hmt(max)))
     print(string.rep("-", 64))
 
     if expected ~= nil then
