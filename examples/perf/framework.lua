@@ -70,7 +70,14 @@ end
 
 local no_count_iter = false
 
+local run_only = os.getenv("RUN_ONLY")
+
 local function test(desc, r, iter, expected)
+    if run_only and not string.match(desc, run_only) then
+        print("SKIP " .. desc)
+        return
+    end
+
     print("RUNNING " .. ITER .. " ITERATIONS FOR " .. desc)
     local sum, avg, max
     local ok, err
