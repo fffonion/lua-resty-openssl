@@ -13,6 +13,7 @@ local format_error = require("resty.openssl.err").format_error
 local version_text = require("resty.openssl.version").version_text
 local OPENSSL_3X = require("resty.openssl.version").OPENSSL_3X
 local ctypes = require "resty.openssl.auxiliary.ctypes"
+local nkeys = require "resty.openssl.auxiliary.compat".nkeys
 
 --[[
 https://wiki.openssl.org/index.php/EVP_Key_Derivation
@@ -311,6 +312,7 @@ function _M.new(typ, properties)
     algo = algo,
     buf = buf,
     buf_size = buf_size,
+    schema = nil,
   }, mt), nil
 end
 
@@ -344,14 +346,16 @@ function _M:derive(outlen, options, options_count)
   if options_count then
     options_count = options_count - 1
   else
-    options_count = 0
-    for k, v in pairs(options) do options_count = options_count + 1 end
+    options_count = nkeys(options)
   end
 
   local param, err
   if options_count > 0 then
-    local schema = self:settable_params(true) -- raw schema
-    param, err = param_lib.construct(options, nil, schema)
+    if not self.schema then
+      self.schema = self:settable_params(true) -- raw schema
+    end
+
+    param, err = param_lib.construct(options, nil, self.schema)
     if err then
       return nil, "kdf:derive: " .. err
     end
