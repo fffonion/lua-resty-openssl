@@ -69,6 +69,15 @@ function _M.istype(l)
   return l and l.ctx and ffi.istype(cipher_ctx_ptr_ct, l.ctx)
 end
 
+function _M.set_buffer_size(sz)
+  if out_buffer_size ~= sz then
+    out_buffer_size = sz
+    out_buffer = ctypes.uchar_array(sz + 64)
+  end
+
+  return true
+end
+
 function _M:get_provider_name()
   if not OPENSSL_3X then
     return false, "cipher:get_provider_name is not supported"
@@ -241,7 +250,6 @@ function _M:final(s)
   if C.EVP_CipherFinal_ex(self.ctx, _out_buffer + offset, out_length) ~= 1 then
     return nil, format_error("cipher:final: EVP_CipherFinal_ex")
   end
-
 
   return ffi_str(_out_buffer, out_length[0] + offset)
 end
