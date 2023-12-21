@@ -14,6 +14,7 @@ local version_text = require("resty.openssl.version").version_text
 local OPENSSL_3X = require("resty.openssl.version").OPENSSL_3X
 local ctypes = require "resty.openssl.auxiliary.ctypes"
 local nkeys = require "resty.openssl.auxiliary.compat".nkeys
+local log_warn = require "resty.openssl.auxiliary.compat".log_warn
 
 --[[
 https://wiki.openssl.org/index.php/EVP_Key_Derivation
@@ -252,7 +253,7 @@ function _M.derive(options)
         local md_size = OPENSSL_3X and C.EVP_MD_get_size(md) or C.EVP_MD_size(md)
         if options.outlen ~= md_size then
           options.outlen = md_size
-          ngx.log(ngx.WARN, "hkdf_mode EXTRACT_ONLY outputs fixed length of ", md_size,
+          log_warn("hkdf_mode EXTRACT_ONLY outputs fixed length of ", md_size,
                   " key, ignoring options.outlen")
         end
         outlen[0] = md_size

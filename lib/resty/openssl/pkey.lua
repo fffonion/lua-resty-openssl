@@ -26,6 +26,8 @@ local ctx_lib = require "resty.openssl.ctx"
 local ctypes = require "resty.openssl.auxiliary.ctypes"
 local ecdsa_util = require "resty.openssl.auxiliary.ecdsa"
 local format_error = require("resty.openssl.err").format_error
+local log_warn = require "resty.openssl.auxiliary.compat".log_warn
+local log_debug = require "resty.openssl.auxiliary.compat".log_debug
 
 local OPENSSL_3X = require("resty.openssl.version").OPENSSL_3X
 
@@ -67,7 +69,7 @@ local function load_pem_der(txt, opts, funcs)
     return nil, "explictly load private or public key from JWK format is not supported"
   end
 
-  ngx.log(ngx.DEBUG, "load key using fmt: ", fmt, ", type: ", typ)
+  log_debug("load key using fmt: ", fmt, ", type: ", typ)
 
   local bio = C.BIO_new_mem_buf(txt, #txt)
   if bio == nil then
@@ -89,7 +91,7 @@ local function load_pem_der(txt, opts, funcs)
         if fmt == "JWK" then
           return nil, err
         end
-        ngx.log(ngx.DEBUG, "jwk decode failed: ", err, ", continuing")
+        log_debug("jwk decode failed: ", err, ", continuing")
       end
     else
       -- #define BIO_CTRL_RESET 1
@@ -113,7 +115,7 @@ local function load_pem_der(txt, opts, funcs)
             local p = opts.passphrase_cb()
             local len = #p -- 1 byte for \0
             if len > size then
-              ngx.log(ngx.WARN, "pkey:load_pem_der: passphrase truncated from ", len, " to ", size)
+              log_warn("pkey:load_pem_der: passphrase truncated from ", len, " to ", size)
               len = size
             end
             ffi_copy(buf, p, len)
@@ -127,7 +129,7 @@ local function load_pem_der(txt, opts, funcs)
     end
 
     if ctx ~= nil then
-      ngx.log(ngx.DEBUG, "pkey:load_pem_der: loaded pkey using function ", f)
+      log_debug("pkey:load_pem_der: loaded pkey using function ", f)
 
       -- pkcs1 functions create a rsa rather than evp_pkey
       -- disable the checking in openssl 3.0 for sail safe

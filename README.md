@@ -863,6 +863,8 @@ in provided JSON will decide if a private or public key is loaded.
 from private key part (the `d` parameter) if it's specified.
 - Signatures and verification must use `ecdsa_use_raw` option to work with JWS standards
 for EC keys. See [pkey:sign](#pkeysign) and [pkey.verify](#pkeyverify) for detail.
+- When running outside of OpenResty, needs to install a JSON library (`cjson` or `dkjson`)
+and `basexx`.
 
 #### Key generation
 

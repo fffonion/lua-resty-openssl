@@ -10,6 +10,7 @@ local ctypes = require "resty.openssl.auxiliary.ctypes"
 local ctx_lib = require "resty.openssl.ctx"
 local format_error = require("resty.openssl.err").format_error
 local OPENSSL_3X = require("resty.openssl.version").OPENSSL_3X
+local log_warn = require "resty.openssl.auxiliary.compat".log_warn
 
 local uchar_array = ctypes.uchar_array
 local void_ptr = ctypes.void_ptr
@@ -271,10 +272,10 @@ function _M:derive(key, salt, count, md, md_properties)
 
   if salt then
     if #salt > 8 then
-      ngx.log(ngx.WARN, "cipher:derive: salt is too long, truncate salt to 8 bytes")
+      log_warn("cipher:derive: salt is too long, truncate salt to 8 bytes")
       salt = salt:sub(0, 8)
     elseif #salt < 8 then
-      ngx.log(ngx.WARN, "cipher:derive: salt is too short, padding with zero bytes to length")
+      log_warn("cipher:derive: salt is too short, padding with zero bytes to length")
       salt = salt .. string.rep('\000', 8 - #salt)
     end
   end
