@@ -27,28 +27,6 @@ local _M = {
   _VERSION = '1.1.0',
 }
 
-local libcrypto_name
-local lib_patterns = {
-  "%s", "%s.so.3", "%s.so.1.1", "%s.so.1.0"
-}
-
-function _M.load_library()
-  for _, pattern in ipairs(lib_patterns) do
-    -- true: load to global namespae
-    local pok, _ = pcall(ffi.load, string.format(pattern, "crypto"), true)
-    if pok then
-      libcrypto_name = string.format(pattern, "crypto")
-      ffi.load(string.format(pattern, "ssl"), true)
-
-      try_require_modules()
-
-      return libcrypto_name
-    end
-  end
-
-  return false, "unable to load crypto library"
-end
-
 function _M.load_modules()
   _M.bn = require("resty.openssl.bn")
   _M.cipher = require("resty.openssl.cipher")
