@@ -2,6 +2,12 @@
 ## [Unreleased]
 
 
+<a name="1.2.0"></a>
+## [1.2.0] - 2023-12-21
+### features
+- **bn:** add from_mpi, to_mpi and set API [073c943](https://github.com/fffonion/lua-resty-openssl/commit/073c943bf74cce7bd6ce90ee97dfc9b753af3cf2)
+
+
 <a name="1.1.0"></a>
 ## [1.1.0] - 2023-12-15
 ### features
@@ -555,7 +561,8 @@
 - **x509:** export pubkey [ede4f81](https://github.com/fffonion/lua-resty-openssl/commit/ede4f817cb0fe092ad6f9ab5d6ecdcde864a9fd8)
 
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/1.1.0...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/1.2.0...HEAD
+[1.2.0]: https://github.com/fffonion/lua-resty-openssl/compare/1.1.0...1.2.0
 [1.1.0]: https://github.com/fffonion/lua-resty-openssl/compare/1.0.2...1.1.0
 [1.0.2]: https://github.com/fffonion/lua-resty-openssl/compare/1.0.1...1.0.2
 [1.0.1]: https://github.com/fffonion/lua-resty-openssl/compare/1.0.0...1.0.1
