@@ -40,6 +40,9 @@ do
     end
 end
 
+local v = require "jit.dump"
+v.on(nil, "/tmp/a.out")
+
 ------------- bn
 
 set_iteration(1000000)
@@ -74,11 +77,10 @@ if lua_openssl then
 end
 
 if lua_pack then
-    test("lua_pack unpack 6 int", function()
+    test("lua_pack bn unpack 6 int", function()
         return lua_pack.unpack(binary_input, ">6I")
     end)
 end
-
 
 ------------- cipher
 write_seperator()

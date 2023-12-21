@@ -14,7 +14,6 @@ local OPENSSL_3X = require("resty.openssl.version").OPENSSL_3X
 local uchar_array = ctypes.uchar_array
 local void_ptr = ctypes.void_ptr
 local ptr_of_int = ctypes.ptr_of_int
-local uchar_ptr = ctypes.uchar_ptr
 
 local _M = {}
 local mt = {__index = _M}
@@ -23,7 +22,8 @@ local cipher_ctx_ptr_ct = ffi.typeof('EVP_CIPHER_CTX*')
 
 local out_length = ptr_of_int()
 -- EVP_MAX_BLOCK_LENGTH is 32, we give it a 64 to be future proof
-local out_buffer = ctypes.uchar_array(1024 + 64)
+local out_buffer_size = 1024
+local out_buffer = ctypes.uchar_array(out_buffer_size + 64)
 
 function _M.new(typ, properties)
   if not typ then
@@ -195,49 +195,55 @@ function _M:set_aead_tag(tag)
   return true
 end
 
+local update_buffer = {}
 function _M:update(...)
   if not self.initialized then
     return nil, "cipher:update: cipher not initalized, call cipher:init first"
   end
 
-  local ret = {}
+  table.clear(update_buffer)
+  local _out_buffer = out_buffer
   for i, s in ipairs({...}) do
     local inl = #s
-    if inl > 1024 then
-      s = ffi_cast(uchar_ptr, s)
-      for i=0, inl-1, 1024 do
-        local chunk_size = 1024
-        if inl - i < 1024 then
-          chunk_size = inl - i
-        end
-        if C.EVP_CipherUpdate(self.ctx, out_buffer, out_length, s+i, chunk_size) ~= 1 then
-          return nil, format_error("cipher:update")
-        end
-        table.insert(ret, ffi_str(out_buffer, out_length[0]))
-      end
-    else
-      if C.EVP_CipherUpdate(self.ctx, out_buffer, out_length, s, inl) ~= 1 then
-        return nil, format_error("cipher:update")
-      end
-      table.insert(ret, ffi_str(out_buffer, out_length[0]))
+    if inl > out_buffer_size and _out_buffer == out_buffer then
+      -- create a larger buffer than the default one
+      _out_buffer = ctypes.uchar_array(inl + 64)
     end
+    if C.EVP_CipherUpdate(self.ctx, _out_buffer, out_length, s, inl) ~= 1 then
+      return nil, format_error("cipher:update")
+    end
+    table.insert(update_buffer, ffi_str(_out_buffer, out_length[0]))
   end
-  return table.concat(ret, "")
+  return table.concat(update_buffer, "")
 end
 
 function _M:final(s)
-  local ret, err
-  if s then
-    ret, err = self:update(s)
-    if err then
-      return nil, err
-    end
+  if not self.initialized then
+    return nil, "cipher:update: cipher not initalized, call cipher:init first"
   end
-  if C.EVP_CipherFinal_ex(self.ctx, out_buffer, out_length) ~= 1 then
+
+  out_length[0] = 0
+  local offset = 0 -- advance the offset if we have update buffer
+  local _out_buffer = out_buffer
+  if s then
+    local inl = #s
+    if inl > out_buffer_size then
+      -- create a larger buffer than the default one
+      _out_buffer = ctypes.uchar_array(inl + 64)
+    end
+
+    if C.EVP_CipherUpdate(self.ctx, _out_buffer, out_length, s, inl) ~= 1 then
+      return nil, format_error("cipher:final")
+    end
+    offset = out_length[0]
+  end
+
+  if C.EVP_CipherFinal_ex(self.ctx, _out_buffer + offset, out_length) ~= 1 then
     return nil, format_error("cipher:final: EVP_CipherFinal_ex")
   end
-  local final_ret = ffi_str(out_buffer, out_length[0])
-  return ret and (ret .. final_ret) or final_ret
+
+
+  return ffi_str(_out_buffer, out_length[0] + offset)
 end
 
 
