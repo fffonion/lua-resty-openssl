@@ -60,7 +60,7 @@ jobs:
           lua_resty_core: "v0.1.27"
           nginx_cc_opts: "-Wno-error"
         - nginx: "1.21.4"
-          openssl: "3.2.0-alpha1"
+          openssl: "3.2.0"
           openssl_fips: "3.0.8"
           extras: "valgrind perf"
           lua_nginx_module: "v0.10.25"
