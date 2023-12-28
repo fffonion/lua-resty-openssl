@@ -6,12 +6,14 @@ local set_iteration = require "framework".set_iteration
 local write_seperator = require "framework".write_seperator
 local cipher = require "resty.openssl.cipher"
 local digest = require "resty.openssl.digest"
+local hmac = require "resty.openssl.hmac"
 local pkey = require "resty.openssl.pkey"
 local version = require "resty.openssl.version"
 local rand = require "resty.openssl.rand"
 local kdf = require "resty.openssl.kdf"
 local aes = require "resty.aes"
 local resty_rsa = require "resty.rsa"
+local to_hex = require "resty.string".to_hex
 
 -- ensure best performance
 require "framework".set_no_count_iter(true)
@@ -256,6 +258,54 @@ do
         end
     end
 
+end
+
+------------- hmac
+do
+    write_seperator()
+
+    local data = string.rep("1", 4096)
+    local key = rand.bytes(32)
+
+    local d = hmac.new(key, "sha256")
+
+    local expected = d:final(data)
+
+    test("lua-resty-openssl hmac sha256 on " .. #data .. " bytes", function()
+        d:reset()
+        return d:final(data)
+    end, nil, expected)
+
+    if version.OPENSSL_3X then
+        local mac = require "resty.openssl.mac"
+        local m = mac.new(key, "HMAC", nil, "sha256")
+        test("lua-resty-openssl hmac sha256 new API on " .. #data .. " bytes", function()
+            m:reset()
+            return m:final(data)
+        end, nil, expected)
+    end
+
+    if luaossl then
+        local _hmac = require "_openssl.hmac"
+        test("luaossl hmac sha256 " .. #data .. " bytes", function()
+            local hh = _hmac.new(key, "sha256")
+            return hh:final(data)
+        end, nil, expected)
+    end
+
+    if lua_openssl then
+        local hh = lua_openssl.hmac
+        test("lua_openssl hmac sha256 on " .. #data .. " bytes", function()
+            return hh.hmac("sha256", data, key)
+        end, nil, to_hex(expected))
+
+        if version.OPENSSL_3X then
+            local mm = lua_openssl.mac
+            test("lua_openssl hmac sha256 new API on " .. #data .. " bytes", function()
+                return mm.mac("sha256", data, key)
+            end, nil, to_hex(expected))
+        end
+    end
 end
 
 ------------- pkey
