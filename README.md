@@ -124,6 +124,7 @@ Table of Contents
     + [mac:gettable_params, mac:settable_params, mac:get_param, mac:set_params](#macgettable_params-macsettable_params-macget_param-macset_params)
     + [mac:update](#macupdate)
     + [mac:final](#macfinal)
+    + [mac:reset](#macreset)
   * [resty.openssl.kdf](#restyopensslkdf)
     + [kdf.derive (legacy)](#kdfderive-legacy)
     + [kdf.new](#kdfnew)
@@ -2111,10 +2112,13 @@ Module to interact with message authentication code (EVP_MAC).
 
 **syntax**: *h, err = mac.new(key, mac, cipher?, digest?, properties?)*
 
-Creates a mac instance. `mac` is a case-insensitive string of digest algorithm name.
+Creates a mac instance. `mac` is a case-insensitive string of MAC algorithm name.
 To view a list of digest algorithms implemented, use
 [openssl.list_mac_algorithms](#openssllist_mac_algorithms) or
 `openssl list -mac-algorithms`.
+
+At least one of `cipher` or `digest` must be specified.
+
 `cipher` is a case-insensitive string of digest algorithm name.
 To view a list of digest algorithms implemented, use
 [openssl.list_cipher_algorithms](#openssllist_cipher_algorithms) or
@@ -2180,6 +2184,16 @@ ngx.say(ngx.encode_base64(mac))
 ```
 
 [Back to TOC](#table-of-contents)
+
+### mac:reset
+
+**syntax**: *ok, err = mac:reset()*
+
+Reset the internal state of `mac` instance as it's just created by [mac.new](#macnew).
+It calls [EVP_MAC_Init](https://www.openssl.org/docs/manmaster/man3/EVP_MAC_init.html) under
+the hood.
+
+User must call this before reusing the same `mac` instance.
 
 ## resty.openssl.kdf
 
