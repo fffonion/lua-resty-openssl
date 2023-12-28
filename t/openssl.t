@@ -73,7 +73,7 @@ false
     location =/t {
         content_by_lua_block {
             local openssl = require("resty.openssl")
-            ngx.say(require("cjson").encode(openssl.list_cipher_algorithms()))
+            ngx.say(require("cjson").encode(openssl.list_cipher_algorithms(true)))
             local version = require("resty.openssl.version")
             if not version.OPENSSL_3X then
                 ngx.say("[\"AES-256-GCM @ default\"]")
@@ -98,7 +98,7 @@ false
     location =/t {
         content_by_lua_block {
             local openssl = require("resty.openssl")
-            ngx.say(require("cjson").encode(openssl.list_digest_algorithms()))
+            ngx.say(require("cjson").encode(openssl.list_digest_algorithms(true)))
             local version = require("resty.openssl.version")
             if not version.OPENSSL_3X then
                 ngx.say("[\"SHA2-256 @ default\"]")

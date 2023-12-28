@@ -460,33 +460,37 @@ Sets the default properties for all future EVP algorithm fetches, implicit as we
 
 ### openssl.list_cipher_algorithms
 
-**syntax**: *ret = openssl.list_cipher_algorithms()*
+**syntax**: *ret = openssl.list_cipher_algorithms(hide_provider?)*
 
-Return available cipher algorithms in an array.
+Return available cipher algorithms in an array. Set `hide_provider` to `true` to
+hide provider name from the result.
 
 [Back to TOC](#table-of-contents)
 
 ### openssl.list_digest_algorithms
 
-**syntax**: *ret = openssl.list_digest_algorithms()*
+**syntax**: *ret = openssl.list_digest_algorithms(hide_provider?)*
 
-Return available digest algorithms in an array.
+Return available digest algorithms in an array. Set `hide_provider` to `true` to
+hide provider name from the result.
 
 [Back to TOC](#table-of-contents)
 
 ### openssl.list_mac_algorithms
 
-**syntax**: *ret = openssl.list_mac_algorithms()*
+**syntax**: *ret = openssl.list_mac_algorithms(hide_provider?)*
 
-Return available MAC algorithms in an array.
+Return available MAC algorithms in an array. Set `hide_provider` to `true` to
+hide provider name from the result.
 
 [Back to TOC](#table-of-contents)
 
 ### openssl.list_kdf_algorithms
 
-**syntax**: *ret = openssl.list_kdf_algorithms()*
+**syntax**: *ret = openssl.list_kdf_algorithms(hide_provider?)*
 
-Return available KDF algorithms in an array.
+Return available KDF algorithms in an array. Set `hide_provider` to `true` to
+hide provider name from the result.
 
 [Back to TOC](#table-of-contents)
 
