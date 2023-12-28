@@ -2,6 +2,22 @@
 ## [Unreleased]
 
 
+<a name="1.2.0"></a>
+## [1.2.0] - 2023-12-28
+### bug fixes
+- **compat:** works better with plain luajit [d23b34a](https://github.com/fffonion/lua-resty-openssl/commit/d23b34ae8b3349342d5f82d90dbfe76696dd2ca4)
+
+### features
+- **bn:** add from_mpi, to_mpi and set API [073c943](https://github.com/fffonion/lua-resty-openssl/commit/073c943bf74cce7bd6ce90ee97dfc9b753af3cf2)
+- **cipher:** add set_buffer_size API [3d0a51c](https://github.com/fffonion/lua-resty-openssl/commit/3d0a51ccab0c2dd46f9eb8088fa2f767eff02a61)
+- **mac:** add reset API [40fdbbb](https://github.com/fffonion/lua-resty-openssl/commit/40fdbbbddc078c01ea40b8ec8b21257d0e3fefa6)
+- **openssl:** list functions can now optionally drop provider name [b36ccba](https://github.com/fffonion/lua-resty-openssl/commit/b36ccba3fce9a1b51a0bc8c23d5e9843e99a2052)
+
+### performance improvements
+- **cipher:** improve performance on cipher [ba5de3e](https://github.com/fffonion/lua-resty-openssl/commit/ba5de3e53e1b83de5b8f75d64c83eb3e507f386a)
+- **kdf:** use table.nkeys for params [dac54bf](https://github.com/fffonion/lua-resty-openssl/commit/dac54bf7685d907518e80ab96a594753cdf0c0e1)
+
+
 <a name="1.1.0"></a>
 ## [1.1.0] - 2023-12-15
 ### features
@@ -555,7 +571,8 @@
 - **x509:** export pubkey [ede4f81](https://github.com/fffonion/lua-resty-openssl/commit/ede4f817cb0fe092ad6f9ab5d6ecdcde864a9fd8)
 
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/1.1.0...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/1.2.0...HEAD
+[1.2.0]: https://github.com/fffonion/lua-resty-openssl/compare/1.1.0...1.2.0
 [1.1.0]: https://github.com/fffonion/lua-resty-openssl/compare/1.0.2...1.1.0
 [1.0.2]: https://github.com/fffonion/lua-resty-openssl/compare/1.0.1...1.0.2
 [1.0.1]: https://github.com/fffonion/lua-resty-openssl/compare/1.0.0...1.0.1
