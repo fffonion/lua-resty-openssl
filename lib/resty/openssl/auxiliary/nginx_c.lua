@@ -68,6 +68,8 @@ else
 
     int ngx_http_lua_resty_openssl_aux_get_socket_ssl_ctx(ngx_http_lua_socket_tcp_upstream_t *u,
         void **_sess);
+
+    int ngx_http_lua_kong_ffi_get_request_ssl(ngx_http_request_t *r, void **ssl_conn);
   ]]
 
   -- sanity test
@@ -81,11 +83,16 @@ local ssl_ctx_type = ffi.typeof("SSL_CTX*")
 get_req_ssl = function()
   local c = get_request()
 
-  local ret
+  local ret, status
   if stream_subsystem then
     ret = C.ngx_stream_lua_resty_openssl_aux_get_request_ssl(c, void_pp)
   else
-    ret = C.ngx_http_lua_resty_openssl_aux_get_request_ssl(c, void_pp)
+    status, ret = pcall(function()
+      return C.ngx_http_lua_kong_ffi_get_request_ssl(c, void_pp)
+    end)
+    if not status then
+      ret = C.ngx_http_lua_resty_openssl_aux_get_request_ssl(c, void_pp)
+    end
   end
 
   if ret ~= NGX_OK then
