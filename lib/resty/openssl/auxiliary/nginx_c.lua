@@ -61,7 +61,7 @@ if ngx.config.subsystem == "stream" then
     success, get_sock_ssl = pcall(function() return C.ngx_stream_lua_kong_get_socket_ssl end)
   end
   if not success or get_sock_ssl == nil then
-    get_sock_ssl = C.ngx_stream_lua_resty_openssl_aux_get_socket_ssl_ctx
+    get_sock_ssl = C.ngx_stream_lua_resty_openssl_aux_get_socket_ssl
   end
 
 else
