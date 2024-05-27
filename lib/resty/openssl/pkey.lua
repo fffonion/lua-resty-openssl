@@ -402,6 +402,67 @@ local function generate_key(config)
   return ctx_ptr[0]
 end
 
+local function compose_key(config)
+  local typ = config.type or 'RSA'
+  local key_type
+
+  if typ == "RSA" then
+    key_type = evp_macro.EVP_PKEY_RSA
+  elseif typ == "EC" then
+    key_type = evp_macro.EVP_PKEY_EC
+  elseif evp_macro.ecx_curves[typ] then
+    key_type = evp_macro.ecx_curves[typ]
+  else
+    return nil, "unsupported type " .. typ
+  end
+  if key_type == 0 then
+    return nil, "the linked OpenSSL library doesn't support " .. typ .. " key"
+  end
+
+  local key, err, key_free, _
+
+  if key_type == evp_macro.EVP_PKEY_EC then
+    key = C.EC_KEY_new()
+    if key == nil then
+      return nil, "EC_KEY_new failed"
+    end
+    key_free = C.EC_KEY_free
+    _, err = ec_lib.set_parameters(key, config.params)
+  elseif key_type == evp_macro.EVP_PKEY_RSA then
+    key = C.RSA_new()
+    if key == nil then
+      return nil, "RSA_new failed"
+    end
+    key_free = C.RSA_free
+    _, err = rsa_lib.set_parameters(key, config.params)
+  elseif key_type == evp_macro.EVP_PKEY_ED25519 or
+         key_type == evp_macro.EVP_PKEY_X25519 or
+         key_type == evp_macro.EVP_PKEY_ED448 or
+         key_type == evp_macro.EVP_PKEY_X448 then
+    key_free = function() end
+    key, err = ecx_lib.set_parameters(key_type, nil, config.params)
+  end
+
+  if err then
+    return nil, "failed to construct " .. typ.. " key from parameters: " .. err
+  end
+
+  local ctx = C.EVP_PKEY_new()
+  if ctx == nil then
+    key_free(key)
+    return nil, "EVP_PKEY_new() failed"
+  end
+
+  local code = C.EVP_PKEY_assign(ctx, key_type, key)
+  if code ~= 1 then
+    key_free(key)
+    C.EVP_PKEY_free(ctx)
+    return nil, "EVP_PKEY_assign() failed"
+  end
+
+  return ctx
+end
+
 local load_key_try_funcs = {} do
   -- TODO: pkcs1 load functions are not required in openssl 3.0
   local _load_key_try_funcs = {
@@ -506,9 +567,13 @@ function _M.new(s, opts)
   local ctx, err
   s = s or {}
   if type(s) == 'table' then
-    ctx, err = generate_key(s)
+    if s.params then
+      ctx, err = compose_key(s)
+    else
+      ctx, err = generate_key(s)
+    end
     if err then
-      err = "pkey.new:generate_key: " .. err
+      err = "pkey.new:new_key: " .. err
     end
   elseif type(s) == 'string' then
     ctx, err = load_pem_der(s, opts or empty_table, load_key_try_funcs)
