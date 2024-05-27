@@ -883,7 +883,7 @@ pkey:verify: expect a string at #1
 
 
 
-=== TEST 27: signature: Raw sign and recover
+=== TEST 27: signature: Raw sign, raw verify and recover
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -895,12 +895,25 @@ pkey:verify: expect a string at #1
 
             local v = myassert(p:verify_recover(s))
             ngx.say(v == "🕶️")
+
+            local p = myassert(require("resty.openssl.pkey").new({
+                type = "EC",
+                curve = "prime256v1",
+            }))
+
+            local hashed = myassert(require("resty.openssl.digest").new("sha384"):final("🕶️"))
+
+            local s = myassert(p:sign_raw(hashed))
+
+            local v = myassert(p:verify_raw(s, hashed, "sha384"))
+            ngx.say(v == true)
         }
     }
 --- request
     GET /t
 --- response_body eval
 "256
+true
 true
 "
 --- no_error_log

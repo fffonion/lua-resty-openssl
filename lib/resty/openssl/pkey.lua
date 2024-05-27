@@ -656,8 +656,9 @@ end
 
 local ASYMMETRIC_OP_ENCRYPT = 0x1
 local ASYMMETRIC_OP_DECRYPT = 0x2
-local ASYMMETRIC_OP_SIGN_RAW = 0x4
-local ASYMMETRIC_OP_VERIFY_RECOVER = 0x8
+local ASYMMETRIC_OP_SIGN_RAW = 0x3
+local ASYMMETRIC_OP_VERIFY_RAW = 0x4
+local ASYMMETRIC_OP_VERIFY_RECOVER = 0x5
 
 local function asymmetric_routine(self, s, op, padding, opts)
   if type(s) ~= "string" then
@@ -701,6 +702,10 @@ local function asymmetric_routine(self, s, op, padding, opts)
     fint = C.EVP_PKEY_sign_init
     f = C.EVP_PKEY_sign
     op_name = "sign"
+  elseif op == ASYMMETRIC_OP_VERIFY_RAW then
+    fint = C.EVP_PKEY_verify_init
+    f = C.EVP_PKEY_verify
+    op_name = "verify"
   elseif op == ASYMMETRIC_OP_VERIFY_RECOVER then
     fint = C.EVP_PKEY_verify_recover_init
     f = C.EVP_PKEY_verify_recover
@@ -725,13 +730,25 @@ local function asymmetric_routine(self, s, op, padding, opts)
     return nil, "pkey:asymmetric_routine: " .. err
   end
 
-  local length = ptr_of_size_t(self.buf_size)
-
-  if f(pkey_ctx, self.buf, length, s, #s) <= 0 then
-    return nil, format_error("pkey:asymmetric_routine EVP_PKEY_" .. op_name)
+  local buf, buf_len
+  if opts and opts.buf_in then
+    buf = opts.buf_in
+    buf_len = #buf
+  else
+    buf = self.buf
+    buf_len = ptr_of_size_t(self.buf_size)
   end
 
-  return ffi_str(self.buf, length[0]), nil
+  code = f(pkey_ctx, buf, buf_len, s, #s)
+  if code <= 0 then
+    return nil, format_error("pkey:asymmetric_routine EVP_PKEY_" .. op_name, code)
+  end
+
+  if not opts or not opts.buf_in then
+    return ffi_str(self.buf, buf_len[0]), nil
+  end
+
+  return true
 end
 
 _M.PADDINGS = rsa_macro.paddings
@@ -751,6 +768,16 @@ function _M:sign_raw(s, padding, opts)
   end
 
   return asymmetric_routine(self, s, ASYMMETRIC_OP_SIGN_RAW, padding, opts)
+end
+
+function _M:verify_raw(signature, hashed_message, md_alg, padding, opts)
+  opts = opts or {}
+  opts.buf_in = signature
+  if md_alg then
+    table.insert(opts, "digest:" .. md_alg)
+  end
+
+  return asymmetric_routine(self, hashed_message, ASYMMETRIC_OP_VERIFY_RAW, padding, opts)
 end
 
 function _M:verify_recover(s, padding, opts)
