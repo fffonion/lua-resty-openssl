@@ -872,12 +872,13 @@ for EC keys. See [pkey:sign](#pkeysign) and [pkey.verify](#pkeyverify) for detai
 - When running outside of OpenResty, needs to install a JSON library (`cjson` or `dkjson`)
 and `basexx`.
 
+[Back to TOC](#table-of-contents)
+
 #### Key generation
 
 **syntax**: *pk, err = pkey.new(config?)*
 
 Generate a new public key or private key.
-
 
 To generate RSA key, `config` table can have `bits` and `exp` field to control key generation.
 When `config` is emitted, this function generates a 2048 bit RSA key with `exponent` of 65537,
@@ -937,6 +938,27 @@ pkey.new({
 
 ```
 
+[Back to TOC](#table-of-contents)
+
+#### Key composition
+
+**syntax**: *pk, err = pkey.new(config?)*
+
+Compose a public or private key using existing parameters. To see
+list of parameters for each key, refer to [pkey:set_parameters](#pkeyset_parameters).
+
+Only `type` and `params` should exist in `config` table, all other keys will be ignored.
+
+```lua
+local private_bn = require "resty.openssl.bn".new("7F48282CCA4C1A65D589C06DBE9C42AE50FBFFDF3A18CBB48498E1DE47F11BE1A3486CD8FA950D68F111970F922279D8", 16)
+local p_384, err = assert(require("resty.openssl.pkey").new({
+    type = "EC",
+    params = {
+        private = private_bn,
+        group = "secp384r1",
+    }
+}))
+```
 
 [Back to TOC](#table-of-contents)
 
