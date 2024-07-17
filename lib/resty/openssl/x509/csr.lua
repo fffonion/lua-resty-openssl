@@ -190,7 +190,8 @@ end
 
 local function modify_extension(replace, ctx, nid, toset, crit)
   local extensions_ptr = stack_ptr_type()
-  extensions_ptr[0] = C.X509_REQ_get_extensions(ctx)
+  local extension = C.X509_REQ_get_extensions(ctx)
+  extensions_ptr[0] = extension
   local need_cleanup = extensions_ptr[0] ~= nil and
   -- extensions_ptr being nil is fine: it may just because there's no extension yet
   -- https://github.com/openssl/openssl/commit/2039ac07b401932fa30a05ade80b3626e189d78a
@@ -210,7 +211,7 @@ local function modify_extension(replace, ctx, nid, toset, crit)
   local code = C.X509V3_add1_i2d(extensions_ptr, nid, toset, crit and 1 or 0, flag)
   -- when the stack is newly allocated, we want to cleanup the newly created stack as well
   -- setting the gc handler here as it's mutated in X509V3_add1_i2d if it's pointing to NULL
-  ffi_gc(extensions_ptr[0], x509_extensions_gc)
+  ffi_gc(extension, x509_extensions_gc)
   if code ~= 1 then
     return false, format_error("X509V3_add1_i2d", code)
   end
@@ -224,7 +225,7 @@ local function modify_extension(replace, ctx, nid, toset, crit)
     end
   end
 
-  code = C.X509_REQ_add_extensions(ctx, extensions_ptr[0])
+  code = C.X509_REQ_add_extensions(ctx, extension)
   if code ~= 1 then
     return false, format_error("X509_REQ_add_extensions", code)
   end
@@ -250,7 +251,8 @@ function _M:add_extension(extension)
 
   local nid = extension:get_object().nid
   local toset = extension_lib.to_data(extension, nid)
-  return add_extension(self.ctx, nid, toset.ctx, extension:get_critical())
+  local res, err = add_extension(self.ctx, nid, toset.ctx, extension:get_critical())
+  return res, err
 end
 
 function _M:set_extension(extension)

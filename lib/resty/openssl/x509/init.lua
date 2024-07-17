@@ -692,7 +692,12 @@ function _M:get_subject_alt_name()
   got = ffi_cast("GENERAL_NAMES*", got_ref)
   local lib = require("resty.openssl.x509.altname")
   -- the internal ptr is returned, ie we need to copy it
-  return lib.dup(got)
+  local res, err = lib.dup(got)
+  if res ~= nil then
+    res._dupped_from = got_ref -- keep got_ref from gc
+  end
+
+  return res, err
 end
 
 -- AUTO GENERATED: EXTENSIONS
@@ -746,7 +751,12 @@ function _M:get_issuer_alt_name()
   got = ffi_cast("GENERAL_NAMES*", got_ref)
   local lib = require("resty.openssl.x509.altname")
   -- the internal ptr is returned, ie we need to copy it
-  return lib.dup(got)
+  local res, err = lib.dup(got)
+  if res ~= nil then
+    res._dupped_from = got_ref -- keep got_ref from gc
+  end
+
+  return res, err
 end
 
 -- AUTO GENERATED: EXTENSIONS
@@ -891,7 +901,10 @@ function _M:get_info_access()
   got = ffi_cast("AUTHORITY_INFO_ACCESS*", got_ref)
   local lib = require("resty.openssl.x509.extension.info_access")
   -- the internal ptr is returned, ie we need to copy it
-  return lib.dup(got)
+  local res, err = lib.dup(got)
+  if res ~= nil then
+    res._dupped_from = got_ref -- keep got_ref from gc
+  end
 end
 
 -- AUTO GENERATED: EXTENSIONS
@@ -945,7 +958,12 @@ function _M:get_crl_distribution_points()
   got = ffi_cast("OPENSSL_STACK*", got_ref)
   local lib = require("resty.openssl.x509.extension.dist_points")
   -- the internal ptr is returned, ie we need to copy it
-  return lib.dup(got)
+  local res, err = lib.dup(got)
+  if res ~= nil then
+    res._dupped_from = got_ref -- keep got_ref from gc
+  end
+
+  return res, err
 end
 
 -- AUTO GENERATED: EXTENSIONS

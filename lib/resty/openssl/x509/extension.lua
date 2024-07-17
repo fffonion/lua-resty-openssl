@@ -225,7 +225,11 @@ function _M.to_data(extension, nid)
     local got = ffi_cast("GENERAL_NAMES*", void_ptr)
     local lib = require("resty.openssl.x509.altname")
     -- the internal ptr is returned, ie we need to copy it
-    return lib.dup(got)
+    local res, err = lib.dup(got)
+    if res ~= nil then
+        res._dupped_from = void_ptr
+    end
+    return res, err
   end
 
   return nil, string.format("x509.extension:to_data: don't know how to convert to NID %d", nid)

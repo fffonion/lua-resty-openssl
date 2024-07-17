@@ -217,7 +217,11 @@ function _M:verify(x509, chain, return_chain, properties, verify_method, flags)
       return true, nil
     end
     local ret_chain_ctx = C.X509_STORE_CTX_get0_chain(ctx)
-    return chain_lib.dup(ret_chain_ctx)
+    local res, err = chain_lib.dup(ret_chain_ctx)
+    if res ~= nil then
+        res._anchor_ctx = ctx
+    end
+    return res, err
   elseif code == 0 then -- unverified
     local vfy_code = C.X509_STORE_CTX_get_error(ctx)
 
