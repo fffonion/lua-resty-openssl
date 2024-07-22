@@ -80,7 +80,10 @@ function _M.new(some, base)
   local ctx = C.BN_new()
   ffi_gc(ctx, C.BN_free)
 
-  local ctx, err = set_bn(ctx, some, base)
+  -- local ctx, err = set_bn(ctx, some, base)
+  -- The above expression set ctx to a new cdata return by
+  -- set_bn, the origin cdata would be GC at any time.
+  local _, err = set_bn(ctx, some, base)
   if err then
     return nil, "bn.new: " .. err
   end
