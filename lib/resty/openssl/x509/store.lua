@@ -140,7 +140,7 @@ function _M:set_purpose(purpose)
     return nil, "x509.store:set_purpose: expect a string at #1"
   end
 
-  local pchar = ffi.new("char[?]", #purpose, purpose)
+  local pchar = ffi.new("char[?]", #purpose + 1, purpose)
   local idx = C.X509_PURPOSE_get_by_sname(pchar)
   idx = tonumber(idx)
 
