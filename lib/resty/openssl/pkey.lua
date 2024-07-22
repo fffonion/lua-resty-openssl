@@ -1060,7 +1060,13 @@ function _M.paramgen(config)
     return nil, format_error("pkey.paramgen: EVP_PKEY_get0_{key}")
   end
 
-  return bio_util.read_wrap(write_func, ctx)
+  local res, err = bio_util.read_wrap(write_func, ctx)
+  return res, err
+  -- use the following form the params would be gc colloected
+  -- before the bio is read. This is because tailed call function
+  -- reset the function stack before entring read_wrap, so the param
+  -- does not referece by any variable,that means it is an dead object and could be GC.
+  -- return bio_util.read_wrap(write_func, ctx)
 end
 
 return _M
