@@ -168,6 +168,15 @@ local function get_extension(ctx, nid_txt, last_pos)
     return nil, nil, format_error("X509v3_get_ext")
   end
 
+  -- the extension is not duplicated when returned by X509v3_get_ext
+  -- so we need to copy it
+  ctx = C.X509_EXTENSION_dup(ctx)
+  if ctx == nil then
+    return nil, nil, "X509_EXTENSION_dup() failed"
+  end
+
+  ffi_gc(ctx, C.X509_EXTENSION_free)
+
   return ctx, ext_idx, nil
 end
 
@@ -430,8 +439,8 @@ function _M:get_subject_alt_name()
   -- since there seems no way to increase ref count for a GENERAL_NAME
   -- we left the elements referenced by the new-dup'ed stack
   local got_ref = got
-  ffi_gc(got_ref, stack_lib.gc_of("GENERAL_NAME"))
   got = ffi_cast("GENERAL_NAMES*", got_ref)
+  ffi_gc(got, stack_lib.gc_of("GENERAL_NAME"))
   local lib = require("resty.openssl.x509.altname")
   -- the internal ptr is returned, ie we need to copy it
   return lib.dup(got)
