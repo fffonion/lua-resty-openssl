@@ -266,8 +266,8 @@ local function get_params_func(typ, field)
   local cf_gettable = C[typ .. "_gettable_params"]
   local gettable = function(self, raw)
     local k = self[field]
-    if raw and param_maps_set[k] then
-      return param_maps_set[k]
+    if raw and param_maps_get[k] then
+      return param_maps_get[k]
     end
 
     local param = cf_gettable(self.ctx)
@@ -278,7 +278,7 @@ local function get_params_func(typ, field)
     end
     local schema, schema_reabale = {}, raw and nil or {}
     parse_params_schema(param, schema, schema_reabale)
-    param_maps_set[k] = schema
+    param_maps_get[k] = schema
 
     return raw and schema or schema_reabale
   end
@@ -292,7 +292,7 @@ local function get_params_func(typ, field)
         return false, typ_lower .. ":set_params: " .. err
       end
     end
-    local schema = param_maps_set[self[field]]
+    local schema = param_maps_get[self[field]]
     if schema == nil or not schema[key] then -- nil or null
       return nil, typ_lower .. ":get_param: unknown key \"" .. key .. "\""
     end
