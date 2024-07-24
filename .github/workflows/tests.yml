@@ -136,7 +136,7 @@ jobs:
         T=$OPENSSL_PREFIX
         mkdir -p $T
         if [ "X$OPENSSL_HASH" != "X" ]; then wget https://github.com/openssl/openssl/archive/$OPENSSL_HASH.tar.gz -qO - | tar zxf ; pushd openssl-$OPENSSL_HASH/; fi
-        if [ "X$OPENSSL_HASH" = "X" ] ; then wget https://www.openssl.org/source/openssl-${{ matrix.openssl }}.tar.gz -qO - | tar zxf -; pushd openssl-${{ matrix.openssl }}/; fi
+        if [ "X$OPENSSL_HASH" = "X" ] ; then (wget https://github.com/openssl/openssl/releases/download/openssl-${{ matrix.openssl }}/openssl-${{ matrix.openssl }}.tar.gz -qO - || wget https://openssl.org/source/old/1.1.1/openssl-${{ matrix.openssl}}.tar.gz -qO -) | tar zxf -; pushd openssl-${{ matrix.openssl }}/; fi
         if [ ! -e $T/include ]; then ./config shared -d --prefix=$T -DPURIFY > build.log 2>&1 || (cat build.log && exit 1); fi
         if [ ! -e $T/include ]; then make -j$JOBS > build.log 2>&1 || (cat build.log && exit 1); fi
         if [ ! -e $T/include ]; then make PATH=$PATH install_sw > build.log 2>&1 || (cat build.log && exit 1); fi
@@ -148,7 +148,7 @@ jobs:
       run: |
         T=${OPENSSL_PREFIX}.fips
         mkdir -p $T
-        wget https://www.openssl.org/source/openssl-${{ matrix.openssl_fips }}.tar.gz -qO - | tar zxf -; pushd openssl-${{ matrix.openssl_fips }}/
+        wget https://github.com/openssl/openssl/releases/download/openssl-${{ matrix.openssl_fips }}/openssl-${{ matrix.openssl_fips }}.tar.gz -qO - | tar zxf -; pushd openssl-${{ matrix.openssl_fips }}
         if [ -e $OPENSSL_PREFIX/lib64/ossl-modules/fips.so ]; then exit 0; fi 
         ./config shared -d --prefix=$T -DPURIFY enable-fips > build.log 2>&1 || (cat build.log && exit 1)
         make -j$JOBS > build.log 2>&1 || (cat build.log && exit 1)
