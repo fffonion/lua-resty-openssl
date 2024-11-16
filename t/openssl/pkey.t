@@ -247,11 +247,30 @@ nil
             }))
             local out2 = myassert(newp_384:to_PEM('private'))
             ngx.say(out == out2)
+
+            local p_ecx = myassert(require("resty.openssl.pkey").new({
+                type = "Ed25519",
+            }))
+            local out = myassert(p_ecx:to_PEM('private'))
+            local params = p_ecx:get_parameters()
+
+            local newp_ecx, err = myassert(require("resty.openssl.pkey").new({
+                type = "Ed25519",
+                params = {
+                    private = params.private,
+                    public = params.public,
+                }
+            }))
+            local out2 = myassert(newp_ecx:to_PEM('private'))
+            ngx.say(out == out2)
+
+
         }
     }
 --- request
     GET /t
 --- response_body
+true
 true
 --- no_error_log
 [error]
