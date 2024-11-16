@@ -439,8 +439,7 @@ local function compose_key(config)
          key_type == evp_macro.EVP_PKEY_X25519 or
          key_type == evp_macro.EVP_PKEY_ED448 or
          key_type == evp_macro.EVP_PKEY_X448 then
-    key_free = function() end
-    key, err = ecx_lib.set_parameters(key_type, nil, config.params)
+    return ecx_lib.set_parameters(key_type, nil, config.params)
   end
 
   if err then
