@@ -130,7 +130,7 @@ jobs:
         git clone https://github.com/openresty/lua-nginx-module.git ./lua-nginx-module -b ${{ matrix.lua_nginx_module }}
         git clone https://github.com/openresty/no-pool-nginx.git ./no-pool-nginx
         git clone https://github.com/fffonion/lua-resty-openssl-aux-module ./lua-resty-openssl-aux-module
-        git clone https://github.com/Kong/lua-kong-nginx-module.git ./lua-kong-nginx-module
+        git clone https://github.com/Kong/lua-kong-nginx-module.git -b 0.12.0 ./lua-kong-nginx-module
         # lua libraries at parent directory of current repository
         popd
         git clone https://github.com/openresty/lua-resty-core.git ../lua-resty-core -b ${{ matrix.lua_resty_core }}
