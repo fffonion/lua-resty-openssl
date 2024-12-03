@@ -535,7 +535,7 @@ cwIDAQAB
         content_by_lua_block {
             local f = io.open("t/fixtures/test.csr"):read("*a")
             local c = myassert(require("resty.openssl.x509.csr").new(f))
-            local toset = ngx.time()
+            local toset = 1
             local ok = myassert(c:set_version(toset))
 
             local get = myassert(c:get_version())
