@@ -2,6 +2,12 @@
 ## [Unreleased]
 
 
+<a name="1.5.2"></a>
+## [1.5.2] - 2024-12-24
+### bug fixes
+- **pkey:** fix compose of ecx key not effective [1dd84ae](https://github.com/fffonion/lua-resty-openssl/commit/1dd84ae5f7c5f5421be7ce5fb155d249238fed58)
+
+
 <a name="1.5.1"></a>
 ## [1.5.1] - 2024-07-25
 
@@ -619,7 +625,8 @@
 - **x509:** export pubkey [ede4f81](https://github.com/fffonion/lua-resty-openssl/commit/ede4f817cb0fe092ad6f9ab5d6ecdcde864a9fd8)
 
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/1.5.1...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/1.5.2...HEAD
+[1.5.2]: https://github.com/fffonion/lua-resty-openssl/compare/1.5.1...1.5.2
 [1.5.1]: https://github.com/fffonion/lua-resty-openssl/compare/1.5.0...1.5.1
 [1.5.0]: https://github.com/fffonion/lua-resty-openssl/compare/1.4.0...1.5.0
 [1.4.0]: https://github.com/fffonion/lua-resty-openssl/compare/1.3.1...1.4.0
