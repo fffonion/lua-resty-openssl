@@ -109,7 +109,7 @@ local function load_pem_der(txt, opts, funcs)
             C.ERR_clear_error()
             return nil, "passphrase must be a string"
           end
-          arg = { null, nil, passphrase }
+          arg = { null, null, passphrase }
         elseif opts.passphrase_cb then
           passphrase_cb = passphrase_cb or ffi_cast("pem_password_cb", function(buf, size)
             local p = opts.passphrase_cb()
