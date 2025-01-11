@@ -141,6 +141,24 @@ function _M:get_peer_cert_chain()
   return chain_lib.dup(stack)
 end
 
+function _M:get_server_certificate()
+  local x509 = C.SSL_get_certificate(self.ctx)
+  if x509 == nil then
+    return nil
+  end
+  ffi.gc(x509, C.X509_free)
+
+  local err
+  -- always copy, although the ref counter of returned x509 is
+  -- already increased by one.
+  x509, err = x509_lib.dup(x509)
+  if err then
+    return nil, err
+  end
+
+  return x509
+end
+
 -- TLSv1.3
 function _M:set_ciphersuites(ciphers)
   if C.SSL_set_ciphersuites(self.ctx, ciphers) ~= 1 then

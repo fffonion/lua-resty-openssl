@@ -448,4 +448,11 @@ function _M.list_ssl_ciphers(cipher_list, ciphersuites, protocol)
   return ssl_lib.get_ciphers(ssl)
 end
 
+function _M.get_server_certificate(ssl_ptr)
+  local ssl = { ctx = ssl_ptr }
+
+  local ssl_lib = require("resty.openssl.ssl")
+  return ssl_lib.get_server_certificate(ssl)
+end
+
 return _M

@@ -62,6 +62,8 @@ ffi.cdef [[
   int SSL_add_client_CA(SSL *ssl, X509 *cacert);
 
   long SSL_ctrl(SSL *ssl, int cmd, long larg, void *parg);
+
+  X509 *SSL_get_certificate(const SSL *ssl);
 ]]
 
 if OPENSSL_3X then

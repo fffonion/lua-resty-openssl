@@ -376,3 +376,40 @@ ok
 [emerg]
 --- skip_nginx
 2: < 9.9.9
+
+=== TEST 9: SSL (server) get_server_certificate
+--- http_config
+    server {
+        listen unix:/tmp/nginx-s9.sock ssl;
+        server_name   test.com;
+        ssl_protocols TLSv1.2;
+        ssl_certificate ../../../t/fixtures/test.crt;
+        ssl_certificate_key ../../../t/fixtures/test.key;
+        ssl_ciphers ECDHE-RSA-AES128-SHA;
+
+        location /t {
+            content_by_lua_block {
+                local ssl = require "resty.openssl.ssl"
+                local sess = myassert(ssl.from_request())
+
+                local crt = myassert(sess:get_server_certificate())
+                ngx.say(myassert(crt:get_subject_name():tostring()))
+            }
+        }
+    }
+--- config
+    location /t {
+        proxy_pass https://unix:/tmp/nginx-s9.sock:;
+        proxy_ssl_server_name on;
+        proxy_ssl_name test.com;
+        # valgrind be happy
+        proxy_ssl_session_reuse off;
+    }
+--- request
+    GET /t
+--- response_body
+CN=test.com
+
+--- no_error_log
+[error]
+[emerg]
