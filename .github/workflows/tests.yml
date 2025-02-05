@@ -177,6 +177,11 @@ jobs:
         git clone https://github.com/openresty/lua-resty-lrucache.git ../lua-resty-lrucache
         git clone https://github.com/openresty/lua-resty-string ../lua-resty-string
     
+    - name: Setup conditional tools
+      if: matrix.nginx == '1.21.4' || matrix.nginx == '1.19.9'
+      run: |
+        sudo apt-get install -qq -y libpcre3-dev
+    
     - name: Build OpenSSL
       if: matrix.boringssl == ''
       run: |
