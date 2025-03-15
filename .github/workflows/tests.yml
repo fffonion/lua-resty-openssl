@@ -227,13 +227,7 @@ jobs:
     - name: Get changed files
       id: changed-files
       run: |
-          # For pull requests, compare with base branch
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "all_changed_files=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | tr '\n' ' ')" >> $GITHUB_OUTPUT
-          # For push events, get changes in last commit
-          else
-            echo "all_changed_files=$(git diff-tree --no-commit-id --name-only -r HEAD | tr '\n' ' ')" >> $GITHUB_OUTPUT
-          fi
+        echo "all_changed_files=$(git diff-tree --no-commit-id --name-only -r HEAD | tr '\n' ' ')" >> $GITHUB_OUTPUT
 
     - name: Run Valgrind
       if: contains(matrix.extras, 'valgrind')
