@@ -2,11 +2,20 @@
 ## [Unreleased]
 
 
+<a name="1.5.3"></a>
+## [1.5.3] - 2025-04-09
+### bug fixes
+- **pkey:** iv should be optional in cipher.init() ([#204](https://github.com/fffonion/lua-resty-openssl/issues/204)) [76a1b0e](https://github.com/fffonion/lua-resty-openssl/commit/76a1b0e602b6d1d13f11968ed78a81f857891ebf)
+
+
 <a name="1.5.2"></a>
-## [1.5.2] - 2025-01-10
+## [1.5.2] - 2025-02-05
 ### bug fixes
 - pkey.new() failed, if compile pkey.lua to LuaJIT bytecode ([#193](https://github.com/fffonion/lua-resty-openssl/issues/193)) [085f329](https://github.com/fffonion/lua-resty-openssl/commit/085f3298720cbe07d02a21daec6eebdf52e35a54)
 - **pkey:** fix compose of ecx key not effective [1dd84ae](https://github.com/fffonion/lua-resty-openssl/commit/1dd84ae5f7c5f5421be7ce5fb155d249238fed58)
+
+### features
+- **compat:** add dev support for nginx 1.27.1 ([#200](https://github.com/fffonion/lua-resty-openssl/issues/200)) [b75248c](https://github.com/fffonion/lua-resty-openssl/commit/b75248cfb8729b2ea953eb159060b248a4f89ea1)
 
 
 <a name="1.5.1"></a>
@@ -626,7 +635,8 @@
 - **x509:** export pubkey [ede4f81](https://github.com/fffonion/lua-resty-openssl/commit/ede4f817cb0fe092ad6f9ab5d6ecdcde864a9fd8)
 
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/1.5.2...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/1.5.3...HEAD
+[1.5.3]: https://github.com/fffonion/lua-resty-openssl/compare/1.5.2...1.5.3
 [1.5.2]: https://github.com/fffonion/lua-resty-openssl/compare/1.5.1...1.5.2
 [1.5.1]: https://github.com/fffonion/lua-resty-openssl/compare/1.5.0...1.5.1
 [1.5.0]: https://github.com/fffonion/lua-resty-openssl/compare/1.4.0...1.5.0
