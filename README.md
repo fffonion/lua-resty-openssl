@@ -861,12 +861,13 @@ pkey.new(pem_or_der_text, {
 
 When loading JWK, there are couple of caveats:
 - Make sure the encoded JSON text is passed in, it must have been base64 decoded.
-- Constraint `type` on JWK key is not supported, the parameters
-in provided JSON will decide if a private or public key is loaded.
+- When using OpenSSL 1.1.1 or lua-resty-openssl earlier than 1.6.0, constraint `type`
+on JWK key is only supported on OpenSSL 3.x and lua-resty-openssl 1.6.0.
+Otherwise the parameters in provided JSON will decide if a private or public key is loaded, 
+specifying `type` will result in an error; also public key part for `OKP` keys (the `x` parameter)
+is not honored and derived from private key part (the `d` parameter) if it's specified.
 - Only key type of `RSA`, `P-256`, `P-384` and `P-512` `EC`,
 `Ed25519`, `X25519`, `Ed448` and `X448` `OKP` keys are supported.
-- Public key part for `OKP` keys (the `x` parameter) is always not honored and derived
-from private key part (the `d` parameter) if it's specified.
 - Signatures and verification must use `ecdsa_use_raw` option to work with JWS standards
 for EC keys. See [pkey:sign](#pkeysign) and [pkey.verify](#pkeyverify) for detail.
 - When running outside of OpenResty, needs to install a JSON library (`cjson` or `dkjson`)
