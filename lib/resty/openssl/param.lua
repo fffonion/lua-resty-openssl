@@ -49,7 +49,7 @@ local function construct(buf_t, length, types_map, types_size)
         buf = ffi_new("char[?]", size)
       end
     else
-      local numeric = type(value) == "number"
+      local numeric = type(value) == "number" or bn_lib.istype(value)
       if (numeric and typ >= OSSL_PARAM_UTF8_STRING) or
         (not numeric and typ <= OSSL_PARAM_UNSIGNED_INTEGER) then
         local alter_typ = types_map[alter_type_key] and types_map[alter_type_key][key]
@@ -71,9 +71,18 @@ local function construct(buf_t, length, types_map, types_size)
       buf = value and ffi_new("int[1]", value) or ffi_new("int[1]")
       param = C.OSSL_PARAM_construct_int(key, buf)
     elseif typ == OSSL_PARAM_UNSIGNED_INTEGER then
-      buf = value and ffi_new("unsigned int[1]", value) or
-                      ffi_new("unsigned int[1]")
-      param = C.OSSL_PARAM_construct_uint(key, buf)
+      if value and bn_lib.istype(value) then
+        value = value:to_binary()
+        local bin = ffi_cast("char *", value)
+        print(key, " size ", #value)
+        param = C.OSSL_PARAM_construct_BN(key, bin, #value)
+        buf_param = buf_param or {}
+        buf_param[key] = param
+      else
+        buf = value and ffi_new("unsigned int[1]", value) or
+                        ffi_new("unsigned int[1]")
+        param = C.OSSL_PARAM_construct_uint(key, buf)
+      end
     elseif typ == OSSL_PARAM_UTF8_STRING then
       buf = value ~= nil and ffi_cast("char *", value) or buf
       param = C.OSSL_PARAM_construct_utf8_string(key, buf, value and #value or size)

@@ -9,9 +9,13 @@ local ec_lib = require "resty.openssl.ec"
 local ecx_lib = require "resty.openssl.ecx"
 local bn_lib = require "resty.openssl.bn"
 local digest_lib = require "resty.openssl.digest"
+local param_lib = require "resty.openssl.param"
 local encode_base64url = require "resty.openssl.auxiliary.compat".encode_base64url
 local decode_base64url = require "resty.openssl.auxiliary.compat".decode_base64url
 local json = require "resty.openssl.auxiliary.compat".json
+
+local format_error = require("resty.openssl.err").format_error
+local OPENSSL_3X = require("resty.openssl.version").OPENSSL_3X
 
 local _M = {}
 
@@ -200,6 +204,91 @@ function _M.load_jwk(txt)
   end
 
   return ctx
+end
+
+local settable_schema = {}
+
+local function get_settable_schema(type, pctx, selection)
+  if settable_schema[type] then
+    return settable_schema[type]
+  end
+
+  local settable = C.EVP_PKEY_fromdata_settable(pctx, selection)
+  if settable == nil then
+    return nil, "EVP_PKEY_fromdata_settable() failed"
+  end
+
+  local schema = {}
+  local readable = {}
+  param_lib.parse_params_schema(settable, schema, readable)
+  print(require("inspect")(readable))
+
+  settable_schema[type] = schema
+  return schema
+end
+
+function _M.load_jwk_3(txt, ptyp, properties)
+  local tbl, err = json.decode(txt)
+  if err then
+    return nil, "error decoding JSON from JWK: " .. err
+  elseif type(tbl) ~= "table" then
+    return nil, "except input to be decoded as a table, got " .. type(tbl)
+  end
+
+  local kty = tbl["kty"]
+  local selection = evp_macro.EVP_PKEY_KEYPAIR
+
+  if kty == "RSA" or kty == "EC" then
+    local ctx = ffi.new("EVP_PKEY*[1]")
+    local pctx = C.EVP_PKEY_CTX_new_from_name(nil, kty, properties)
+    if pctx == nil then
+      return nil, "EVP_PKEY_CTX_new_from_name() failed"
+    end
+    ffi.gc(pctx, C.EVP_PKEY_CTX_free)
+
+    if C.EVP_PKEY_fromdata_init(pctx) ~= 1 then
+      return nil, "EVP_PKEY_fromdata_init() failed"
+    end
+    local schema, err = get_settable_schema(kty, pctx, selection)
+    if not schema then
+      return nil, "failed to get key schema for " .. kty .. ": " .. err
+    end
+
+    local sanitized_tbl = {}
+    for k, v in pairs(tbl) do
+      if kty == "EC" then
+        if k == "d" then
+          k = "priv"
+          v = decode_base64url(v)
+          v = bn_lib.from_binary(v)
+        elseif k == "crv" then
+          k = "group"
+        end
+      end
+      if k ~= "kty" and k ~= "x" and k ~= "y" then
+        sanitized_tbl[k] = v
+      end
+    end
+
+    if kty == "EC" then
+      -- sanitized_tbl["pub"] = "\x40" .. decode_base64url(tbl["x"]) .. decode_base64url(tbl["y"])
+    end
+
+    local params, err = param_lib.construct(sanitized_tbl, nil, schema)
+    if err then
+      return nil, "failed to construct parameters: " .. err
+    end
+
+    if C.EVP_PKEY_fromdata(pctx, ctx, selection, params) ~= 1 then
+      return nil, format_error("EVP_PKEY_fromdata()")
+    end
+
+    return ctx[0]
+  end
+end
+
+if OPENSSL_3X then
+  _M.load_jwk = _M.load_jwk_3
 end
 
 function _M.dump_jwk(pkey, is_priv)
