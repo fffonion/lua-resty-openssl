@@ -226,8 +226,7 @@ jobs:
 
     - name: Get changed files
       id: changed-files
-      run: |
-        echo "all_changed_files=$(git diff-tree --no-commit-id --name-only -r HEAD | tr '\n' ' ')" >> $GITHUB_OUTPUT
+      uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c # v46
 
     - name: Run Valgrind
       if: contains(matrix.extras, 'valgrind')
