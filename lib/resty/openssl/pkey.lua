@@ -625,8 +625,12 @@ function _M.istype(l)
   return l and l.ctx and ffi.istype(evp_pkey_ptr_ct, l.ctx)
 end
 
-function _M:get_key_type()
-  return objects_lib.nid2table(self.key_type)
+function _M:get_key_type(nid_only)
+  return nid_only and self.key_type or objects_lib.nid2table(self.key_type)
+end
+
+function _M:get_size()
+  return OPENSSL_3X and C.EVP_PKEY_get_size(self.ctx) or C.EVP_PKEY_size(self.ctx)
 end
 
 function _M:get_default_digest_type()

@@ -1310,18 +1310,40 @@ true
                 type = 'RSA',
             }))
             ngx.say(encode_sorted_json(p:get_key_type()))
+            ngx.say(p:get_key_type(true))
         }
     }
 --- request
     GET /t
 --- response_body_like eval
-'{"id":"1.2.840.113549.1.1.1","ln":"rsaEncryption","nid":6,"sn":"rsaEncryption"}'
+'{"id":"1.2.840.113549.1.1.1","ln":"rsaEncryption","nid":6,"sn":"rsaEncryption"}
+6'
 --- no_error_log
 [error]
 
 
 
-=== TEST 38: misc: Checks if it's private key
+=== TEST 38: misc: get size
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local p, err = myassert(require("resty.openssl.pkey").new({
+                type = 'EC',
+            }))
+            ngx.say(p:get_size())
+        }
+    }
+--- request
+    GET /t
+--- response_body
+56
+--- no_error_log
+[error]
+
+
+
+=== TEST 39: misc: Checks if it's private key
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -1359,7 +1381,7 @@ true
 
 
 
-=== TEST 39: misc: Checks if it's private key: ecx
+=== TEST 40: misc: Checks if it's private key: ecx
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -1395,7 +1417,7 @@ true
 
 
 
-=== TEST 40: misc: Returns provider
+=== TEST 41: misc: Returns provider
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -1419,7 +1441,7 @@ default
 
 
 
-=== TEST 41: params: Returns gettable, settable params
+=== TEST 42: params: Returns gettable, settable params
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -1445,7 +1467,7 @@ default
 
 
 
-=== TEST 42: params: Get params, set params
+=== TEST 43: params: Get params, set params
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
