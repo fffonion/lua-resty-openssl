@@ -1098,7 +1098,7 @@ private | private key | [bn](#restyopensslbn)
 public | public key | [bn](#restyopensslbn)
 p | prime modulus | [bn](#restyopensslbn)
 q | reference position | [bn](#restyopensslbn)
-p | base generator | [bn](#restyopensslbn)
+g | base generator | [bn](#restyopensslbn)
 
 
 Parameters for Curve25519 and Curve448 keys:
