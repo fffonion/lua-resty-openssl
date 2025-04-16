@@ -387,7 +387,7 @@ cDRFLQ7NWt+AP4i0TdBzog==
             }))
             local key = myassert(k:derive(16, {
                 pass = "1234567",
-            }))
+            }, 1)) -- verify options_count works
             ngx.say(ngx.encode_base64(key))
             -- output SIZE_MAX since it's not fixed size, need to find a better test case
             ngx.say(tostring(k:get_param("size", nil, "bn")))
