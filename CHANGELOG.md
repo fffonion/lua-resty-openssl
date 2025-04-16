@@ -2,6 +2,12 @@
 ## [Unreleased]
 
 
+<a name="1.6.1"></a>
+## [1.6.1] - 2025-04-16
+### bug fixes
+- **kdf:** fix derive API may not work if options_count is set to 1 [ae9d2ae](https://github.com/fffonion/lua-resty-openssl/commit/ae9d2aef9dd762a2af55addb83a2349abca994f4)
+
+
 <a name="1.6.0"></a>
 ## [1.6.0] - 2025-04-14
 ### bug fixes
@@ -639,7 +645,8 @@
 - **x509:** export pubkey [ede4f81](https://github.com/fffonion/lua-resty-openssl/commit/ede4f817cb0fe092ad6f9ab5d6ecdcde864a9fd8)
 
 
-[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/1.6.0...HEAD
+[Unreleased]: https://github.com/fffonion/lua-resty-openssl/compare/1.6.1...HEAD
+[1.6.1]: https://github.com/fffonion/lua-resty-openssl/compare/1.6.0...1.6.1
 [1.6.0]: https://github.com/fffonion/lua-resty-openssl/compare/1.5.2...1.6.0
 [1.5.2]: https://github.com/fffonion/lua-resty-openssl/compare/1.5.1...1.5.2
 [1.5.1]: https://github.com/fffonion/lua-resty-openssl/compare/1.5.0...1.5.1
