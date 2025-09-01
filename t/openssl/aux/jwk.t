@@ -29,7 +29,7 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            local jwk = require("cjson").encode({
+            local j = {
                 kty = "RSA",
                 n   = "pjdss8ZaDfEH6K6U7GeW2nxDqR4IP049fk1fK0lndimbMMVBdPv_hSpm8T8EtBDxrUdi1OHZfMhUixGaut-3nQ4GG9nM249oxhCtxqqNvEXrmQRGqczyLxuh-fKn9Fg--hS9UpazHpfVAFnB5aCfXoNhPuI8oByyFKMKaOVgHNqP5NBEqabiLftZD3W_lsFCPGuzr4Vp0YS7zS2hDYScC2oOMu4rGU1LcMZf39p3153Cq7bS2Xh6Y-vw5pwzFYZdjQxDn8x8BG3fJ6j8TGLXQsbKH1218_HcUJRvMwdpbUQG5nvA2GXVqLqdwp054Lzk9_B_f1lVrmOKuHjTNHq48w",
                 e   = "AQAB",
@@ -39,11 +39,21 @@ __DATA__
                 dp  = "lmmU_AG5SGxBhJqb8wxfNXDPJjf__i92BgJT2Vp4pskBbr5PGoyV0HbfUQVMnw977RONEurkR6O6gxZUeCclGt4kQlGZ-m0_XSWx13v9t9DIbheAtgVJ2mQyVDvK4m7aRYlEceFh0PsX8vYDS5o1txgPwb3oXkPTtrmbAGMUBpE",
                 dq  = "mxRTU3QDyR2EnCv0Nl0TCF90oliJGAHR9HJmBe__EjuCBbwHfcT8OG3hWOv8vpzokQPRl5cQt3NckzX3fs6xlJN4Ai2Hh2zduKFVQ2p-AF2p6Yfahscjtq-GY9cB85NxLy2IXCC0PF--Sq9LOrTE9QV988SJy_yUrAjcZ5MmECk",
                 qi  = "ldHXIrEmMZVaNwGzDF9WG8sHj2mOZmQpw9yrjLK9hAsmsNr5LTyqWAqJIYZSwPTYWhY4nu2O0EY9G9uYiqewXfCKw_UngrJt8Xwfq1Zruz0YY869zPN4GiE9-9rzdZB33RBw8kIOquY3MK74FMwCihYx_LiU2YTHkaoJ3ncvtvg"
-            })
+            }
+            local jwk = require("cjson").encode(j)
             local privkey = myassert(require("resty.openssl.pkey").new(jwk))
             local privkey = myassert(require("resty.openssl.pkey").new(jwk, {
                 format = "JWK",
             }))
+
+            local exported = myassert(privkey:tostring("private", "JWK"))
+            exported = require("cjson").decode(exported)
+
+            for k, v in pairs(j) do
+                if k ~= "kid" and v ~= exported[k] then
+                    ngx.say("JWK part changed: input: " .. k .. "=" .. v .. ", output: " .. k .. "=" .. tostring(exported[k]))
+                end
+            end
 
             -- errors
             local _, err = require("resty.openssl.pkey").new('asdasd', {
@@ -59,16 +69,28 @@ __DATA__
             ngx.say(err)
 
             -- pubkey only
-            jwk = require("cjson").encode({
+            j = {
                 kty = "RSA",
                 n   = "pjdss8ZaDfEH6K6U7GeW2nxDqR4IP049fk1fK0lndimbMMVBdPv_hSpm8T8EtBDxrUdi1OHZfMhUixGaut-3nQ4GG9nM249oxhCtxqqNvEXrmQRGqczyLxuh-fKn9Fg--hS9UpazHpfVAFnB5aCfXoNhPuI8oByyFKMKaOVgHNqP5NBEqabiLftZD3W_lsFCPGuzr4Vp0YS7zS2hDYScC2oOMu4rGU1LcMZf39p3153Cq7bS2Xh6Y-vw5pwzFYZdjQxDn8x8BG3fJ6j8TGLXQsbKH1218_HcUJRvMwdpbUQG5nvA2GXVqLqdwp054Lzk9_B_f1lVrmOKuHjTNHq48w",
                 e   = "AQAB",
-            })
+            }
+            jwk = require("cjson").encode(j)
             local pubkey = myassert(require("resty.openssl.pkey").new(jwk))
+
+            exported = myassert(pubkey:tostring("public", "JWK"))
+            exported = require("cjson").decode(exported)
+
+            for k, v in pairs(j) do
+                if k ~= "kid" and v ~= exported[k] then
+                    ngx.say("JWK part changed: input: " .. k .. "=" .. v .. ", output: " .. k .. "=" .. tostring(exported[k]))
+                end
+            end
 
             local s = myassert(pubkey:encrypt("23333"))
             local s = myassert(privkey:decrypt(s))
             ngx.say(s)
+
+            ngx.say("OK")
         }
     }
 --- request
@@ -77,6 +99,7 @@ __DATA__
 'pkey.new:load_key: (jwk:load_jwk: )?error decoding JSON from JWK: Expected value but found invalid token at character 1
 (pkey.new:load_key: failed to construct RSA key from JWK: at least "n" and "e" parameter is required|pkey.new:load_key: jwk:load_jwk: missing required parameter "e")
 23333
+OK
 '
 --- no_error_log
 [error]
@@ -86,17 +109,27 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            local jwk = require("cjson").encode({
+            local j = {
                 kty = "EC",
                 crv = "P-256",
                 x   = "SVqB4JcUD6lsfvqMr-OKUNUphdNn64Eay60978ZlL74",
                 y   = "lf0u0pMj4lGAzZix5u4Cm5CMQIgMNpkwy163wtKYVKI",
                 d   = "0g5vAEKzugrXaRbgKG0Tj2qJ5lMP4Bezds1_sTybkfk"
-            })
+            }
+            local jwk = require("cjson").encode(j)
             local privkey = myassert(require("resty.openssl.pkey").new(jwk))
             local privkey = myassert(require("resty.openssl.pkey").new(jwk, {
                 format = "JWK",
             }))
+
+            local exported = myassert(privkey:tostring("private", "JWK"))
+            exported = require("cjson").decode(exported)
+
+            for k, v in pairs(j) do
+                if k ~= "kid" and v ~= exported[k] then
+                    ngx.say("JWK part changed: input: " .. k .. "=" .. v .. ", output: " .. k .. "=" .. tostring(exported[k]))
+                end
+            end
 
             -- errors
             local _, err = require("resty.openssl.pkey").new(require("cjson").encode({
@@ -109,19 +142,31 @@ __DATA__
             ngx.say(err)
 
             -- pubkey only
-            jwk = require("cjson").encode({
+            j = {
                 kty = "EC",
                 crv = "P-256",
                 x   = "SVqB4JcUD6lsfvqMr-OKUNUphdNn64Eay60978ZlL74",
                 y   = "lf0u0pMj4lGAzZix5u4Cm5CMQIgMNpkwy163wtKYVKI",
-            })
+            }
+            jwk = require("cjson").encode(j)
             local pubkey = myassert(require("resty.openssl.pkey").new(jwk))
+
+            exported = myassert(pubkey:tostring("public", "JWK"))
+            exported = require("cjson").decode(exported)
+
+            for k, v in pairs(j) do
+                if k ~= "kid" and v ~= exported[k] then
+                    ngx.say("JWK part changed: input: " .. k .. "=" .. v .. ", output: " .. k .. "=" .. tostring(exported[k]))
+                end
+            end
 
             local d = require("resty.openssl.digest").new("sha256")
             d:update("23333")
             local s = myassert(privkey:sign(d))
             local ok = myassert(pubkey:verify(s, d))
             ngx.say(ok)
+            
+            ngx.say("OK")
         }
     }
 --- request
@@ -129,6 +174,7 @@ __DATA__
 --- response_body_like eval
 '(pkey.new:load_key: failed to construct EC key from JWK: at least "x" and "y" parameter is required|pkey.new:load_key: jwk:load_jwk: missing required parameter "y")
 true
+OK
 '
 --- no_error_log
 [error]
@@ -138,16 +184,26 @@ true
 --- config
     location =/t {
         content_by_lua_block {
-            local jwk = require("cjson").encode({
+            local j = {
                 kty = "OKP",
                 crv = "Ed25519",
                 x   = "11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo",
                 d   = "nWGxne_9WmC6hEr0kuwsxERJxWl7MmkZcDusAxyuf2A",
-            })
+            }
+            local jwk = require("cjson").encode(j)
             local privkey = myassert(require("resty.openssl.pkey").new(jwk))
             local privkey = myassert(require("resty.openssl.pkey").new(jwk, {
                 format = "JWK",
             }))
+
+            local exported = myassert(privkey:tostring("private", "JWK"))
+            exported = require("cjson").decode(exported)
+
+            for k, v in pairs(j) do
+                if k ~= "kid" and v ~= exported[k] then
+                    ngx.say("JWK part changed: input: " .. k .. "=" .. v .. ", output: " .. k .. "=" .. tostring(exported[k]))
+                end
+            end
 
             -- errors
             local _, err = require("resty.openssl.pkey").new(require("cjson").encode({
@@ -159,19 +215,31 @@ true
             ngx.say(err)
 
             -- pubkey only
-            jwk = require("cjson").encode({
+            j = {
                 kty = "OKP",
                 crv = "Ed25519",
                 x   = "11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo",
-            })
+            }
+            jwk = require("cjson").encode(j)
             local pubkey = myassert(require("resty.openssl.pkey").new(jwk))
 
+            exported = myassert(pubkey:tostring("public", "JWK"))
+            exported = require("cjson").decode(exported)
+
+            for k, v in pairs(j) do
+                if k ~= "kid" and v ~= exported[k] then
+                    ngx.say("JWK part changed: input: " .. k .. "=" .. v .. ", output: " .. k .. "=" .. tostring(exported[k]))
+                end
+            end
+
+            ngx.say("OK")
         }
     }
 --- request
     GET /t
---- response_body_link eval
-'(pkey.new:load_key: failed to construct OKP key from JWK: at least "x" or "d" parameter is required|pkey.new:load_key: jwk:load_jwk: missing required parameter "e")
+--- response_body_like eval
+'(pkey.new:load_key: failed to construct OKP key from JWK: at least "x" or "d" parameter is required|pkey.new:load_key: jwk:load_jwk: missing required parameter "x")
+OK
 '
 --- no_error_log
 [error]
