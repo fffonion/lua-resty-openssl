@@ -205,6 +205,25 @@ OK
                 end
             end
 
+            local j2 = {
+                kty = "OKP",
+                crv = "Ed25519",
+                d   = "nWGxne_9WmC6hEr0kuwsxERJxWl7MmkZcDusAxyuf2A",
+            }
+            local jwk2 = require("cjson").encode(j2)
+            local privkey2 = myassert(require("resty.openssl.pkey").new(jwk2, {
+                format = "JWK",
+            }))
+
+            local exported2 = myassert(privkey2:tostring("private", "JWK"))
+            exported2 = require("cjson").decode(exported2)
+
+            for k, v in pairs(j) do
+                if k ~= "kid" and v ~= exported2[k] then
+                    ngx.say("JWK part changed: input: " .. k .. "=" .. v .. ", output: " .. k .. "=" .. tostring(exported2[k]))
+                end
+            end
+
             -- errors
             local _, err = require("resty.openssl.pkey").new(require("cjson").encode({
                 kty = "OKP",
@@ -238,7 +257,7 @@ OK
 --- request
     GET /t
 --- response_body_like eval
-'(pkey.new:load_key: failed to construct OKP key from JWK: at least "x" or "d" parameter is required|pkey.new:load_key: jwk:load_jwk: missing required parameter "x")
+'(pkey.new:load_key: failed to construct OKP key from JWK: at least "x" or "d" parameter is required|pkey.new:load_key: jwk:load_jwk: missing at least one of \"x\" or \"d\" parameter from OKP JWK)
 OK
 '
 --- no_error_log
@@ -373,7 +392,7 @@ OK
              local jwk = require("cjson").encode({
                 kty = "OKP",
                 crv = "Ed25519",
-                x   = "11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo",
+                -- x   = "11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo",
                 d   = "nWGxne_9WmC6hEr0kuwsxERJxWl7MmkZcDusAxyuf2A",
             })
             local key = myassert(require("resty.openssl.pkey").new(jwk, {
