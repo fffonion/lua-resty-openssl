@@ -167,6 +167,29 @@ OK
             ngx.say(ok)
             
             ngx.say("OK")
+
+            -- jwk with x stripped leading 0
+            local j = {
+                kty = "EC",
+                crv = "P-521",
+                x   = "1anMzz1ZLHp2t03cviM3_zMaVm7Oe02KamaLmPkx9TDuOP77mv5Jfd-_3-TTupfl4yqX8TDrD59od9AWFj2fJ64",
+                y   = "AW_R2InNCFSsGyUotGnNiiSgFBEvi7W_OcNXzGy7pcvUMHv7FpnsRO1mgwICZNuMpM6DwMq3F-NU98DM1rhxZ0nJ",
+                d   = "AQ8JctVWDJrVl1IZAhejQgTjnidDyQcp9KTYbVBZolJfAT9D_Mfbur5_581598FLD3TSlCmBJD7OjkqGR9Yw7lMT"
+            }
+            local jwk = require("cjson").encode(j)
+            local privkey = myassert(require("resty.openssl.pkey").new(jwk))
+            local privkey = myassert(require("resty.openssl.pkey").new(jwk, {
+                format = "JWK",
+            }))
+
+            local exported = myassert(privkey:tostring("private", "JWK"))
+            exported = require("cjson").decode(exported)
+
+            for k, v in pairs(j) do
+                if k ~= "kid" and v ~= exported[k] then
+                    ngx.say("JWK part changed: input: " .. k .. "=" .. v .. ", output: " .. k .. "=" .. tostring(exported[k]))
+                end
+            end
         }
     }
 --- request
