@@ -4531,7 +4531,9 @@ Module to interact with utility openssl functions.
 **syntax**: *res, err = crypto.memcmp(a, b, len)*
 
 Performs constant-time comparison of 2 memory regions a and b with len bytes. See [CRYPTO_memcmp](https://docs.openssl.org/3.2/man3/CRYPTO_memcmp)
-for more info.
+for more info. The 2 memory regions can be any lua type serializable by the `buffer.encode` luajit function.
+
+This function may return an error when attempting to serialize unsupported object types, circular references or deeply nested tables.
 
 Returns 0 if the memory regions are equal and nonzero otherwise.
 
