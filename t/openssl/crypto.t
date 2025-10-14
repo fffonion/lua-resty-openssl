@@ -27,21 +27,21 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
+            local ffi = require("ffi")
             local crypto = require("resty.openssl.crypto")
-            local buffer = require("string.buffer")
             local res, err
 
+            -- test string
             res, err = crypto.memcmp("abc", "abc", 3)
             ngx.say(res)
             ngx.say(err)
 
-            res, err = crypto.memcmp(100, 100, #buffer.encode(100))
-            ngx.say(res)
-            ngx.say(err)
-
-            local table_a = { "a", b=1, 101 }
-            local table_b = { "a", b=1, 101 }
-            res, err = crypto.memcmp(table_a, table_b, #buffer.encode(table_a))
+            -- test cdata
+            local ffi_string_a = ffi.new("char[?]", 3)
+            ffi.copy(ffi_string_a, "abc")
+            local ffi_string_b = ffi.new("char[?]", 3)
+            ffi.copy(ffi_string_b, "abc")
+            res, err = crypto.memcmp(ffi_string_a, ffi_string_b, 3)
             ngx.say(res)
             ngx.say(err)
         }
@@ -49,8 +49,6 @@ __DATA__
 --- request
     GET /t
 --- response_body
-0
-nil
 0
 nil
 0
@@ -63,21 +61,29 @@ nil
 --- config
     location =/t {
         content_by_lua_block {
+            local ffi = require("ffi")
             local crypto = require("resty.openssl.crypto")
-            local buffer = require("string.buffer")
             local res, err
 
+            -- test string
             res, err = crypto.memcmp("abc", "acc", 3)
             ngx.say(res)
             ngx.say(err)
 
-            res, err = crypto.memcmp(100, 102, #buffer.encode(100))
+            -- test cdata
+            local ffi_string_a = ffi.new("char[?]", 3)
+            ffi.copy(ffi_string_a, "abc")
+            local ffi_string_b = ffi.new("char[?]", 3)
+            ffi.copy(ffi_string_b, "acc")
+            res, err = crypto.memcmp(ffi_string_a, ffi_string_b, 3)
             ngx.say(res)
             ngx.say(err)
 
-            local table_a = { "a", b=1, 101 }
-            local table_b = { "a", b=1, 102 }
-            res, err = crypto.memcmp(table_a, table_b, #buffer.encode(table_a))
+            ffi_string_a = ffi.new("char[?]", 4)
+            ffi.copy(ffi_string_a, "abc")
+            ffi_string_b = ffi.new("char[?]", 4)
+            ffi.copy(ffi_string_b, "abcd")
+            res, err = crypto.memcmp(ffi_string_a, ffi_string_b, 4)
             ngx.say(res)
             ngx.say(err)
         }
@@ -94,7 +100,7 @@ nil
 --- no_error_log
 [error]
 
-=== TEST 3: memcmp: invalid len arg
+=== TEST 3: memcmp: invalid arg len
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -110,5 +116,32 @@ nil
 --- response_body
 nil
 crypto:memcmp arg 'len' must be a number > 0
+--- no_error_log
+[error]
+
+=== TEST 4: memcmp: invalid arg types
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local crypto = require("resty.openssl.crypto")
+            res, err = crypto.memcmp(100, 102, 1)
+            ngx.say(res)
+            ngx.say(err)
+
+            local table_a = { "a", b=1, 101 }
+            local table_b = { "a", b=1, 102 }
+            res, err = crypto.memcmp(table_a, table_b, 2)
+            ngx.say(res)
+            ngx.say(err)
+        }
+    }
+--- request
+    GET /t
+--- response_body
+nil
+crypto:memcmp only strings and cdata types are supported
+nil
+crypto:memcmp only strings and cdata types are supported
 --- no_error_log
 [error]
