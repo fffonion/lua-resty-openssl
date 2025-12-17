@@ -140,6 +140,7 @@ function _M.derive(options)
   end
 
   for k, v in pairs(options_schema) do
+    # don't use unpack here to avoid nil truncation
     local v, err = check_options(options, typ, k, v[1],v[2],v[3])
     if err then
       return nil, "kdf.derive: " .. err
