@@ -1493,3 +1493,27 @@ default
 "
 --- no_error_log
 [error]
+
+
+
+=== TEST: encryption: invalid padding error message preserves user input
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local privkey = myassert(require("resty.openssl.pkey").new())
+            local pubkey = myassert(require("resty.openssl.pkey").new(assert(privkey:to_PEM("public"))))
+
+            local ok, err = pubkey:encrypt("23333", "bad_pad")
+            ngx.say(ok)
+            ngx.say(err)
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"nil
+invalid padding: bad_pad
+"
+--- no_error_log
+[error]

@@ -592,3 +592,26 @@ true
 "
 --- no_error_log
 [error]
+
+
+
+=== TEST: mod_sqr: error message names the correct op
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local bn = require("resty.openssl.bn")
+            local a = myassert(bn.new(3))
+            local ok, err = pcall(function() return bn.mod_sqr(a, "not-a-bn", 5) end)
+            ngx.say(ok)
+            ngx.say(err)
+        }
+    }
+--- request
+    GET /t
+--- response_body_like
+^false
+.*mod_sqr.*
+$
+--- no_error_log
+[error]
