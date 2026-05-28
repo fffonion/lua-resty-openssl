@@ -66,7 +66,7 @@ local function load_pem_der(txt, opts, funcs)
   end
 
   if fmt == "JWK" and (typ == "pu" or typ == "pr") and not OPENSSL_3X then
-    return nil, "explictly load private or public key from JWK format is not supported on OpenSSL 1.1.1"
+    return nil, "explicitly load private or public key from JWK format is not supported on OpenSSL 1.1.1"
   end
 
   log_debug("load key using fmt: ", fmt, ", type: ", typ)
