@@ -191,8 +191,10 @@ function _M:verify(x509, chain, return_chain, properties, verify_method, flags)
   ffi_gc(ctx, C.X509_STORE_CTX_free)
 
   local chain_dup_ctx
+  local chain_dup -- anchor to prevent GC freeing the stack while ctx references it
   if chain then
-    local chain_dup, err = chain_lib.dup(chain.ctx)
+    local err
+    chain_dup, err = chain_lib.dup(chain.ctx)
     if err then
       return nil, err
     end
