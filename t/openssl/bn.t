@@ -609,9 +609,6 @@ true
     }
 --- request
     GET /t
---- response_body_like
-^false
-.*mod_sqr.*
-$
+--- response_body_like: mod_sqr
 --- no_error_log
 [error]
