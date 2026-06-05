@@ -28,52 +28,51 @@ jobs:
         include:
         # TODO: arm64
         # latest and one version older for valgrind and perf test
-        - nginx: "1.19.9"
-          openssl: "3.1.7"
-          openssl_fips: "3.0.9"
-          extras: "valgrind"
-          lua_nginx_module: "v0.10.20"
-          lua_resty_core: "v0.1.22"
-          nginx_cc_opts: "-Wno-error"
         - nginx: "1.25.3"
-          openssl: "3.3.6"
+          openssl: "3.5.6" # LTS
           openssl_fips: "3.0.9"
           extras: "valgrind perf lua-kong-nginx-module"
           lua_nginx_module: "v0.10.26"
           lua_resty_core: "v0.1.28"
           nginx_cc_opts: "-Wno-error"
         - nginx: "1.27.1"
+          openssl: "3.5.6" # LTS
+          openssl_fips: "3.0.9"
+          extras: "valgrind perf lua-kong-nginx-module"
+          lua_nginx_module: "v0.10.28"
+          lua_resty_core: "v0.1.31"
+          nginx_cc_opts: "-Wno-error"
+        - nginx: "1.29.2"
           openssl: "1.1.1w"
           extras: "valgrind perf"
-          lua_nginx_module: "v0.10.28"
-          lua_resty_core: "v0.1.31"
-        - nginx: "1.27.1"
-          openssl: "3.0.19"
-          openssl_fips: "3.0.9"
+          lua_nginx_module: "v0.10.31rc2"
+          lua_resty_core: "v0.1.34rc2"
+        - nginx: "1.29.2"
+          openssl: "3.0.20" # LTS
           extras: "valgrind perf lua-kong-nginx-module"
-          lua_nginx_module: "v0.10.28"
-          lua_resty_core: "v0.1.31"
+          lua_nginx_module: "v0.10.31rc2"
+          lua_resty_core: "v0.1.34rc2"
           nginx_cc_opts: "-Wno-error"
-        - nginx: "1.27.1"
-          openssl: "3.3.6"
+        - nginx: "1.29.2"
+          openssl: "3.5.6" # LTS
           openssl_fips: "3.0.9"
           extras: "valgrind perf lua-kong-nginx-module"
-          lua_nginx_module: "v0.10.28"
-          lua_resty_core: "v0.1.31"
+          lua_nginx_module: "v0.10.31rc2"
+          lua_resty_core: "v0.1.34rc2"
           nginx_cc_opts: "-Wno-error"
-        - nginx: "1.27.1"
-          openssl: "3.4.4"
+        - nginx: "1.29.2"
+          openssl: "3.6.2"
           openssl_fips: "3.0.9"
           extras: "valgrind perf lua-kong-nginx-module"
-          lua_nginx_module: "v0.10.28"
-          lua_resty_core: "v0.1.31"
+          lua_nginx_module: "v0.10.31rc2"
+          lua_resty_core: "v0.1.34rc2"
           nginx_cc_opts: "-Wno-error"
-        - nginx: "1.27.1"
-          openssl: "3.5.5"
+        - nginx: "1.31.1"
+          openssl: "3.5.6" # LTS
           openssl_fips: "3.0.9"
-          extras: "valgrind perf lua-kong-nginx-module"
-          lua_nginx_module: "v0.10.28"
-          lua_resty_core: "v0.1.31"
+          extras: "valgrind perf"
+          lua_nginx_module: "v0.10.31rc5"
+          lua_resty_core: "v0.1.34rc3"
           nginx_cc_opts: "-Wno-error"
 
 
@@ -141,7 +140,7 @@ jobs:
         T=$OPENSSL_PREFIX
         mkdir -p $T
         if [ "X$OPENSSL_HASH" != "X" ]; then wget https://github.com/openssl/openssl/archive/$OPENSSL_HASH.tar.gz -qO - | tar zxf ; pushd openssl-$OPENSSL_HASH/; fi
-        if [ "X$OPENSSL_HASH" = "X" ] ; then (wget https://github.com/openssl/openssl/releases/download/openssl-${{ matrix.openssl }}/openssl-${{ matrix.openssl }}.tar.gz -qO - || wget https://openssl.org/source/old/1.1.1/openssl-${{ matrix.openssl}}.tar.gz -qO -) | tar zxf -; pushd openssl-${{ matrix.openssl }}/; fi
+        if [ "X$OPENSSL_HASH" = "X" ] ; then (wget https://github.com/openssl/openssl/releases/download/openssl-${{ matrix.openssl }}/openssl-${{ matrix.openssl }}.tar.gz -qO - || wget https://github.com/openssl/openssl/releases/download/OpenSSL_1_1_1w/openssl-1.1.1w.tar.gz -qO -) | tar zxf -; pushd openssl-${{ matrix.openssl }}/; fi
         if [ ! -e $T/include ]; then ./config shared -d --prefix=$T -DPURIFY > build.log 2>&1 || (cat build.log && exit 1); fi
         if [ ! -e $T/include ]; then make -j$JOBS > build.log 2>&1 || (cat build.log && exit 1); fi
         if [ ! -e $T/include ]; then make PATH=$PATH install_sw > build.log 2>&1 || (cat build.log && exit 1); fi
