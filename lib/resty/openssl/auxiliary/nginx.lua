@@ -3,7 +3,7 @@ local get_socket_ssl, get_socket_ssl_ctx
 
 local pok, nginx_c = pcall(require, "resty.openssl.auxiliary.nginx_c")
 
-local stream_lua_supported = false
+local stream_lua_supported
 
 if pok and not os.getenv("CI_SKIP_NGINX_C") then
   get_req_ssl = nginx_c.get_req_ssl
