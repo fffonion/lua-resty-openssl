@@ -47,7 +47,7 @@ else
   -- https://github.com/nginx/nginx/blob/master/src/core/ngx_connection.h
   if ngx_version == 1017008 or ngx_version == 1019003 or ngx_version == 1019009
     or ngx_version == 1021004
-    or (not ngx_has_http_v3 and (ngx_version == 1025003 or ngx_version == 1027001 or ngx_version == 1029002 or ngx_version == 1031001))) then
+    or (not ngx_has_http_v3 and (ngx_version == 1025003 or ngx_version == 1027001 or ngx_version == 1029002 or ngx_version == 1031001)) then
     -- 1.17.8, 1.19.3, 1.19.9, 1.21.4, 1.25.3, 1.27.1, 1.29.2, 1.31.1
     ffi.cdef [[
     typedef struct ngx_proxy_protocol_s ngx_proxy_protocol_t;
@@ -85,7 +85,7 @@ else
       // trimmed
     } ngx_connection_s;
   ]]
-  elseif ngx_has_http_v3 and (ngx_version == 1025003 or ngx_version == 1027001 or ngx_version == 1029002 or ngx_version == 1031001)) then
+  elseif ngx_has_http_v3 and (ngx_version == 1025003 or ngx_version == 1027001 or ngx_version == 1029002 or ngx_version == 1031001) then
     -- 1.25.3, 1.27.1, 1.29.2, 1.31.1
     ffi.cdef [[
     typedef struct ngx_proxy_protocol_s ngx_proxy_protocol_t;
