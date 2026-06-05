@@ -19,8 +19,8 @@ jobs:
 
     steps:
     - name: Checkout source code
-      uses: actions/checkout@v2
-    - uses: Jayrgo/luacheck-action@v1
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+    - uses: Jayrgo/luacheck-action@01594c6841054ef52fe52c0711b1a9159df3b461 # v1.0.0
       name: luacheck
       with:
         # List of files, directories and rockspecs to check.
