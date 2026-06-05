@@ -1,6 +1,6 @@
 # lua-resty-openssl
 
-FFI-based OpenSSL binding for LuaJIT, supporting OpenSSL 3.x, 1.1 series.
+FFI-based OpenSSL binding for LuaJIT, supporting OpenSSL 3.x and later, and the 1.1.1 series.
 
 OpenSSL 1.1.0, 1.0.2 and BoringSSL support has been dropped, but are still available at the [0.x branch](https://github.com/fffonion/lua-resty-openssl/tree/0.x).
 
@@ -41,6 +41,8 @@ Table of Contents
     + [version.version](#versionversion)
     + [version.info](#versioninfo)
     + [version.OPENSSL_3X](#versionOPENSSL_3X)
+    + [version.OPENSSL_4X](#versionOPENSSL_4X)
+    + [version.OPENSSL_3_UP](#versionOPENSSL_3_UP)
     + [version.OPENSSL_111](#versionopenssl_111)
   * [resty.openssl.provider](#restyopensslprovider)
     + [provider.load](#providerload)
@@ -308,7 +310,7 @@ Description
 ===========
 
 `lua-resty-openssl` is a FFI-based OpenSSL binding library, currently
-supports OpenSSL `3.x` and `1.1.1` series.
+supports OpenSSL `3.x`, `4.x` and the `1.1.1` series.
 
 [Back to TOC](#table-of-contents)
 
@@ -381,7 +383,7 @@ Load all available sub modules into current module:
   ssl_ctx = require("resty.openssl.ssl_ctx"),
 ```
 
-Starting OpenSSL 3.0, [`provider`](#restyopensslprovider) and [`mac`](#restyopensslmac)
+Starting with OpenSSL 3.0, [`provider`](#restyopensslprovider) and [`mac`](#restyopensslmac)
 [`ctx`](#restyopensslctx)
 is also available.
 
@@ -419,7 +421,7 @@ lua-resty-openssl supports following modes:
 
 Compile the module per [security policy](https://www.openssl.org/docs/fips/SecurityPolicy-2.0.2.pdf),
 
-**OpenSSL 3.0.0 fips provider**
+**OpenSSL 3 fips provider**
 
 Refer to https://wiki.openssl.org/index.php/OpenSSL_3.0 Section 7
 Compile the provider per guide, install the fipsmodule.cnf that
@@ -451,7 +453,7 @@ print(c:get_provider_name()) -- prints "fips"
 
 **syntax**: *text, err = openssl.get_fips_version_text()*
 
-Returns the version text of the FIPS module, only available on OpenSSL 3.x.
+Returns the version text of the FIPS module, available on OpenSSL 3.0 or later.
 
 [Back to TOC](#table-of-contents)
 
@@ -505,7 +507,8 @@ hide provider name from the result.
 
 Return default SSL ciphers as a string. `cipher_list` (prior TLSv1.3) and
 `ciphersuites` (TLSv1.3) can be used to expand the cipher settings matches
-`protocol`.
+`protocol`. OpenSSL 4.x rejects `"SSLv3"` because SSLv3 support has been
+removed.
 
 ```lua
 openssl.list_ssl_ciphers()
@@ -537,7 +540,7 @@ The context is currently effective following modules:
 - [rand](#restyopensslrand)
 - [x509](#restyopensslx509), [x509.csr](#restyopensslx509csr), [x509.crl](#restyopensslx509crl) and some [x509.store](#restyopensslx509store) functions
 
-This module is only available on OpenSSL 3.0 or later.
+This module is available on OpenSSL 3.0 or later.
  
 [Back to TOC](#table-of-contents)
 
@@ -589,7 +592,7 @@ Return the latest error message from the last error code. Errors are formatted a
 
     [ctx_msg]: code: [return_code]: error:[error code]:[library name]:[func name]:[reason string]:[file name]:[line number]:
 
-On OpenSSL prior to 3.x, errors are formatted as:
+On OpenSSL prior to 3.0, errors are formatted as:
 
     [ctx_msg]: code: [return_code]: [file name]:[line number]:error:[error code]:[library name]:[func name]:[reason string]:
 
@@ -700,7 +703,10 @@ Returns various OpenSSL information. Available values for `types` are:
     INFO_SEED_SOURCE
     INFO_MODULES_DIR
 
-This function is only available on OpenSSL 3.0.
+This function is available on OpenSSL 3.0 or later.
+Information entries removed by the linked OpenSSL release return `nil`; for
+example, `INFO_ENGINES_DIR` returns `nil` on OpenSSL 4.0 because engine support
+has been removed.
 Please refer to
 [OPENSSL_VERSION_NUMBER(3)](https://www.openssl.org/docs/manmaster/man3/OPENSSL_VERSION_NUMBER.html)
 for explanation of each type.
@@ -719,6 +725,20 @@ A boolean indicates whether the linked OpenSSL is 3.x series.
 
 [Back to TOC](#table-of-contents)
 
+### version.OPENSSL_4X
+
+A boolean indicates whether the linked OpenSSL is 4.x series.
+
+[Back to TOC](#table-of-contents)
+
+### version.OPENSSL_3_UP
+
+A boolean indicates whether the linked OpenSSL is OpenSSL 3.0 or later.
+Use this when guarding APIs and symbols that exist in both OpenSSL 3.x and
+4.x. Use `OPENSSL_3X` or `OPENSSL_4X` for version-specific behavior.
+
+[Back to TOC](#table-of-contents)
+
 ### version.OPENSSL_111
 
 A boolean indicates whether the linked OpenSSL is 1.1.1 series.
@@ -727,7 +747,7 @@ A boolean indicates whether the linked OpenSSL is 1.1.1 series.
 
 ## resty.openssl.provider
 
-Module to interact with providers. This module only work on OpenSSL >= 3.0.0.
+Module to interact with providers. This module works only on OpenSSL 3.0 or later.
 
 [Back to TOC](#table-of-contents)
 
@@ -804,7 +824,7 @@ print(name)
 
 local result = assert(p:get_params("name", "version", "buildinfo", "status"))
 print(require("cjson").encode(result))
--- outputs '{"buildinfo":"3.0.0-alpha7","name":"OpenSSL Default Provider","status":1,"version":"3.0.0"}'
+-- outputs provider metadata; version and buildinfo vary by OpenSSL release
 ```
 
 [Back to TOC](#table-of-contents)
@@ -864,11 +884,12 @@ pkey.new(pem_or_der_text, {
 
 When loading JWK, there are couple of caveats:
 - Make sure the encoded JSON text is passed in, it must have been base64 decoded.
-- When using OpenSSL 1.1.1 or lua-resty-openssl earlier than 1.6.0, constraint `type`
-on JWK key is only supported on OpenSSL 3.x and lua-resty-openssl 1.6.0.
-Otherwise the parameters in provided JSON will decide if a private or public key is loaded, 
-specifying `type` will result in an error; also public key part for `OKP` keys (the `x` parameter)
-is not honored and derived from private key part (the `d` parameter) if it's specified.
+- Constraining `opts.type` for JWK keys requires OpenSSL 3.0 or later and
+lua-resty-openssl 1.6.0 or later. On OpenSSL 1.1.1 or older
+lua-resty-openssl releases, the parameters in the provided JSON will decide if
+a private or public key is loaded, specifying `type` will result in an error;
+also public key part for `OKP` keys (the `x` parameter) is not honored and
+derived from private key part (the `d` parameter) if it's specified.
 - Only key type of `RSA`, `P-256`, `P-384` and `P-512` `EC`,
 `Ed25519`, `X25519`, `Ed448` and `X448` `OKP` keys are supported.
 - Signatures and verification must use `ecdsa_use_raw` option to work with JWS standards
@@ -923,7 +944,7 @@ local key, err = pkey.new({
 ```
 
 It's also possible to pass raw pkeyopt control strings in `config` table as used in the `genpkey` CLI program.
-See [openssl-genpkey(1)](https://www.openssl.org/docs/man3.0/man1/openssl-genpkey.html) for a list of options.
+See [openssl-genpkey(1)](https://docs.openssl.org/master/man1/openssl-genpkey/) for a list of options.
 
 For example:
 
@@ -992,7 +1013,7 @@ For DH key:
  Parameter | Description
 -----------|-------------
 type | `"DH"`
-bits | Generate a new DH parameter with `bits` long prime. If omitted, default to `2048`. Starting OpenSSL 3.0, only bits equal to 2048 is allowed.
+bits | Generate a new DH parameter with `bits` long prime. If omitted, default to `2048`. Starting with OpenSSL 3.0, only bits equal to 2048 is allowed.
 group | Use predefined groups instead of generating new one. `bit` will be ignored if `group` is set.
 
 Possible values for `group` are:
@@ -1015,7 +1036,7 @@ local pem, err = pkey.paramgen({
 ```
 
 It's also possible to pass raw pkeyopt control strings in `config` table as used in the `genpkey` CLI program.
-See [openssl-genpkey(1)](https://www.openssl.org/docs/man3.0/man1/openssl-genpkey.html) for a list of options.
+See [openssl-genpkey(1)](https://docs.openssl.org/master/man1/openssl-genpkey/) for a list of options.
 
 [Back to TOC](#table-of-contents)
 
@@ -1025,7 +1046,7 @@ See [openssl-genpkey(1)](https://www.openssl.org/docs/man3.0/man1/openssl-genpke
 
 Returns the provider name of `pkey`.
 
-This function is available since OpenSSL 3.0.
+This function is available on OpenSSL 3.0 or later.
 
 [Back to TOC](#table-of-contents)
 
@@ -1436,7 +1457,7 @@ If both arguments are omitted, this functions returns the `PEM` representation o
 
 If `is_pkcs1` is set to true, the output is encoded using a PKCS#1 RSAPublicKey structure;
 `PKCS#1` encoding is currently supported for RSA key in PEM format. Writing out a PKCS#1
-encoded RSA key is currently not supported when using with OpenSSL 3.0.
+encoded RSA key is currently not supported when using OpenSSL 3.0 or later.
 
 [Back to TOC](#table-of-contents)
 
@@ -1797,7 +1818,7 @@ To view a list of cipher algorithms implemented, use
 [openssl.list_cipher_algorithms](#openssllist_cipher_algorithms)
 or `openssl list -cipher-algorithms`
 
-Staring from OpenSSL 3.0, this function accepts an optional `properties` parameter
+Starting with OpenSSL 3.0, this function accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
@@ -1830,7 +1851,7 @@ Avoid call this function at hotpath, as this re-allocate the buffer every time i
 
 Returns the provider name of `cipher`.
 
-This function is available since OpenSSL 3.0.
+This function is available on OpenSSL 3.0 or later.
 
 [Back to TOC](#table-of-contents)
 
@@ -2029,7 +2050,7 @@ To view a list of digest algorithms implemented, use
 If `digest_name` is omitted, it's default to `sha1`. Specially, the digest_name `"null"`
 represents a "null" message digest that does nothing: i.e. the hash it returns is of zero length.
 
-Staring from OpenSSL 3.0, this function accepts an optional `properties` parameter
+Starting with OpenSSL 3.0, this function accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
@@ -2048,7 +2069,7 @@ Returns `true` if table is an instance of `digest`. Returns `false` otherwise.
 
 Returns the provider name of `digest`.
 
-This function is available since OpenSSL 3.0.
+This function is available on OpenSSL 3.0 or later.
 
 [Back to TOC](#table-of-contents)
 
@@ -2214,7 +2235,7 @@ Returns `true` if table is an instance of `mac`. Returns `false` otherwise.
 
 Returns the provider name of `mac`.
 
-This function is available since OpenSSL 3.0.
+This function is available on OpenSSL 3.0 or later.
 
 [Back to TOC](#table-of-contents)
 
@@ -2291,7 +2312,7 @@ Derive a key from given material. Various KDFs are supported based on OpenSSL ve
 | pass    | string | Initial key material to derive from | (empty string) |
 | salt    | string | Add some salt | (empty string) |
 | md    | string | Message digest method name to use, not effective for `scrypt` type | `"sha1"` |
-| properties | string | Staring from OpenSSL 3.0, this function accepts an optional `properties` parameter
+| properties | string | Starting with OpenSSL 3.0, this function accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms. | |
 | pbkdf2_iter     | number | PBKDF2 iteration count. RFC 2898 suggests an iteration count of at least 1000. Any value less than 1 is treated as a single iteration.  | `1` |
 | hkdf_key     | string | HKDF key  | **required** |
@@ -2339,7 +2360,7 @@ To view a list of kdf algorithms implemented, use
 [openssl.list_kdf_algorithms](#openssllist_kdf_algorithms) or
 `openssl list -kdf-algorithms`.
 
-This function is available since OpenSSL 3.0.
+This function is available on OpenSSL 3.0 or later.
 
 This function accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms.
@@ -2352,7 +2373,7 @@ to explictly select provider to fetch algorithms.
 
 Returns `true` if table is an instance of `kdf`. Returns `false` otherwise.
 
-This function is available since OpenSSL 3.0.
+This function is available on OpenSSL 3.0 or later.
 
 [Back to TOC](#table-of-contents)
 
@@ -2362,7 +2383,7 @@ This function is available since OpenSSL 3.0.
 
 Returns the provider name of `kdf`.
 
-This function is available since OpenSSL 3.0.
+This function is available on OpenSSL 3.0 or later.
 
 [Back to TOC](#table-of-contents)
 
@@ -2371,7 +2392,7 @@ This function is available since OpenSSL 3.0.
 Query settable or gettable params and set or get params.
 See [Generic EVP parameter getter/setter](#generic-evp-parameter-gettersetter).
 
-This function is available since OpenSSL 3.0.
+This function is available on OpenSSL 3.0 or later.
 
 [Back to TOC](#table-of-contents)
 
@@ -2424,7 +2445,7 @@ key = assert(k:derive(16, {
 }))
 ```
 
-This function is available since OpenSSL 3.0.
+This function is available on OpenSSL 3.0 or later.
 
 [Back to TOC](#table-of-contents)
 
@@ -2505,10 +2526,10 @@ Encode data in `data` to a PKCS#12 text.
 
 `passphrase` is the string for encryption. If omitted, an empty string will be used.
 
-Staring from OpenSSL 3.0, this function accepts an optional `properties` parameter
+Starting with OpenSSL 3.0, this function accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms.
 
-Note in OpenSSL 3.0 `RC2` has been moved to **legacy** provider. In order to encode p12 data with RC2
+Note on OpenSSL 3.0 or later, `RC2` has been moved to **legacy** provider. In order to encode p12 data with RC2
 encryption, you need to [load the legacy provider](#providerload) first.
 
 ```lua
@@ -2529,7 +2550,7 @@ but onle `cert`, `key`, `cacerts` and `friendly_name` are returned.
 
 `passphrase` is the string for encryption. If omitted, an empty string will be used.
 
-Note in OpenSSL 3.0 `RC2` has been moved to **legacy** provider. In order to decode p12 data with RC2
+Note on OpenSSL 3.0 or later, `RC2` has been moved to **legacy** provider. In order to decode p12 data with RC2
 encryption, you need to [load the legacy provider](#providerload) first.
 
 [Back to TOC](#table-of-contents)
@@ -2567,7 +2588,7 @@ Creates a `x509` instance. `txt` can be **PEM** or **DER** formatted text;
 
 When `txt` is omitted, `new()` creates an empty `x509` instance.
 
-Staring from OpenSSL 3.0, this function accepts an optional `properties` parameter
+Starting with OpenSSL 3.0, this function accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
@@ -2601,7 +2622,7 @@ To view a list of digest algorithms implemented, use
 
 If `digest_name` is omitted, it's default to `sha1`.
 
-Staring from OpenSSL 3.0, this function accepts an optional `properties` parameter
+Starting with OpenSSL 3.0, this function accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
@@ -2619,7 +2640,7 @@ To view a list of digest algorithms implemented, use
 
 If `digest_name` is omitted, it's default to `sha1`.
 
-Staring from OpenSSL 3.0, this function accepts an optional `properties` parameter
+Starting with OpenSSL 3.0, this function accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
@@ -2887,7 +2908,7 @@ Create an empty `csr` instance. `txt` can be **PEM** or **DER** formatted text;
 
 When `txt` is omitted, `new()` creates an empty `csr` instance.
 
-Staring from OpenSSL 3.0, this function accepts an optional `properties` parameter
+Starting with OpenSSL 3.0, this function accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
@@ -3094,7 +3115,7 @@ Creates a `crl` instance. `txt` can be **PEM** or **DER** formatted text;
 
 When `txt` is omitted, `new()` creates an empty `crl` instance.
 
-Staring from OpenSSL 3.0, this function accepts an optional `properties` parameter
+Starting with OpenSSL 3.0, this function accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
@@ -3587,11 +3608,11 @@ data = {
   subject = resty.openssl.x509 instance,
   request = resty.openssl.x509.csr instance,
   crl = resty.openssl.x509.crl instance,
-  issuer_pkey = resty.openssl.pkey instance, -- >= OpenSSL 3.0
+  issuer_pkey = resty.openssl.pkey instance, -- OpenSSL 3.0 or later
 }
 ```
 
-From OpenSSL 3.0, `issuer_pkey` can be specified as a fallback source for
+Starting with OpenSSL 3.0, `issuer_pkey` can be specified as a fallback source for
 generating the authority key identifier extension when `issuer` is same as `subject`.
 
 When `data` is a string, it's the full nconf string. Using section lookup from `value` to
@@ -4033,7 +4054,7 @@ Module to interact with X.509 certificate store (X509_STORE).
 
 Creates a new `store` instance.
 
-Staring from OpenSSL 3.0, this function accepts an optional `properties` parameter
+Starting with OpenSSL 3.0, this function accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
@@ -4055,7 +4076,7 @@ Loads certificates into the X509_STORE from the hardcoded default paths.
 Note that to load "default" CAs correctly, usually you need to install a CA
 certificates bundle. For example, the package in Debian/Ubuntu is called `ca-certificates`.
 
-Staring from OpenSSL 3.0, this function accepts an optional `properties` parameter
+Starting with OpenSSL 3.0, this function accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
@@ -4080,7 +4101,7 @@ skip settting the flags.
 
 Loads a X.509 certificate on file system into store.
 
-Staring from OpenSSL 3.0, this function accepts an optional `properties` parameter
+Starting with OpenSSL 3.0, this function accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
@@ -4093,7 +4114,7 @@ Loads a directory of X.509 certificates on file system into store. The certifica
 must be in hashed form, as documented in
 [X509_LOOKUP_hash_dir(3)](https://www.openssl.org/docs/manmaster/man3/X509_LOOKUP_hash_dir.html).
 
-Staring from OpenSSL 3.0, this function accepts an optional `properties` parameter
+Starting with OpenSSL 3.0, this function accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms.
 
 [Back to TOC](#table-of-contents)
@@ -4187,7 +4208,7 @@ If verification succeed, and `return_chain` is set to true, returns the proof of
 [resty.openssl.x509.chain](#restyopensslx509chain); otherwise
 returns `true` only. If verification failed, returns `nil` and error explaining the reason.
 
-Staring from OpenSSL 3.0, this function accepts an optional `properties` parameter
+Starting with OpenSSL 3.0, this function accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms.
 
 `verify_method` can be set to use predefined verify parameters such as `"default"`, `"pkcs7"`,
@@ -4209,7 +4230,7 @@ Only does the revocation check. The first argument `verified_chain` must be a
 `store_ctx:verify` or be built by yourself. Note the first cert needs to be the end entity
 certificate you want to check and the second cert needs to be its issuer.
 
-Staring from OpenSSL 3.0, this function accepts an optional `properties` parameter
+Starting with OpenSSL 3.0, this function accepts an optional `properties` parameter
 to explictly select provider to fetch algorithms.
 
 Returns `true` when the certificate isn't revoked,
@@ -4466,9 +4487,10 @@ is only effective in `ssl_client_hello_by` phase.
 
 **syntax**: *bitmask, err = ssl:set_protocols(protocol, ...)*
 
-Set avaialable protocols for handshake, this is a convenient function that
+Set available protocols for handshake, this is a convenient function that
 calls [ssl:set_options](#sslset_options) and [ssl:clear_options](#sslclear_options) to
 set appropriate options.
+OpenSSL 4.x rejects `"SSLv3"` because SSLv3 support has been removed.
 
 Returns the options of current session in bitmask.
 
@@ -4645,7 +4667,7 @@ name:add("L", "Mars")
 
 ## Generic EVP parameter getter/setter
 
-Starting from OpenSSL 3.0, this library provides a genric interface to get and set abitrary parameters
+Starting with OpenSSL 3.0, this library provides a generic interface to get and set arbitrary parameters
 from underlying implementation. This works for [cipher](#resty.openssl.cipher),
 [pkey](#resty.openssl.pkey), [digest](#resty.openssl.digest), [mac](#resty.openssl.mac) and
 [kdf](#resty.openssl.kdf).
@@ -4774,6 +4796,14 @@ are accessed directly. They are accessed by memory offset in assembly.
 OpenSSL [keeps ABI/binary compatibility](https://wiki.openssl.org/index.php/Versioning)
 with minor releases or letter releases. So all structs offsets and macro constants are kept
 same.
+
+OpenSSL 4.0 is a major release and removes APIs that had been deprecated in
+earlier major releases, including ENGINE support, fixed-version SSL/TLS method
+functions, SSLv3 support, custom EVP method APIs, and several legacy ERR APIs.
+See the [OpenSSL 4.0.0 release notes](https://github.com/openssl/openssl/releases/tag/openssl-4.0.0)
+and [ossl-removed-api(7)](https://docs.openssl.org/master/man7/ossl-removed-api/)
+for details. This library avoids cdef'ing removed OpenSSL 4.0 APIs; APIs and
+symbols shared by OpenSSL 3.x and 4.x are guarded with `version.OPENSSL_3_UP`.
 
 If you plan to use this library on an untested version of OpenSSL (like custom builds or pre releases),
 [this](https://abi-laboratory.pro/index.php?view=timeline&l=openssl) can be a good source to consult.

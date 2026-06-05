@@ -54,6 +54,7 @@ no_long_string();
 
 env_to_nginx("CI_SKIP_NGINX_C");
 env_to_nginx("CI_SKIP_KONG_SSL_FUNCS");
+env_to_nginx("TEST_OPENSSL_CLI");
 
 run_tests();
 
@@ -79,7 +80,9 @@ __DATA__
                 merge_stderr = true,
                 buffer_size = 256000,
             }
-            local proc = ngx_pipe.spawn({'bash', '-c', "echo q | openssl s_client -unix /tmp/nginx-sctx1.sock -alpn h4 && sleep 0.1"}, opts)
+            local openssl = os.getenv("TEST_OPENSSL_CLI") or "openssl"
+            local cmd = string.format("echo q | %q s_client -unix /tmp/nginx-sctx1.sock -alpn h4 && sleep 0.1", openssl)
+            local proc = ngx_pipe.spawn({'bash', '-c', cmd}, opts)
             local data, err, partial = proc:stdout_read_all()
             if ngx.re.match(data, "ALPN protocol: h4") then
                 ngx.say("ok")
@@ -96,4 +99,3 @@ ok
 --- no_error_log
 [error]
 [emerg]
-

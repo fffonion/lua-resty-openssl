@@ -189,16 +189,56 @@ true
 --- config
     location =/t {
         content_by_lua_block {
+            local ffi = require("ffi")
             local store = require("resty.openssl.x509.store")
+            local x509 = require("resty.openssl.x509")
             local s = myassert(store.new())
 
-            local ok = myassert(s:load_directory("/etc/ssl/certs"))
-
             local f = io.open("t/fixtures/GlobalSign.pem"):read("*a")
-            local c = myassert(require("resty.openssl.x509").new(f))
+            local c = myassert(x509.new(f))
 
-            local chain = myassert(s:verify(c, nil, true))
-            ngx.say(#chain)
+            pcall(ffi.cdef, [[
+                unsigned long X509_subject_name_hash(const X509 *x);
+            ]])
+
+            local function shell_quote(s)
+                return "'" .. tostring(s):gsub("'", "'\\''") .. "'"
+            end
+
+            local function command_ok(ok)
+                return ok == true or ok == 0
+            end
+
+            local dir = string.format("certs7-%d", ngx.worker.pid())
+            local path
+            local dir_created
+
+            local ok, err = pcall(function()
+                assert(command_ok(os.execute("mkdir -p " .. shell_quote(dir))))
+                dir_created = true
+
+                path = string.format("%s/%08x.0", dir,
+                                     tonumber(ffi.C.X509_subject_name_hash(c.ctx)))
+                local cert_file = assert(io.open(path, "w"))
+                cert_file:write(c:tostring())
+                cert_file:close()
+
+                myassert(s:load_directory(dir))
+
+                local chain = myassert(s:verify(c, nil, true))
+                ngx.say(#chain)
+            end)
+
+            if path then
+                os.remove(path)
+            end
+            if dir_created then
+                os.execute("rmdir " .. shell_quote(dir))
+            end
+
+            if not ok then
+                error(err)
+            end
         }
     }
 --- request

@@ -132,7 +132,7 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            if not require("resty.openssl.version").OPENSSL_3X then
+            if not require("resty.openssl.version").OPENSSL_3_UP then
                 ngx.say("default")
                 ngx.exit(0)
             end
@@ -156,7 +156,7 @@ default
 --- config
     location =/t {
         content_by_lua_block {
-            if not require("resty.openssl.version").OPENSSL_3X then
+            if not require("resty.openssl.version").OPENSSL_3_UP then
                 ngx.say("{}\n-ssl3-ms-")
                 ngx.exit(0)
             end

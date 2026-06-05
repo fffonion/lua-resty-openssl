@@ -28,7 +28,7 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            if not require("resty.openssl.version").OPENSSL_3X then
+            if not require("resty.openssl.version").OPENSSL_3_UP then
                 ngx.say("kwUMjYrP0BSJb8cIJvWYoiM1Kc4mQxZOTwSiTTLRhDM=")
                 ngx.exit(0)
             end
@@ -53,7 +53,7 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            if not require("resty.openssl.version").OPENSSL_3X then
+            if not require("resty.openssl.version").OPENSSL_3_UP then
                 ngx.say("kwUMjYrP0BSJb8cIJvWYoiM1Kc4mQxZOTwSiTTLRhDM=")
                 ngx.exit(0)
             end
@@ -78,7 +78,7 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            if not require("resty.openssl.version").OPENSSL_3X then
+            if not require("resty.openssl.version").OPENSSL_3_UP then
                 ngx.say("kwUMjYrP0BSJb8cIJvWYoiM1Kc4mQxZOTwSiTTLRhDM=")
                 ngx.exit(0)
             end
@@ -103,7 +103,7 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            if not require("resty.openssl.version").OPENSSL_3X then
+            if not require("resty.openssl.version").OPENSSL_3_UP then
                 ngx.say("mac.new: invalid cipher or digest type")
                 ngx.exit(0)
             end
@@ -125,7 +125,7 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            if not require("resty.openssl.version").OPENSSL_3X then
+            if not require("resty.openssl.version").OPENSSL_3_UP then
                 ngx.say("default")
                 ngx.exit(0)
             end
@@ -149,7 +149,7 @@ default
 --- config
     location =/t {
         content_by_lua_block {
-            if not require("resty.openssl.version").OPENSSL_3X then
+            if not require("resty.openssl.version").OPENSSL_3_UP then
                 ngx.say("-size-\n-digest-")
                 ngx.exit(0)
             end
@@ -175,7 +175,7 @@ default
 --- config
     location =/t {
         content_by_lua_block {
-            if not require("resty.openssl.version").OPENSSL_3X then
+            if not require("resty.openssl.version").OPENSSL_3_UP then
                 ngx.say("true\n32")
                 ngx.exit(0)
             end

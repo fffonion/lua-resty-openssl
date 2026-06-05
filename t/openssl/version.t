@@ -57,3 +57,57 @@ OpenSSL \d.\d.\d.+
 compiler:.+
 --- no_error_log
 [error]
+
+
+
+=== TEST 3: Classifies OpenSSL 4 as provider-era
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local version = require("resty.openssl.version")
+            if version.version_num >= 0x40000000 and version.version_num < 0x50000000 then
+                ngx.say(version.OPENSSL_4X)
+                ngx.say(version.OPENSSL_3_UP)
+                ngx.say(version.OPENSSL_3X)
+                return
+            end
+
+            ngx.say("not 4x")
+        }
+    }
+--- request
+    GET /t
+--- response_body_like
+(?:true\s+true\s+false|not 4x)
+--- no_error_log
+[error]
+
+
+
+=== TEST 4: Handles removed OpenSSL 4 info entries
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local version = require("resty.openssl.version")
+            if not version.OPENSSL_3_UP then
+                ngx.say("not 3x up")
+                return
+            end
+
+            local info = version.info(version.INFO_ENGINES_DIR)
+            if version.OPENSSL_4X then
+                ngx.say(info == nil)
+                return
+            end
+
+            ngx.say(type(info) == "string")
+        }
+    }
+--- request
+    GET /t
+--- response_body_like
+(?:true|not 3x up)
+--- no_error_log
+[error]

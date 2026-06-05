@@ -29,7 +29,7 @@ __DATA__
 --- config
     location =/t {
         content_by_lua_block {
-            if not require("resty.openssl.version").OPENSSL_3X then
+            if not require("resty.openssl.version").OPENSSL_3_UP then
                 ngx.say("true\nnil\ntrue\nfalse\nnil\ntrue")
                 ngx.exit(0)
             end
@@ -67,7 +67,7 @@ true
 --- config
     location =/t {
         content_by_lua_block {
-            if not require("resty.openssl.version").OPENSSL_3X then
+            if not require("resty.openssl.version").OPENSSL_3_UP then
                 ngx.say("nil\ntrue\nnil\ntrue")
                 ngx.exit(0)
             end
@@ -101,7 +101,7 @@ true
 --- config
     location =/t {
         content_by_lua_block {
-            if not require("resty.openssl.version").OPENSSL_3X then
+            if not require("resty.openssl.version").OPENSSL_3_UP then
                 ngx.say("true\ncommon libcrypto routines:provider_init:")
                 ngx.exit(0)
             end
@@ -128,7 +128,7 @@ true
 --- config
     location =/t {
         content_by_lua_block {
-            if not require("resty.openssl.version").OPENSSL_3X then
+            if not require("resty.openssl.version").OPENSSL_3_UP then
                 ngx.say('{"buildinfo":"3.0.0-alpha7","name":"OpenSSL Default Provider","status":1,"version":"3.0.0"}')
                 ngx.exit(0)
             end
@@ -143,6 +143,6 @@ true
 --- request
     GET /t
 --- response_body_like
-{"buildinfo":"3.+","name":"OpenSSL Default Provider","status":1,"version":"3.+"}
+{"buildinfo":"[34]\..+","name":"OpenSSL Default Provider","status":1,"version":"[34]\..+"}
 --- no_error_log
 [error]
