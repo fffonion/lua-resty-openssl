@@ -534,7 +534,7 @@ ok
             ngx.say(p:to_PEM(nil, true))
             ngx.say(key:tostring(nil, "DER", true))
 
-            if require("resty.openssl.version").OPENSSL_3X then
+            if require("resty.openssl.version").OPENSSL_3_UP then
                 ngx.say('BEGIN RSA PUBLIC KEY\ntrue')
                 ngx.say('BEGIN RSA PRIVATE KEY\ntrue')
                 ngx.exit(0)
@@ -1422,7 +1422,7 @@ true
 --- config
     location =/t {
         content_by_lua_block {
-            if not require("resty.openssl.version").OPENSSL_3X then
+            if not require("resty.openssl.version").OPENSSL_3_UP then
                 ngx.say("default")
                 ngx.exit(0)
             end
@@ -1446,7 +1446,7 @@ default
 --- config
     location =/t {
         content_by_lua_block {
-            if not require("resty.openssl.version").OPENSSL_3X then
+            if not require("resty.openssl.version").OPENSSL_3_UP then
                 ngx.say("-bits-\n-encoding-")
                 ngx.exit(0)
             end
@@ -1472,7 +1472,7 @@ default
 --- config
     location =/t {
         content_by_lua_block {
-            if not require("resty.openssl.version").OPENSSL_3X then
+            if not require("resty.openssl.version").OPENSSL_3_UP then
                 ngx.say("true")
                 ngx.exit(0)
             end

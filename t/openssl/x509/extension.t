@@ -194,15 +194,18 @@ CA Issuers - URI:http://cacerts.digicert.com/DigiCertHighAssuranceTLSHybridECCSH
 
             ngx.say(tostring(c))
 
-            if require("resty.openssl.version").OPENSSL_3X then
+            local version = require("resty.openssl.version")
+            if version.OPENSSL_3_UP then
                 c = myassert(extension.new("authorityKeyIdentifier", "keyid",
                                 {
                                     subject = x509,
                                     issuer = x509,
                                 }))
 
-                if tostring(c) ~= "0." then
+                if version.OPENSSL_3X and tostring(c) ~= "0." then
                     ngx.log(ngx.ERR, "authorityKeyIdentifier should be empty but got " .. tostring(c))
+                elseif version.OPENSSL_4X and tostring(c) ~= "27:B1:7E:9F:BB:26:99:50:D8:F3:C3:53:5B:FE:31:16:B0:BB:1E:72" then
+                    ngx.log(ngx.ERR, "authorityKeyIdentifier should match issuer keyid but got " .. tostring(c))
                 end
 
                 c = myassert(extension.new("authorityKeyIdentifier", "keyid",

@@ -75,7 +75,7 @@ false
             local openssl = require("resty.openssl")
             ngx.say(require("cjson").encode(openssl.list_cipher_algorithms(true)))
             local version = require("resty.openssl.version")
-            if not version.OPENSSL_3X then
+            if not version.OPENSSL_3_UP then
                 ngx.say("[\"AES-256-GCM @ default\"]")
                 ngx.exit(0)
             end
@@ -100,7 +100,7 @@ false
             local openssl = require("resty.openssl")
             ngx.say(require("cjson").encode(openssl.list_digest_algorithms(true)))
             local version = require("resty.openssl.version")
-            if not version.OPENSSL_3X then
+            if not version.OPENSSL_3_UP then
                 ngx.say("[\"SHA2-256 @ default\"]")
                 ngx.exit(0)
             end
@@ -123,7 +123,7 @@ false
     location =/t {
         content_by_lua_block {
             local version = require("resty.openssl.version")
-            if not version.OPENSSL_3X then
+            if not version.OPENSSL_3_UP then
                 ngx.say("[\"HMAC @ default\"]")
                 ngx.exit(0)
             end
@@ -146,7 +146,7 @@ false
     location =/t {
         content_by_lua_block {
             local version = require("resty.openssl.version")
-            if not version.OPENSSL_3X then
+            if not version.OPENSSL_3_UP then
                 ngx.say("[\"HKDF @ default\"]")
                 ngx.exit(0)
             end
@@ -182,5 +182,34 @@ false
 .*ECDHE-ECDSA-AES128-SHA
 .*ECDHE-ECDSA-AES128-SHA
 .*ECDHE-ECDSA-AES128-SHA
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: Reject SSLv3 protocol on OpenSSL 4
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local version = require("resty.openssl.version")
+            if not version.OPENSSL_4X then
+                ngx.say("not 4x")
+                return
+            end
+
+            local openssl = require("resty.openssl")
+            local ok, err = openssl.list_ssl_ciphers(nil, nil, "SSLv3")
+            ngx.say(ok == nil and err == 'unknown protocol "SSLv3"')
+
+            local ssl = require("resty.openssl.ssl")
+            ok, err = ssl.set_protocols({}, "SSLv3")
+            ngx.say(ok == nil and err == '"SSLv3" is not a valid protocol')
+        }
+    }
+--- request
+    GET /t
+--- response_body_like
+(?:true\s+true|not 4x)
 --- no_error_log
 [error]
