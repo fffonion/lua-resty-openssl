@@ -249,9 +249,9 @@ else
       void                    *cleanup;
       void                    *request;
 
-      struct sockaddr_storage          sockaddr; // 0.0.18
-      socklen_t                        socklen; // 0.0.18
-      ngx_log_t                        log; // 0.0.18
+      void                    *sockaddr; // 0.0.18
+      socklen_t               socklen; // 0.0.18
+      void                    *log; // 0.0.18
 
       ngx_peer_connection_s            peer;
       // trimmed
