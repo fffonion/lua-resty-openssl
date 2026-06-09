@@ -37,7 +37,7 @@ jobs:
           nginx_cc_opts: "-Wno-error"
         - nginx: "1.27.1"
           openssl: "3.5.6" # LTS
-          openssl_fips: "3.0.9"
+          openssl_fips: "3.1.2"
           extras: "valgrind perf lua-kong-nginx-module"
           lua_nginx_module: "v0.10.28"
           lua_resty_core: "v0.1.31"
@@ -55,21 +55,28 @@ jobs:
           nginx_cc_opts: "-Wno-error"
         - nginx: "1.29.2"
           openssl: "3.5.6" # LTS
-          openssl_fips: "3.0.9"
+          openssl_fips: "3.1.2"
           extras: "valgrind perf lua-kong-nginx-module"
           lua_nginx_module: "v0.10.31rc2"
           lua_resty_core: "v0.1.34rc2"
           nginx_cc_opts: "-Wno-error"
         - nginx: "1.29.2"
           openssl: "3.6.2"
-          openssl_fips: "3.0.9"
+          openssl_fips: "3.1.2"
           extras: "valgrind perf lua-kong-nginx-module"
           lua_nginx_module: "v0.10.31rc2"
           lua_resty_core: "v0.1.34rc2"
           nginx_cc_opts: "-Wno-error"
         - nginx: "1.31.1"
           openssl: "3.5.6" # LTS
-          openssl_fips: "3.0.9"
+          openssl_fips: "3.1.2"
+          extras: "valgrind perf"
+          lua_nginx_module: "v0.10.31rc5"
+          lua_resty_core: "v0.1.34rc3"
+          nginx_cc_opts: "-Wno-error"
+        - nginx: "1.31.1"
+          openssl: "4.0.0"
+          openssl_fips: "3.1.2"
           extras: "valgrind perf"
           lua_nginx_module: "v0.10.31rc5"
           lua_resty_core: "v0.1.34rc3"
@@ -97,10 +104,10 @@ jobs:
 
     steps:
     - name: Checkout source code
-      uses: actions/checkout@v3
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
     
     - name: Setup cache
-      uses: actions/cache@v3
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
       with:
         path: |
           /home/runner/work/cache
@@ -211,7 +218,7 @@ jobs:
 
     - name: Get changed files
       id: changed-files
-      uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c # v46
+      uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
 
     - name: Run Valgrind
       if: contains(matrix.extras, 'valgrind')
@@ -290,9 +297,11 @@ jobs:
         popd
 
         luarocks install --local lua_pack
-        luarocks install --local openssl OPENSSL_DIR=$OPENSSL_PREFIX
-        luarocks install --local luaossl CRYPTO_DIR=$OPENSSL_PREFIX OPENSSL_DIR=$OPENSSL_PREFIX
-        cp ~/.luarocks/lib/lua/5.1/openssl_*-openssl.so ~/.luarocks/lib/lua/5.1/lua-openssl.so
+        if [ "${{ matrix.openssl }}" != "4.0.0" ]; then
+          luarocks install --local openssl OPENSSL_DIR=$OPENSSL_PREFIX
+          luarocks install --local luaossl CRYPTO_DIR=$OPENSSL_PREFIX OPENSSL_DIR=$OPENSSL_PREFIX
+          cp ~/.luarocks/lib/lua/5.1/openssl_*-openssl.so ~/.luarocks/lib/lua/5.1/lua-openssl.so
+        fi
 
     - name: Run performance test
       if: contains(matrix.extras, 'perf')

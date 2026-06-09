@@ -30,7 +30,7 @@ __DATA__
     location =/t {
         content_by_lua_block {
             local p
-            if require("resty.openssl.version").OPENSSL_3X then
+            if require("resty.openssl.version").OPENSSL_3_UP then
                 local pro = require "resty.openssl.provider"
                 p = myassert(pro.load("legacy"))
             end
@@ -65,7 +65,7 @@ __DATA__
     location =/t {
         content_by_lua_block {
             local p
-            if require("resty.openssl.version").OPENSSL_3X then
+            if require("resty.openssl.version").OPENSSL_3_UP then
                 local pro = require "resty.openssl.provider"
                 p = myassert(pro.load("legacy"))
             end
@@ -106,7 +106,7 @@ pkcs12.decode.+mac verify failure.*
     location =/t {
         content_by_lua_block {
             local p
-            if require("resty.openssl.version").OPENSSL_3X then
+            if require("resty.openssl.version").OPENSSL_3_UP then
                 local pro = require "resty.openssl.provider"
                 p = myassert(pro.load("legacy"))
             end
@@ -169,7 +169,7 @@ pkcs12.decode.+mac verify failure.*
     location =/t {
         content_by_lua_block {
             local p
-            if require("resty.openssl.version").OPENSSL_3X then
+            if require("resty.openssl.version").OPENSSL_3_UP then
                 local pro = require "resty.openssl.provider"
                 p = myassert(pro.load("legacy"))
             end
@@ -226,7 +226,7 @@ pkcs12.decode.+mac verify failure.*
     location =/t {
         content_by_lua_block {
             local p
-            if require("resty.openssl.version").OPENSSL_3X then
+            if require("resty.openssl.version").OPENSSL_3_UP then
                 local pro = require "resty.openssl.provider"
                 p = myassert(pro.load("legacy"))
             end
