@@ -11,7 +11,7 @@ local crl_lib = require "resty.openssl.x509.crl"
 local ctx_lib = require "resty.openssl.ctx"
 local format_all_error = require("resty.openssl.err").format_all_error
 local format_error = require("resty.openssl.err").format_error
-local OPENSSL_3X = require("resty.openssl.version").OPENSSL_3X
+local OPENSSL_3_UP = require("resty.openssl.version").OPENSSL_3_UP
 
 local _M = {}
 local mt = { __index = _M }
@@ -179,7 +179,7 @@ function _M:verify(x509, chain, return_chain, properties, verify_method, flags)
   end
 
   local ctx
-  if OPENSSL_3X then
+  if OPENSSL_3_UP then
     ctx = C.X509_STORE_CTX_new_ex(ctx_lib.get_libctx(), properties)
   else
     ctx = C.X509_STORE_CTX_new()
@@ -191,10 +191,8 @@ function _M:verify(x509, chain, return_chain, properties, verify_method, flags)
   ffi_gc(ctx, C.X509_STORE_CTX_free)
 
   local chain_dup_ctx
-  local chain_dup -- anchor to prevent GC freeing the stack while ctx references it
   if chain then
-    local err
-    chain_dup, err = chain_lib.dup(chain.ctx)
+    local chain_dup, err = chain_lib.dup(chain.ctx)
     if err then
       return nil, err
     end
@@ -240,7 +238,7 @@ function _M:check_revocation(verified_chain, properties)
   end
 
   local ctx
-  if OPENSSL_3X then
+  if OPENSSL_3_UP then
     ctx = C.X509_STORE_CTX_new_ex(ctx_lib.get_libctx(), properties)
   else
     ctx = C.X509_STORE_CTX_new()
