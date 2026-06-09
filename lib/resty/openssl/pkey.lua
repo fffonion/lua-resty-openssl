@@ -738,10 +738,11 @@ local function asymmetric_routine(self, s, op, padding, opts)
 
   if self.key_type == evp_macro.EVP_PKEY_RSA then
     if padding then
-      padding = tonumber(padding)
-      if not padding then
-        return nil, "invalid padding: " .. __tostring(padding)
+      local p = tonumber(padding)
+      if not p then
+        return nil, "invalid padding: " .. tostring(padding)
       end
+      padding = p
     else
       padding = rsa_macro.paddings.RSA_PKCS1_PADDING
     end
