@@ -39,6 +39,17 @@ local null = ctypes.null
 local load_pem_args = { null, null, null }
 local load_der_args = { null }
 
+-- Traditional key types that don't use the raw public/private key API.
+local legacy_type_nids = {
+  RSA = evp_macro.EVP_PKEY_RSA,
+  ["RSA-PSS"] = C.OBJ_txt2nid("RSASSA-PSS"),
+  EC = evp_macro.EVP_PKEY_EC,
+  DH = evp_macro.EVP_PKEY_DH,
+  DHX = C.OBJ_txt2nid("dhpublicnumber"),
+  DSA = C.OBJ_txt2nid("DSA"),
+  SM2 = C.OBJ_txt2nid("SM2"),
+}
+
 local get_pkey_key = {
   [evp_macro.EVP_PKEY_RSA] = function(ctx) return C.EVP_PKEY_get0_RSA(ctx) end,
   [evp_macro.EVP_PKEY_EC] = function(ctx) return C.EVP_PKEY_get0_EC_KEY(ctx) end,
@@ -295,7 +306,7 @@ local load_param_funcs = {
 
 local function generate_key(config)
   local typ = config.type or 'RSA'
-  local key_type
+  local key_type, pctx
 
   if typ == "RSA" then
     key_type = evp_macro.EVP_PKEY_RSA
@@ -305,6 +316,12 @@ local function generate_key(config)
     key_type = evp_macro.EVP_PKEY_DH
   elseif evp_macro.ecx_curves[typ] then
     key_type = evp_macro.ecx_curves[typ]
+  elseif OPENSSL_3_UP then
+    pctx = C.EVP_PKEY_CTX_new_from_name(ctx_lib.get_libctx(), typ,
+                                       config.properties)
+    if pctx == nil then
+      return nil, format_error("EVP_PKEY_CTX_new_from_name")
+    end
   else
     return nil, "unsupported type " .. typ
   end
@@ -312,9 +329,8 @@ local function generate_key(config)
     return nil, "the linked OpenSSL library doesn't support " .. typ .. " key"
   end
 
-  local pctx
-
-  if key_type == evp_macro.EVP_PKEY_EC or key_type == evp_macro.EVP_PKEY_DH then
+  if pctx == nil and (key_type == evp_macro.EVP_PKEY_EC or
+                      key_type == evp_macro.EVP_PKEY_DH) then
     local params, err
     if config.param then
       -- HACK
@@ -352,7 +368,7 @@ local function generate_key(config)
     if pctx == nil then
       return nil, format_error("EVP_PKEY_CTX_new")
     end
-  else
+  elseif pctx == nil then
     pctx = C.EVP_PKEY_CTX_new_id(key_type, nil)
     if pctx == nil then
       return nil, format_error("EVP_PKEY_CTX_new_id")
@@ -596,9 +612,23 @@ function _M.new(s, opts)
 
   ffi_gc(ctx, C.EVP_PKEY_free)
 
-  local key_type = OPENSSL_3_UP and C.EVP_PKEY_get_base_id(ctx) or C.EVP_PKEY_base_id(ctx)
-  if key_type == 0 then
-    return nil, "pkey.new: cannot get key_type"
+  local key_type
+  if OPENSSL_3_UP then
+    local p = C.EVP_PKEY_get0_type_name(ctx)
+    if p == nil then
+      return nil, "pkey.new: cannot get key type name"
+    end
+    local type_name = ffi_str(p)
+    key_type = legacy_type_nids[type_name]
+    key_type = key_type or C.OBJ_txt2nid(type_name)
+    if key_type == 0 then
+      C.ERR_clear_error()
+    end
+  else
+    key_type = C.EVP_PKEY_base_id(ctx)
+    if key_type == 0 then
+      return nil, "pkey.new: cannot get key_type"
+    end
   end
   local key_type_is_ecx = (key_type == evp_macro.EVP_PKEY_ED25519) or
                           (key_type == evp_macro.EVP_PKEY_X25519) or
@@ -626,6 +656,9 @@ function _M.istype(l)
 end
 
 function _M:get_key_type(nid_only)
+  if self.key_type == 0 then
+    return nil, "pkey:get_key_type: key type has no ASN.1 NID"
+  end
   return nid_only and self.key_type or objects_lib.nid2table(self.key_type)
 end
 
