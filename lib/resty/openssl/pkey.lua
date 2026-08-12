@@ -50,6 +50,11 @@ local legacy_type_nids = {
   SM2 = C.OBJ_txt2nid("SM2"),
 }
 
+local legacy_nids = {}
+for _, nid in pairs(legacy_type_nids) do
+  legacy_nids[nid] = true
+end
+
 local get_pkey_key = {
   [evp_macro.EVP_PKEY_RSA] = function(ctx) return C.EVP_PKEY_get0_RSA(ctx) end,
   [evp_macro.EVP_PKEY_EC] = function(ctx) return C.EVP_PKEY_get0_EC_KEY(ctx) end,
@@ -630,10 +635,7 @@ function _M.new(s, opts)
       return nil, "pkey.new: cannot get key_type"
     end
   end
-  local key_type_is_ecx = (key_type == evp_macro.EVP_PKEY_ED25519) or
-                          (key_type == evp_macro.EVP_PKEY_X25519) or
-                          (key_type == evp_macro.EVP_PKEY_ED448) or
-                          (key_type == evp_macro.EVP_PKEY_X448)
+  local key_type_uses_raw_private = not legacy_nids[key_type]
 
   -- although OpenSSL discourages to use this size for digest/verify
   -- but this is good enough for now
@@ -643,7 +645,7 @@ function _M.new(s, opts)
     ctx = ctx,
     pkey_ctx = nil,
     key_type = key_type,
-    key_type_is_ecx = key_type_is_ecx,
+    key_type_uses_raw_private = key_type_uses_raw_private,
     buf = ctypes.uchar_array(buf_size),
     buf_size = buf_size,
   }, mt)
@@ -697,7 +699,7 @@ if OPENSSL_3_UP then
 end
 
 function _M:get_parameters()
-  if not self.key_type_is_ecx then
+  if not self.key_type_uses_raw_private then
     local getter = get_pkey_key[self.key_type]
     if not getter then
       return nil, "key getter not defined"
@@ -720,7 +722,7 @@ function _M:get_parameters()
 end
 
 function _M:set_parameters(opts)
-  if not self.key_type_is_ecx then
+  if not self.key_type_uses_raw_private then
     local getter = get_pkey_key[self.key_type]
     if not getter then
       return nil, "key getter not defined"
@@ -748,7 +750,23 @@ function _M:set_parameters(opts)
 end
 
 function _M:is_private()
-  local params = self:get_parameters()
+  if self.key_type_uses_raw_private then
+    local length = ptr_of_size_t()
+    if C.EVP_PKEY_get_raw_private_key(self.ctx, nil, length) ~= 1 then
+      C.ERR_clear_error()
+      return false
+    end
+
+    local private = ctypes.uchar_array(length[0])
+    local code = C.EVP_PKEY_get_raw_private_key(self.ctx, private, length)
+    C.ERR_clear_error()
+    return code == 1
+  end
+
+  local params, err = self:get_parameters()
+  if params == nil then
+    return nil, err
+  end
   if self.key_type == evp_macro.EVP_PKEY_RSA then
     return params.d ~= nil
   else
@@ -866,7 +884,7 @@ end
 
 function _M:sign_raw(s, padding, opts)
   -- TODO: temporary hack before OpenSSL has proper check for existence of private key
-  if self.key_type_is_ecx and not self:is_private() then
+  if self.key_type_uses_raw_private and not self:is_private() then
     return nil, "pkey:sign_raw: missing private key"
   end
 
@@ -929,7 +947,7 @@ end
 
 function _M:sign(digest, md_alg, padding, opts)
   -- TODO: temporary hack before OpenSSL has proper check for existence of private key
-  if self.key_type_is_ecx and not self:is_private() then
+  if self.key_type_uses_raw_private and not self:is_private() then
     return nil, "pkey:sign: missing private key"
   end
 

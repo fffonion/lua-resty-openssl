@@ -843,6 +843,9 @@ Ed25519 | Y | Y | | Y (PureEdDSA) | |
 X25519 | Y | Y | | | Y (ECDH) |
 Ed448 | Y | Y | | Y (PureEdDSA) | |
 X448 | Y | Y | | | Y (ECDH) |
+ML-DSA (OpenSSL 3.5+) | Y | Y | | Y | |
+SLH-DSA (OpenSSL 3.5+) | Y | Y | | Y | |
+ML-KEM (OpenSSL 3.5+) | Y | Y | | | KEM API not yet exposed |
 
 Direct support of encryption and decryption for EC and ECX does not exist, but
 processes like ECIES is possible with [pkey:derive](#pkeyderive),
