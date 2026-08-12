@@ -72,6 +72,8 @@ Table of Contents
     + [pkey:verify_raw](#pkeyverify_raw)
     + [pkey:verify_recover](#pkeyverify_recover)
     + [pkey:derive](#pkeyderive)
+    + [pkey:encapsulate](#pkeyencapsulate)
+    + [pkey:decapsulate](#pkeydecapsulate)
     + [pkey:tostring](#pkeytostring)
     + [pkey:to_PEM](#pkeyto_pem)
   * [resty.openssl.bn](#restyopensslbn)
@@ -834,18 +836,19 @@ Module to interact with private keys and public keys (EVP_PKEY).
 
 Each key type may only support part of operations:
 
-Key Type | Load existing key | Key generation | Encrypt/Decrypt | Sign/Verify | Key Exchange |
----------|----------|----------------|-----------------|-------------|---------- |
-RSA| Y | Y | Y | Y | |
-DH | Y | Y | | | Y |
-EC | Y | Y | | Y (ECDSA) | Y (ECDH) |
-Ed25519 | Y | Y | | Y (PureEdDSA) | |
-X25519 | Y | Y | | | Y (ECDH) |
-Ed448 | Y | Y | | Y (PureEdDSA) | |
-X448 | Y | Y | | | Y (ECDH) |
-ML-DSA (OpenSSL 3.5+) | Y | Y | | Y | |
-SLH-DSA (OpenSSL 3.5+) | Y | Y | | Y | |
-ML-KEM (OpenSSL 3.5+) | Y | Y | | | KEM API not yet exposed |
+Key Type | Load existing key | Key generation | Encrypt/Decrypt | Sign/Verify | Key Exchange | Encapsulate/Decapsulate |
+---------|----------|----------------|-----------------|-------------|----------|-------------------------|
+RSA| Y | Y | Y | Y | | Y (RSASVE, OpenSSL 3.5+) |
+DH | Y | Y | | | Y | |
+EC | Y | Y | | Y (ECDSA) | Y (ECDH) | Y (DHKEM, OpenSSL 3.5+) |
+Ed25519 | Y | Y | | Y (PureEdDSA) | | |
+X25519 | Y | Y | | | Y (ECDH) | Y (DHKEM, OpenSSL 3.5+) |
+Ed448 | Y | Y | | Y (PureEdDSA) | | |
+X448 | Y | Y | | | Y (ECDH) | Y (DHKEM, OpenSSL 3.5+) |
+ML-DSA (OpenSSL 3.5+) | Y | Y | | Y | | |
+SLH-DSA (OpenSSL 3.5+) | Y | Y | | Y | | |
+ML-KEM (OpenSSL 3.5+) | Y | Y | | | | Y |
+ML-KEM TLS hybrid (OpenSSL 3.5+) | Provider dependent | Y | | | | Y |
 
 Direct support of encryption and decryption for EC and ECX does not exist, but
 processes like ECIES is possible with [pkey:derive](#pkeyderive),
@@ -1078,6 +1081,11 @@ See [Generic EVP parameter getter/setter](#generic-evp-parameter-gettersetter).
 
 Returns a table containing the `parameters` of pkey instance.
 
+For ECX keys and, separately, OpenSSL 3 provider-native keys such as ML-KEM,
+ML-DSA, SLH-DSA and ML-KEM TLS hybrid keys, the table exposes binary `public`
+and `private` fields when the provider permits those components to be
+exported. Some providers intentionally do not export a private component.
+
 [Back to TOC](#table-of-contents)
 
 ### pkey:set_parameters
@@ -1087,6 +1095,11 @@ Returns a table containing the `parameters` of pkey instance.
 Set the parameters of the pkey from a table `params`.
 If the parameter is not set in the `params` table,
 it remains untouched in the pkey instance.
+
+For ECX keys and, separately, OpenSSL 3 provider-native keys, `public` and
+`private` contain the raw binary key components. Setting either component
+replaces the underlying immutable provider key while preserving the pkey
+object.
 
 ```lua
 local pk, err = require("resty.openssl.pkey").new()
@@ -1464,6 +1477,35 @@ instance.
 
 See [examples/x25519-dh.lua](https://github.com/fffonion/lua-resty-openssl/blob/master/examples/x25519-dh.lua)
 for an example on how key exchange works for X25519 keys with DH algorithm.
+
+[Back to TOC](#table-of-contents)
+
+### pkey:encapsulate
+
+**syntax**: *wrapped_key, shared_secret_or_err = pk:encapsulate(properties?)*
+
+Performs a KEM encapsulation using a public key. On success, it returns the
+encapsulated key followed by the generated shared secret. `properties` is an
+optional OpenSSL property query used when creating the operation context.
+
+This method requires OpenSSL 3.0 or later. ML-KEM and the ML-KEM TLS hybrid key
+types require OpenSSL 3.5 or later. OpenSSL also implements RSA RSASVE and
+EC/X25519/X448 DHKEM; this wrapper uses their defaults available in OpenSSL
+3.5 or later.
+
+[Back to TOC](#table-of-contents)
+
+### pkey:decapsulate
+
+**syntax**: *shared_secret, err = pk:decapsulate(wrapped_key, properties?)*
+
+Decapsulates `wrapped_key` using a private KEM key and returns the shared
+secret. `properties` has the same meaning as in
+[pkey:encapsulate](#pkeyencapsulate).
+
+This method requires OpenSSL 3.0 or later. ML-KEM and the ML-KEM TLS hybrid key
+types require OpenSSL 3.5 or later. RSA, EC, X25519 and X448 have the same
+version considerations described for [pkey:encapsulate](#pkeyencapsulate).
 
 [Back to TOC](#table-of-contents)
 

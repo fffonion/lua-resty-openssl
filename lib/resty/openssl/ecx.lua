@@ -11,10 +11,8 @@ local _M = {}
 
 _M.params = {"public", "private"}
 
-local empty_table = {}
-
 function _M.get_parameters(evp_pkey_st)
-  return setmetatable(empty_table, {
+  return setmetatable({}, {
     __index = function(_, k)
       local getter
       if k == 'public' or k == "pub_key" then
@@ -38,9 +36,8 @@ function _M.get_parameters(evp_pkey_st)
   }), nil
 end
 
-function _M.set_parameters(key_type, evp_pkey_st, opts)
-  -- for ecx keys we always create a new EVP_PKEY and release the old one
-  -- Note: we allow to pass a nil as evp_pkey_st to create a new EVP_PKEY
+function _M.set_parameters(key_type, _, opts)
+  -- Note: nil evp_pkey_st is allowed when constructing a new EVP_PKEY.
   local key
   if opts.private then
     local priv = opts.private
@@ -58,11 +55,21 @@ function _M.set_parameters(key_type, evp_pkey_st, opts)
     return nil, "no parameter is specified"
   end
 
-  if evp_pkey_st ~= nil then
-    C.EVP_PKEY_free(evp_pkey_st)
-  end
   return key
 
+end
+
+function _M.is_private(evp_pkey_st)
+  local length = ctypes.ptr_of_size_t()
+  if C.EVP_PKEY_get_raw_private_key(evp_pkey_st, nil, length) ~= 1 then
+    C.ERR_clear_error()
+    return false
+  end
+
+  local private = ctypes.uchar_array(length[0])
+  local code = C.EVP_PKEY_get_raw_private_key(evp_pkey_st, private, length)
+  C.ERR_clear_error()
+  return code == 1
 end
 
 return _M
