@@ -926,6 +926,19 @@ local key, err = pkey.new({
 })
 ```
 
+On OpenSSL 3.0 or later, any key type implemented by a loaded provider can be
+requested by name. For example, OpenSSL 3.5 or later provides post-quantum key
+types including:
+
+```lua
+local ml_dsa = assert(pkey.new({ type = "ML-DSA-44" }))
+local ml_kem = assert(pkey.new({ type = "ML-KEM-768" }))
+local slh_dsa = assert(pkey.new({ type = "SLH-DSA-SHA2-128s" }))
+```
+
+`config.properties` may be used to select a provider implementation for these
+provider-native key types.
+
 It's also possible to pass a PEM-encoded EC or DH parameters to `config.param` for key generation:
 
 ```lua
@@ -1149,6 +1162,12 @@ Returns a ASN1_OBJECT of key type of the private key as a table.
 
 Starting from lua-resty-openssl 1.6.0, an optional argument `nid_only` can be set to `true`
 to only return the numeric NID of the key.
+
+On OpenSSL 3.0 or later, this method preserves the historical NID and ASN.1
+table for existing key types. Standardized post-quantum key types with assigned
+OIDs, such as ML-KEM, ML-DSA and SLH-DSA, return the same table shape using
+their OID NID. A provider-only key type without an assigned OID returns `nil`
+and an error rather than a synthetic NID.
 
 ```lua
 local pkey, err = require("resty.openssl.pkey").new({type="X448"})

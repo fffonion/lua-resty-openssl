@@ -1311,19 +1311,91 @@ true
             }))
             ngx.say(encode_sorted_json(p:get_key_type()))
             ngx.say(p:get_key_type(true))
+
+            p = myassert(require("resty.openssl.pkey").new({
+                type = 'EC',
+                curve = 'prime256v1',
+            }))
+            ngx.say(encode_sorted_json(p:get_key_type()))
+            ngx.say(p:get_key_type(true))
         }
     }
 --- request
     GET /t
 --- response_body_like eval
 '{"id":"1.2.840.113549.1.1.1","ln":"rsaEncryption","nid":6,"sn":"rsaEncryption"}
-6'
+6
+{"id":"1.2.840.10045.2.1","ln":"id-ecPublicKey","nid":408,"sn":"id-ecPublicKey"}
+408'
 --- no_error_log
 [error]
 
 
 
-=== TEST 38: misc: get size
+=== TEST 38: misc: provider and post-quantum key types
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local version = require("resty.openssl.version")
+            local types = {
+                "ML-KEM-512",
+                "ML-DSA-44",
+                "SLH-DSA-SHA2-128s",
+            }
+
+            if version.version_num < 0x30500000 then
+                for _ = 1, #types do
+                    ngx.say("true\ntrue\ntrue")
+                end
+                ngx.say("true\ntrue")
+                ngx.exit(0)
+            end
+
+            local pkey = require("resty.openssl.pkey")
+            for _, typ in ipairs(types) do
+                local key = myassert(pkey.new({ type = typ }))
+                local info = myassert(key:get_key_type())
+                local nid = myassert(key:get_key_type(true))
+                local public = myassert(pkey.new(myassert(key:to_PEM("public")), {
+                    format = "PEM",
+                    type = "pu",
+                }))
+
+                ngx.say(info.nid > 0)
+                ngx.say(nid == info.nid)
+                ngx.say(public:get_key_type(true) == nid)
+            end
+
+            -- Provider-only hybrid key types don't have an ASN.1 NID, but
+            -- they must still be accepted as pkey objects.
+            local hybrid = myassert(pkey.new({ type = "X25519MLKEM768" }))
+            local info, err = hybrid:get_key_type()
+            ngx.say(info == nil)
+            ngx.say(err:find("has no ASN.1 NID", 1, true) ~= nil)
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+"
+--- no_error_log
+[error]
+
+
+
+=== TEST 39: misc: get size
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -1343,7 +1415,7 @@ true
 
 
 
-=== TEST 39: misc: Checks if it's private key
+=== TEST 40: misc: Checks if it's private key
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -1381,7 +1453,7 @@ true
 
 
 
-=== TEST 40: misc: Checks if it's private key: ecx
+=== TEST 41: misc: Checks if it's private key: ecx
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -1417,7 +1489,7 @@ true
 
 
 
-=== TEST 41: misc: Returns provider
+=== TEST 42: misc: Returns provider
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -1441,7 +1513,7 @@ default
 
 
 
-=== TEST 42: params: Returns gettable, settable params
+=== TEST 43: params: Returns gettable, settable params
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -1467,7 +1539,7 @@ default
 
 
 
-=== TEST 43: params: Get params, set params
+=== TEST 44: params: Get params, set params
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {

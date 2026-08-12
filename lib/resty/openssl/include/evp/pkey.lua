@@ -98,7 +98,7 @@ if OPENSSL_3_UP then
   ffi.cdef [[
     int EVP_PKEY_CTX_set_rsa_padding(EVP_PKEY_CTX *ctx, int pad_mode);
 
-    int EVP_PKEY_get_base_id(const EVP_PKEY *pkey);
+    const char *EVP_PKEY_get0_type_name(const EVP_PKEY *key);
     int EVP_PKEY_get_size(const EVP_PKEY *pkey);
 
     int EVP_PKEY_CTX_set_ec_paramgen_curve_nid(EVP_PKEY_CTX *ctx, int nid);
