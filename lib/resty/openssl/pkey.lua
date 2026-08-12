@@ -295,7 +295,7 @@ local load_param_funcs = {
 
 local function generate_key(config)
   local typ = config.type or 'RSA'
-  local key_type
+  local key_type, provider_name
 
   if typ == "RSA" then
     key_type = evp_macro.EVP_PKEY_RSA
@@ -305,6 +305,10 @@ local function generate_key(config)
     key_type = evp_macro.EVP_PKEY_DH
   elseif evp_macro.ecx_curves[typ] then
     key_type = evp_macro.ecx_curves[typ]
+  elseif OPENSSL_3_UP then
+    -- provider-based algorithm (e.g. post-quantum ML-DSA/ML-KEM/SLH-DSA): it has
+    -- no legacy key type id, so create the keygen context from its name.
+    provider_name = typ
   else
     return nil, "unsupported type " .. typ
   end
@@ -314,7 +318,12 @@ local function generate_key(config)
 
   local pctx
 
-  if key_type == evp_macro.EVP_PKEY_EC or key_type == evp_macro.EVP_PKEY_DH then
+  if provider_name then
+    pctx = C.EVP_PKEY_CTX_new_from_name(nil, provider_name, nil)
+    if pctx == nil then
+      return nil, format_error("EVP_PKEY_CTX_new_from_name")
+    end
+  elseif key_type == evp_macro.EVP_PKEY_EC or key_type == evp_macro.EVP_PKEY_DH then
     local params, err
     if config.param then
       -- HACK
@@ -597,6 +606,25 @@ function _M.new(s, opts)
   ffi_gc(ctx, C.EVP_PKEY_free)
 
   local key_type = OPENSSL_3_UP and C.EVP_PKEY_get_base_id(ctx) or C.EVP_PKEY_base_id(ctx)
+  if key_type == 0 and OPENSSL_3_UP then
+    -- EVP_PKEY_get_base_id() can return EVP_PKEY_NONE (0) even for keys that do
+    -- have a legacy type. Recover the classical families with EVP_PKEY_is_a()
+    -- first (their keymgmt name does not round-trip through OBJ_txt2nid: "RSA" ->
+    -- NID_rsa, "EC"/"DH" -> undef), then fall back to the algorithm name for
+    -- provider-only keys such as the post-quantum ML-DSA/ML-KEM/SLH-DSA.
+    if C.EVP_PKEY_is_a(ctx, "RSA") == 1 then
+      key_type = evp_macro.EVP_PKEY_RSA
+    elseif C.EVP_PKEY_is_a(ctx, "EC") == 1 then
+      key_type = evp_macro.EVP_PKEY_EC
+    elseif C.EVP_PKEY_is_a(ctx, "DH") == 1 or C.EVP_PKEY_is_a(ctx, "DHX") == 1 then
+      key_type = evp_macro.EVP_PKEY_DH
+    else
+      local type_name = C.EVP_PKEY_get0_type_name(ctx)
+      if type_name ~= nil then
+        key_type = C.OBJ_txt2nid(type_name)
+      end
+    end
+  end
   if key_type == 0 then
     return nil, "pkey.new: cannot get key_type"
   end
