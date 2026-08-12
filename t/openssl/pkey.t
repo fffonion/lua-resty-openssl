@@ -277,7 +277,68 @@ true
 
 
 
-=== TEST 9: paramgen: Outpus DH and EC params
+=== TEST 10: compose: Compose provider keys from raw parameters
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local version = require("resty.openssl.version")
+            if version.version_num < 0x30500000 then
+                ngx.say("ML-KEM-512 800 1632 false true")
+                ngx.say("ML-DSA-44 1312 2560 false true")
+                ngx.say("SLH-DSA-SHA2-128s 32 64 false true")
+                ngx.say("X25519MLKEM768 1216 2432 false true")
+                ngx.say("X448MLKEM1024 1624 3224 false true")
+                ngx.say("SecP256r1MLKEM768 1249 nil false nil")
+                ngx.say("SecP384r1MLKEM1024 1665 nil false nil")
+                ngx.exit(0)
+            end
+
+            local pkey = require("resty.openssl.pkey")
+            local types = {
+                "ML-KEM-512", "ML-DSA-44", "SLH-DSA-SHA2-128s",
+                "X25519MLKEM768", "X448MLKEM1024",
+                "SecP256r1MLKEM768", "SecP384r1MLKEM1024",
+            }
+
+            for _, typ in ipairs(types) do
+                local private = myassert(pkey.new({ type = typ }))
+                local params = myassert(private:get_parameters())
+                local public = myassert(pkey.new({
+                    type = typ,
+                    params = { public = params.public },
+                }))
+                local copied_private
+
+                if params.private ~= nil then
+                    local copied = myassert(pkey.new({
+                        type = typ,
+                        params = { private = params.private },
+                    }))
+                    copied_private = copied:is_private()
+                end
+                ngx.say(typ, " ", #params.public, " ",
+                        params.private and #params.private, " ",
+                        public:is_private(), " ", copied_private)
+            end
+        }
+    }
+--- request
+    GET /t
+--- response_body
+ML-KEM-512 800 1632 false true
+ML-DSA-44 1312 2560 false true
+SLH-DSA-SHA2-128s 32 64 false true
+X25519MLKEM768 1216 2432 false true
+X448MLKEM1024 1624 3224 false true
+SecP256r1MLKEM768 1249 nil false nil
+SecP384r1MLKEM1024 1665 nil false nil
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: paramgen: Outpus DH and EC params
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -305,7 +366,7 @@ true
 
 
 
-=== TEST 10: paramgen: Load parameters for keygen
+=== TEST 12: paramgen: Load parameters for keygen
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -348,7 +409,7 @@ true
 
 
 
-=== TEST 11: load: Loads encrypted PEM pkey with passphrase
+=== TEST 13: load: Loads encrypted PEM pkey with passphrase
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -380,7 +441,7 @@ ok
 
 
 
-=== TEST 12: load: Loads encrypted PEM pkey with passphrase callback
+=== TEST 14: load: Loads encrypted PEM pkey with passphrase callback
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -416,7 +477,7 @@ ok
 
 
 
-=== TEST 13: load: PEM passphrase_cb won't overflow
+=== TEST 15: load: PEM passphrase_cb won't overflow
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -490,7 +551,7 @@ ok
 
 
 
-=== TEST 14: load: Loads DER format
+=== TEST 16: load: Loads DER format
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -514,7 +575,7 @@ ok
 
 
 
-=== TEST 15: load: Reads and write pkcs1 rsa key
+=== TEST 17: load: Reads and write pkcs1 rsa key
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -564,7 +625,7 @@ true
 
 
 
-=== TEST 16: write: Outputs DER and JWK
+=== TEST 18: write: Outputs DER and JWK
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -597,7 +658,7 @@ true
 
 
 
-=== TEST 17: write: Outputs public key
+=== TEST 19: write: Outputs public key
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -615,7 +676,53 @@ true
 
 
 
-=== TEST 18: parameters: Extracts RSA parameters
+=== TEST 20: write: Outputs post-quantum PEM and DER keys
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local version = require("resty.openssl.version")
+            if version.version_num < 0x30500000 then
+                ngx.say("ML-KEM-512 PRIVATE KEY PUBLIC KEY 1730 822 true false")
+                ngx.say("ML-DSA-44 PRIVATE KEY PUBLIC KEY 2626 1334 true false")
+                ngx.say("SLH-DSA-SHA2-128s PRIVATE KEY PUBLIC KEY 84 50 true false")
+                ngx.exit(0)
+            end
+
+            local pkey = require("resty.openssl.pkey")
+            local types = {
+                "ML-KEM-512", "ML-DSA-44", "SLH-DSA-SHA2-128s",
+            }
+            for _, typ in ipairs(types) do
+                local private = myassert(pkey.new({ type = typ }))
+                local private_pem = myassert(private:tostring("private", "PEM"))
+                local public_pem = myassert(private:tostring("public", "PEM"))
+                local private_der = myassert(private:tostring("private", "DER"))
+                local public_der = myassert(private:tostring("public", "DER"))
+                local loaded_private = myassert(pkey.new(
+                    private_der, { format = "DER", type = "pr" }))
+                local loaded_public = myassert(pkey.new(
+                    public_der, { format = "DER", type = "pu" }))
+                ngx.say(typ, " ", private_pem:match("BEGIN ([^-]+)"), " ",
+                        public_pem:match("BEGIN ([^-]+)"), " ",
+                        #private_der, " ", #public_der, " ",
+                        loaded_private:is_private(), " ",
+                        loaded_public:is_private())
+            end
+        }
+    }
+--- request
+    GET /t
+--- response_body
+ML-KEM-512 PRIVATE KEY PUBLIC KEY 1730 822 true false
+ML-DSA-44 PRIVATE KEY PUBLIC KEY 2626 1334 true false
+SLH-DSA-SHA2-128s PRIVATE KEY PUBLIC KEY 84 50 true false
+--- no_error_log
+[error]
+
+
+
+=== TEST 21: parameters: Extracts RSA parameters
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -652,7 +759,7 @@ nil
 
 
 
-=== TEST 19: parameters: Extracts EC parameters
+=== TEST 22: parameters: Extracts EC parameters
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -691,7 +798,7 @@ nil
 
 
 
-=== TEST 20: parameters: Extracts Ed25519 parameters
+=== TEST 23: parameters: Extracts Ed25519 parameters
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -717,7 +824,57 @@ nil
 
 
 
-=== TEST 21: parameters: Set DH parameters
+=== TEST 24: parameters: Extracts and sets post-quantum parameters
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local version = require("resty.openssl.version")
+            if version.version_num < 0x30500000 then
+                ngx.say("ML-KEM-512 800 1632 false true")
+                ngx.say("ML-DSA-44 1312 2560 false true")
+                ngx.say("SLH-DSA-SHA2-128s 32 64 false true")
+                ngx.say("X25519MLKEM768 1216 2432 false true")
+                ngx.say("SecP256r1MLKEM768 1249 nil false nil")
+                ngx.exit(0)
+            end
+
+            local pkey = require("resty.openssl.pkey")
+            local types = {
+                "ML-KEM-512", "ML-DSA-44", "SLH-DSA-SHA2-128s",
+                "X25519MLKEM768", "SecP256r1MLKEM768",
+            }
+            for _, typ in ipairs(types) do
+                local private = myassert(pkey.new({ type = typ }))
+                local params = myassert(private:get_parameters())
+                local reset = myassert(pkey.new({ type = typ }))
+                myassert(reset:set_parameters({ public = params.public }))
+                local public_only = reset:is_private()
+                local restored
+                if params.private ~= nil then
+                    myassert(reset:set_parameters({ private = params.private }))
+                    restored = reset:is_private()
+                end
+                ngx.say(typ, " ", #params.public, " ",
+                        params.private and #params.private, " ",
+                        public_only, " ", restored)
+            end
+        }
+    }
+--- request
+    GET /t
+--- response_body
+ML-KEM-512 800 1632 false true
+ML-DSA-44 1312 2560 false true
+SLH-DSA-SHA2-128s 32 64 false true
+X25519MLKEM768 1216 2432 false true
+SecP256r1MLKEM768 1249 nil false nil
+--- no_error_log
+[error]
+
+
+
+=== TEST 25: parameters: Set DH parameters
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -764,7 +921,7 @@ A4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507FD6406CFF14266D31266FEA1E5C41564B
 
 
 
-=== TEST 22: encryption: Encrypt and decrypt
+=== TEST 26: encryption: Encrypt and decrypt
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -794,7 +951,7 @@ A4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507FD6406CFF14266D31266FEA1E5C41564B
 
 
 
-=== TEST 23: encryption: Encrypt and decrypt with ctrl str
+=== TEST 27: encryption: Encrypt and decrypt with ctrl str
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -836,7 +993,62 @@ A4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507FD6406CFF14266D31266FEA1E5C41564B
 
 
 
-=== TEST 24: signature: Sign and verify
+=== TEST 28: encryption: invalid padding error message preserves user input
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local privkey = myassert(require("resty.openssl.pkey").new())
+            local pubkey = myassert(require("resty.openssl.pkey").new(assert(privkey:to_PEM("public"))))
+
+            local ok, err = pubkey:encrypt("23333", "bad_pad")
+            ngx.say(ok)
+            ngx.say(err)
+        }
+    }
+--- request
+    GET /t
+--- response_body eval
+"nil
+invalid padding: bad_pad
+"
+--- no_error_log
+[error]
+
+
+
+=== TEST 29: encryption: Post-quantum signature keys are unsupported
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local version = require("resty.openssl.version")
+            if version.version_num < 0x30500000 then
+                ngx.say("pkey:asymmetric_routine EVP_PKEY_encrypt_init")
+                ngx.say("pkey:asymmetric_routine EVP_PKEY_decrypt_init")
+                ngx.exit(0)
+            end
+
+            local key = myassert(require("resty.openssl.pkey").new({
+                type = "ML-DSA-44",
+            }))
+            local _, encrypt_err = key:encrypt("x")
+            local _, decrypt_err = key:decrypt("x")
+            ngx.say(encrypt_err:match("^(.-): code:"))
+            ngx.say(decrypt_err:match("^(.-): code:"))
+        }
+    }
+--- request
+    GET /t
+--- response_body
+pkey:asymmetric_routine EVP_PKEY_encrypt_init
+pkey:asymmetric_routine EVP_PKEY_decrypt_init
+--- no_error_log
+[error]
+
+
+
+=== TEST 30: signature: Sign and verify
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -865,7 +1077,7 @@ true
 
 
 
-=== TEST 25: signature: One shot sign and verify
+=== TEST 31: signature: One shot sign and verify
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -906,7 +1118,61 @@ true
 
 
 
-=== TEST 26: signature: Error on bad digest or verify parameters
+=== TEST 32: signature: Post-quantum one-shot sign and verify
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local version = require("resty.openssl.version")
+            if version.version_num < 0x30500000 then
+                ngx.say("2420 true\n7856 true\n7856 true")
+                ngx.say("pkey:asymmetric_routine EVP_PKEY_sign_init: code: -2")
+                ngx.say("pkey:asymmetric_routine EVP_PKEY_verify_init: code: -2")
+                ngx.say("pkey:asymmetric_routine EVP_PKEY_verify_recover_init: code: -2")
+                ngx.exit(0)
+            end
+
+            local pkey = require("resty.openssl.pkey")
+            local types = {
+                "ML-DSA-44",
+                "SLH-DSA-SHA2-128s", "SLH-DSA-SHAKE-128s",
+            }
+            for _, typ in ipairs(types) do
+                local private = myassert(pkey.new({ type = typ }))
+                local public = myassert(pkey.new(
+                    myassert(private:to_PEM("public")),
+                    { format = "PEM", type = "pu" }
+                ))
+                local signature = myassert(private:sign("post quantum", nil))
+                local verified = myassert(public:verify(
+                    signature, "post quantum", nil))
+                ngx.say(#signature, " ", verified)
+            end
+
+            local key = myassert(pkey.new({ type = "ML-DSA-44" }))
+            local _, sign_err = key:sign_raw("x")
+            local _, verify_err = key:verify_raw("x", "x")
+            local _, recover_err = key:verify_recover("x")
+            ngx.say(sign_err:match("^(.-) error:") or sign_err)
+            ngx.say(verify_err:match("^(.-) error:") or verify_err)
+            ngx.say(recover_err:match("^(.-) error:") or recover_err)
+        }
+    }
+--- request
+    GET /t
+--- response_body
+2420 true
+7856 true
+7856 true
+pkey:asymmetric_routine EVP_PKEY_sign_init: code: -2
+pkey:asymmetric_routine EVP_PKEY_verify_init: code: -2
+pkey:asymmetric_routine EVP_PKEY_verify_recover_init: code: -2
+--- no_error_log
+[error]
+
+
+
+=== TEST 33: signature: Error on bad digest or verify parameters
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -935,7 +1201,7 @@ pkey:verify: expect a string at #1
 
 
 
-=== TEST 27: signature: Raw sign, raw verify and recover
+=== TEST 34: signature: Raw sign, raw verify and recover
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -973,7 +1239,7 @@ true
 
 
 
-=== TEST 28: signature: Streaming sign and one shot sign can cross verify
+=== TEST 35: signature: Streaming sign and one shot sign can cross verify
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -1030,7 +1296,7 @@ true
 
 
 
-=== TEST 29: signature: Sign/verify with md_alg
+=== TEST 36: signature: Sign/verify with md_alg
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -1066,7 +1332,7 @@ false
 
 
 
-=== TEST 30: signature: Sign/verify with paddings
+=== TEST 37: signature: Sign/verify with paddings
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -1103,7 +1369,7 @@ false
 
 
 
-=== TEST 31: signature: Sign/verify with PSS custom salt_len
+=== TEST 38: signature: Sign/verify with PSS custom salt_len
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -1134,7 +1400,7 @@ true
 
 
 
-=== TEST 32: signature: Sign/verify with binary ecdsa sig
+=== TEST 39: signature: Sign/verify with binary ecdsa sig
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -1178,7 +1444,7 @@ nilpkey:sign: ecdsa.sig_raw2der: invalid signature length, expect 64 but got \\d
 
 
 
-=== TEST 33: signature: Sign/verify with binary ecdsa sig length
+=== TEST 40: signature: Sign/verify with binary ecdsa sig length
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -1220,7 +1486,7 @@ true
 
 
 
-=== TEST 34: signature: Sign and verify with ctrl str
+=== TEST 41: signature: Sign and verify with ctrl str
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -1251,7 +1517,7 @@ true
 
 
 
-=== TEST 35: signature: Get default digest type
+=== TEST 42: signature: Get default digest type
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -1271,7 +1537,7 @@ true
 
 
 
-=== TEST 36: derivation: Key derivation for EC, X448 and X25519
+=== TEST 43: derivation: Key derivation for EC, X448 and X25519
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -1301,7 +1567,111 @@ true
 
 
 
-=== TEST 37: misc: get key type
+=== TEST 44: KEM: Post-quantum encapsulate and decapsulate
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local version = require("resty.openssl.version")
+            if version.version_num < 0x30500000 then
+                ngx.say("ML-KEM-512 768 32 true")
+                ngx.say("ML-KEM-768 1088 32 true")
+                ngx.say("ML-KEM-1024 1568 32 true")
+                ngx.say("X25519MLKEM768 1120 64 true")
+                ngx.say("X448MLKEM1024 1624 88 true")
+                ngx.say("SecP256r1MLKEM768 1153 64 true")
+                ngx.say("SecP384r1MLKEM1024 1665 80 true")
+                ngx.say("pkey:derive: EVP_PKEY_derive_init: code: -2")
+                ngx.exit(0)
+            end
+
+            local pkey = require("resty.openssl.pkey")
+            local types = {
+                "ML-KEM-512", "ML-KEM-768", "ML-KEM-1024",
+                "X25519MLKEM768", "X448MLKEM1024",
+                "SecP256r1MLKEM768", "SecP384r1MLKEM1024",
+            }
+            for _, typ in ipairs(types) do
+                local private = myassert(pkey.new({ type = typ }))
+                local params = myassert(private:get_parameters())
+                local public = myassert(pkey.new({
+                    type = typ,
+                    params = { public = params.public },
+                }))
+                local wrapped, secret = public:encapsulate()
+                assert(wrapped, secret)
+                ngx.say(typ, " ", #wrapped, " ", #secret, " ",
+                        myassert(private:decapsulate(wrapped)) == secret)
+            end
+
+            local signature_key = myassert(pkey.new({ type = "ML-DSA-44" }))
+            local _, derive_err = signature_key:derive(signature_key)
+            ngx.say(derive_err:match("^(.-) error:") or derive_err)
+        }
+    }
+--- request
+    GET /t
+--- response_body
+ML-KEM-512 768 32 true
+ML-KEM-768 1088 32 true
+ML-KEM-1024 1568 32 true
+X25519MLKEM768 1120 64 true
+X448MLKEM1024 1624 88 true
+SecP256r1MLKEM768 1153 64 true
+SecP384r1MLKEM1024 1665 80 true
+pkey:derive: EVP_PKEY_derive_init: code: -2
+--- no_error_log
+[error]
+
+
+
+=== TEST 45: KEM: RSA, EC, X25519 and X448
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local version = require("resty.openssl.version")
+            if version.version_num < 0x30500000 then
+                ngx.say("RSA 128 128 true")
+                ngx.say("EC 65 32 true")
+                ngx.say("X25519 32 32 true")
+                ngx.say("X448 56 64 true")
+                ngx.exit(0)
+            end
+
+            local pkey = require("resty.openssl.pkey")
+            local configs = {
+                { type = "RSA", bits = 1024 },
+                { type = "EC", curve = "prime256v1" },
+                { type = "X25519" },
+                { type = "X448" },
+            }
+            for _, config in ipairs(configs) do
+                local private = myassert(pkey.new(config))
+                local public = myassert(pkey.new(
+                    myassert(private:to_PEM("public")),
+                    { type = "pu", format = "PEM" }
+                ))
+                local wrapped, secret = public:encapsulate()
+                assert(wrapped, secret)
+                ngx.say(config.type, " ", #wrapped, " ", #secret, " ",
+                        myassert(private:decapsulate(wrapped)) == secret)
+            end
+        }
+    }
+--- request
+    GET /t
+--- response_body
+RSA 128 128 true
+EC 65 32 true
+X25519 32 32 true
+X448 56 64 true
+--- no_error_log
+[error]
+
+
+
+=== TEST 46: misc: get key type
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -1322,17 +1692,17 @@ true
     }
 --- request
     GET /t
---- response_body_like eval
-'{"id":"1.2.840.113549.1.1.1","ln":"rsaEncryption","nid":6,"sn":"rsaEncryption"}
+--- response_body
+{"id":"1.2.840.113549.1.1.1","ln":"rsaEncryption","nid":6,"sn":"rsaEncryption"}
 6
 {"id":"1.2.840.10045.2.1","ln":"id-ecPublicKey","nid":408,"sn":"id-ecPublicKey"}
-408'
+408
 --- no_error_log
 [error]
 
 
 
-=== TEST 38: misc: provider and post-quantum key types
+=== TEST 47: misc: provider and post-quantum key types
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -1345,77 +1715,86 @@ true
             }
 
             if version.version_num < 0x30500000 then
-                for _ = 1, #types do
-                    ngx.say("true\ntrue\ntrue")
-                end
-                ngx.say("true\nfalse\ntrue")
-                ngx.say("true\ntrue")
+                ngx.say('{"id":"2.16.840.1.101.3.4.4.1","ln":"ML-KEM-512","nid":1454,"sn":"id-alg-ml-kem-512"}')
+                ngx.say(1454)
+                ngx.say('{"id":"2.16.840.1.101.3.4.3.17","ln":"ML-DSA-44","nid":1457,"sn":"id-ml-dsa-44"}')
+                ngx.say(1457)
+                ngx.say('{"id":"2.16.840.1.101.3.4.3.20","ln":"SLH-DSA-SHA2-128s","nid":1460,"sn":"id-slh-dsa-sha2-128s"}')
+                ngx.say(1460)
+                ngx.say("nil")
+                ngx.say("pkey:get_key_type: key type has no ASN.1 NID")
                 ngx.exit(0)
             end
 
             local pkey = require("resty.openssl.pkey")
-            local keys = {}
             for _, typ in ipairs(types) do
                 local key = myassert(pkey.new({ type = typ }))
                 local info = myassert(key:get_key_type())
                 local nid = myassert(key:get_key_type(true))
-                local public = myassert(pkey.new(myassert(key:to_PEM("public")), {
-                    format = "PEM",
-                    type = "pu",
-                }))
 
-                ngx.say(info.nid > 0)
-                ngx.say(nid == info.nid)
-                ngx.say(public:get_key_type(true) == nid)
-                assert(key:is_private() == true)
-                assert(public:is_private() == false)
-                local params = myassert(key:get_parameters())
-                assert(type(params.public) == "string")
-                assert(type(params.private) == "string")
-                local public_params = myassert(public:get_parameters())
-                assert(type(public_params.public) == "string")
-                assert(public_params.private == nil)
-                keys[typ] = { private = key, public = public }
+                ngx.say(encode_sorted_json(info))
+                ngx.say(nid)
             end
-
-            local pair = keys["ML-DSA-44"]
-            ngx.say(pair.private:is_private())
-            ngx.say(pair.public:is_private())
-            local signature = myassert(pair.private:sign("hello PQ", nil))
-            ngx.say(myassert(pair.public:verify(signature, "hello PQ", nil)))
 
             -- Provider-only hybrid key types don't have an ASN.1 NID, but
             -- they must still be accepted as pkey objects.
             local hybrid = myassert(pkey.new({ type = "X25519MLKEM768" }))
             local info, err = hybrid:get_key_type()
-            ngx.say(info == nil)
-            ngx.say(err:find("has no ASN.1 NID", 1, true) ~= nil)
+            ngx.say(info)
+            ngx.say(err)
         }
     }
 --- request
     GET /t
---- response_body eval
-"true
-true
-true
-true
-true
-true
-true
-true
-true
-true
-false
-true
-true
-true
-"
+--- response_body
+{"id":"2.16.840.1.101.3.4.4.1","ln":"ML-KEM-512","nid":1454,"sn":"id-alg-ml-kem-512"}
+1454
+{"id":"2.16.840.1.101.3.4.3.17","ln":"ML-DSA-44","nid":1457,"sn":"id-ml-dsa-44"}
+1457
+{"id":"2.16.840.1.101.3.4.3.20","ln":"SLH-DSA-SHA2-128s","nid":1460,"sn":"id-slh-dsa-sha2-128s"}
+1460
+nil
+pkey:get_key_type: key type has no ASN.1 NID
 --- no_error_log
 [error]
 
 
 
-=== TEST 39: misc: get size
+=== TEST 48: misc: post-quantum key metadata
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local version = require("resty.openssl.version")
+            if version.version_num < 0x30500000 then
+                ngx.say("true\n2420\ndefault\nnil\nget_default_digest: code: 0")
+                ngx.exit(0)
+            end
+
+            local pkey = require("resty.openssl.pkey")
+            local key = myassert(pkey.new({ type = "ML-DSA-44" }))
+            ngx.say(pkey.istype(key))
+            ngx.say(key:get_size())
+            ngx.say(myassert(key:get_provider_name()))
+            local digest, err = key:get_default_digest_type()
+            ngx.say(digest)
+            ngx.say(err)
+        }
+    }
+--- request
+    GET /t
+--- response_body
+true
+2420
+default
+nil
+get_default_digest: code: 0
+--- no_error_log
+[error]
+
+
+
+=== TEST 49: misc: get size
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -1435,7 +1814,7 @@ true
 
 
 
-=== TEST 40: misc: Checks if it's private key
+=== TEST 50: misc: Checks if it's private key
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -1473,7 +1852,7 @@ true
 
 
 
-=== TEST 41: misc: Checks if it's private key: ecx
+=== TEST 51: misc: Checks if it's private key: ecx
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -1509,7 +1888,7 @@ true
 
 
 
-=== TEST 42: misc: Returns provider
+=== TEST 52: misc: Returns provider
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -1533,7 +1912,7 @@ default
 
 
 
-=== TEST 43: params: Returns gettable, settable params
+=== TEST 53: params: Returns gettable, settable params
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -1559,7 +1938,7 @@ default
 
 
 
-=== TEST 44: params: Get params, set params
+=== TEST 54: params: Get params, set params
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
@@ -1588,24 +1967,42 @@ default
 
 
 
-=== TEST: encryption: invalid padding error message preserves user input
+=== TEST 55: params: Post-quantum generic EVP params
 --- http_config eval: $::HttpConfig
 --- config
     location =/t {
         content_by_lua_block {
-            local privkey = myassert(require("resty.openssl.pkey").new())
-            local pubkey = myassert(require("resty.openssl.pkey").new(assert(privkey:to_PEM("public"))))
+            local version = require("resty.openssl.version")
+            if version.version_num < 0x30500000 then
+                ngx.say("ML-KEM-512 128")
+                ngx.say("ML-DSA-44 128")
+                ngx.say("SLH-DSA-SHA2-128s 128")
+                ngx.say("X25519MLKEM768 192")
+                ngx.say("SecP256r1MLKEM768 192")
+                ngx.exit(0)
+            end
 
-            local ok, err = pubkey:encrypt("23333", "bad_pad")
-            ngx.say(ok)
-            ngx.say(err)
+            local pkey = require("resty.openssl.pkey")
+            local types = {
+                "ML-KEM-512", "ML-DSA-44", "SLH-DSA-SHA2-128s",
+                "X25519MLKEM768", "SecP256r1MLKEM768",
+            }
+            for _, typ in ipairs(types) do
+                local key = myassert(pkey.new({ type = typ }))
+                assert(type(key:gettable_params()) == "table")
+                assert(type(key:settable_params()) == "table")
+                ngx.say(typ, " ", myassert(key:get_param("security-bits")))
+                myassert(key:set_params({}))
+            end
         }
     }
 --- request
     GET /t
---- response_body eval
-"nil
-invalid padding: bad_pad
-"
+--- response_body
+ML-KEM-512 128
+ML-DSA-44 128
+SLH-DSA-SHA2-128s 128
+X25519MLKEM768 192
+SecP256r1MLKEM768 192
 --- no_error_log
 [error]

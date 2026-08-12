@@ -73,6 +73,7 @@ build = {
       ["resty.openssl.pkcs12"] = "lib/resty/openssl/pkcs12.lua",
       ["resty.openssl.pkey"] = "lib/resty/openssl/pkey.lua",
       ["resty.openssl.provider"] = "lib/resty/openssl/provider.lua",
+      ["resty.openssl.provider_key"] = "lib/resty/openssl/provider_key.lua",
       ["resty.openssl.rand"] = "lib/resty/openssl/rand.lua",
       ["resty.openssl.rsa"] = "lib/resty/openssl/rsa.lua",
       ["resty.openssl.ssl"] = "lib/resty/openssl/ssl.lua",
