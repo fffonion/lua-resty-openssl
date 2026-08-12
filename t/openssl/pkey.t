@@ -1369,6 +1369,12 @@ true
                 ngx.say(public:get_key_type(true) == nid)
                 assert(key:is_private() == true)
                 assert(public:is_private() == false)
+                local params = myassert(key:get_parameters())
+                assert(type(params.public) == "string")
+                assert(type(params.private) == "string")
+                local public_params = myassert(public:get_parameters())
+                assert(type(public_params.public) == "string")
+                assert(public_params.private == nil)
                 keys[typ] = { private = key, public = public }
             end
 
