@@ -13,24 +13,25 @@ _M.params = {"public", "private"}
 
 local empty_table = {}
 
-local MAX_ECX_KEY_SIZE = 114 -- ed448 uses 114 bytes
-
 function _M.get_parameters(evp_pkey_st)
   return setmetatable(empty_table, {
     __index = function(_, k)
-      local buf = ctypes.uchar_array(MAX_ECX_KEY_SIZE)
-      local length = ctypes.ptr_of_size_t(MAX_ECX_KEY_SIZE)
-
+      local getter
       if k == 'public' or k == "pub_key" then
-        if C.EVP_PKEY_get_raw_public_key(evp_pkey_st, buf, length) ~= 1 then
-          error(format_error("ecx.get_parameters: EVP_PKEY_get_raw_private_key"))
-        end
-      elseif k == 'private' or k == "priv ~=_key" then
-        if C.EVP_PKEY_get_raw_private_key(evp_pkey_st, buf, length) ~= 1 then
-          return nil, format_error("ecx.get_parameters: EVP_PKEY_get_raw_private_key")
-        end
+        getter = C.EVP_PKEY_get_raw_public_key
+      elseif k == 'private' or k == "priv_key" then
+        getter = C.EVP_PKEY_get_raw_private_key
       else
-        return nil, "ecx.get_parameters: unknown parameter \"" .. k .. "\" for EC key"
+        return nil, "ecx.get_parameters: unknown raw key parameter \"" .. k .. "\""
+      end
+
+      local length = ctypes.ptr_of_size_t()
+      if getter(evp_pkey_st, nil, length) ~= 1 then
+        return nil
+      end
+      local buf = ctypes.uchar_array(length[0])
+      if getter(evp_pkey_st, buf, length) ~= 1 then
+        return nil, format_error("ecx.get_parameters: EVP_PKEY_get_raw_*_key")
       end
       return ffi_str(buf, length[0])
     end
