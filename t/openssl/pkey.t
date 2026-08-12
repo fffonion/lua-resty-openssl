@@ -1348,11 +1348,13 @@ true
                 for _ = 1, #types do
                     ngx.say("true\ntrue\ntrue")
                 end
+                ngx.say("true\nfalse\ntrue")
                 ngx.say("true\ntrue")
                 ngx.exit(0)
             end
 
             local pkey = require("resty.openssl.pkey")
+            local keys = {}
             for _, typ in ipairs(types) do
                 local key = myassert(pkey.new({ type = typ }))
                 local info = myassert(key:get_key_type())
@@ -1365,7 +1367,16 @@ true
                 ngx.say(info.nid > 0)
                 ngx.say(nid == info.nid)
                 ngx.say(public:get_key_type(true) == nid)
+                assert(key:is_private() == true)
+                assert(public:is_private() == false)
+                keys[typ] = { private = key, public = public }
             end
+
+            local pair = keys["ML-DSA-44"]
+            ngx.say(pair.private:is_private())
+            ngx.say(pair.public:is_private())
+            local signature = myassert(pair.private:sign("hello PQ", nil))
+            ngx.say(myassert(pair.public:verify(signature, "hello PQ", nil)))
 
             -- Provider-only hybrid key types don't have an ASN.1 NID, but
             -- they must still be accepted as pkey objects.
@@ -1386,6 +1397,9 @@ true
 true
 true
 true
+true
+true
+false
 true
 true
 true
