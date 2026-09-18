@@ -1237,7 +1237,8 @@ instance or a string. Returns the signed text and error if any.
 
 When passing a [digest](#restyopenssldigest) instance as first parameter, it should not
 have been called [final()](#digestfinal); users should only use [update()](#digestupdate).
-This mode only supports RSA and EC keys.
+This mode only supports RSA and ECDSA keys. For SM2, pass the original message as a
+string so the implementation can include the distinguishing ID when calculating the digest.
 
 When passing a string as first parameter, `md_alg` parameter will specify the name
 to use when signing. When `md_alg` is undefined, for RSA and EC keys, this function does SHA256
@@ -1276,8 +1277,21 @@ This is useful for example to send the signature as JWS.
   pss_saltlen, -- For PSS mode only this option specifies the salt length.
   mgf1_md, -- For PSS and OAEP padding sets the MGF1 digest. If the MGF1 digest is not explicitly set in PSS mode then the signing digest is used.
   oaep_md, -- The digest used for the OAEP hash function. If not explicitly set then SHA1 is used.
+  distid, -- The SM2 distinguishing ID. Defaults to the GM/T 0009-2012 value "1234567812345678".
 }
 ```
+
+OpenSSL versions do not consistently choose the same implicit SM2 ID. Set
+`opts.distid` explicitly on both sides when interoperating with another
+implementation. In particular, pass the matching `-sigopt distid:...` option
+to the OpenSSL CLI. The ID is a byte string and may contain NUL bytes. Omitting
+`opts.distid` uses the default above. On OpenSSL versions before 4.0,
+`distid = ""` explicitly selects an empty ID; OpenSSL 4.0 rejects an empty ID.
+
+Upstream OpenSSL 1.1.1k and earlier are affected by the SM2 decryption buffer
+overflow described in [CVE-2021-3711](https://www.openssl.org/news/secadv/20210824.txt).
+Use OpenSSL 1.1.1l or later, or a vendor build with that fix backported, when
+decrypting untrusted SM2 ciphertext.
 
 It's also possible to pass raw pkeyopt control strings as used in the `pkeyutl` CLI program. This lets users pass in options that
 are not explicitly supported as parameters above.
@@ -1313,7 +1327,8 @@ with OpenSSL 1.1.1 or lower.
 
 When passing [digest](#restyopenssldigest) instances as second parameter, it should not
 have been called [final()](#digestfinal); users should only use [update()](#digestupdate).
-This mode only supports RSA and EC keys.
+This mode only supports RSA and ECDSA keys. For SM2, pass the original message as a
+string so the implementation can include the distinguishing ID when calculating the digest.
 
 When passing a string as second parameter, `md_alg` parameter will specify the name
 to use when verifying. When `md_alg` is undefined, for RSA and EC keys, this function does SHA256

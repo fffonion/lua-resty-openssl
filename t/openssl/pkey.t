@@ -1437,7 +1437,7 @@ true
 true
 truenil
 false.+
-nilpkey:sign: ecdsa.sig_raw2der: invalid signature length, expect 64 but got \\d+
+nilpkey:verify: ecdsa.sig_raw2der: invalid signature length, expect 64 but got \\d+
 "
 --- no_error_log
 [error]
@@ -2004,5 +2004,330 @@ ML-DSA-44 128
 SLH-DSA-SHA2-128s 128
 X25519MLKEM768 192
 SecP256r1MLKEM768 192
+--- no_error_log
+[error]
+
+
+
+=== TEST 56: SM2: keygen, PEM reload, and type detection
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local pkey = require("resty.openssl.pkey")
+            local config = { type = "SM2" }
+            local k = myassert(pkey.new(config))
+            ngx.say(config.curve == nil)
+            local kt = k:get_key_type()
+            ngx.say(kt and (kt.sn == "SM2" or kt.nid == 1172))
+
+            local k2 = myassert(pkey.new({ type = "EC", curve = "SM2" }))
+            local kt2 = k2:get_key_type()
+            ngx.say(kt2 and (kt2.sn == "SM2" or kt2.nid == 1172))
+
+            local wrong_curve, wrong_curve_err = pkey.new({
+                type = "SM2",
+                curve = "prime256v1",
+            })
+            ngx.say(wrong_curve == nil)
+            ngx.say(wrong_curve_err ==
+                    "pkey.new:new_key: SM2 key type requires the SM2 curve")
+
+            local pem = myassert(k:to_PEM("PrivateKey"))
+            local loaded = myassert(pkey.new(pem))
+            local kt3 = loaded:get_key_type()
+            ngx.say(kt3 and (kt3.sn == "SM2" or kt3.nid == 1172))
+
+            -- Verify provider-decoded id-ecPublicKey on SM2 curve is classified as SM2
+            local issue_201_spki = myassert(ngx.decode_base64(
+                    "MFkwEwYHKoZIzj0CAQYIKoEcz1UBgi0DQgAEjV7mWcnGBgl92T7Rf+vP8E7Cg8om" ..
+                    "8F8TNPMk78+AXjwqNP4KuSMmGCxlymPfvalXn3jydApJDm+9VnfsYu/1Ng=="))
+            local spki_key = myassert(pkey.new(issue_201_spki, { format = "DER", type = "pu" }))
+            local spki_kt = spki_key:get_key_type()
+            ngx.say(spki_kt and (spki_kt.sn == "SM2" or spki_kt.nid == 1172))
+
+            local pub_pem = myassert(k:to_PEM("PublicKey"))
+            local pub = myassert(pkey.new(pub_pem))
+            local pub_params = myassert(pub:get_parameters())
+            local private_params = myassert(k:get_parameters())
+            local bn = require("resty.openssl.bn")
+            local openssl3 = require("resty.openssl.version").OPENSSL_3_UP
+            ngx.say(not openssl3 or pub_params ~= private_params)
+            ngx.say(not openssl3 or pub_params.private == nil)
+            ngx.say(bn.istype(pub_params.public))
+            ngx.say(pub_params.group == 1172)
+            ngx.say(pub_params.public == private_params.public and
+                    pub_params.x == private_params.x and
+                    pub_params.y == private_params.y)
+            ngx.say(not myassert(pub:is_private()))
+            ngx.say(myassert(k:is_private()))
+            local has_raw_fields = false
+            for _ in pairs(pub_params) do
+                has_raw_fields = true
+            end
+            ngx.say(not has_raw_fields)
+            if openssl3 then
+                pub = nil
+                collectgarbage("collect")
+                ngx.say(bn.istype(pub_params.x))
+            else
+                ngx.say(true)
+            end
+
+            -- Provider-backed SM2 keys must not report success after mutating
+            -- only an exported, cached EC_KEY.
+            local mutable = myassert(pkey.new({ type = "SM2" }))
+            local replacement = myassert(pkey.new({ type = "SM2" }))
+            local original_private = myassert(
+                    mutable:get_parameters()).private
+            local replacement_private = myassert(
+                    replacement:get_parameters()).private
+            assert(original_private ~= replacement_private)
+            local set_ok, set_err = mutable:set_parameters({
+                private = replacement_private,
+            })
+            local current_private = myassert(
+                    mutable:get_parameters()).private
+            if openssl3 then
+                ngx.say(set_ok == nil)
+                ngx.say(set_err ==
+                        "pkey:set_parameters: cannot extract EC_KEY from SM2 key")
+                ngx.say(current_private == original_private)
+                local _, group_err = mutable:set_parameters({
+                    group = "prime256v1",
+                })
+                ngx.say(group_err ==
+                        "pkey:set_parameters: cannot extract EC_KEY from SM2 key" and
+                        myassert(mutable:get_parameters()).group == 1172)
+
+                local probe = "SM2 key remains usable after rejected mutation"
+                local probe_sig = myassert(mutable:sign(probe, "sm3"))
+                ngx.say(myassert(mutable:verify(
+                        probe_sig, probe, "sm3")) == true)
+            else
+                ngx.say(myassert(set_ok))
+                ngx.say(set_err == nil)
+                ngx.say(current_private == replacement_private)
+
+                local group_ok, group_err = mutable:set_parameters({
+                    group = "prime256v1",
+                })
+                ngx.say(group_ok == nil and group_err ==
+                        "pkey:set_parameters: SM2 key requires the SM2 group" and
+                        myassert(mutable:get_parameters()).group == 1172)
+
+                local wrong_params = myassert(pkey.paramgen({
+                    type = "EC",
+                    curve = "prime256v1",
+                }))
+                local param_key, param_err = pkey.new({
+                    type = "SM2",
+                    param = wrong_params,
+                })
+                local sm2_params = myassert(pkey.paramgen({
+                    type = "EC",
+                    curve = "SM2",
+                }))
+                local valid_param_key = myassert(pkey.new({
+                    type = "SM2",
+                    param = sm2_params,
+                }))
+                local valid_param_type = valid_param_key:get_key_type()
+                ngx.say(param_key == nil and param_err ==
+                        "pkey.new:new_key: SM2 key type requires the SM2 curve" and
+                        (valid_param_type.sn == "SM2" or
+                         valid_param_type.nid == 1172))
+            end
+        }
+    }
+--- request
+    GET /t
+--- response_body
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+--- no_error_log
+[error]
+
+
+
+=== TEST 57: SM2: asymmetric encrypt and decrypt (dynamic buffer)
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local pkey = require("resty.openssl.pkey")
+            local k = myassert(pkey.new({ type = "SM2" }))
+            local pub_pem = myassert(k:to_PEM("PublicKey"))
+            local pub = myassert(pkey.new(pub_pem))
+
+            local msg = string.rep("SM2-Dynamic-Buffer-Allocation-1234567890-", 3)
+            local ct = myassert(pub:encrypt(msg))
+            local pt = myassert(k:decrypt(ct))
+            ngx.say(pt == msg)
+        }
+    }
+--- request
+    GET /t
+--- response_body
+true
+--- no_error_log
+[error]
+
+
+
+=== TEST 58: SM2: sign and verify with default and custom distid
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local pkey = require("resty.openssl.pkey")
+            local k = myassert(pkey.new({ type = "SM2" }))
+            local pub_pem = myassert(k:to_PEM("PublicKey"))
+            local pub = myassert(pkey.new(pub_pem))
+
+            local msg = "Test message for SM2 signature"
+            local gmt_id = "1234567812345678"
+
+            -- Default distid is GM/T 0009-2012
+            local sig = myassert(k:sign(msg, "sm3"))
+            local ok = myassert(pub:verify(sig, msg, "sm3"))
+            ngx.say(ok == true)
+            local ok_gmt = myassert(pub:verify(sig, msg, "sm3", nil, { distid = gmt_id }))
+            ngx.say(ok_gmt == true)
+            local ok_empty_mismatch = pub:verify(sig, msg, "sm3", nil, { distid = "" })
+            ngx.say(not ok_empty_mismatch)
+
+            local openssl4 = require("resty.openssl.version").OPENSSL_4X
+            if not openssl4 then
+                -- Explicit empty distid is an opt-in, not the default
+                local sig_empty = myassert(k:sign(msg, "sm3", nil, { distid = "" }))
+                local ok_empty = myassert(pub:verify(sig_empty, msg, "sm3", nil, { distid = "" }))
+                ngx.say(ok_empty == true)
+            else
+                -- OpenSSL 4.0 rejects zero-length distid
+                local sig_empty = k:sign(msg, "sm3", nil, { distid = "" })
+                ngx.say(sig_empty == nil)
+            end
+
+            -- Custom distid
+            local custom_id = "user_account_12345"
+            local sig_custom = myassert(k:sign(msg, "sm3", nil, { distid = custom_id }))
+            local ok_custom = myassert(pub:verify(sig_custom, msg, "sm3", nil, { distid = custom_id }))
+            ngx.say(ok_custom == true)
+
+            -- Wrong distid must fail
+            local ok_wrong = pub:verify(sig_custom, msg, "sm3", nil, { distid = "wrong_id" })
+            ngx.say(not ok_wrong)
+
+            -- IDs are octet strings and may contain NUL bytes
+            local binary_id = "user\0account"
+            local sig_binary = myassert(k:sign(msg, "sm3", nil, { distid = binary_id }))
+            local ok_binary = myassert(pub:verify(sig_binary, msg, "sm3", nil, { distid = binary_id }))
+            ngx.say(ok_binary == true)
+
+            -- Array-style controls use the same length-aware path
+            local array_id = "alice@example.com"
+            local sig_array = myassert(k:sign(msg, "sm3", nil, { "distid:" .. array_id }))
+            local ok_array = myassert(pub:verify(sig_array, msg, "sm3", nil, { "distid:" .. array_id }))
+            ngx.say(ok_array == true)
+
+            -- Preserve validation errors that don't originate in OpenSSL
+            local _, type_err = k:sign(msg, "sm3", nil, { distid = 123 })
+            ngx.say(type_err == "pkey:sign_verify_prepare: id must be a string")
+
+            local digest = require("resty.openssl.digest")
+            local sign_digest = myassert(digest.new("sm3"))
+            myassert(sign_digest:update(msg))
+            local _, digest_sign_err = k:sign(sign_digest)
+            ngx.say(digest_sign_err ==
+                    "pkey:sign: digest instances are not supported for SM2; pass the message as a string")
+
+            local verify_digest = myassert(digest.new("sm3"))
+            myassert(verify_digest:update(msg))
+            local _, digest_verify_err = pub:verify(sig, verify_digest)
+            ngx.say(digest_verify_err ==
+                    "pkey:verify: digest instances are not supported for SM2; pass the message as a string")
+
+            -- Interoperability vector published by github.com/emmansun/gmsm.
+            local vector_pub = myassert(pkey.new(myassert(ngx.decode_base64(
+                    "MFkwEwYHKoZIzj0CAQYIKoEcz1UBgi0DQgAEg1bmQqQOvRjSm6NTL72f" ..
+                    "O77o8CfD9vOaW6L4cDafmYiYH17+VdHFzfbA7ysHCEehT3/fQnKo3wnE" ..
+                    "QvMFivlLoQ==")), { format = "DER", type = "pu" }))
+            local vector_sig = myassert(ngx.decode_base64(
+                    "MEQCIFs6eZvZTJBjEg1yhnaSIK9rD6EnAJrz6HPA6HQu3F+JAiAJeWik" ..
+                    "yLBA/VSNFFazP0cMq9hFa/6lPoqCj5L21L3Ndw=="))
+            local vector_ok = myassert(vector_pub:verify(vector_sig,
+                    "ShangMi SM2 Sign Standard", "sm3"))
+            ngx.say(vector_ok == true)
+        }
+    }
+--- request
+    GET /t
+--- response_body
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+true
+--- no_error_log
+[error]
+
+
+
+=== TEST 59: SM2: ecdsa_use_raw sign and verify with public key
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local pkey = require("resty.openssl.pkey")
+            local k = myassert(pkey.new({ type = "SM2" }))
+            local pub_pem = myassert(k:to_PEM("PublicKey"))
+            local pub = myassert(pkey.new(pub_pem))
+
+            local msg = "Test message for SM2 raw signature"
+            local opts = { ecdsa_use_raw = true }
+
+            local raw = myassert(k:sign(msg, "sm3", nil, opts))
+            ngx.say(#raw == 64)
+            local ok = myassert(pub:verify(raw, msg, "sm3", nil, opts))
+            ngx.say(ok == true)
+
+            local der = myassert(k:sign(msg, "sm3"))
+            local ok_der_as_raw = pub:verify(der, msg, "sm3", nil, opts)
+            ngx.say(not ok_der_as_raw)
+        }
+    }
+--- request
+    GET /t
+--- response_body
+true
+true
+true
 --- no_error_log
 [error]
