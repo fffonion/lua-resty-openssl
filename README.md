@@ -872,6 +872,10 @@ The second parameter `opts` accepts an optional table to constrain key-loading b
 When loading a PEM encoded RSA key, it can either be a PKCS#8 encoded
 `SubjectPublicKeyInfo`/`PrivateKeyInfo` or a PKCS#1 encoded `RSAPublicKey`/`RSAPrivateKey`.
 
+On OpenSSL 1.1.1, an EC key on the SM2 curve is treated as an SM2 key after
+loading. Its `sign()` and `verify()` operations use SM2 signatures rather than
+ECDSA signatures over the same curve.
+
 When loading an encrypted PEM encoded key, the `passphrase` to decrypt it can either be set
 in `opts.passphrase` or `opts.passphrase_cb`:
 
@@ -946,6 +950,10 @@ local slh_dsa = assert(pkey.new({ type = "SLH-DSA-SHA2-128s" }))
 provider-native key types.
 
 It's also possible to pass a PEM-encoded EC or DH parameters to `config.param` for key generation:
+
+For SM2, `config.param` must contain a named-curve SM2 EC parameters block.
+Explicit EC parameter encodings are not supported. On OpenSSL 3.0 or later,
+the block is validated and the SM2 provider generates the key.
 
 ```lua
 local dhparam = pkey.paramgen({
@@ -1241,9 +1249,10 @@ This mode only supports RSA and ECDSA keys. For SM2, pass the original message a
 string so the implementation can include the distinguishing ID when calculating the digest.
 
 When passing a string as first parameter, `md_alg` parameter will specify the name
-to use when signing. When `md_alg` is undefined, for RSA and EC keys, this function does SHA256
+to use when signing. When `md_alg` is undefined, for RSA and non-SM2 EC keys, this function does SHA256
 by default. For Ed25519 or Ed448 keys, this function does a PureEdDSA signing,
 no message digest should be specified and will not be used.
+For SM2 keys, omitting `md_alg` uses SM3.
 
 For RSA key, it's also possible to specify `padding` scheme with following choices:
 
@@ -1277,7 +1286,7 @@ This is useful for example to send the signature as JWS.
   pss_saltlen, -- For PSS mode only this option specifies the salt length.
   mgf1_md, -- For PSS and OAEP padding sets the MGF1 digest. If the MGF1 digest is not explicitly set in PSS mode then the signing digest is used.
   oaep_md, -- The digest used for the OAEP hash function. If not explicitly set then SHA1 is used.
-  distid, -- The SM2 distinguishing ID. Defaults to the GM/T 0009-2012 value "1234567812345678".
+  distid, -- SM2 sign/verify only. Defaults to the GM/T 0009-2012 value "1234567812345678".
 }
 ```
 
@@ -1331,9 +1340,10 @@ This mode only supports RSA and ECDSA keys. For SM2, pass the original message a
 string so the implementation can include the distinguishing ID when calculating the digest.
 
 When passing a string as second parameter, `md_alg` parameter will specify the name
-to use when verifying. When `md_alg` is undefined, for RSA and EC keys, this function does SHA256
+to use when verifying. When `md_alg` is undefined, for RSA and non-SM2 EC keys, this function does SHA256
 by default. For Ed25519 or Ed448 keys, this function does a PureEdDSA verification,
 no message digest should be specified and will not be used.
+For SM2 keys, omitting `md_alg` uses SM3.
 
 When key is a RSA key, the function accepts an optional argument `padding` which choices
 of values are same as those in [pkey:sign](#pkeysign). When `padding` is `RSA_PKCS1_PSS_PADDING`, it's

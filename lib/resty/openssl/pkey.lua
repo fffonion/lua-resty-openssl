@@ -344,19 +344,37 @@ local load_param_funcs = {
   },
 }
 
-local function generate_key(config)
-  local typ = config.type or 'RSA'
+local function _resolve_key_type(config, key_tp)
+  if key_tp ~= "EC" and key_tp ~= "SM2" then
+    return key_tp
+  end
+
+  if legacy_type_nids.SM2 == 0 then
+    if key_tp == "SM2" then
+      return nil, "the linked OpenSSL library doesn't support SM2 key"
+    end
+    return key_tp
+  end
+
   local sm2_curve = false
-  if (typ == "EC" or typ == "SM2") and
-      legacy_type_nids.SM2 ~= 0 and type(config.curve) == "string" then
+  if type(config.curve) == "string" then
     sm2_curve = C.OBJ_txt2nid(config.curve) == legacy_type_nids.SM2
     C.ERR_clear_error()
   end
 
-  if typ == "EC" and sm2_curve then
-    typ = "SM2"
-  elseif typ == "SM2" and config.curve ~= nil and not sm2_curve then
+  if sm2_curve then
+    return "SM2"
+  elseif key_tp == "SM2" and config.curve ~= nil then
     return nil, "SM2 key type requires the SM2 curve"
+  end
+
+  return key_tp
+end
+
+local function generate_key(config)
+  local typ, err = _resolve_key_type(config, config.type or 'RSA')
+  if err then
+    return nil, err
   end
 
   local key_type, pctx
@@ -367,17 +385,36 @@ local function generate_key(config)
     key_type = evp_macro.EVP_PKEY_EC
   elseif typ == "DH" then
     key_type = evp_macro.EVP_PKEY_DH
+  elseif typ == "SM2" then
+    if OPENSSL_3_UP then
+      if config.param then
+        -- Validate the requested group; the provider SM2 keymgmt generates
+        -- the key with its SM2 group rather than using EC paramgen.
+        local group, err = load_pem_der(config.param,
+                                        { format = config.format },
+                                        load_param_funcs[evp_macro.EVP_PKEY_EC])
+        if err then
+          return nil, "load_pem_der: " .. err
+        end
+        ffi_gc(group, C.EC_GROUP_free)
+        if C.EC_GROUP_get_curve_name(group) ~= legacy_type_nids.SM2 then
+          return nil, "SM2 key type requires the SM2 curve"
+        end
+      end
+      pctx = C.EVP_PKEY_CTX_new_from_name(ctx_lib.get_libctx(), typ,
+                                          config.properties)
+      if pctx == nil then
+        return nil, format_error("EVP_PKEY_CTX_new_from_name")
+      end
+    else
+      key_type = evp_macro.EVP_PKEY_EC
+    end
   elseif OPENSSL_3_UP then
     pctx = C.EVP_PKEY_CTX_new_from_name(ctx_lib.get_libctx(), typ,
                                        config.properties)
     if pctx == nil then
       return nil, format_error("EVP_PKEY_CTX_new_from_name")
     end
-  elseif typ == "SM2" then
-    if legacy_type_nids.SM2 == 0 then
-      return nil, "the linked OpenSSL library doesn't support SM2 key"
-    end
-    key_type = evp_macro.EVP_PKEY_EC
   elseif evp_macro.ecx_curves[typ] then
     key_type = evp_macro.ecx_curves[typ]
   else
@@ -400,7 +437,7 @@ local function generate_key(config)
       if key_type == evp_macro.EVP_PKEY_EC then
         local ec_group = ctx
         ffi_gc(ec_group, C.EC_GROUP_free)
-        if typ == "SM2" and legacy_type_nids.SM2 ~= 0 then
+        if typ == "SM2" then
           if C.EC_GROUP_get_curve_name(ec_group) ~= legacy_type_nids.SM2 then
             return nil, "SM2 key type requires the SM2 curve"
           end
@@ -950,14 +987,22 @@ local function asymmetric_routine(self, s, op, padding, opts)
     buf = opts.buf_in
     buf_len = #buf
   else
-    local req_len = ptr_of_size_t()
-    code = f(pkey_ctx, nil, req_len, s, #s)
-    if code <= 0 then
-      return nil, format_error("pkey:asymmetric_routine EVP_PKEY_" .. op_name, code)
-    end
-    if req_len[0] > self.buf_size then
-      self.buf = ctypes.uchar_array(req_len[0])
-      self.buf_size = req_len[0]
+    if self.key_type == legacy_type_nids.SM2 and
+        (op == ASYMMETRIC_OP_ENCRYPT or op == ASYMMETRIC_OP_DECRYPT) then
+      local req_len = ptr_of_size_t()
+      code = f(pkey_ctx, nil, req_len, s, #s)
+      if code <= 0 then
+        return nil, format_error("pkey:asymmetric_routine EVP_PKEY_" .. op_name, code)
+      end
+      local need = tonumber(req_len[0])
+      if op == ASYMMETRIC_OP_DECRYPT and need < #s then
+        -- CVE-2021-3711: OpenSSL 1.1.1k and earlier can underestimate it.
+        need = #s
+      end
+      if need > self.buf_size then
+        self.buf = ctypes.uchar_array(need)
+        self.buf_size = need
+      end
     end
     buf = self.buf
     buf_len = ptr_of_size_t(self.buf_size)

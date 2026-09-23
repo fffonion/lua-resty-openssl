@@ -2183,11 +2183,15 @@ true
             local ct = myassert(pub:encrypt(msg))
             local pt = myassert(k:decrypt(ct))
             ngx.say(pt == msg)
+            ngx.say(type(pub.buf_size) == "number" and pub.buf_size >= #ct)
+            ngx.say(type(k.buf_size) == "number" and k.buf_size >= #ct)
         }
     }
 --- request
     GET /t
 --- response_body
+true
+true
 true
 --- no_error_log
 [error]
@@ -2211,6 +2215,8 @@ true
             local sig = myassert(k:sign(msg, "sm3"))
             local ok = myassert(pub:verify(sig, msg, "sm3"))
             ngx.say(ok == true)
+            local default_sig = myassert(k:sign(msg))
+            ngx.say(myassert(pub:verify(default_sig, msg, "sm3")) == true)
             local ok_gmt = myassert(pub:verify(sig, msg, "sm3", nil, { distid = gmt_id }))
             ngx.say(ok_gmt == true)
             local ok_empty_mismatch = pub:verify(sig, msg, "sm3", nil, { distid = "" })
@@ -2295,6 +2301,7 @@ true
 true
 true
 true
+true
 --- no_error_log
 [error]
 
@@ -2326,6 +2333,63 @@ true
 --- request
     GET /t
 --- response_body
+true
+true
+true
+--- no_error_log
+[error]
+
+
+=== TEST 60: SM2: explicit EC parameters
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local pkey = require("resty.openssl.pkey")
+            local wrong_params = myassert(pkey.paramgen({
+                type = "EC",
+                curve = "prime256v1",
+            }))
+            local wrong_key, wrong_err = pkey.new({
+                type = "SM2",
+                param = wrong_params,
+            })
+            ngx.say(wrong_key == nil and wrong_err ==
+                    "pkey.new:new_key: SM2 key type requires the SM2 curve")
+
+            local sm2_params = myassert(pkey.paramgen({
+                type = "EC",
+                curve = "SM2",
+            }))
+            local key = myassert(pkey.new({
+                type = "SM2",
+                param = sm2_params,
+            }))
+            ngx.say(key:get_key_type().nid == 1172 and
+                    myassert(key:get_parameters()).group == 1172)
+
+            local msg = "SM2 key generated from explicit parameters"
+            local distid = "custom-sm2-id"
+            local sig = myassert(key:sign(msg, "sm3", nil, { distid = distid }))
+            ngx.say(myassert(key:verify(sig, msg, "sm3", nil,
+                                         { distid = distid })) == true)
+
+            if require("resty.openssl.version").OPENSSL_3_UP then
+                local unavailable = pkey.new({
+                    type = "SM2",
+                    param = sm2_params,
+                    properties = "provider=no-such-provider",
+                })
+                ngx.say(unavailable == nil)
+            else
+                ngx.say(true)
+            end
+        }
+    }
+--- request
+    GET /t
+--- response_body
+true
 true
 true
 true
