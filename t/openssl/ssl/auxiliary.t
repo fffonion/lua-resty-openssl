@@ -133,10 +133,11 @@ nil: socket has no SSL context
 [error]
 
 
-=== TEST 4: missing socket methods and request SSL_CTX use lazy legacy getters
+=== TEST 4: unavailable getters use lazy legacy getters
 --- config
     location /t {
         content_by_lua_block {
+            require("ngx.ssl").get_req_ssl_ctx = nil
             local count = 0
             local sock = {}
             package.preload["resty.openssl.auxiliary.nginx_legacy"] = function()
@@ -291,6 +292,9 @@ SSL_CTX
             ngx_ssl.get_req_ssl_pointer = function()
                 return ffi.cast("void *", 1)
             end
+            ngx_ssl.get_req_ssl_ctx = function()
+                return ffi.cast("void *", 4)
+            end
             package.preload["resty.openssl.auxiliary.nginx_legacy"] = function()
                 error("legacy must not load")
             end
@@ -300,6 +304,7 @@ SSL_CTX
             }
             local aux = require "resty.openssl.auxiliary.nginx"
             ngx.say(ffi.istype("SSL *", assert(aux.get_req_ssl())))
+            ngx.say(ffi.istype("SSL_CTX *", assert(aux.get_req_ssl_ctx())))
             ngx.say(ffi.istype("SSL *", assert(aux.get_socket_ssl(sock))))
             ngx.say(ffi.istype("SSL_CTX *", assert(aux.get_socket_ssl_ctx(sock))))
         }
@@ -310,5 +315,56 @@ GET /t
 true
 true
 true
+true
+--- no_error_log
+[error]
+
+
+=== TEST 9: native request SSL_CTX API avoids legacy initialization
+--- config
+    location /t {
+        content_by_lua_block {
+            local ffi = require "ffi"
+            local expected = ffi.cast("void *", 4)
+            require("ngx.ssl").get_req_ssl_ctx = function()
+                return expected
+            end
+            package.preload["resty.openssl.auxiliary.nginx_legacy"] = function()
+                error("legacy must not load")
+            end
+            local aux = require "resty.openssl.auxiliary.nginx"
+            local ctx = assert(aux.get_req_ssl_ctx())
+            ngx.say(ffi.istype("SSL_CTX *", ctx))
+            ngx.say(ffi.cast("void *", ctx) == expected)
+        }
+    }
+--- request
+GET /t
+--- response_body
+true
+true
+--- no_error_log
+[error]
+
+
+=== TEST 10: native request SSL_CTX errors do not trigger legacy fallback
+--- config
+    location /t {
+        content_by_lua_block {
+            require("ngx.ssl").get_req_ssl_ctx = function()
+                return nil, "bad ssl context"
+            end
+            package.preload["resty.openssl.auxiliary.nginx_legacy"] = function()
+                error("legacy must not load")
+            end
+            local aux = require "resty.openssl.auxiliary.nginx"
+            local ctx, err = aux.get_req_ssl_ctx()
+            ngx.say(ctx, ": ", err)
+        }
+    }
+--- request
+GET /t
+--- response_body
+nil: bad ssl context
 --- no_error_log
 [error]
