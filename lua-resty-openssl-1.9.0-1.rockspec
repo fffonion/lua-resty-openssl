@@ -20,6 +20,7 @@ build = {
       ["resty.openssl.auxiliary.ecdsa"] = "lib/resty/openssl/auxiliary/ecdsa.lua",
       ["resty.openssl.auxiliary.jwk"] = "lib/resty/openssl/auxiliary/jwk.lua",
       ["resty.openssl.auxiliary.nginx"] = "lib/resty/openssl/auxiliary/nginx.lua",
+      ["resty.openssl.auxiliary.nginx_legacy"] = "lib/resty/openssl/auxiliary/nginx_legacy.lua",
       ["resty.openssl.auxiliary.nginx_c"] = "lib/resty/openssl/auxiliary/nginx_c.lua",
       ["resty.openssl.bn"] = "lib/resty/openssl/bn.lua",
       ["resty.openssl.cipher"] = "lib/resty/openssl/cipher.lua",

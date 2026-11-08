@@ -4328,7 +4328,12 @@ Module to interact with SSL connection.
 
 **This module is currently considered experimental.**
 
-**Note: to use this module in production, users are encouraged to compile [lua-resty-openssl-aux-module](https://github.com/fffonion/lua-resty-openssl-aux-module).**
+This module prefers lua-resty-core APIs when available: `ngx.ssl.get_req_ssl_pointer()`
+and `ngx.ssl.get_req_ssl_ctx()` for downstream SSL connections and session contexts,
+and `tcpsock:getsslpointer()` / `tcpsock:getsslctx()` for cosockets, in both HTTP
+and stream subsystems. Unavailable APIs fall back to [lua-resty-openssl-aux-module](https://github.com/fffonion/lua-resty-openssl-aux-module)
+or the existing compatibility implementation. The auxiliary module is still
+recommended for production when a lua-resty-core API is unavailable.
 
 [Back to TOC](#table-of-contents)
 
@@ -4573,7 +4578,12 @@ Module to interact with SSL_CTX context.
 
 **This module is currently considered experimental.**
 
-**Note: to use this module in production, users are encouraged to compile [lua-resty-openssl-aux-module](https://github.com/fffonion/lua-resty-openssl-aux-module).**
+This module prefers lua-resty-core APIs when available: `ngx.ssl.get_req_ssl_pointer()`
+and `ngx.ssl.get_req_ssl_ctx()` for downstream SSL connections and session contexts,
+and `tcpsock:getsslpointer()` / `tcpsock:getsslctx()` for cosockets, in both HTTP
+and stream subsystems. Unavailable APIs fall back to [lua-resty-openssl-aux-module](https://github.com/fffonion/lua-resty-openssl-aux-module)
+or the existing compatibility implementation. The auxiliary module is still
+recommended for production when a lua-resty-core API is unavailable.
 
 [Back to TOC](#table-of-contents)
 
