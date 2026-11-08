@@ -8,6 +8,7 @@ local ssl_ctx_type = ffi.typeof("SSL_CTX*")
 
 local ok, ngx_ssl = pcall(require, "ngx.ssl")
 local get_req_ssl_pointer = ok and ngx_ssl.get_req_ssl_pointer
+local get_req_ssl_context = ok and ngx_ssl.get_req_ssl_ctx
 
 local socket_ok = pcall(require, "resty.core.socket")
 local function has_socket_api(name)
@@ -48,9 +49,16 @@ local function get_req_ssl()
 end
 
 local function get_req_ssl_ctx()
-  -- Keep Nginx's session_ctx semantics, which can differ from
-  -- SSL_get_SSL_CTX() after SNI selection.
-  return get_legacy().get_req_ssl_ctx()
+  if not get_req_ssl_context then
+    return get_legacy().get_req_ssl_ctx()
+  end
+
+  local ctx, err = get_req_ssl_context()
+  if ctx == nil then
+    return nil, err
+  end
+
+  return ffi_cast(ssl_ctx_type, ctx)
 end
 
 local function get_socket_ssl(sock)
