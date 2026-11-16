@@ -48,8 +48,9 @@ else
   if ngx_version == 1017008 or ngx_version == 1019003 or ngx_version == 1019009
     or ngx_version == 1021004
     or (not ngx_has_http_v3 and (ngx_version == 1025003 or ngx_version == 1027001
-                                 or ngx_version == 1029002 or ngx_version == 1031001)) then
-    -- 1.17.8, 1.19.3, 1.19.9, 1.21.4, 1.25.3, 1.27.1, 1.29.2, 1.31.1
+                                 or ngx_version == 1029002 or ngx_version == 1031001
+                                 or ngx_version == 1031008)) then
+    -- 1.17.8, 1.19.3, 1.19.9, 1.21.4, 1.25.3, 1.27.1, 1.29.2, 1.31.1, 1.31.8
     ffi.cdef [[
     typedef struct ngx_proxy_protocol_s ngx_proxy_protocol_t;
 
@@ -87,8 +88,9 @@ else
     } ngx_connection_s;
   ]]
   elseif ngx_has_http_v3 and (ngx_version == 1025003 or ngx_version == 1027001
-                              or ngx_version == 1029002 or ngx_version == 1031001) then
-    -- 1.25.3, 1.27.1, 1.29.2, 1.31.1
+                              or ngx_version == 1029002 or ngx_version == 1031001
+                              or ngx_version == 1031008) then
+    -- 1.25.3, 1.27.1, 1.29.2, 1.31.1, 1.31.8
     ffi.cdef [[
     typedef struct ngx_proxy_protocol_s ngx_proxy_protocol_t;
     typedef struct ngx_quic_stream_s ngx_quic_stream_t;
@@ -266,7 +268,7 @@ else
 
   stream_lua_supported = ngx_lua_version >= 10031 -- can't get stream lua version, use ngx_lua_version for a guess
 
-  if ngx_lua_version >= 10019 and ngx_lua_version <= 10031 then
+  if ngx_lua_version >= 10019 and ngx_lua_version <= 10032 then
     -- https://github.com/openresty/lua-nginx-module/blob/master/src/ngx_http_lua_socket_tcp.h
     ffi.cdef[[
       typedef struct {
