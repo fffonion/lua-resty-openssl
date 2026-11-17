@@ -47,6 +47,7 @@ jobs:
           extras: "valgrind perf"
           lua_nginx_module: "v0.10.31rc2"
           lua_resty_core: "v0.1.34rc2"
+          luaossl_cc_opts: "-std=gnu17" # OpenSSL 1.1.1 headers predate C23.
         - nginx: "1.29.2"
           openssl: "3.0.20" # LTS
           extras: "valgrind perf lua-kong-nginx-module"
@@ -299,7 +300,7 @@ jobs:
         luarocks install --local lua_pack
         if [ "${{ matrix.openssl }}" != "4.0.0" ]; then
           luarocks install --local openssl OPENSSL_DIR=$OPENSSL_PREFIX
-          luarocks install --local luaossl CRYPTO_DIR=$OPENSSL_PREFIX OPENSSL_DIR=$OPENSSL_PREFIX
+          luarocks install --local luaossl CRYPTO_DIR=$OPENSSL_PREFIX OPENSSL_DIR=$OPENSSL_PREFIX CFLAGS="$(luarocks config variables.CFLAGS) ${{ matrix.luaossl_cc_opts }}"
           cp ~/.luarocks/lib/lua/5.1/openssl_*-openssl.so ~/.luarocks/lib/lua/5.1/lua-openssl.so
         fi
 
