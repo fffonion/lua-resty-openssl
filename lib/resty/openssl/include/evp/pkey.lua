@@ -99,6 +99,7 @@ if OPENSSL_3_UP then
     int EVP_PKEY_CTX_set_rsa_padding(EVP_PKEY_CTX *ctx, int pad_mode);
 
     const char *EVP_PKEY_get0_type_name(const EVP_PKEY *key);
+    int EVP_PKEY_get_id(const EVP_PKEY *pkey);
     int EVP_PKEY_get_size(const EVP_PKEY *pkey);
     int EVP_PKEY_get_bits(const EVP_PKEY *pkey);
     int EVP_PKEY_get_octet_string_param(const EVP_PKEY *pkey,

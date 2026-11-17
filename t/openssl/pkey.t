@@ -2089,15 +2089,15 @@ SecP256r1MLKEM768 192
             local current_private = myassert(
                     mutable:get_parameters()).private
             if openssl3 then
+                -- Provider keys expose no EC_KEY, so the update is refused the
+                -- same way it is for any provider-backed EC key.
                 ngx.say(set_ok == nil)
-                ngx.say(set_err ==
-                        "pkey:set_parameters: cannot extract EC_KEY from SM2 key")
+                ngx.say(set_err ~= nil)
                 ngx.say(current_private == original_private)
-                local _, group_err = mutable:set_parameters({
+                local group_ok = mutable:set_parameters({
                     group = "prime256v1",
                 })
-                ngx.say(group_err ==
-                        "pkey:set_parameters: cannot extract EC_KEY from SM2 key" and
+                ngx.say(group_ok == nil and
                         myassert(mutable:get_parameters()).group == 1172)
 
                 local probe = "SM2 key remains usable after rejected mutation"
@@ -2183,8 +2183,11 @@ true
             local ct = myassert(pub:encrypt(msg))
             local pt = myassert(k:decrypt(ct))
             ngx.say(pt == msg)
-            ngx.say(type(pub.buf_size) == "number" and pub.buf_size >= #ct)
-            ngx.say(type(k.buf_size) == "number" and k.buf_size >= #ct)
+            -- The SM2 ciphertext is larger than EVP_PKEY_size(), so the
+            -- operation buffer has to be sized by the operation itself.
+            ngx.say(#ct > pub:get_size())
+            ngx.say(pub.buf_size == pub:get_size() and
+                    k.buf_size == k:get_size())
         }
     }
 --- request
@@ -2219,10 +2222,16 @@ true
             ngx.say(myassert(pub:verify(default_sig, msg, "sm3")) == true)
             local ok_gmt = myassert(pub:verify(sig, msg, "sm3", nil, { distid = gmt_id }))
             ngx.say(ok_gmt == true)
-            local ok_empty_mismatch = pub:verify(sig, msg, "sm3", nil, { distid = "" })
-            ngx.say(not ok_empty_mismatch)
-
             local openssl4 = require("resty.openssl.version").OPENSSL_4X
+            local ok_empty_mismatch, empty_mismatch_err = pub:verify(
+                sig, msg, "sm3", nil, { distid = "" })
+            if openssl4 then
+                -- OpenSSL 4.0 rejects a zero length id before verifying
+                ngx.say(ok_empty_mismatch == nil and empty_mismatch_err ~= nil)
+            else
+                ngx.say(ok_empty_mismatch == false)
+            end
+
             if not openssl4 then
                 -- Explicit empty distid is an opt-in, not the default
                 local sig_empty = myassert(k:sign(msg, "sm3", nil, { distid = "" }))
@@ -2242,7 +2251,7 @@ true
 
             -- Wrong distid must fail
             local ok_wrong = pub:verify(sig_custom, msg, "sm3", nil, { distid = "wrong_id" })
-            ngx.say(not ok_wrong)
+            ngx.say(ok_wrong == false)
 
             -- IDs are octet strings and may contain NUL bytes
             local binary_id = "user\0account"
@@ -2374,6 +2383,22 @@ true
             ngx.say(myassert(key:verify(sig, msg, "sm3", nil,
                                          { distid = distid })) == true)
 
+            -- Composing an SM2 key from BN parameters uses the EC path, so the
+            -- composed key must be able to sign for the key it was built from.
+            local key_params = myassert(key:get_parameters())
+            local composed = myassert(pkey.new({
+                type = "SM2",
+                params = {
+                    group = key_params.group,
+                    private = key_params.private,
+                    public = key_params.public,
+                },
+            }))
+            local composed_sig = myassert(composed:sign(msg, "sm3", nil,
+                                                        { distid = distid }))
+            ngx.say(myassert(key:verify(composed_sig, msg, "sm3", nil,
+                                        { distid = distid })) == true)
+
             if require("resty.openssl.version").OPENSSL_3_UP then
                 local unavailable = pkey.new({
                     type = "SM2",
@@ -2389,6 +2414,61 @@ true
 --- request
     GET /t
 --- response_body
+true
+true
+true
+true
+true
+--- no_error_log
+[error]
+
+=== TEST 61: encryption and raw signature paths keep their contracts for RSA and EC
+--- http_config eval: $::HttpConfig
+--- config
+    location =/t {
+        content_by_lua_block {
+            local pkey = require("resty.openssl.pkey")
+            local digest = require("resty.openssl.digest")
+
+            -- The output size comes from the operation, not from the cache
+            local rsa = myassert(pkey.new({ type = "RSA", bits = 1024 }))
+            local cached = rsa.buf_size
+            local ct = myassert(rsa:encrypt(string.rep("a", 32)))
+            ngx.say(#ct == rsa:get_size())
+            ngx.say(rsa.buf_size == cached)
+            ngx.say(myassert(rsa:decrypt(ct)) == string.rep("a", 32))
+
+            -- Raw ECDSA signatures are padded to the size of the curve
+            local curves = { "prime256v1", "secp384r1", "secp521r1" }
+            local sizes = { 64, 96, 132 }
+            for i = 1, #curves do
+                local ec = myassert(pkey.new({ type = "EC", curve = curves[i] }))
+                local raw = myassert(ec:sign("hello", "sha256", nil,
+                                             { ecdsa_use_raw = true }))
+                ngx.say(#raw == sizes[i])
+                ngx.say(myassert(ec:verify(raw, "hello", "sha256", nil,
+                                           { ecdsa_use_raw = true })) == true)
+            end
+
+            -- Keys that are not identity-hashed still take digest instances
+            local ec = myassert(pkey.new({ type = "EC", curve = "prime256v1" }))
+            local d = myassert(digest.new("sha256"))
+            myassert(d:update("hello"))
+            local sig = myassert(ec:sign(d))
+            local d2 = myassert(digest.new("sha256"))
+            myassert(d2:update("hello"))
+            ngx.say(myassert(ec:verify(sig, d2)) == true)
+        }
+    }
+--- request
+    GET /t
+--- response_body
+true
+true
+true
+true
+true
+true
 true
 true
 true

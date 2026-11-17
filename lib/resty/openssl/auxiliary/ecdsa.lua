@@ -27,32 +27,18 @@ SEQUENCE {
   The binary form is typically 64 bytes.
 ]]
 
-local function group_size(ec_key, bits)
-  if bits ~= nil then
-    if type(bits) ~= "number" or bits <= 0 then
-      return nil, "invalid EC group bits"
-    end
-    return ceil(bits / 8)
+-- A DER ECDSA signature carries (r, s) without any width, so the raw form has
+-- to be padded to the size of the curve. The caller passes the bit size of the
+-- key, which both legacy and provider backed keys can report.
+local function sig_size(bits)
+  if type(bits) ~= "number" or bits <= 0 then
+    return nil, "invalid EC group bits"
   end
-  if ec_key == nil then
-    return nil, "ec_key is required"
-  end
-
-  local group = C.EC_KEY_get0_group(ec_key)
-  if group == nil then
-    return nil, "failed to get EC group"
-  end
-
-  local sz = C.EC_GROUP_order_bits(group)
-  if sz <= 0 then
-    return nil, "failed to get EC group order bits"
-  end
-
-  return ceil(sz / 8)
+  return ceil(bits / 8)
 end
 
-_M.sig_der2raw = function(der, ec_key, bits)
-  local psize, err = group_size(ec_key, bits)
+_M.sig_der2raw = function(der, bits)
+  local psize, err = sig_size(bits)
   if not psize then
     return nil, err
   end
@@ -94,8 +80,8 @@ _M.sig_der2raw = function(der, ec_key, bits)
   return rbin .. sbin
 end
 
-_M.sig_raw2der = function(bin, ec_key, bits)
-  local psize, err = group_size(ec_key, bits)
+_M.sig_raw2der = function(bin, bits)
+  local psize, err = sig_size(bits)
   if not psize then
     return nil, err
   end

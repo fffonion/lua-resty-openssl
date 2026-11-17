@@ -952,8 +952,7 @@ provider-native key types.
 It's also possible to pass a PEM-encoded EC or DH parameters to `config.param` for key generation:
 
 For SM2, `config.param` must contain a named-curve SM2 EC parameters block.
-Explicit EC parameter encodings are not supported. On OpenSSL 3.0 or later,
-the block is validated and the SM2 provider generates the key.
+Explicit EC parameter encodings are not supported.
 
 ```lua
 local dhparam = pkey.paramgen({
@@ -999,6 +998,9 @@ Compose a public or private key using existing parameters. To see
 list of parameters for each key, refer to [pkey:set_parameters](#pkeyset_parameters).
 
 Only `type` and `params` should exist in `config` table, all other keys will be ignored.
+
+`type = "SM2"` composes an SM2 key from the same EC style parameters, and
+`params.group` must then be the SM2 curve.
 
 ```lua
 local private_bn = require "resty.openssl.bn".new("7F48282CCA4C1A65D589C06DBE9C42AE50FBFFDF3A18CBB48498E1DE47F11BE1A3486CD8FA950D68F111970F922279D8", 16)
