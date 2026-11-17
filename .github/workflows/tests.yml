@@ -29,15 +29,15 @@ jobs:
         # TODO: arm64
         # latest and one version older for valgrind and perf test
         - nginx: "1.27.1"
-          openssl: "3.5.6" # LTS
-          openssl_fips: "3.0.9"
+          openssl: "3.5.9" # LTS
+          openssl_fips: "3.0.22"
           extras: "valgrind perf lua-kong-nginx-module"
           lua_nginx_module: "v0.10.28"
           lua_resty_core: "v0.1.31"
           nginx_cc_opts: "-Wno-error"
         - nginx: "1.29.2"
-          openssl: "3.5.6" # LTS
-          openssl_fips: "3.1.2"
+          openssl: "3.5.9" # LTS
+          openssl_fips: "3.1.8"
           extras: "valgrind perf lua-kong-nginx-module"
           lua_nginx_module: "v0.10.31rc2"
           lua_resty_core: "v0.1.34rc2"
@@ -49,35 +49,35 @@ jobs:
           lua_resty_core: "v0.1.34rc3"
           luaossl_cc_opts: "-std=gnu17" # OpenSSL 1.1.1 headers predate C23.
         - nginx: "1.31.1"
-          openssl: "3.0.20" # LTS
+          openssl: "3.0.22" # LTS
           extras: "valgrind perf lua-kong-nginx-module"
           lua_nginx_module: "v0.10.31rc5"
           lua_resty_core: "v0.1.34rc3"
           nginx_cc_opts: "-Wno-error"
         - nginx: "1.31.1"
-          openssl: "3.5.6" # LTS
-          openssl_fips: "3.1.2"
+          openssl: "3.5.9" # LTS
+          openssl_fips: "3.1.8"
           extras: "valgrind perf lua-kong-nginx-module"
           lua_nginx_module: "v0.10.31rc5"
           lua_resty_core: "v0.1.34rc3"
           nginx_cc_opts: "-Wno-error"
         - nginx: "1.31.1"
-          openssl: "3.6.2"
-          openssl_fips: "3.1.2"
+          openssl: "3.6.5"
+          openssl_fips: "3.1.8"
           extras: "valgrind perf lua-kong-nginx-module"
           lua_nginx_module: "v0.10.31rc5"
           lua_resty_core: "v0.1.34rc3"
           nginx_cc_opts: "-Wno-error"
         - nginx: "1.31.8"
-          openssl: "3.5.6" # LTS
-          openssl_fips: "3.1.2"
+          openssl: "3.5.9" # LTS
+          openssl_fips: "3.1.8"
           extras: "valgrind perf"
           lua_nginx_module: "v0.10.32rc7"
           lua_resty_core: "v0.1.35rc2"
           nginx_cc_opts: "-Wno-error"
         - nginx: "1.31.8"
-          openssl: "4.0.0"
-          openssl_fips: "3.1.2"
+          openssl: "4.0.3"
+          openssl_fips: "3.1.8"
           extras: "valgrind perf"
           lua_nginx_module: "v0.10.32rc7"
           lua_resty_core: "v0.1.35rc2"
@@ -297,7 +297,7 @@ jobs:
         popd
 
         luarocks install --local lua_pack
-        if [ "${{ matrix.openssl }}" != "4.0.0" ]; then
+        if [[ "${{ matrix.openssl }}" != 4.* ]]; then
           luarocks install --local openssl OPENSSL_DIR=$OPENSSL_PREFIX
           luarocks install --local luaossl CRYPTO_DIR=$OPENSSL_PREFIX OPENSSL_DIR=$OPENSSL_PREFIX CFLAGS="$(luarocks config variables.CFLAGS) ${{ matrix.luaossl_cc_opts }}"
           cp ~/.luarocks/lib/lua/5.1/openssl_*-openssl.so ~/.luarocks/lib/lua/5.1/lua-openssl.so
